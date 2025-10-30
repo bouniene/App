@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم المصنع</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* === NEW: CSS Variables for Theming === */
+        :root {
+            --theme-color: #2563eb; /* default theme color */
+            --theme-color-hover: #3b82f6; /* default hover color */
+        }
+
+        /* === IMPROVED STYLES === */
+        body { font-family: 'Inter', 'Cairo', sans-serif; background-color: #0f172a; color: #e2e8f0; }
+        .config-panel { scrollbar-width: thin; scrollbar-color: #475569 #1e293b; }
+        .config-panel::-webkit-scrollbar { width: 8px; }
+        .config-panel::-webkit-scrollbar-track { background: #1e293b; }
+        .config-panel::-webkit-scrollbar-thumb { background-color: #475569; border-radius: 10px; border: 3px solid #1e293b; }
+        input, select { background-color: #0f172a; border-color: #475569; color: #e2e8f0; }
+        input[type="color"] { padding: 2px; height: 40px; } /* Style for color picker */
+        input:focus, select:focus { outline: none; border-color: var(--theme-color-hover); box-shadow: 0 0 0 1px var(--theme-color-hover); }
+        input:disabled { background-color: #1e293b; color: #64748b; cursor: not-allowed; }
+        
+        /* === THEMED ELEMENTS === */
+        .btn-primary { background-color: var(--theme-color); transition: background-color 0.2s; }
+        .btn-primary:hover { background-color: var(--theme-color-hover); }
+        .breadcrumb-link:hover { color: var(--theme-color-hover); text-decoration: none; }
+        
+        .btn-add { border: 1px dashed #475569; color: #94a3b8; }
+        .btn-add:hover { background-color: #334155; color: #e2e8f0; border-color: #64748b; }
+        .app-item { background-color: #1e293b; border: 1px solid #334155; border-radius: 0.5rem; transition: box-shadow 0.2s ease-in-out; }
+        .app-item:hover { box-shadow: 0 0 15px rgba(59, 130, 246, 0.1); }
+        .accordion-header { padding: 0.60rem 0.75rem; }
+        .accordion-header:hover { background-color: rgba(51, 65, 85, 0.5); }
+        .accordion-header { cursor: move; }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out, padding 0.3s ease-out; padding: 0 0.75rem; }
+        .accordion-content.open { padding: 0.75rem; padding-top: 0.65rem; border-top: 1px solid #334155; }
+        .accordion-toggle-icon { transition: transform 0.3s ease-out; }
+        .rotate-180 { transform: rotate(180deg); }
+        .config-panel-view { display: none; }
+        .config-panel-view.active { display: block; }
+        .breadcrumb-link { cursor: pointer; color: #94a3b8; }
+        
+        #preview-body { font-family: 'Cairo', sans-serif; margin: 0; background-color: #f0f2f5; color: #333; display: flex; flex-direction: column; min-height: 100%; }
+        .dashboard-page { display: none; flex-direction: column; flex-grow: 1; }
+        .dashboard-page.active { display: flex; }
+        
+        /* === THEMED ELEMENTS === */
+        .dashboard-header { 
+            background-color: var(--theme-color); 
+            color: white; 
+            padding: 15px 30px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            position: relative; 
+            min-height: 60px; /* MODIFIED: Reduced height for mobile */
+        }
+        @media (min-width: 640px) {
+            .dashboard-header { min-height: 70px; } /* Restore height for desktop */
+        }
+        
+        .dashboard-header h1 { 
+            margin: 0; 
+            /* MODIFIED: Font size and weight are now handled by Tailwind classes in JS */
+        }
+        
+        /* === MODIFIED: Back button and Logo use same space === */
+        .back-btn { 
+            position: absolute; 
+            left: 15px; /* MODIFIED: Reduced for mobile */
+            top: 50%; 
+            transform: translateY(-50%); 
+            color: white; 
+            text-decoration: none; 
+            font-size: 24px; 
+            display: flex; 
+            align-items: center; 
+        }
+        @media (min-width: 640px) {
+            .back-btn { left: 20px; } /* Restore for desktop */
+        }
+        
+        #preview-logo-container { 
+            position: absolute; 
+            left: 15px; /* MODIFIED: Reduced for mobile */
+            top: 50%; 
+            transform: translateY(-50%); 
+            height: 40px; 
+            display: flex; 
+            align-items: center; 
+        }
+        @media (min-width: 640px) {
+            #preview-logo-container { left: 20px; } /* Restore for desktop */
+        }
+        
+        #header-logo-main { max-height: 40px; width: auto; }
+        
+        .app-grid-container { 
+            flex-grow: 1; 
+            display: flex; 
+            justify-content: center; 
+            align-items: flex-start; 
+            padding: 20px 15px; /* MODIFIED: Reduced padding for mobile */
+        }
+        @media (min-width: 640px) {
+            .app-grid-container { padding: 40px 20px; } /* Restore for desktop */
+        }
+        
+        .app-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; max-width: 1000px; width: 100%; }
+        .app-card { position: relative; background-color: #ffffff; border-radius: 8px; padding: 15px; text-align: center; text-decoration: none; color: inherit; box-shadow: 0 4px 8px rgba(0,0,0,0.08); transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 140px; cursor: pointer; }
+        .app-card:hover { transform: translateY(-5px); box-shadow: 0 8px 16px rgba(0,0,0,0.12); }
+        
+        /* === THEMED ELEMENT === */
+        .app-icon { font-size: 36px; color: var(--theme-color); margin-bottom: 10px; word-break: break-all; }
+        
+        .app-title { font-size: 1em; font-weight: 600; margin-bottom: 5px; color: #333; }
+        .app-description { font-size: 0.75em; color: #666; line-height: 1.3; flex-grow: 1; }
+        .dashboard-footer { background-color: #303030; color: #f0f0f0; text-align: center; padding: 15px; font-size: 0.9em; }
+        .add-new-card { border: 2px dashed #b0b0b0; background-color: #f9f9f9; color: #777; }
+        .add-new-card .app-icon { color: #777; }
+        
+        /* === MODIFIED: Responsive Edit Mode Logic === */
+        #config-panel { 
+            transition: width 0.4s ease, padding 0.4s ease, opacity 0.4s ease, max-height 0.4s ease; 
+            opacity: 1;
+        }
+        #preview-container { 
+            transition: width 0.4s ease; 
+        }
+        
+        /* When NOT in edit mode, collapse the panel completely */
+        body:not(.edit-mode) #config-panel { 
+            width: 0; 
+            padding-left: 0; 
+            padding-right: 0; 
+            opacity: 0; 
+            pointer-events: none; 
+            max-height: 0; /* Collapse height in flex-col */
+            overflow: hidden; /* Hide content while collapsed */
+        }
+        body:not(.edit-mode) #preview-container { 
+            width: 100%; 
+        }
+
+        /* When IN edit mode, restore properties. Width is handled by Tailwind classes. */
+        body.edit-mode #config-panel {
+            padding: 1rem;
+            opacity: 1;
+            pointer-events: auto;
+            max-height: 100vh; /* Restore height */
+            overflow-y: auto; /* Restore scrolling */
+            /* Width is handled by 'w-full md:w-1/3' in HTML */
+        }
+        /* No rule for 'body.edit-mode #preview-container' needed, 'w-full md:w-2/3' handles it */
+        /* === END MODIFIED: Responsive Edit Mode Logic === */
+
+        
+        /* === MODIFIED: Edit button moved === */
+        .edit-mode-toggle { 
+            position: absolute; 
+            right: 15px; /* MODIFIED: Reduced for mobile */
+            top: 50%; 
+            transform: translateY(-50%); 
+            background-color: rgba(255, 255, 255, 0.15); 
+            border: 1px solid rgba(255, 255, 255, 0.2); 
+            border-radius: 9999px; 
+            color: white; 
+            cursor: pointer; 
+            width: 40px; 
+            height: 40px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            transition: background-color 0.2s; 
+        }
+        @media (min-width: 640px) {
+            .edit-mode-toggle { right: 20px; } /* Restore for desktop */
+        }
+        
+        .edit-mode-toggle:hover { background-color: rgba(255, 255, 255, 0.3); }
+        .edit-app-btn { position: absolute; top: 5px; right: 5px; background-color: rgba(0, 0, 0, 0.6); color: white; border-radius: 50%; width: 28px; height: 28px; display: none; align-items: center; justify-content: center; cursor: pointer; transition: background-color 0.2s; border: 1px solid rgba(255, 255, 255, 0.2); }
+        .edit-app-btn:hover { background-color: rgba(0, 0, 0, 0.8); }
+        .edit-app-btn .material-icons { font-size: 16px; }
+        body.edit-mode .edit-app-btn { display: flex; }
+        .folder-indicator { position: absolute; top: 5px; left: 5px; background-color: rgba(255, 193, 7, 0.8); color: black; border-radius: 50%; width: 28px; height: 28px; display: none; align-items: center; justify-content: center; border: 1px solid rgba(0, 0, 0, 0.2); }
+        .folder-indicator .material-icons { font-size: 16px; }
+        body.edit-mode .folder-indicator { display: flex; }
+
+        /* ### NEW: ICON PICKER STYLES ### */
+        .icon-picker-trigger-btn { position: absolute; right: 0; top: 0; bottom: 0; padding: 0 0.5rem; color: #94a3b8; }
+        .icon-picker-trigger-btn:hover { color: #e2e8f0; }
+        .icon-picker-modal-grid { max-height: 60vh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #475569 #1e293b; }
+        .icon-picker-modal-grid::-webkit-scrollbar { width: 8px; }
+        .icon-picker-modal-grid::-webkit-scrollbar-track { background: #1e293b; }
+        .icon-picker-modal-grid::-webkit-scrollbar-thumb { background-color: #475569; border-radius: 10px; border: 3px solid #1e293b; }
+        .icon-picker-item { transition: background-color 0.2s, color 0.2s; }
+        .icon-picker-item:hover { background-color: var(--theme-color-hover); color: white; }
+
+        /* ### NEW: SYNC & PRESENCE STYLES ### */
+        #sync-status.text-green-500 { color: #22c55e; }
+        #sync-status.text-red-500 { color: #ef4444; }
+        #sync-status.text-gray-500 { color: #6b7280; }
+        #presence-ui .material-icons { font-size: 10px; }
+    </style>
+</head>
+<body> <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-slate-800 rounded-lg shadow-xl p-6 w-full max-w-md">
+            <h3 class="text-xl font-semibold mb-4">General Settings</h3>
+            <div class="space-y-4">
+                <div><label for="dashboard-title" class="block text-sm font-medium text-gray-300">Dashboard Header Title</label><input type="text" id="dashboard-title" value="لوحة تطبيقات المصنع" class="mt-1 block w-full rounded-md shadow-sm p-2"></div>
+                <div><label for="page-title" class="block text-sm font-medium text-gray-300">Page Title (&lt;title&gt;)</label><input type="text" id="page-title" value="لوحة تحكم المصنع" class="mt-1 block w-full rounded-md shadow-sm p-2"></div>
+                <div><label for="footer-text" class="block text-sm font-medium text-gray-300">Footer Text</label><input type="text" id="footer-text" value="© 2025 اسم المصنع الخاص بك. جميع الحقوق محفوظة." class="mt-1 block w-full rounded-md shadow-sm p-2"></div>
+                
+                <div><label for="theme-color" class="block text-sm font-medium text-gray-300">Theme Color</label><input type="color" id="theme-color" value="#2563eb" class="mt-1 block w-full rounded-md shadow-sm"></div>
+                
+                <div><label for="logo-url" class="block text-sm font-medium text-gray-300">Logo URL (Optional)</label><input type="text" id="logo-url" value="" placeholder="https://example.com/logo.png" class="mt-1 block w-full rounded-md shadow-sm p-2"></div>
+            </div>
+             <button id="close-settings-btn" class="mt-6 w-full btn-primary text-white py-2 px-4 rounded-lg">Close</button>
+        </div>
+    </div>
+
+    <div id="edit-app-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
+        <div class="bg-slate-800 rounded-lg shadow-xl p-6 w-full max-w-lg">
+            <h3 class="text-xl font-semibold mb-5">تعديل التطبيق</h3>
+            <div class="space-y-4" id="edit-app-form">
+                <input type="hidden" id="edit-app-id">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">نوع التطبيق</label>
+                    <div class="flex space-x-4 mt-1 bg-slate-900 p-2 rounded-md"><label class="flex items-center text-sm"><input type="radio" name="edit-app-type" value="link"> <span class="ml-2">رابط</span></label><label class="flex items-center text-sm"><input type="radio" name="edit-app-type" value="folder"> <span class="ml-2">مجلد</span></label></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label for="edit-app-title" class="block text-sm font-medium text-slate-300">العنوان</label><input type="text" id="edit-app-title" class="mt-1 block w-full rounded-md shadow-sm p-2"></div>
+                    <div>
+                        <label for="edit-app-icon" class="block text-sm font-medium text-slate-300">اسم الأيقونة</label>
+                        <div class="relative mt-1">
+                            <input type="text" id="edit-app-icon" class="block w-full rounded-md shadow-sm p-2 pr-10" readonly>
+                            <button type="button" class="icon-picker-trigger-btn" title="اختر أيقونة"><span class="material-icons">edit</span></button>
+                        </div>
+                    </div>
+                </div>
+                <div><label for="edit-app-desc" class="block text-sm font-medium text-slate-300">الوصف</label><input type="text" id="edit-app-desc" class="mt-1 block w-full rounded-md shadow-sm p-2"></div>
+                <div><label for="edit-app-url" class="block text-sm font-medium text-slate-300">URL (href)</label><input type="text" id="edit-app-url" class="mt-1 block w-full rounded-md shadow-sm p-2"></div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                 <button id="close-edit-modal-btn" type="button" class="py-2 px-4 rounded-lg bg-slate-600 hover:bg-slate-500 text-white">إلغاء</button>
+                 <button id="save-edit-modal-btn" type="button" class="py-2 px-4 rounded-lg btn-primary text-white">حفظ التغييرات</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="icon-picker-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
+      <div class="bg-slate-800 rounded-lg shadow-xl p-5 w-full max-w-4xl flex flex-col">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-semibold">اختر أيقونة</h3>
+          <button id="close-icon-picker-btn" class="text-slate-400 hover:text-white text-3xl font-bold">&times;</button>
+        </div>
+        <input type="text" id="icon-picker-search" placeholder="ابحث عن أيقونة..." class="w-full p-2 mb-4 rounded-md shadow-sm">
+        <div id="icon-picker-grid" class="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2 text-center icon-picker-modal-grid">
+            </div>
+      </div>
+    </div>
+
+
+    <div class="flex flex-col md:flex-row h-screen">
+        <div id="config-panel" class="w-full md:w-1/3 p-4 bg-slate-800 shadow-lg flex-col overflow-y-auto config-panel">
+            
+            <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-700">
+                <h2 class="text-xl font-bold text-white">Dashboard Generator</h2>
+                <div class="flex items-center space-x-2">
+                    <span id="sync-status" class="material-icons text-gray-500" title="جاري الاتصال...">sync_problem</span>
+                    <button id="open-settings-btn" class="text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-700">
+                        <span class="material-icons">settings</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="config-navigation" class="mb-4 text-sm text-gray-400"><span class="breadcrumb-link" data-level="-1">التطبيقات الرئيسية</span></div>
+            <div id="config-views-container" class="flex-grow">
+                </div>
+            
+            <div class="mt-4"><button id="add-app-btn" class="w-full flex items-center justify-center text-sm py-2 px-4 rounded-lg btn-add transition-colors"><span class="material-icons mr-2 text-base">add</span>Add New App</button></div>
+            
+            <div class="mt-auto pt-4">
+                <div class="flex items-center justify-between">
+                    <button id="generate-btn" class="btn-primary text-white font-bold py-2 px-4 rounded-lg text-base shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300">Generate &amp; Download HTML</button>
+                    <div id="presence-ui" class="flex items-center space-x-2" title="المستخدمون المتصلون">
+                        <span class="material-icons text-gray-500">circle</span>
+                        <span id="presence-count" class="font-medium text-white">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="preview-container" class="w-full md:w-2/3 bg-gray-700 overflow-hidden">
+            <div id="preview-body" class="h-full w-full">
+                </div>
+        </div>
+    </div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    let isEditMode = false; // Start in edit mode
+	document.body.classList.remove('edit-mode'); // <-- أضف هذا السطر
+    let appData = [];
+    let navigationStack = [];
+
+    // ### NEW: Firebase Config & Vars ###
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+    const firebaseConfig = {
+      apiKey: "AIzaSyBPDnVOol10iskGrtgqxlp9a28cQFCemB4",
+      authDomain: "nnnnc-48782.firebaseapp.com",
+      databaseURL: "https://nnnnc-48782-default-rtdb.firebaseio.com",
+      projectId: "nnnnc-48782",
+      storageBucket: "nnnnc-48782.firebasestorage.app",
+      messagingSenderId: "91157067378",
+      appId: "1:91157067378:web:e0a600f956bad0b44234eb",
+      measurementId: "G-5D1059BT76"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+    
+    let isSyncing = false; // Flag to prevent echo from local changes
+    let dbRef; // Reference to the dashboard node in RTDB
+
+    const configViewsContainer = document.getElementById('config-views-container');
+    const configNavigation = document.getElementById('config-navigation');
+    const generateBtn = document.getElementById('generate-btn');
+    const previewBody = document.getElementById('preview-body');
+    const settingsModal = document.getElementById('settings-modal');
+    const openSettingsBtn = document.getElementById('open-settings-btn');
+    const closeSettingsBtn = document.getElementById('close-settings-btn');
+    
+    // ### MODIFIED: Get all settings inputs ###
+    const dashboardTitleInput = document.getElementById('dashboard-title');
+    const pageTitleInput = document.getElementById('page-title');
+    const footerTextInput = document.getElementById('footer-text');
+    const themeColorInput = document.getElementById('theme-color');
+    const logoUrlInput = document.getElementById('logo-url');
+    
+    const addAppBtn = document.getElementById('add-app-btn');
+    const editAppModal = document.getElementById('edit-app-modal');
+    const closeEditModalBtn = document.getElementById('close-edit-modal-btn');
+    const saveEditModalBtn = document.getElementById('save-edit-modal-btn');
+    const editAppIdInput = document.getElementById('edit-app-id');
+    const editAppTitleInput = document.getElementById('edit-app-title');
+    const editAppIconInput = document.getElementById('edit-app-icon');
+    const editAppDescInput = document.getElementById('edit-app-desc');
+    const editAppUrlInput = document.getElementById('edit-app-url');
+    const editAppTypeRadios = document.querySelectorAll('input[name="edit-app-type"]');
+    
+    const iconPickerModal = document.getElementById('icon-picker-modal');
+    const closeIconPickerBtn = document.getElementById('close-icon-picker-btn');
+    const iconPickerGrid = document.getElementById('icon-picker-grid');
+    const iconPickerSearch = document.getElementById('icon-picker-search');
+    let currentIconInput = null;
+
+    // ### NEW: Firebase UI Elements ###
+    const syncStatusIcon = document.getElementById('sync-status');
+    const presenceCountEl = document.getElementById('presence-count');
+    const presenceIndicatorEl = document.getElementById('presence-ui').querySelector('.material-icons');
+
+    const initialApps = [
+      {
+        "id": 1757492006071,
+        "type": "link",
+        "icon": "inventory_2",
+        "title": "إدارة المخزون",
+        "desc": "تتبع المواد الخام والمنتجات النهائية.",
+        "url": "inventory.html",
+        "children": []
+      },
+      {
+        "id": 1757492006072,
+        "type": "folder",
+        "icon": "precision_manufacturing",
+        "title": "إدارة الإنتاج",
+        "desc": "تخطيط ومتابعة أوامر العمل.",
+        "url": "#",
+        "children": [
+          {
+            "id": 1757492006073,
+            "type": "link",
+            "icon": "assignment",
+            "title": "أوامر العمل",
+            "desc": "عرض وإدارة أوامر العمل.",
+            "url": "work-orders.html",
+            "children": []
+          },
+          {
+            "id": 1757492006074,
+            "type": "link",
+            "icon": "event",
+            "title": "التخطيط والجدولة",
+            "desc": "جدولة خطوط الإنتاج.",
+            "url": "planning.html",
+            "children": []
+          },
+          {
+            "id": 1757871233168,
+            "type": "link",
+            "icon": "zoom_in",
+            "title": "scanner",
+            "desc": "",
+            "url": "#",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": 1757492006075,
+        "type": "link",
+        "icon": "fact_check",
+        "title": "مراقبة الجودة",
+        "desc": "فحص المواد، العمليات، والمنتجات.",
+        "url": "quality_control.html",
+        "children": []
+      },
+      {
+        "id": 1757492006076,
+        "type": "folder",
+        "icon": "print",
+        "title": "طباعة الملصقات",
+        "desc": "طباعة ملصقات المنتجات والشحنات.",
+        "url": "#",
+        "children": [
+          {
+            "id": 1757871078504,
+            "type": "link",
+            "icon": "print",
+            "title": "DECO 4",
+            "desc": "",
+            "url": "#",
+            "children": []
+          },
+          {
+            "id": 1757871129970,
+            "type": "link",
+            "icon": "print",
+            "title": "Valpaint",
+            "desc": "",
+            "url": "#",
+            "children": []
+          },
+          {
+            "id": 1757871184712,
+            "type": "link",
+            "icon": "print",
+            "title": "2EMEC",
+            "desc": "",
+            "url": "#",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": 1757870718313,
+        "type": "folder",
+        "icon": "format_align_center",
+        "title": "FOIL",
+        "desc": "ALL FOIL",
+        "url": "#",
+        "children": [
+          {
+            "id": 1757870782312,
+            "type": "link",
+            "icon": "warehouse",
+            "title": "Foil Inventory",
+            "desc": "Manage foil rolls and usage.",
+            "url": "#",
+            "children": []
+          },
+          {
+            "id": 1757870824009,
+            "type": "link",
+            "icon": "inventory",
+            "title": "Sample Management",
+            "desc": "Track and store samples.",
+            "url": "#",
+            "children": []
+          },
+          {
+            "id": 1757870910256,
+            "type": "link",
+            "icon": "add_circle_outline",
+            "title": "Wheel Inventory",
+            "desc": "Manage wheel stock.",
+            "url": "#",
+            "children": []
+          },
+          {
+            "id": 1757870935145,
+            "type": "link",
+            "icon": "view_list",
+            "title": "Measurements",
+            "desc": "Record project sizes.",
+            "url": "#",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": 1757871353792,
+        "type": "folder",
+        "icon": "account_circle",
+        "title": "العمال",
+        "desc": "كل مايخص العمال",
+        "url": "#",
+        "children": [
+          {
+            "id": 1757871386264,
+            "type": "link",
+            "icon": "apartment",
+            "title": "الخزائن",
+            "desc": "ترتيب الخزائن",
+            "url": "#",
+            "children": []
+          },
+          {
+            "id": 1757871415836,
+            "type": "link",
+            "icon": "comment",
+            "title": "ارقام هواتف ومعلومات",
+            "desc": "",
+            "url": "#",
+            "children": []
+          },
+          {
+            "id": 1757871477362,
+            "type": "link",
+            "icon": "clear_all",
+            "title": "جدول العمل",
+            "desc": "",
+            "url": "#",
+            "children": []
+          },
+          {
+            "id": 1757871542672,
+            "type": "link",
+            "icon": "apps",
+            "title": "يوم السبت وغيره",
+            "desc": "العمل يوم السبت والايام والساعات الاضافية",
+            "url": "#",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": 1757871640615,
+        "type": "folder",
+        "icon": "database",
+        "title": "نماذج تقارير",
+        "desc": "",
+        "url": "#",
+        "children": []
+      },
+      {
+        "id": 1757871667384,
+        "type": "link",
+        "icon": "format_list_numbered",
+        "title": "To Do",
+        "desc": "",
+        "url": "#",
+        "children": []
+      }
+    ];
+
+    const materialIcons = ["account_balance", "account_balance_wallet", "account_circle", "add", "add_box", "add_circle_outline", "add_shopping_cart", "agriculture", "air", "alarm", "all_inbox", "analytics", "anchor", "apartment", "api", "apps", "archive", "arrow_back", "arrow_forward", "art_track", "article", "assessment", "assignment", "assignment_ind", "attach_file", "attach_money", "attractions", "autorenew", "badge", "bakery_dining", "bar_chart", "barcode", "battery_full", "bedtime", "biotech", "block", "bluetooth", "bolt", "book", "bookmark", "bookmarks", "brush", "bug_report", "build", "business", "business_center", "calculate", "calendar_today", "camera_alt", "campaign", "card_giftcard", "carpenter", "castle", "chat", "check_circle", "checkroom", "church", "class", "clear_all", "cleaning_services", "close", "cloud", "code", "comment", "compare_arrows", "compost", "computer", "connecting_airports", "construction", "contact_page", "content_copy", "content_cut", "content_paste", "conveyor_belt", "corporate_fare", "cottage", "credit_card", "currency_exchange", "dark_mode", "dashboard", "database", "delete", "delete_forever", "desktop_windows", "developer_mode", "directions_car", "disabled_by_default", "dns", "domain", "done", "download", "drag_handle", "dry_cleaning", "dynamic_feed", "eco", "edit", "edit_off", "electrical_services", "email", "emergency", "emoji_events", "energy_savings_leaf", "engineering", "enhanced_encryption", "equalizer", "error", "event", "expand_more", "explore", "extension", "face", "fact_check", "factory", "family_restroom", "fastfood", "favorite", "feed", "festival", "filter_drama", "filter_list", "fingerprint", "fitness_center", "flag", "flight", "flight_land", "flight_takeoff", "flutter_dash", "folder", "forest", "forklift", "format_align_center", "format_align_left", "format_align_right", "format_bold", "format_italic", "format_list_bulleted", "format_list_numbered", "format_paint", "format_underlined", "forum", "fullscreen", "functions", "gas_meter", "gavel", "gesture", "grade", "grass", "grid_view", "group", "handshake", "handyman", "hardware", "healing", "headset", "help", "history", "home", "hotel", "house", "how_to_reg", "how_to_vote", "https", "hvac", "image", "info", "inventory", "inventory_2", "key", "keyboard", "label", "landscape", "language", "layers", "leaderboard", "lightbulb", "link", "local_bar", "local_cafe", "local_fire_department", "local_hospital", "local_pizza", "local_shipping", "local_taxi", "location_off", "location_on", "lock", "lock_open", "login", "logout", "loyalty", "luggage", "manage_accounts", "map", "masks", "mediation", "medical_services", "medication", "meeting_room", "memory", "menu", "mic", "military_tech", "monitoring", "more_vert", "mosque", "mouse", "move_to_inbox", "movie", "museum", "music_note", "my_location", "navigation", "newspaper", "nfc", "no_encryption", "no_transfer", "notifications", "oil_barrel", "open_in_full", "open_with", "outbox", "package", "pages", "paid", "palette", "pallet", "pan_tool", "park", "password", "payment", "percent", "person", "pest_control", "pets", "phone", "photo_camera", "photo_library", "piano", "pie_chart", "place", "playlist_add", "plumbing", "point_of_sale", "policy", "poll", "power", "precision_manufacturing", "price_change", "price_check", "print", "printer", "privacy_tip", "propane_tank", "psychology", "public", "publish", "push_pin", "qr_code_scanner", "query_stats", "question_answer", "queue_music", "radio", "ramen_dining", "receipt", "receipt_long", "recycling", "refresh", "remove", "remove_shopping_cart", "reorder", "reply", "report", "request_quote", "restaurant", "restore_page", "robot", "room", "roofing", "rotate_right", "router", "rule", "sailing", "save", "savings", "scanner", "schedule", "school", "science", "search", "security", "select_all", "sell", "send", "sensors", "sensors_off", "set_meal", "settings", "settings_backup_restore", "settings_industrial", "settings_power", "share", "shield", "shopping_bag", "shopping_basket", "shopping_cart", "show_chart", "signal_cellular_alt", "smartphone", "solar_power", "sort", "speaker", "speed", "sports_basketball", "sports_esports", "sports_motorsports", "sports_score", "sports_soccer", "sports_tennis", "stadium", "star", "storage", "store", "storefront", "subject", "subway", "supervisor_account", "support", "support_agent", "swap_horiz", "swap_vert", "sync", "synagogue", "table_chart", "tablet_mac", "temple_hindu", "terminal", "text_format", "theater_comedy", "thermostat", "thumb_up", "timeline", "toc", "tour", "train", "trending_down", "trending_up", "trip_origin", "troubleshoot", "tv", "unarchive", "update", "upload_file", "usb", "vaccines", "verified_user", "video_call", "videocam", "videogame_asset", "view_list", "view_module", "view_stream", "visibility", "visibility_off", "volume_down", "volume_mute", "volume_up", "vpn_key", "warehouse", "warning", "watch", "watch_later", "water", "water_drop", "wb_sunny", "webhook", "wheelchair_pickup", "wifi", "wind_power", "work", "workspaces", "zoom_in", "zoom_out"];
+
+    // ### NEW: Helper function to fix null children from RTDB ###
+    const fixNullChildren = (apps) => {
+        if (!apps) return;
+        apps.forEach(app => {
+            if (app.type === 'folder' && !app.children) {
+                app.children = [];
+            }
+            fixNullChildren(app.children);
+        });
+    };
+    
+    // ### NEW: Helper function to get settings from DOM ###
+    function getSettingsFromDOM() {
+        return {
+            dashboardTitle: dashboardTitleInput.value,
+            pageTitle: pageTitleInput.value,
+            footerText: footerTextInput.value,
+            themeColor: themeColorInput.value,
+            logoUrl: logoUrlInput.value
+        };
+    }
+
+    // ### NEW: Helper function to apply theme color ###
+    function applyThemeColor(color) {
+        if (!color) color = '#2563eb';
+        // Set the main theme color
+        document.documentElement.style.setProperty('--theme-color', color);
+        
+        // Generate a slightly lighter color for hover
+        let hoverColor = color;
+        try {
+            // Convert hex to R, G, B
+            let r = parseInt(color.slice(1, 3), 16);
+            let g = parseInt(color.slice(3, 5), 16);
+            let b = parseInt(color.slice(5, 7), 16);
+            
+            // Lighten (clamping at 255)
+            r = Math.min(255, r + 20);
+            g = Math.min(255, g + 20);
+            b = Math.min(255, b + 20);
+            
+            // Convert back to hex
+            hoverColor = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+        } catch (e) {
+            console.warn("Could not generate hover color", e);
+            hoverColor = '#3b82f6'; // Fallback
+        }
+        document.documentElement.style.setProperty('--theme-color-hover', hoverColor);
+    }
+
+    // ### NEW: Helper function to load settings into DOM ###
+    function loadSettings(settings) {
+        const defaults = {
+            dashboardTitle: 'لوحة تطبيقات المصنع',
+            pageTitle: 'لوحة تحكم المصنع',
+            footerText: '© 2025 اسم المصنع الخاص بك. جميع الحقوق محفوظة.',
+            themeColor: '#2563eb',
+            logoUrl: ''
+        };
+        
+        dashboardTitleInput.value = settings.dashboardTitle || defaults.dashboardTitle;
+        pageTitleInput.value = settings.pageTitle || defaults.pageTitle;
+        footerTextInput.value = settings.footerText || defaults.footerText;
+        themeColorInput.value = settings.themeColor || defaults.themeColor;
+        logoUrlInput.value = settings.logoUrl || defaults.logoUrl;
+        
+        // Apply settings
+        document.title = pageTitleInput.value;
+        applyThemeColor(themeColorInput.value);
+    }
+
+    // ### MODIFIED: Firebase Sync Function (now syncs settings AND apps) ###
+    function syncToFirebase() {
+        if (dbRef && auth.currentUser) {
+            isSyncing = true;
+            
+            const settings = getSettingsFromDOM();
+            // Clean data: Firebase RTDB doesn't like 'undefined' values.
+            const cleanAppData = JSON.parse(JSON.stringify(appData));
+            const fullData = { settings, appData: cleanAppData };
+            
+            dbRef.set(fullData)
+                .then(() => {
+                    // Save to local storage on successful sync
+                    localStorage.setItem('dashboardData', JSON.stringify(fullData));
+                    isSyncing = false;
+                })
+                .catch((error) => {
+                    console.error("Firebase Sync Error:", error);
+                    isSyncing = false; // Reset flag on error
+                });
+        }
+    }
+
+    const findAppById=(id,apps=appData)=>{for(const app of apps){if(app.id==id)return app;if(app.children?.length>0){const a=findAppById(id,app.children);if(a)return a}}return null};
+    
+    // ### MODIFIED: updateAppData now calls debouncedUpdatePreview, which will handle the sync ###
+    const updateAppData=(id,field,value)=>{const app=findAppById(id);if(app){app[field]=value;if(field==="type"){if(value==="folder")app.children=app.children||[];const a=document.querySelector(`.config-panel-view.active [data-id='${id}']`);a&&updateAppUI(a,app)}field==="title"&&navigationStack.some(a=>a.id==id)&&renderNavigation(),debouncedUpdatePreview()}};
+    
+    const updateAppUI=(appElement,app)=>{const a=appElement.querySelector('[data-field="url"]'),t=appElement.querySelector(".manage-sub-apps-btn");"folder"===app.type?(a.disabled=!0,a.value="#",t.disabled=!1,app.url="#"):(a.disabled=!1,t.disabled=!0)};
+    
+    const renderConfigView=(appArray,parentApp=null)=>{const viewId=parentApp?`view-${parentApp.id}`:"view-root";let viewContainer=document.getElementById(viewId);viewContainer||(viewContainer=document.createElement("div"),viewContainer.id=viewId,viewContainer.className="config-panel-view space-y-1",configViewsContainer.appendChild(viewContainer)),viewContainer.innerHTML="",appArray.forEach(app=>{const hasChildren=app.children&&app.children.length>0,appElement=document.createElement("div");appElement.className="app-item",appElement.dataset.id=app.id;const childCountText="folder"===app.type&&hasChildren?`(${app.children.length})`:"";appElement.innerHTML=`<div class="accordion-header flex justify-between items-center p-2 rounded-t-lg"><span class="font-medium text-sm app-accordion-title flex-grow">${app.title||"New App"} <span class="text-xs text-slate-500 ml-1">${childCountText}</span></span><div class="flex items-center space-x-1"><button class="manage-sub-apps-btn text-slate-400 hover:text-white p-1 disabled:text-slate-600 disabled:cursor-not-allowed" title="Manage Sub-Apps"><span class="material-icons text-base align-middle">folder_open</span></button><button class="remove-app-btn text-slate-500 hover:text-red-400 p-1" title="Remove App"><span class="material-icons text-base align-middle">delete_outline</span></button><span class="material-icons accordion-toggle-icon">expand_more</span></div></div><div class="accordion-content"><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><div class="sm:col-span-2"><label class="block text-xs font-medium text-slate-400 mb-1">Application Type</label><div class="flex space-x-4 mt-1 bg-slate-900 p-1.5 rounded-md"><label class="flex items-center text-sm"><input type="radio" name="app-type-${app.id}" value="link" class="app-type-radio" ${"link"===app.type?"checked":""}> <span class="ml-2">Link</span></label><label class="flex items-center text-sm"><input type="radio" name="app-type-${app.id}" value="folder" class="app-type-radio" ${"folder"===app.type?"checked":""}> <span class="ml-2">Folder</span></label></div></div><div><label class="block text-xs font-medium text-slate-400 mb-1">Icon Name</label><div class="relative"><input type="text" data-field="icon" class="app-input block w-full rounded-md p-1.5 text-sm pr-8" value="${app.icon||"apps"}" readonly><button type="button" class="icon-picker-trigger-btn" title="Select Icon"><span class="material-icons text-sm">edit</span></button></div><p class="text-xs text-slate-500 mt-1">* Click the edit button to select an icon.</p></div><div><label class="block text-xs font-medium text-slate-400 mb-1">URL (href)</label><input type="text" data-field="url" class="app-input block w-full rounded-md p-1.5 text-sm" value="${app.url||"#"}"></div><div class="sm:col-span-2"><label class="block text-xs font-medium text-slate-400 mb-1">Title</label><input type="text" data-field="title" class="app-input block w-full rounded-md p-1.5 text-sm" value="${app.title||""}"></div><div class="sm:col-span-2"><label class="block text-xs font-medium text-slate-400 mb-1">Description</label><input type="text" data-field="desc" class="app-input block w-full rounded-md p-1.5 text-sm" value="${app.desc||""}"></div></div></div>`,viewContainer.appendChild(appElement),updateAppUI(appElement,app)}),Sortable.create(viewContainer,{animation:150,handle:".accordion-header",onEnd:evt=>{const[movedItem]=appArray.splice(evt.oldIndex,1);appArray.splice(evt.newIndex,0,movedItem),debouncedUpdatePreview()}})};
+
+    const navigateToView=(parentApp=null)=>{parentApp?navigationStack.push(parentApp):navigationStack=[];const a=parentApp?parentApp.children:appData,t=parentApp?`view-${parentApp.id}`:"view-root";document.querySelectorAll(".config-panel-view").forEach(e=>e.classList.remove("active")),renderConfigView(a,parentApp);const view=document.getElementById(t);if(view)view.classList.add("active");renderNavigation()};
+    const renderNavigation=()=>{let e=`<span class="breadcrumb-link" data-level="-1">التطبيقات الرئيسية</span>`;navigationStack.forEach((a,t)=>{e+=` <span class="text-slate-500 mx-1">/</span> <span class="breadcrumb-link" data-level="${t}">${a.title}</span>`}),configNavigation.innerHTML=e};
+    
+    // ### MODIFIED: addApp calls debouncedUpdatePreview (which now syncs) ###
+    const addApp=(parentApp=null)=>{const e={id:Date.now(),type:"link",icon:"apps",title:"New App",desc:"",url:"#",children:[]},a=parentApp?parentApp.children:appData;a.push(e);const n=(e,a=appData,t=[])=>{if(!e)return[];for(const d of a)if(d.id==e)return[...t,d];else if(d.children){const c=n(e,d.children,[...t,d]);if(c)return c}return null},l=n(parentApp?.id);null!==l&&(navigationStack=l,(()=>{const e=parentApp?parentApp.children:appData,a=parentApp?`view-${parentApp.id}`:"view-root";document.querySelectorAll(".config-panel-view").forEach(e=>e.classList.remove("active")),renderConfigView(e,parentApp);const view=document.getElementById(a);if(view)view.classList.add("active");renderNavigation()})()),debouncedUpdatePreview(),setTimeout(()=>{document.querySelector(`.config-panel-view.active [data-id='${e.id}'] .accordion-header`)?.click()},50)};
+    
+    // ### MODIFIED: removeApp now calls updatePreview and syncToFirebase immediately ###
+    const removeApp = (appId, parentApp = null) => {
+        const appToRemove = findAppById(appId);
+        if (!appToRemove) return;
+        // NOTE: Using confirm as it was in the original user code.
+        if (confirm(`هل أنت متأكد أنك تريد حذف تطبيق "${appToRemove.title}"؟`)) {
+            const targetArray = parentApp ? parentApp.children : appData;
+            const appIndex = targetArray.findIndex(a => a.id == appId);
+            if (appIndex > -1) {
+                targetArray.splice(appIndex, 1);
+                const currentView = parentApp ? `view-${parentApp.id}` : 'view-root';
+                document.getElementById(currentView)?.remove();
+                
+                navigateToView(navigationStack.length > 0 ? navigationStack[navigationStack.length - 1] : null);
+                updatePreview(); // Update preview immediately
+                syncToFirebase(); // Sync deletion immediately
+            }
+        }
+    };
+
+    const toggleEditMode=()=>{isEditMode=!isEditMode,document.body.classList.toggle("edit-mode",isEditMode),updatePreview()};
+    
+    const openEditModal=(app)=>{editAppIdInput.value=app.id,editAppTitleInput.value=app.title,editAppIconInput.value=app.icon,editAppDescInput.value=app.desc,editAppUrlInput.value=app.url,editAppTypeRadios.forEach(a=>{a.checked=a.value===app.type}),editAppUrlInput.disabled="folder"===app.type,editAppModal.classList.remove("hidden")};
+    const closeEditModal=()=>{editAppModal.classList.add("hidden")};
+
+    // ### MODIFIED: saveAppChanges now calls syncToFirebase immediately ###
+    const saveAppChanges=()=>{const e=editAppIdInput.value,a=findAppById(e);if(!a)return;let t;editAppTypeRadios.forEach(e=>{e.checked&&(t=e.value)}),a.title=editAppTitleInput.value,a.icon=editAppIconInput.value,a.desc=editAppDescInput.value,a.type=t,a.url="folder"===t?"#":editAppUrlInput.value,"folder"===a.type&&!a.children&&(a.children=[]),updatePreview();syncToFirebase();const d=navigationStack.length>0?navigationStack[navigationStack.length-1]:null;renderConfigView(d?d.children:appData,d),closeEditModal()};
+
+    // --- Icon Picker Logic (Unchanged) ---
+    const populateIconPicker = (filter = '') => {
+        iconPickerGrid.innerHTML = '';
+        const filteredIcons = materialIcons.filter(icon => icon.includes(filter.toLowerCase()));
+        filteredIcons.forEach(icon => {
+            const btn = document.createElement('button');
+            btn.className = 'p-2 rounded-md flex flex-col items-center justify-center icon-picker-item';
+            btn.dataset.iconName = icon;
+            btn.innerHTML = `<span class="material-icons text-3xl">${icon}</span><span class="text-xs mt-1 truncate">${icon}</span>`;
+            iconPickerGrid.appendChild(btn);
+        });
+    };
+    document.body.addEventListener('click', e => {
+        const triggerBtn = e.target.closest('.icon-picker-trigger-btn');
+        if (triggerBtn) {
+            currentIconInput = triggerBtn.previousElementSibling;
+            populateIconPicker();
+            iconPickerSearch.value = '';
+            iconPickerModal.classList.remove('hidden');
+            iconPickerSearch.focus();
+        }
+    });
+    closeIconPickerBtn.addEventListener('click', () => iconPickerModal.classList.add('hidden'));
+    iconPickerModal.addEventListener('click', e => { if (e.target.id === 'icon-picker-modal') iconPickerModal.classList.add('hidden'); });
+    iconPickerSearch.addEventListener('input', () => populateIconPicker(iconPickerSearch.value));
+    iconPickerGrid.addEventListener('click', e => {
+        const iconBtn = e.target.closest('.icon-picker-item');
+        if (iconBtn && currentIconInput) {
+            currentIconInput.value = iconBtn.dataset.iconName;
+            currentIconInput.dispatchEvent(new Event('input', { bubbles: true }));
+            iconPickerModal.classList.add('hidden');
+            currentIconInput = null;
+        }
+    });
+    // --- End Icon Picker Logic ---
+
+
+    configViewsContainer.addEventListener('click',e=>{const a=e.target.closest(".app-item");if(!a)return;const t=a.dataset.id,d=navigationStack.length>0?navigationStack[navigationStack.length-1]:null;if(e.target.closest(".accordion-header")&&!e.target.closest("button")){const c=a.querySelector(".accordion-content"),o=c.style.maxHeight;a.querySelector(".accordion-toggle-icon").classList.toggle("rotate-180"),o?(c.style.maxHeight=null,c.classList.remove("open")):(c.classList.add("open"),c.style.maxHeight=c.scrollHeight+"px")}e.target.closest(".remove-app-btn")&&removeApp(t,d),e.target.closest(".manage-sub-apps-btn")&&(()=>{const n=findAppById(t);n&&!e.target.closest("button").disabled&&navigateToView(n)})()});
+    configViewsContainer.addEventListener('input',e=>{const a=e.target.closest(".app-item");if(!a)return;const t=a.dataset.id;if(e.target.classList.contains("app-input")){const d=e.target.dataset.field,n=e.target.value;updateAppData(t,d,n),"title"===d&&(a.querySelector(".app-accordion-title").textContent=n)}e.target.classList.contains("app-type-radio")&&updateAppData(t,"type",e.target.value)});
+    configNavigation.addEventListener('click',e=>{if(e.target.classList.contains("breadcrumb-link")){const a=parseInt(e.target.dataset.level,10),t=navigationStack.slice(0,a+1),d=-1===a?null:t[a];navigationStack=t.slice(0,a),-1===a&&(navigationStack=[]),navigateToView(d)}});
+    addAppBtn.addEventListener('click',()=>{const e=navigationStack.length>0?navigationStack[navigationStack.length-1]:null;addApp(e)});
+    previewBody.addEventListener('click',e=>{const a=e.target.closest(".add-new-card"),t=e.target.closest("#edit-mode-toggle"),d=e.target.closest(".edit-app-btn");if(t)return e.preventDefault(),void toggleEditMode();if(d){e.preventDefault(),e.stopPropagation();const c=d.dataset.id,o=findAppById(c);o&&openEditModal(o)}else a&&(e.preventDefault(),(()=>{const n=a.dataset.parentId,l="root"!==n?findAppById(n):null;addApp(l)})())});
+    saveEditModalBtn.addEventListener('click', saveAppChanges);
+    closeEditModalBtn.addEventListener('click', closeEditModal);
+    editAppModal.addEventListener('click', e => { if (e.target.id === 'edit-app-modal') closeEditModal(); });
+    editAppTypeRadios.forEach(radio => radio.addEventListener('change', e => { editAppUrlInput.disabled = e.target.value === 'folder'; }));
+
+    const generatePagesRecursive = (apps, parentIdForBack, showAddCards) => {
+        if (!apps) return '';
+        let cardsHtml = apps.map(app => {
+            const isFolder = app.type === 'folder';
+            const href = isFolder ? 'javascript:void(0)' : app.url;
+            const targetAttr = isFolder ? `data-target="page-${app.id}"` : `href="${href}"`;
+            const editButton = showAddCards ? `<button class="edit-app-btn" data-id="${app.id}" title="تعديل"><span class="material-icons">edit</span></button>` : '';
+            const folderIndicator = isFolder && showAddCards ? `<span class="folder-indicator" title="يحتوي على تطبيقات فرعية"><span class="material-icons">folder</span></span>` : '';
+            return `<a ${targetAttr} class="app-card">
+                        ${editButton}
+                        ${folderIndicator}
+                        <span class="material-icons app-icon">${app.icon}</span>
+                        <h2 class="app-title">${app.title}</h2>
+                        <p class="app-description">${app.desc}</p>
+                    </a>`;
+        }).join('');
+        if (showAddCards) {
+            const parentId = parentIdForBack === 'main-dashboard' ? 'root' : parentIdForBack.replace('page-','');
+            cardsHtml += `<div class="app-card add-new-card" data-parent-id="${parentId}"><span class="material-icons app-icon" style="font-size: 48px;">add_circle_outline</span><h2 class="app-title">إضافة تطبيق</h2></div>`;
+        }
+        return cardsHtml;
+    };
+
+    // ### MODIFIED: renderPreviewAndFinal now includes Logo AND responsive h1 classes ###
+    const renderPreviewAndFinal = (showAddCards, includeEditButton) => {
+        let allPages = {};
+        const buildSubPages=(apps,parentIdForBack)=>{if(!apps)return;apps.forEach(app=>{if(app.type==="folder"){const e=`page-${app.id}`,t=`<a href="javascript:void(0)" class="back-btn" data-target="${parentIdForBack}"><span class="material-icons">arrow_forward</span></a>`;allPages[app.id]=`<div id="${e}" class="dashboard-page"><header class="dashboard-header">${t}<h1 class="text-xl sm:text-2xl font-bold">${app.title}</h1></header><main class="app-grid-container"><div class="app-grid">${generatePagesRecursive(app.children,e,showAddCards)}</div></main></div>`;app.children&&buildSubPages(app.children,e)}})};
+        
+        buildSubPages(appData, 'main-dashboard');
+        
+        const editBtnIcon = isEditMode ? 'close' : 'edit';
+        const editBtnTitle = isEditMode ? 'إيقاف وضع التحرير' : 'تفعيل وضع التحرير';
+        const editToggleBtn = includeEditButton ? `<button id="edit-mode-toggle" class="edit-mode-toggle" title="${editBtnTitle}"><span class="material-icons">${editBtnIcon}</span></button>` : '';
+        
+        // NEW: Add Logo
+        const logoImg = logoUrlInput.value 
+            ? `<img id="header-logo-main" src="${logoUrlInput.value}" alt="Logo" class="h-10">`
+            : '';
+        const logoContainer = `<div id="preview-logo-container">${logoImg}</div>`;
+
+        const mainCards = generatePagesRecursive(appData, 'main-dashboard', showAddCards);
+        
+        const mainDashboard = `<div id="main-dashboard" class="dashboard-page active">
+            <header class="dashboard-header">
+                ${logoContainer}
+                <h1 class="text-xl sm:text-2xl font-bold">${dashboardTitleInput.value}</h1>
+                ${editToggleBtn}
+            </header>
+            <main class="app-grid-container"><div class="app-grid">${mainCards}</div></main>
+        </div>`;
+        
+        const subPagesHtml = Object.values(allPages).join('');
+        return { mainDashboard, subPagesHtml, footer: `<footer class="dashboard-footer"><p>${footerTextInput.value}</p></footer>` };
+    };
+
+    const updatePreview = () => {
+        const activePageElement = previewBody.querySelector('.dashboard-page.active');
+        const activePageId = activePageElement ? activePageElement.id : 'main-dashboard';
+
+        const { mainDashboard, subPagesHtml, footer } = renderPreviewAndFinal(isEditMode, true);
+        previewBody.innerHTML = `<div style="display: contents;">${mainDashboard}${subPagesHtml}</div>${footer}`;
+        
+        const defaultActivePage = previewBody.querySelector('.dashboard-page.active');
+        if (defaultActivePage) {
+            defaultActivePage.classList.remove('active');
+        }
+        const pageToRestore = previewBody.querySelector(`#${activePageId}`);
+        if (pageToRestore) {
+            pageToRestore.classList.add('active');
+        }
+        
+        previewBody.querySelectorAll('a[data-target]').forEach(link => {
+            link.onclick = e => {
+                if (e.target.closest('.edit-app-btn')) return;
+                e.preventDefault();
+                const targetId = link.getAttribute('data-target');
+                previewBody.querySelector('.dashboard-page.active')?.classList.remove('active');
+                previewBody.querySelector(`#${targetId}`)?.classList.add('active');
+            };
+        });
+    };
+    
+    // ### MODIFIED: This debouncer now triggers sync AFTER updating the preview ###
+    let timeout;
+    const debouncedUpdatePreview = () => { 
+        clearTimeout(timeout); 
+        timeout = setTimeout(() => {
+            updatePreview(); 
+            syncToFirebase(); // Sync everything
+        }, 500); 
+    };
+    document.querySelector('#config-panel').addEventListener('input', debouncedUpdatePreview);
+
+    // ### NEW: Debouncer for settings changes ###
+    let settingsTimeout;
+    const debouncedUpdateSettings = () => {
+        clearTimeout(settingsTimeout);
+        settingsTimeout = setTimeout(() => {
+            const settings = getSettingsFromDOM();
+            // Apply live changes
+            document.title = settings.pageTitle;
+            applyThemeColor(settings.themeColor);
+            updatePreview(); // Re-render preview for title, footer, logo
+            
+            syncToFirebase(); // Sync everything
+        }, 500);
+    };
+    
+    // ### NEW: Add listeners to settings inputs ###
+    dashboardTitleInput.addEventListener('input', debouncedUpdateSettings);
+    pageTitleInput.addEventListener('input', debouncedUpdateSettings);
+    footerTextInput.addEventListener('input', debouncedUpdateSettings);
+    themeColorInput.addEventListener('input', debouncedUpdateSettings);
+    logoUrlInput.addEventListener('input', debouncedUpdateSettings);
+
+    
+    // ### MODIFIED: generateFinalHTML now saves settings and uses DOM manipulation ###
+    generateBtn.addEventListener('click', () => {
+        // Ensure data is synced before generating
+        syncToFirebase();
+        downloadHTML(generateFinalHTML(), 'dashboard.html')
+    });
+
+    const generateFinalHTML = () => {
+        const currentSettings = getSettingsFromDOM();
+        const currentAppDataString = JSON.stringify(appData, null, 2);
+        
+        // Create a temporary DOM from the current document
+        const doc = document.cloneNode(true);
+        
+        // 1. Set to non-edit mode
+        doc.body.classList.remove('edit-mode');
+        
+        // 2. Update <title>
+        doc.querySelector('title').innerText = currentSettings.pageTitle;
+        
+        // 3. Update settings input values
+        doc.getElementById('dashboard-title').setAttribute('value', currentSettings.dashboardTitle);
+        doc.getElementById('page-title').setAttribute('value', currentSettings.pageTitle);
+        doc.getElementById('footer-text').setAttribute('value', currentSettings.footerText);
+        doc.getElementById('theme-color').setAttribute('value', currentSettings.themeColor);
+        doc.getElementById('logo-url').setAttribute('value', currentSettings.logoUrl);
+        
+        // 4. Update theme in <style>
+        const styleTag = doc.querySelector('style');
+        if (styleTag) {
+            styleTag.innerHTML = styleTag.innerHTML.replace(
+                /--theme-color: .*?;/,
+                `--theme-color: ${currentSettings.themeColor};`
+            );
+            // Hover color will be regenerated by JS on load
+        }
+        
+        // 5. Update initialApps in <script>
+        const scriptTags = doc.querySelectorAll('body > script:not([src])'); // Find inline scripts
+        scriptTags.forEach(scriptTag => {
+            const initialAppsRegex = /const initialApps = \[[\s\S]*?\];/;
+            if (initialAppsRegex.test(scriptTag.innerHTML)) {
+                scriptTag.innerHTML = scriptTag.innerHTML.replace(
+                    initialAppsRegex, 
+                    `const initialApps = ${currentAppDataString};`
+                );
+            }
+        });
+        
+        return doc.documentElement.outerHTML;
+    };
+    const downloadHTML=(content,fileName)=>{const e=new Blob([content],{type:"text/html"}),a=document.createElement("a");a.href=URL.createObjectURL(e),a.download=fileName,a.click(),URL.revokeObjectURL(a.href)};
+
+    openSettingsBtn.addEventListener('click', () => settingsModal.classList.remove('hidden'));
+    closeSettingsBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
+
+    // ### NEW: Firebase Initialization Function ###
+    function initializeFirebaseSync() {
+        // 1. Listen for connection state
+        const connectedRef = db.ref('.info/connected');
+        connectedRef.on('value', (snap) => {
+            if (snap.val() === true) {
+                syncStatusIcon.innerHTML = 'sync';
+                syncStatusIcon.classList.remove('text-red-500', 'text-gray-500');
+                syncStatusIcon.classList.add('text-green-500');
+                syncStatusIcon.title = 'متصل';
+            } else {
+                syncStatusIcon.innerHTML = 'sync_problem';
+                syncStatusIcon.classList.remove('text-green-500', 'text-gray-500');
+                syncStatusIcon.classList.add('text-red-500');
+                syncStatusIcon.title = 'غير متصل';
+            }
+        });
+
+        // 2. Sign in anonymously
+        auth.signInAnonymously().then(() => {
+            const userId = auth.currentUser.uid;
+            const myUserRef = db.ref('/presence/' + userId);
+
+            // 3. Set presence
+            myUserRef.set(true);
+            myUserRef.onDisconnect().remove(); // Remove user on disconnect
+
+            // 4. Listen for presence count
+            const presenceRef = db.ref('/presence/');
+            presenceRef.on('value', (snap) => {
+                const count = snap.numChildren();
+                presenceCountEl.innerText = count;
+                presenceIndicatorEl.classList.remove('text-gray-500');
+                presenceIndicatorEl.classList.add('text-green-400');
+            });
+
+            // 5. Load initial data
+            dbRef = db.ref('/dashboard'); // ### MODIFIED: Ref is now /dashboard
+            dbRef.once('value', (snapshot) => {
+                let dataLoaded = false;
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    appData = data.appData || [];
+                    loadSettings(data.settings || {}); // Load settings from DB
+                    fixNullChildren(appData);
+                    // Save to local storage
+                    localStorage.setItem('dashboardData', JSON.stringify(data));
+                    dataLoaded = true;
+                } else {
+                    // No data in DB. If we loaded from local storage, use that.
+                    // Otherwise, use initialApps and save it
+                    if (appData.length === 0) { // Only if local storage was empty
+                        appData = JSON.parse(JSON.stringify(initialApps));
+                        dataLoaded = true; // Need to render this default data
+                    }
+                    // Save current state (either from local or initial) to DB
+                    syncToFirebase(); 
+                }
+                
+                // If data was loaded from DB (or was initialApps), re-render
+                if (dataLoaded) {
+                    navigateToView(null);
+                    updatePreview();
+                }
+
+                // 6. Attach the main sync listener for remote changes
+                dbRef.on('value', (snapshot) => {
+                    if (isSyncing) return; // Don't re-render from our own changes
+                    
+                    if (snapshot.exists()) {
+                        const data = snapshot.val();
+                        appData = data.appData || [];
+                        loadSettings(data.settings || {}); // Load remote settings
+                        fixNullChildren(appData);
+                        
+                        // Save new truth to local storage
+                        localStorage.setItem('dashboardData', JSON.stringify(data));
+
+                        // Re-render both panels to reflect remote changes
+                        const currentParent = navigationStack.length > 0 ? navigationStack[navigationStack.length - 1] : null;
+                        navigateToView(currentParent);
+                        updatePreview();
+                    }
+                });
+            });
+
+        }).catch((error) => {
+            console.error("Firebase Auth Error:", error);
+            syncStatusIcon.innerHTML = 'error';
+            syncStatusIcon.title = 'خطأ في المصادقة';
+            syncStatusIcon.classList.add('text-red-500');
+        });
+    }
+
+    // ### MODIFIED: Start the app by loading from local storage first ###
+    let didRenderFromLocal = false;
+    try {
+        const localDataString = localStorage.getItem('dashboardData');
+        if (localDataString) {
+            const localData = JSON.parse(localDataString);
+            appData = localData.appData || [];
+            loadSettings(localData.settings || {}); // Load local settings
+            fixNullChildren(appData);
+            
+            // Render immediately from local data
+            navigateToView(null);
+            updatePreview();
+            didRenderFromLocal = true;
+        }
+    } catch (e) {
+        console.error("Error loading from local storage:", e);
+        localStorage.removeItem('dashboardData'); // Clear corrupted data
+    }
+    
+    // Always initialize Firebase sync after attempting local load
+    initializeFirebaseSync();
+    
+    // If we didn't render from local (e.g., first visit), render default inputs
+    if (!didRenderFromLocal) {
+        loadSettings({}); // Load default settings into inputs
+        navigateToView(null); // Render empty config (will be populated by Firebase)
+        updatePreview(); // Render preview with default settings
+    }
+});
+</script>
+
+</body>
+</html>
