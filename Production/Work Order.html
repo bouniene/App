@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Work Order System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.css" rel="stylesheet">
+
+    <style>
+        /* --- Global Variables & Base Styling --- */
+        :root {
+            --bs-primary-rgb: 103, 78, 167;
+            --bs-secondary-rgb: 233, 236, 239;
+            --bs-body-font-family: 'Inter', 'Cairo', sans-serif;
+            --bs-body-bg: #f0f2f5;
+            --bs-card-bg: #ffffff;
+            --bs-card-border-color: #dee2e6;
+            --bs-border-radius: 0.375rem;
+            --controls-panel-width: 450px;
+            --header-height: 60px;
+        }
+
+        body {
+            font-family: var(--bs-body-font-family);
+            background-color: var(--bs-body-bg);
+            font-size: 0.95rem;
+        }
+
+        /* --- App Layout --- */
+        .app-header {
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 0;
+            height: var(--header-height);
+            background-color: var(--bs-card-bg);
+            border-bottom: 1px solid var(--bs-card-border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1.5rem;
+            z-index: 1040; /* Lower than modal backdrop */
+        }
+
+        .app-main-container {
+            display: flex;
+            height: calc(100vh - var(--header-height));
+            margin-top: var(--header-height);
+        }
+
+        /* --- Controls Panel (Left Side) --- */
+        #controls-panel {
+            width: var(--controls-panel-width);
+            flex-shrink: 0;
+            background-color: var(--bs-card-bg);
+            border-right: 1px solid var(--bs-card-border-color);
+            overflow-y: auto;
+            padding: 1rem;
+            transition: margin-left 0.3s ease-in-out;
+            order: 1;
+        }
+
+        #controls-panel.collapsed {
+            margin-left: calc(-1 * var(--controls-panel-width));
+        }
+
+        .control-section {
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 1rem;
+        }
+        .control-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .control-section h5 {
+            font-weight: 700;
+            color: #343a40;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            font-size: 1rem;
+        }
+        .control-section h5 i {
+            margin-right: 0.5rem;
+            color: rgb(var(--bs-primary-rgb));
+        }
+        
+        #page-controls-container .page-control {
+            border: 1px solid var(--bs-card-border-color);
+            border-radius: var(--bs-border-radius);
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+        #page-controls-container .page-control:hover {
+            background-color: #f8f9fa;
+        }
+         #page-controls-container .page-control.active {
+            background-color: rgba(var(--bs-primary-rgb), 0.1);
+            border-color: rgba(var(--bs-primary-rgb), 0.5);
+        }
+        #page-controls-container .page-control-header {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        /* --- Preview Panel (Right Side) --- */
+        #preview-panel {
+            flex-grow: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            order: 2;
+        }
+
+        #a4-preview-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .a4-page {
+            background: white;
+            width: 210mm;
+            min-height: 297mm;
+            padding: 12mm;
+            margin: 0 auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .page-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+        
+        .a4-page:hover .page-actions {
+            opacity: 1;
+        }
+
+        /* --- A4 Page Content Styling --- */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #333;
+            padding-bottom: 0.8rem;
+            margin-bottom: 1rem;
+        }
+        .page-header img.company-logo {
+            max-width: 130px;
+            max-height: 60px;
+            object-fit: contain;
+            cursor: pointer;
+        }
+        .page-header .title-block {
+            text-align: right;
+        }
+        .page-header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #333;
+            margin: 0;
+        }
+        .page-header p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: #555;
+        }
+        
+        .page-section {
+            margin-bottom: 1rem;
+        }
+        .page-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.4rem;
+            margin-bottom: 0.8rem;
+        }
+        .page-section-header h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: rgb(var(--bs-primary-rgb));
+            margin: 0;
+            border: none; padding: 0;
+        }
+
+        .custom-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        .custom-table th, .custom-table td {
+            border: 1px solid #ccc;
+            padding: 0.4rem;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .custom-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        .custom-table .table-image {
+             width: 50px;
+             height: 50px;
+             object-fit: cover;
+             cursor: pointer;
+             border-radius: 4px;
+        }
+         .custom-table .table-image:hover {
+            outline: 2px solid rgb(var(--bs-primary-rgb));
+        }
+
+        .notes-section {
+            border: 1px solid #eee;
+            padding: 0.8rem;
+            background-color: #fafafa;
+            border-radius: var(--bs-border-radius);
+            min-height: 80px;
+            white-space: pre-wrap;
+            font-size: 0.85rem;
+        }
+
+        /* --- NEW/UPDATED Visual Foil Bar Styles --- */
+        .product-foil-card {
+            border: 1px solid #e0e0e0;
+            border-radius: var(--bs-border-radius);
+            margin-bottom: 1rem;
+            background-color: #ffffff; /* White background for the card */
+            padding: 0.75rem;
+        }
+        .product-foil-card-header {
+            font-weight: 700;
+            font-size: 1.1rem; /* Slightly larger product name */
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        /* NEW: Foil Grouping Styles */
+        .foil-group {
+            background-color: #f8f9fa; /* Light grey background to separate groups */
+            border: 1px solid #dee2e6;
+            border-radius: var(--bs-border-radius);
+            margin-bottom: 0.5rem;
+            overflow: hidden; /* To contain the rounded corners */
+        }
+        .foil-group:last-child {
+            margin-bottom: 0;
+        }
+        .foil-group-header {
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 0.5rem 0.75rem;
+            background-color: #e9ecef; /* Slightly darker header for the group */
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .foil-group-body {
+            padding: 0.5rem;
+        }
+
+        .foil-instance-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem; /* Increased gap slightly */
+            padding: 0.25rem; /* Reduced padding as it's now inside a padded body */
+        }
+        
+        .foil-instance-label {
+            flex-basis: 150px; /* Adjusted basis */
+            flex-shrink: 0;
+            font-size: 0.8rem;
+            font-weight: 500; /* Normal weight for reference */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .visual-bar-container {
+            height: 18px; /* Slightly taller bar */
+            background-color: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid #dee2e6;
+            display: flex;
+            width: 100%;
+            flex-grow: 1;
+        }
+        .visual-bar-segment {
+            height: 100%;
+            transition: all 0.2s ease;
+            box-shadow: inset 0 0 2px rgba(0,0,0,0.1); /* Adding a subtle inner shadow for depth */
+        }
+        
+        .foil-repetition-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background-color: #dc3545;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-left: 8px;
+        }
+
+        .page-footer {
+            position: absolute;
+            bottom: 12mm;
+            right: 12mm;
+            left: 12mm;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #888;
+            border-top: 1px solid #eee;
+            padding-top: 0.5rem;
+        }
+
+        [contenteditable]:hover, [contenteditable]:focus {
+            outline: 1px dashed rgb(var(--bs-primary-rgb));
+            background-color: rgba(var(--bs-primary-rgb), 0.05);
+        }
+
+        /* --- Additional Controls --- */
+        .loading-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background-color: rgba(255, 255, 255, 0.85); 
+            display: flex; justify-content: center; align-items: center; 
+            z-index: 2000; backdrop-filter: blur(4px); 
+        }
+
+        #controls-panel .form-label {
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+        }
+        #controls-panel .form-control, #controls-panel .form-select, #controls-panel .ts-control {
+            font-size: 0.9rem;
+        }
+
+        /* --- Print Styles --- */
+        @page {
+            size: A4;
+            margin: 0; /* Let HTML control margins */
+        }
+        @media print {
+            body { 
+                background-color: white !important; 
+                font-size: 10pt;
+            }
+            .no-print { 
+                display: none !important; 
+            }
+
+            /* Reset layout containers for print flow */
+            .app-main-container, #preview-panel, #a4-preview-container {
+                display: block;
+                padding: 0;
+                margin: 0;
+                overflow: visible;
+                height: auto;
+                gap: 0;
+            }
+
+            /* Core Logic: Use table display for repeating headers/footers */
+            .a4-page {
+                display: table;
+                width: 100%;
+                box-shadow: none;
+                border: none;
+                page-break-after: always;
+            }
+            .a4-page:last-of-type {
+                page-break-after: auto;
+            }
+            .page-header {
+                display: table-header-group;
+            }
+            .page-footer {
+                display: table-footer-group;
+                position: static; /* Override screen styling */
+            }
+
+            /* --- Read-only and color adjustments --- */
+             [contenteditable]:hover, [contenteditable]:focus {
+                 outline: none;
+                 background-color: transparent;
+             }
+             [contenteditable] {
+                 -webkit-user-modify: read-only !important;
+             }
+            
+            .visual-bar-segment, .foil-repetition-badge {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            .foil-repetition-badge {
+                background-color: #dc3545 !important;
+                border: 1px solid #842029; /* Fallback border for printers that don't render background */
+            }
+
+            /* --- Page break control --- */
+            .page-section, .product-foil-card, .custom-table tr, .foil-group {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <input type="file" id="image-upload-input" accept="image/*" style="display: none;">
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay" style="display: none;">
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+            <p class="mt-2 text-muted fw-bold">Loading...</p>
+        </div>
+    </div>
+
+    <!-- App Header -->
+    <header class="app-header no-print">
+        <div class="d-flex align-items-center">
+             <button id="panel-toggle-btn" class="btn btn-outline-secondary me-3" title="Show/Hide Controls Panel">
+                 <i class="bi bi-layout-sidebar-inset"></i>
+            </button>
+             <h4 class="m-0 fw-bold d-flex align-items: center">
+                 <i class="bi bi-receipt-cutoff text-primary me-3 fs-3"></i>
+                 Work Order System
+            </h4>
+        </div>
+        <div class="ms-auto d-flex align-items-center gap-2">
+            <div class="btn-group">
+                <button class="btn btn-outline-secondary" id="toggle-logo-btn" title="Toggle Logo"><i class="bi bi-card-image"></i></button>
+                <button class="btn btn-outline-secondary" id="change-logo-btn" title="Change Logo"><i class="bi bi-pencil-square"></i></button>
+            </div>
+            <button class="btn btn-primary" id="print-btn"><i class="bi bi-printer-fill me-2"></i> Print</button>
+        </div>
+    </header>
+
+    <!-- App Main Container -->
+    <main class="app-main-container">
+        <!-- Controls Panel -->
+        <aside id="controls-panel" class="no-print">
+            <!-- Data Source Section -->
+            <div class="control-section">
+                <h5><i class="bi bi-database-down"></i>1. Add Products to Page</h5>
+                <div id="page-controls-container">
+                    <!-- Page controls with selectors will be added here -->
+                </div>
+                <button class="btn btn-sm btn-outline-primary mt-2" id="add-page-btn-sidebar">
+                    <i class="bi bi-plus-lg"></i> Add New Product Page
+                </button>
+            </div>
+            
+            <!-- Notes Section -->
+            <div class="control-section">
+                <h5><i class="bi bi-chat-left-text"></i>2. Additional Notes (for active page)</h5>
+                <textarea id="notes-content" class="form-control" rows="5" placeholder="Add any special instructions..."></textarea>
+            </div>
+        </aside>
+
+        <!-- Preview Panel -->
+        <main id="preview-panel">
+            <div id="a4-preview-container">
+                 <!-- A4 pages will be inserted here by JavaScript -->
+            </div>
+        </main>
+        
+    </main>
+
+    <!-- A4 Page Template (Hidden) -->
+    <template id="a4-page-template">
+        <div class="a4-page">
+            <div class="page-actions no-print">
+                <button class="btn btn-sm btn-danger delete-page-btn" title="Delete Page"><i class="bi bi-trash"></i></button>
+            </div>
+            <header class="page-header">
+                <div class="logo-container">
+                    <img src="https://i.imgur.com/4l4rBjF.png" alt="Company Logo" class="company-logo" data-image-target="logo">
+                </div>
+                <div class="title-block">
+                    <h1 data-key="title" contenteditable="true">Production Work Order</h1>
+                    <p>
+                        <strong>ID:</strong> <span data-key="id" contenteditable="true">WO-001</span> | 
+                        <strong>Date:</strong> <span data-key="date" contenteditable="true">2025-10-21</span>
+                    </p>
+                    <p><strong>To:</strong> <span data-key="recipient" contenteditable="true">Production Dept.</span></p>
+                </div>
+            </header>
+            
+            <section class="page-section" data-section="customTable">
+                <div class="page-section-header">
+                    <h3><i class="bi bi-table me-2"></i>Specifications Table</h3>
+                    <button class="btn btn-sm btn-outline-success add-row-btn no-print" title="Add Blank Row"><i class="bi bi-plus-lg"></i></button>
+                </div>
+                <div class="custom-table-render" data-key="customTable"></div>
+            </section>
+            
+            <section class="page-section" data-section="visualBars">
+                <div class="page-section-header">
+                     <h3><i class="bi bi-rulers me-2"></i>Foil Composition</h3>
+                </div>
+                 <div class="visual-bars-render" data-key="visualBars"></div>
+            </section>
+
+            <section class="page-section" data-section="notes">
+                 <div class="page-section-header">
+                      <h3><i class="bi bi-chat-left-text me-2"></i>Notes</h3>
+                 </div>
+                <div data-key="notes" contenteditable="true" class="notes-section"></div>
+            </section>
+
+            <footer class="page-footer">
+                <span class="page-number">Page 1</span>
+            </footer>
+        </div>
+    </template>
+
+    <!-- Modals -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmationModalTitle">Confirmation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="confirmationModalBody"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmationModalConfirm">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="imageChooserModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Change Image</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Choose an image source. You can also paste an image from your clipboard (Ctrl+V).</p>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" id="image-chooser-upload"><i class="bi bi-upload me-2"></i>Upload from Device</button>
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="Or paste image URL here" id="image-chooser-url-input">
+                            <button class="btn btn-outline-secondary" type="button" id="image-chooser-url-btn">Set URL</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    <script type="module">
+        // =================================================================
+        // =========== Firebase Setup ======================================
+        // =================================================================
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBPDnVOol10iskGrtgqxlp9a28cQFCemB4",
+            authDomain: "nnnnc-48782.firebaseapp.com",
+            databaseURL: "https://nnnnc-48782-default-rtdb.firebaseio.com",
+            projectId: "nnnnc-48782",
+            storageBucket: "nnnnc-48782.appspot.com",
+            messagingSenderId: "91157067378",
+            appId: "1:91157067378:web:e0a600f956bad0b44234eb"
+        };
+
+        const firebaseApp = initializeApp(firebaseConfig);
+        const database = getDatabase(firebaseApp);
+        
+        // =================================================================
+        // =========== Main Application Object =============================
+        // =================================================================
+        const WorkOrderApp = {
+            state: {
+                firebaseSamples: [],
+                firebaseFoils: [],
+                gSheetSamples: [],
+                logoUrl: 'https://i.imgur.com/4l4rBjF.png',
+                logoVisible: true,
+                pages: [],
+                activePageIndex: 0,
+                currentImageTarget: null, // { type: 'logo'/'table', rowIndex? }
+            },
+
+            elements: {
+                loadingOverlay: document.getElementById('loading-overlay'),
+                previewContainer: document.getElementById('a4-preview-container'),
+                pageTemplate: document.getElementById('a4-page-template'),
+                controlsPanel: document.getElementById('controls-panel'),
+                panelToggleBtn: document.getElementById('panel-toggle-btn'),
+                notesContent: document.getElementById('notes-content'),
+                pageControlsContainer: document.getElementById('page-controls-container'),
+                imageUploadInput: document.getElementById('image-upload-input'),
+                confirmationModal: new bootstrap.Modal(document.getElementById('confirmationModal')),
+                confirmationModalTitle: document.getElementById('confirmationModalTitle'),
+                confirmationModalBody: document.getElementById('confirmationModalBody'),
+                confirmationModalConfirmBtn: document.getElementById('confirmationModalConfirm'),
+            },
+            
+            tomSelectInstances: [],
+
+            async init() {
+                this.showLoading(true, "Initializing Application...");
+                this.bindEventListeners();
+                this.addNewPage();
+                
+                try {
+                    await Promise.all([this.fetchFirebaseData(), this.fetchGSheetData()]);
+                    this.UI.updateAllSelectors();
+                } catch (error) {
+                    console.error("Failed to load initial data:", error);
+                    this.UI.showConfirmation("Loading Error", "An error occurred while loading initial data. Please check your internet connection and try again.", () => window.location.reload());
+                }
+                
+                this.updateFormFromState();
+                this.showLoading(false);
+            },
+
+            bindEventListeners() {
+                this.elements.panelToggleBtn.addEventListener('click', () => this.UI.toggleControlsPanel());
+                document.getElementById('toggle-logo-btn').addEventListener('click', () => this.UI.toggleLogo());
+                document.getElementById('change-logo-btn').addEventListener('click', () => this.ImageHandler.showModal('logo'));
+                document.getElementById('print-btn').addEventListener('click', () => window.print());
+                document.getElementById('add-page-btn-sidebar').addEventListener('click', () => this.addNewPage());
+                
+                // --- Main Preview Panel Event Delegation ---
+                this.elements.previewContainer.addEventListener('click', (e) => {
+                    const pageElement = e.target.closest('.a4-page');
+                    if (!pageElement) return;
+                    const pageIndex = parseInt(pageElement.dataset.index, 10);
+                    
+                    this.setActivePage(pageIndex);
+
+                    // Page delete button
+                    if (e.target.closest('.delete-page-btn')) {
+                        this.deletePage(pageIndex);
+                    }
+                    // Table image click to change
+                     if (e.target.classList.contains('table-image')) {
+                         const rowIndex = e.target.closest('tr').dataset.rowIndex;
+                         this.ImageHandler.showModal('table', rowIndex);
+                    }
+                    // Table row delete button
+                    if (e.target.closest('.delete-row-btn')) {
+                        const rowIndex = parseInt(e.target.closest('tr').dataset.rowIndex, 10);
+                        this.TableManager.deleteRow(pageIndex, rowIndex);
+                    }
+                    // Add new blank row button
+                    if (e.target.closest('.add-row-btn')) {
+                         this.TableManager.addBlankRow(pageIndex);
+                    }
+                });
+
+                // --- ContentEditable State Update ---
+                this.elements.previewContainer.addEventListener('blur', (e) => {
+                    const target = e.target;
+                    const pageElement = target.closest('.a4-page');
+                    if (!pageElement) return;
+                    const pageIndex = parseInt(pageElement.dataset.index, 10);
+
+                    // General page data (title, date, etc.)
+                    if (target.hasAttribute('contenteditable') && target.dataset.key) {
+                        this.updateStateFromPreview(pageIndex, target.dataset.key, target.innerHTML);
+                    }
+                    // Table cell data
+                    if (target.hasAttribute('contenteditable') && target.closest('.custom-table-render')) {
+                        this.TableManager.updateStateFromTableCell(target);
+                    }
+                }, true);
+                
+                this.elements.notesContent.addEventListener('input', () => this.updateStateFromForm());
+                
+                // --- Sidebar Page Control Click ---
+                this.elements.pageControlsContainer.addEventListener('click', (e) => {
+                    const pageControl = e.target.closest('.page-control');
+                    if (pageControl) {
+                        const pageIndex = parseInt(pageControl.dataset.pageIndex, 10);
+                        this.setActivePage(pageIndex);
+                    }
+                });
+                
+                // --- Image Handling Events ---
+                this.elements.imageUploadInput.addEventListener('change', (e) => this.ImageHandler.handleFileSelect(e));
+                document.addEventListener('paste', (e) => this.ImageHandler.handlePaste(e));
+            },
+
+            // =================================================================
+            // =========== Data Fetching Methods ===============================
+            // =================================================================
+            async fetchFirebaseData() {
+                this.showLoading(true, "Fetching data from Firebase...");
+                try {
+                    const samplesRef = ref(database, 'samples');
+                    const foilsRef = ref(database, 'rolls');
+                    
+                    const [samplesSnapshot, foilsSnapshot] = await Promise.all([get(samplesRef), get(foilsRef)]);
+
+                    if (samplesSnapshot.exists()) {
+                        this.state.firebaseSamples = Object.values(samplesSnapshot.val()).filter(s => s && !s.isArchived && !s.isDeleted);
+                    }
+                    if (foilsSnapshot.exists()) {
+                        this.state.firebaseFoils = Object.values(foilsSnapshot.val()).map(roll => ({
+                            docId: roll.docId,
+                            name: roll.id || "Unnamed Foil",
+                            reference: roll.groupNumber ? String(roll.groupNumber) : "N/A",
+                            components: roll.components || [],
+                            width: roll.width || 0
+                        }));
+                    }
+                } catch (error) {
+                    console.error("Error fetching Firebase data:", error);
+                    throw error;
+                }
+            },
+
+            async fetchGSheetData() {
+                this.showLoading(true, "Fetching data from Google Sheet...");
+                try {
+                    const response = await fetch('https://opensheet.elk.sh/1xa8jeqLMMgoPIqJn7mVtRVJsq1WWnKGJ-2Hzx5WLiHM/Foil-modeles');
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const data = await response.json();
+                    if(Array.isArray(data)){
+                        this.state.gSheetSamples = data.filter(s => s && s['Sample Name']);
+                    } else {
+                        console.warn("Google Sheet data is not in expected format (array).", data);
+                        this.state.gSheetSamples = [];
+                    }
+                } catch (error) {
+                    console.error("Error fetching Google Sheet data:", error);
+                    this.state.gSheetSamples = []; // Ensure it's an empty array on failure
+                }
+            },
+            
+            // =================================================================
+            // =========== State Management Methods ============================
+            // =================================================================
+            addNewPage() {
+                const newPageIndex = this.state.pages.length;
+                const newPage = {
+                    title: 'Production Work Order',
+                    id: `WO-${String(newPageIndex + 1).padStart(3, '0')}`,
+                    date: new Date().toISOString().split('T')[0],
+                    recipient: 'Production Dept.',
+                    notes: '',
+                    customTable: {
+                        headers: ['Image', 'Product', 'Qty/Box', 'Qty/Unit', 'Foil Name(s)', 'Notes'],
+                        rows: [] // Will be an array of objects
+                    }
+                };
+                this.state.pages.push(newPage);
+                this.UI.addPageToDOM(newPage, newPageIndex);
+                this.UI.addPageControl(newPageIndex);
+                this.setActivePage(newPageIndex);
+            },
+
+            deletePage(index) {
+                if (this.state.pages.length <= 1) {
+                    this.UI.showConfirmation("Cannot Delete", "At least one page must remain.", () => {});
+                    return;
+                }
+                 this.UI.showConfirmation(
+                     "Delete Page?", 
+                     `Are you sure you want to delete page ${index + 1}? This action cannot be undone.`, 
+                     () => {
+                         this.state.pages.splice(index, 1);
+                         this.tomSelectInstances.splice(index, 1);
+
+                         if (this.state.activePageIndex >= index) {
+                             this.state.activePageIndex = Math.max(0, this.state.activePageIndex - 1);
+                         }
+
+                         this.UI.renderAllPages();
+                         this.UI.renderAllPageControls();
+                         this.setActivePage(this.state.activePageIndex);
+                     }
+                 );
+            },
+            
+            setActivePage(index) {
+                if (this.state.activePageIndex === index && document.querySelector('.page-control.active')) return;
+                this.state.activePageIndex = index;
+                this.updateFormFromState();
+                this.UI.updateActivePageControl(index);
+                 const targetPageElement = document.querySelector(`.a4-page[data-index="${index}"]`);
+                if (targetPageElement) {
+                    targetPageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            },
+
+            updateStateFromForm() {
+                const activePage = this.state.pages[this.state.activePageIndex];
+                if (!activePage) return;
+                activePage.notes = this.elements.notesContent.value;
+                this.UI.updatePageInDOM(activePage, this.state.activePageIndex);
+            },
+
+            updateStateFromPreview(pageIndex, key, value) {
+                const page = this.state.pages[pageIndex];
+                if (page && page.hasOwnProperty(key)) {
+                    page[key] = value;
+                }
+            },
+            
+            updateFormFromState() {
+                const activePage = this.state.pages[this.state.activePageIndex];
+                if (!activePage) return;
+                this.elements.notesContent.value = activePage.notes;
+                // Full preview update is handled by setActivePage
+            },
+            
+            addProductToTable(sourceAndId, pageIndex) {
+                const targetPage = this.state.pages[pageIndex];
+                if (!targetPage || !sourceAndId) return;
+
+                const [sourceType, id] = sourceAndId.split(/-(.*)/s);
+                let product;
+                let newRowData = { 
+                    image: '', 
+                    product: '', 
+                    qtyBox: '', 
+                    qtyUnit: '', 
+                    foils: '', 
+                    notes: '',
+                    associatedFoils: [] 
+                };
+                
+                if (sourceType === 'firebase') {
+                    product = this.state.firebaseSamples.find(s => s.docId === id);
+                    if (product) {
+                        const foilIds = (product.components || []).map(c => typeof c === 'object' ? c.id : c);
+                        newRowData.associatedFoils = foilIds.map(foilId => this.state.firebaseFoils.find(f => f.docId === foilId)).filter(Boolean);
+                        newRowData.product = product.name || '';
+                        newRowData.image = product.imageUrl || '';
+                        newRowData.foils = newRowData.associatedFoils.map(f => f.name).join(' + ');
+                    }
+                } else if (sourceType === 'gsheet') {
+                    // Note: Google Sheet data uses index as ID
+                    product = this.state.gSheetSamples[id];
+                    if (product) {
+                        const foilText = product['Foil Components'] || product['Components (Foils)'] || product['foil'] || '';
+                        const foilNames = foilText.split('/').map(name => name.trim()).filter(name => name && name !== '****');
+                        
+                        newRowData.associatedFoils = foilNames.map(name => {
+                           return this.state.firebaseFoils.find(f => f.name && f.name.toLowerCase().includes(name.toLowerCase()));
+                        }).filter(Boolean);
+
+                        newRowData.product = product['Sample Name'] || '';
+                        newRowData.image = ''; 
+                        newRowData.foils = newRowData.associatedFoils.map(f => f.name).join(' + ') || foilText;
+                    }
+                }
+
+                if(product) {
+                    this.TableManager.addSpecificRow(pageIndex, newRowData);
+                }
+                
+                this.setActivePage(pageIndex);
+            },
+            
+            showLoading(show, message = "Loading...") {
+                this.elements.loadingOverlay.style.display = show ? 'flex' : 'none';
+                this.elements.loadingOverlay.querySelector('p').textContent = message;
+            },
+        };
+
+        // =================================================================
+        // =========== UI Management Object ================================
+        // =================================================================
+        WorkOrderApp.UI = {
+            addPageControl(index) {
+                const pageControlHTML = `
+                    <div class="page-control" data-page-index="${index}">
+                        <div class="page-control-header">Page ${index + 1}</div>
+                        <select class="product-selector" placeholder="Add product to this page..."></select>
+                    </div>`;
+                WorkOrderApp.elements.pageControlsContainer.insertAdjacentHTML('beforeend', pageControlHTML);
+                const newSelect = WorkOrderApp.elements.pageControlsContainer.querySelector(`[data-page-index="${index}"] .product-selector`);
+                this.initializeTomSelect(newSelect, index);
+            },
+            
+            renderAllPageControls() {
+                WorkOrderApp.elements.pageControlsContainer.innerHTML = '';
+                WorkOrderApp.tomSelectInstances.forEach(instance => instance.destroy());
+                WorkOrderApp.tomSelectInstances = [];
+                WorkOrderApp.state.pages.forEach((_, index) => {
+                    this.addPageControl(index);
+                });
+            },
+
+            updateActivePageControl(activeIndex) {
+                document.querySelectorAll('.page-control').forEach(el => {
+                    el.classList.remove('active');
+                });
+                const activeControl = document.querySelector(`.page-control[data-page-index="${activeIndex}"]`);
+                if(activeControl) {
+                    activeControl.classList.add('active');
+                }
+            },
+            
+            getSelectOptions() {
+                 const app = WorkOrderApp;
+                const firebaseOptions = app.state.firebaseSamples.map(s => ({ value: `firebase-${s.docId}`, text: s.name, optgroup: 'firebase' }));
+                const gsheetOptions = app.state.gSheetSamples.map((s, i) => ({ value: `gsheet-${i}`, text: s['Sample Name'], optgroup: 'gsheet' }));
+                
+                return {
+                    optgroups: [
+                        { value: 'firebase', label: 'From Samples (Firebase)' },
+                        { value: 'gsheet', label: 'From Templates (Google Sheet)' }
+                    ],
+                    options: [...firebaseOptions, ...gsheetOptions],
+                };
+            },
+
+            initializeTomSelect(selectElement, pageIndex) {
+                const optionsData = this.getSelectOptions();
+                const instance = new TomSelect(selectElement, {
+                    create: false,
+                    placeholder: "Add product to this page...",
+                    optgroups: optionsData.optgroups,
+                    options: optionsData.options,
+                    onChange: (value) => {
+                        if (value) {
+                            WorkOrderApp.addProductToTable(value, pageIndex);
+                            instance.clear();
+                        }
+                    },
+                });
+                WorkOrderApp.tomSelectInstances.push(instance);
+            },
+            
+            updateAllSelectors() {
+                const optionsData = this.getSelectOptions();
+                WorkOrderApp.tomSelectInstances.forEach(instance => {
+                    instance.clearOptions();
+                    instance.addOption(optionsData.options);
+                    instance.addOptionGroup('firebase', optionsData.optgroups[0]);
+                    instance.addOptionGroup('gsheet', optionsData.optgroups[1]);
+                    instance.refreshOptions(false);
+                });
+            },
+
+            toggleControlsPanel() {
+                const icon = WorkOrderApp.elements.panelToggleBtn.querySelector('i');
+                WorkOrderApp.elements.controlsPanel.classList.toggle('collapsed');
+                icon.classList.toggle('bi-layout-sidebar-inset');
+                icon.classList.toggle('bi-layout-sidebar-inset-reverse');
+            },
+
+            toggleLogo() {
+                WorkOrderApp.state.logoVisible = !WorkOrderApp.state.logoVisible;
+                document.querySelectorAll('.logo-container').forEach(el => {
+                    el.style.display = WorkOrderApp.state.logoVisible ? 'block' : 'none';
+                });
+            },
+            
+            addPageToDOM(pageData, index) {
+                const pageClone = WorkOrderApp.elements.pageTemplate.content.cloneNode(true);
+                const pageElement = pageClone.querySelector('.a4-page');
+                pageElement.dataset.index = index;
+                WorkOrderApp.elements.previewContainer.appendChild(pageElement);
+                this.updatePageInDOM(pageData, index);
+            },
+            
+            updatePageInDOM(pageData, index) {
+                const pageElement = WorkOrderApp.elements.previewContainer.querySelector(`.a4-page[data-index="${index}"]`);
+                if (!pageElement || !pageData) return;
+
+                pageElement.querySelector('.company-logo').src = WorkOrderApp.state.logoUrl;
+
+                // Update general page data
+                for (const key of ['title', 'id', 'date', 'recipient', 'notes']) {
+                     const element = pageElement.querySelector(`[data-key="${key}"]`);
+                     if (element && element.innerHTML !== pageData[key]) {
+                         element.innerHTML = pageData[key];
+                     }
+                }
+                
+                // Update table
+                const tableContainer = pageElement.querySelector(`[data-key="customTable"]`);
+                tableContainer.innerHTML = WorkOrderApp.TableManager.generateHtml(pageData.customTable, index);
+
+                // --- UPDATED FOIL RENDERING LOGIC ---
+                const visualBarsContainer = pageElement.querySelector(`[data-key="visualBars"]`);
+                let allFoilCardsHtml = '';
+                
+                pageData.customTable.rows.forEach(row => {
+                    if (!row.product || !row.foils) return;
+
+                    const allFoilNamesInRow = row.foils.split('+').map(name => name.trim()).filter(Boolean);
+                    const foilFrequency = allFoilNamesInRow.reduce((acc, name) => {
+                        acc[name] = (acc[name] || 0) + 1;
+                        return acc;
+                    }, {});
+                    const uniqueFoilNamesInRow = [...new Set(allFoilNamesInRow)];
+                    
+                    let productCardContent = '';
+                    let colorOffset = 0; // Reset color offset for each product card
+
+                    uniqueFoilNamesInRow.forEach(foilName => {
+                        const allInstancesOfThisFoil = WorkOrderApp.state.firebaseFoils.filter(f => f.name === foilName);
+
+                        if (allInstancesOfThisFoil.length > 0) {
+                            let groupInstancesHtml = '';
+                            allInstancesOfThisFoil.forEach((foilInstance) => {
+                                groupInstancesHtml += `
+                                    <div class="foil-instance-wrapper">
+                                        <div class="foil-instance-label" title="Ref: ${foilInstance.reference || 'N/A'}">
+                                            <span class="text-muted">Ref:</span> ${foilInstance.reference || 'N/A'}
+                                        </div>
+                                        ${this.createSingleVisualBar(foilInstance, colorOffset)}
+                                    </div>
+                                `;
+                            });
+
+                            const repetitionBadge = foilFrequency[foilName] > 1
+                                ? `<span class="foil-repetition-badge">${foilFrequency[foilName]}</span>`
+                                : '';
+
+                            productCardContent += `
+                                <div class="foil-group">
+                                    <div class="foil-group-header">
+                                        <span>${foilName}</span>
+                                        ${repetitionBadge}
+                                    </div>
+                                    <div class="foil-group-body">
+                                        ${groupInstancesHtml}
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        colorOffset++; // Increment color for the next DISTINCT foil name
+                    });
+
+                    if (productCardContent) {
+                        allFoilCardsHtml += `
+                            <div class="product-foil-card">
+                                <div class="product-foil-card-header">${row.product}</div>
+                                ${productCardContent}
+                            </div>
+                        `;
+                    }
+                });
+                
+                visualBarsContainer.innerHTML = allFoilCardsHtml;
+                
+                // Toggle section visibility
+                pageElement.querySelector('[data-section="customTable"]').style.display = pageData.customTable && pageData.customTable.rows.length > 0 ? 'block' : 'none';
+                pageElement.querySelector('[data-section="notes"]').style.display = pageData.notes && pageData.notes.trim() !== '' ? 'block' : 'none';
+                pageElement.querySelector('[data-section="visualBars"]').style.display = allFoilCardsHtml.trim() !== '' ? 'block' : 'none';
+
+                // Update page number
+                pageElement.querySelector('.page-number').textContent = `Page ${index + 1} of ${WorkOrderApp.state.pages.length}`;
+            },
+
+            renderAllPages() {
+                WorkOrderApp.elements.previewContainer.innerHTML = '';
+                WorkOrderApp.state.pages.forEach((pageData, index) => this.addPageToDOM(pageData, index));
+            },
+
+            createSingleVisualBar(foil, colorOffset = 0) {
+                const maxLength = foil.width || 64;
+                const components = foil.components || [];
+                const COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#14b8a6', '#f97316'];
+                let segmentsHTML = '';
+                let totalLength = 0;
+
+                components.forEach((component, index) => {
+                    const length = component.length || 0;
+                    if (length <= 0) return;
+                    totalLength += length;
+                    const widthPercent = (length / maxLength) * 100;
+                    segmentsHTML += `<div class="visual-bar-segment" style="width: ${widthPercent}%; background-color: ${COLORS[(index + colorOffset) % COLORS.length]};" title="Part ${index + 1}: ${length}cm"></div>`;
+                });
+
+                if (totalLength < maxLength && totalLength > 0) {
+                    const remainingPercent = ((maxLength - totalLength) / maxLength) * 100;
+                    segmentsHTML += `<div class="visual-bar-segment" style="width: ${remainingPercent}%; background-color: transparent;" title="Remaining: ${(maxLength - totalLength).toFixed(1)}cm"></div>`;
+                }
+                return `<div class="visual-bar-container">${segmentsHTML}</div>`;
+            },
+            
+            showConfirmation(title, body, confirmCallback) {
+                const { elements } = WorkOrderApp;
+                elements.confirmationModalTitle.textContent = title;
+                elements.confirmationModalBody.textContent = body;
+
+                // Clone and replace the button to remove old event listeners
+                const newConfirmBtn = elements.confirmationModalConfirmBtn.cloneNode(true);
+                elements.confirmationModalConfirmBtn.parentNode.replaceChild(newConfirmBtn, elements.confirmationModalConfirmBtn);
+                elements.confirmationModalConfirmBtn = newConfirmBtn;
+
+                elements.confirmationModalConfirmBtn.addEventListener('click', () => {
+                    confirmCallback();
+                    elements.confirmationModal.hide();
+                });
+                elements.confirmationModal.show();
+            }
+        };
+        
+        // =================================================================
+        // =========== Sub-Managers for Cleaner Code =======================
+        // =================================================================
+        WorkOrderApp.TableManager = {
+            addBlankRow(pageIndex) {
+                const newRow = { 
+                    id: crypto.randomUUID(), image: '', product: '', qtyBox: '', 
+                    qtyUnit: '', foils: '', notes: '', associatedFoils: []
+                };
+                this.addSpecificRow(pageIndex, newRow);
+            },
+            
+            addSpecificRow(pageIndex, rowData) {
+                const targetPage = WorkOrderApp.state.pages[pageIndex];
+                if (!targetPage) return;
+                rowData.id = crypto.randomUUID(); // Ensure unique ID
+                targetPage.customTable.rows.push(rowData);
+                WorkOrderApp.UI.updatePageInDOM(targetPage, pageIndex);
+            },
+
+            generateHtml(tableData, pageIndex) {
+                 if (!tableData) return '';
+                let html = `<table class="custom-table"><thead><tr>`;
+                tableData.headers.forEach(header => html += `<th>${header}</th>`);
+                html += `<th class="no-print"></th></tr></thead><tbody>`;
+                
+                tableData.rows.forEach((row, rowIndex) => {
+                    html += `<tr data-row-index="${rowIndex}" data-row-id="${row.id}">
+                        <td><img src="${row.image || 'https://placehold.co/50x50/e9ecef/adb5bd?text=?'}" class="table-image" alt="Product thumbnail"></td>
+                        <td contenteditable="true" data-key="product">${row.product}</td>
+                        <td contenteditable="true" data-key="qtyBox">${row.qtyBox}</td>
+                        <td contenteditable="true" data-key="qtyUnit">${row.qtyUnit}</td>
+                        <td contenteditable="true" data-key="foils">${row.foils}</td>
+                        <td contenteditable="true" data-key="notes">${row.notes}</td>
+                        <td class="no-print"><button class="btn btn-sm btn-outline-danger delete-row-btn" title="Delete Row"><i class="bi bi-trash"></i></button></td>
+                    </tr>`;
+                });
+                html += '</tbody></table>';
+                return html;
+            },
+
+            updateStateFromTableCell(cellElement) {
+                const pageIndex = parseInt(cellElement.closest('.a4-page').dataset.index, 10);
+                const rowIndex = parseInt(cellElement.closest('tr').dataset.rowIndex, 10);
+                const key = cellElement.dataset.key;
+                
+                const tableData = WorkOrderApp.state.pages[pageIndex]?.customTable;
+                if (!tableData || !tableData.rows[rowIndex] || key === undefined) return;
+                
+                tableData.rows[rowIndex][key] = cellElement.textContent;
+                
+                // If foil names are changed, we need to re-render to update the visual bars
+                if(key === 'foils') {
+                    WorkOrderApp.UI.updatePageInDOM(WorkOrderApp.state.pages[pageIndex], pageIndex);
+                }
+            },
+
+            deleteRow(pageIndex, rowIndex) {
+                const targetPage = WorkOrderApp.state.pages[pageIndex];
+                if (targetPage && targetPage.customTable.rows[rowIndex]) {
+                    targetPage.customTable.rows.splice(rowIndex, 1);
+                    WorkOrderApp.UI.updatePageInDOM(targetPage, pageIndex);
+                }
+            }
+        };
+
+        WorkOrderApp.ImageHandler = {
+            modal: new bootstrap.Modal(document.getElementById('imageChooserModal')),
+            
+            showModal(type, rowIndex = null) {
+                WorkOrderApp.state.currentImageTarget = { type, rowIndex };
+                this.modal.show();
+                
+                // Bind listeners once
+                if (!this.listenersAttached) {
+                     document.getElementById('image-chooser-upload').addEventListener('click', () => {
+                         WorkOrderApp.elements.imageUploadInput.click();
+                         this.modal.hide();
+                    });
+                     document.getElementById('image-chooser-url-btn').addEventListener('click', () => {
+                         const urlInput = document.getElementById('image-chooser-url-input');
+                         if (urlInput.value) {
+                             this.processUrl(urlInput.value);
+                             urlInput.value = '';
+                         }
+                         this.modal.hide();
+                    });
+                    this.listenersAttached = true;
+                }
+            },
+
+            handleFileSelect(event) {
+                const file = event.target.files[0];
+                if (file) this.processFile(file);
+                event.target.value = '';
+            },
+
+            handlePaste(event) {
+                if (!WorkOrderApp.state.currentImageTarget) return; 
+
+                const items = (event.clipboardData || window.clipboardData).items;
+                for (let item of items) {
+                    if (item.kind === 'file' && item.type.startsWith('image/')) {
+                        const blob = item.getAsFile();
+                        this.processFile(blob);
+                        event.preventDefault();
+                        this.modal.hide();
+                        return;
+                    }
+                }
+            },
+            
+            processUrl(url) {
+                // Basic URL validation
+                 try {
+                     new URL(url);
+                     this.updateImage(url);
+                 } catch (_) {
+                     WorkOrderApp.UI.showConfirmation("Invalid URL", "The provided text is not a valid URL.", () => {});
+                 }
+            },
+
+            processFile(file) {
+                if (!file.type.startsWith('image/')) return;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => this.updateImage(e.target.result);
+                reader.readAsDataURL(file);
+            },
+
+            updateImage(dataURL) {
+                const target = WorkOrderApp.state.currentImageTarget;
+                if (!target) return;
+                const activePage = WorkOrderApp.state.pages[WorkOrderApp.state.activePageIndex];
+
+                if (target.type === 'logo') {
+                    WorkOrderApp.state.logoUrl = dataURL;
+                    // Update all visible logos
+                     document.querySelectorAll('.company-logo').forEach(img => img.src = dataURL);
+                } else if (target.type === 'table') {
+                    activePage.customTable.rows[target.rowIndex].image = dataURL;
+                    WorkOrderApp.UI.updatePageInDOM(activePage, WorkOrderApp.state.activePageIndex);
+                }
+                
+                WorkOrderApp.state.currentImageTarget = null;
+            }
+        };
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => WorkOrderApp.init());
+    </script>
+</body>
+</html>
+
