@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wheel Inventory Management System</title>
+    <meta name="theme-color" content="#674ea7"/>
+    <link rel="manifest" id="manifest-placeholder">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bs-primary-rgb: 103, 78, 167;
+            --bs-body-font-family: 'Inter', sans-serif;
+            --bs-body-bg: #f8f9fa;
+        }
+        body { font-family: var(--bs-body-font-family); background-color: var(--bs-body-bg); }
+
+        /* Layout & Keyframes */
+        .app-container { padding: 1rem 1.5rem; }
+        .control-panel {
+            display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+            padding: 0.75rem; background-color: var(--bs-body-bg); border-bottom: 1px solid #dee2e6;
+            gap: 1rem; margin-bottom: 1rem;
+        }
+        .control-panel-right { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+        .main-content { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Kanban & Table Styles */
+        #kanban-view-content { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+        .kanban-card { background-color: white; border: 1px solid #dee2e6; border-radius: 0.25rem; box-shadow: 0 .125rem .25rem rgba(0,0,0,.075); transition: all 0.2s ease; cursor: pointer; padding: 1rem; }
+        .kanban-card:hover { transform: translateY(-4px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.15); }
+        .kanban-card-img { width: 60px; height: 60px; object-fit: cover; border-radius: 0.25rem; }
+        .low-stock-warning { font-weight: bold; }
+        
+        .table-container { width: 50%; margin: 0 auto; }
+        .data-table { width: 100%; background-color: white; box-shadow: 0 .125rem .25rem rgba(0,0,0,.075); border-radius: 0.25rem; overflow: hidden; }
+        .data-table thead { background-color: #f1f3f5; }
+        .data-table th, .data-table td { border-bottom: 1px solid #e9ecef; padding: 0.4rem 0.6rem !important; font-size: 0.85rem; vertical-align: middle; }
+        .data-table tbody tr:hover { background-color: rgba(var(--bs-primary-rgb), 0.07); }
+        .data-table tbody td.editable:hover { background-color: rgba(var(--bs-primary-rgb), 0.1); cursor: pointer; }
+        .data-table .form-control-sm { width: 100%; height: 26px; font-size: 0.85rem; text-align: center; border: 2px solid rgb(var(--bs-primary-rgb)); background-color: #fffde7; }
+        .list-view-img { width: 40px; height: 40px; object-fit: cover; border-radius: 50%; }
+
+        /* Status Indicators */
+        #sync-status-indicator { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; }
+        .inline-notifier { font-size: 0.9rem; font-weight: 600; padding: 0.25rem 0.75rem; border-radius: 1rem; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .inline-notifier.show { opacity: 1; }
+        .inline-notifier.success { color: #0f5132; background-color: #d1e7dd; }
+        .inline-notifier.danger { color: #842029; background-color: #f8d7da; }
+        .inline-notifier.info { color: #41464b; background-color: #e2e3e5; }
+        
+        /* Misc & Responsive */
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.8); display: flex; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(4px); }
+        #qr-reader-container { flex-direction: column; gap: 1rem; }
+        #qr-reader { width: 300px; }
+        @media (max-width: 992px) { .table-container { width: 80%; } }
+        @media (max-width: 768px) { .table-container { width: 100%; } .control-panel { flex-direction: column; align-items: stretch; } }
+
+        /* Print styles */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 1cm;
+            }
+            .no-print { display: none !important; }
+            body, .app-container { padding: 0; margin: 0; }
+            #kanban-view-content, .table-container { display: none; }
+            
+            #qr-print-view {
+                display: flex !important;
+                flex-wrap: wrap;
+                align-content: flex-start;
+                gap: 5mm;
+                width: 100%;
+                height: 100%;
+            }
+            .qr-print-item {
+                box-sizing: border-box;
+                border: 1px dashed #888;
+                padding: 5mm;
+                page-break-inside: avoid;
+                width: calc(50% - 2.5mm);
+                height: 68mm;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+            .qr-print-item .qr-code-image-container {
+                flex-grow: 1;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 100%;
+            }
+            .qr-print-item img {
+                max-width: 100%;
+                max-height: 50mm;
+                height: auto;
+            }
+            .qr-print-item .qr-code-text {
+                font-weight: bold;
+                font-size: 14pt;
+                margin-top: 5px;
+                flex-shrink: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header class="d-flex justify-content-between align-items-center pb-2 mb-3 border-bottom no-print">
+            <div class="d-flex align-items-center">
+                <a href="index.html" class="btn btn-light me-3" title="index">
+                    <i class="bi bi-arrow-left fs-5"></i>
+                </a>
+                <h1 class="h4 m-0 fw-bold d-flex align-items-center">
+                    <i class="bi bi-gear-wide-connected text-primary me-2"></i> Wheel Inventory
+                </h1>
+                <div id="loading-overlay" style="display: none;"><div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div></div>
+            </div>
+            <div class="form-check form-switch ms-2" title="Show archived items">
+                <input class="form-check-input" type="checkbox" role="switch" id="show-archived-toggle">
+                <label class="form-check-label" for="show-archived-toggle"><i class="bi bi-archive-fill"></i></label>
+            </div>
+        </header>
+
+        <div class="control-panel no-print">
+            <div class="d-flex align-items-center gap-2">
+                <button id="create-btn" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i> New</button>
+                <button id="scan-qr-btn" class="btn btn-secondary"><i class="bi bi-qr-code-scan me-1"></i> Scan to Edit</button>
+            </div>
+            <div class="input-group" style="max-width: 250px;">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="search" id="search-input" class="form-control" placeholder="Search by thickness...">
+            </div>
+            <div class="control-panel-right">
+                <div id="sync-status-indicator"></div>
+                <span id="inline-notifier" class="inline-notifier"></span>
+                <div class="btn-group view-switcher">
+                    <button class="btn btn-outline-secondary active" id="kanban-view-btn" title="Kanban View"><i class="bi bi-grid-3x3-gap-fill"></i></button>
+                    <button class="btn btn-outline-secondary" id="list-view-btn" title="Data Table View"><i class="bi bi-table"></i></button>
+                </div>
+                <button id="print-qrs-btn" class="btn btn-outline-secondary" title="Print All QR Codes"><i class="bi bi-qr-code"></i></button>
+                <button id="print-summary-btn" class="btn btn-outline-secondary" title="Print"><i class="bi bi-printer-fill"></i></button>
+            </div>
+        </div>
+        
+        <main id="main-content" class="main-content print-area"></main>
+    </div>
+
+    <div class="modal fade" id="wheel-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="wheel-form" novalidate>
+                    <div class="modal-header"><h5 class="modal-title" id="modal-title"></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                    <div class="modal-body">
+                        <input type="hidden" id="wheel-edit-id">
+                        <div class="mb-3"><label for="wheel-thickness" class="form-label">Wheel Thickness (cm)</label><input type="number" id="wheel-thickness" class="form-control" required step="any" placeholder="e.g., 2.5"></div>
+                        <div class="mb-3"><label for="wheel-quantity" class="form-label">Quantity on Hand</label><input type="number" id="wheel-quantity" class="form-control" required placeholder="e.g., 10"></div>
+                        <div class="mb-3"><label for="wheel-min-quantity" class="form-label">Minimum Quantity</label><input type="number" id="wheel-min-quantity" class="form-control" required placeholder="e.g., 5"></div>
+                        <div class="text-center mt-3" id="qr-code-section" style="display: none;">
+                            <hr>
+                            <div id="qr-code-container" class="mx-auto" style="width: 128px;"></div>
+                            <small class="text-muted">Scan ID to edit this item</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <div id="modal-actions" class="me-auto"></div>
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button><button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div id="qr-reader-container" class="loading-overlay" style="display: none;">
+        <div id="qr-reader"></div>
+        <button id="close-scanner-btn" class="btn btn-danger mt-3">Close Scanner</button>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    
+    <script type="module">
+        // --- Firebase Integration ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBPDnVOol10iskGrtgqxlp9a28cQFCemB4",
+            authDomain: "nnnnc-48782.firebaseapp.com",
+            databaseURL: "https://nnnnc-48782-default-rtdb.firebaseio.com",
+            projectId: "nnnnc-48782",
+            storageBucket: "nnnnc-48782.firebasestorage.app",
+            messagingSenderId: "91157067378",
+            appId: "1:91157067378:web:e0a600f956bad0b44234eb",
+            measurementId: "G-5D1059BT76"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        // --- End of Firebase Integration ---
+
+        // --- PWA & Service Worker Setup ---
+        (function() {
+            const manifest = {
+                "name": "Wheel Inventory", "short_name": "WheelInv", "start_url": ".", "display": "standalone",
+                "background_color": "#f8f9fa", "theme_color": "#674ea7", "description": "Offline-first inventory management for printing wheels.",
+                "icons": [{"src": "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/gear-wide-connected.svg", "sizes": "any", "type": "image/svg+xml"}]
+            };
+            const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+            document.querySelector('#manifest-placeholder').setAttribute('href', URL.createObjectURL(blob));
+
+            if ('serviceWorker' in navigator) {
+                const swContent = `
+                    const CACHE_NAME = 'wheel-inventory-cache-v1';
+                    const urlsToCache = [
+                        '.',
+                        'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
+                        'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css',
+                        'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap',
+                        'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js',
+                        'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js',
+                        'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js'
+                    ];
+                    self.addEventListener('install', e => e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(urlsToCache))));
+                    self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));
+                `;
+                const swBlob = new Blob([swContent], {type: 'application/javascript'});
+                const swURL = URL.createObjectURL(swBlob);
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register(swURL)
+                      .then(reg => console.log('ServiceWorker registration successful.'))
+                      .catch(err => console.error('ServiceWorker registration failed: ', err));
+                });
+            }
+        })();
+        
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const LocalDB = {
+                DB_NAME: 'WheelInventoryDB', DB_VERSION: 1, db: null,
+                init() {
+                    return new Promise((resolve, reject) => {
+                        const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+                        request.onupgradeneeded = e => {
+                            this.db = e.target.result;
+                            if (!this.db.objectStoreNames.contains('wheels')) {
+                                this.db.createObjectStore('wheels', { keyPath: 'docId' });
+                            }
+                        };
+                        request.onsuccess = e => { this.db = e.target.result; resolve(); };
+                        request.onerror = e => reject(e.target.error);
+                    });
+                },
+                saveWheels(wheels) {
+                    return new Promise((resolve, reject) => {
+                        if (!this.db) return reject('DB not initialized');
+                        const tx = this.db.transaction('wheels', 'readwrite');
+                        const store = tx.objectStore('wheels');
+                        store.clear(); 
+                        wheels.forEach(wheel => store.put(wheel));
+                        tx.oncomplete = () => resolve();
+                        tx.onerror = () => reject(tx.error);
+                    });
+                },
+                getWheels() {
+                    return new Promise((resolve, reject) => {
+                        if (!this.db) return reject('DB not initialized');
+                        const tx = this.db.transaction('wheels', 'readonly');
+                        const store = tx.objectStore('wheels');
+                        const request = store.getAll();
+                        request.onsuccess = () => resolve(request.result);
+                        request.onerror = () => reject(request.error);
+                    });
+                }
+            };
+
+            const WheelManagerApp = {
+                state: { wheels: [], currentView: 'kanban', showArchived: false, notifierTimeout: null, isSyncing: false, searchQuery: '' },
+                elements: {},
+                DEFAULT_IMAGE_URL: 'https://i.imgur.com/adXSxvs.jpeg',
+                qrScanner: null,
+                dbRef: null, // To hold the Firebase database reference
+                
+                async init() {
+                    this.elements = {
+                        mainContent: document.getElementById('main-content'), createBtn: document.getElementById('create-btn'),
+                        kanbanBtn: document.getElementById('kanban-view-btn'), listBtn: document.getElementById('list-view-btn'),
+                        archiveToggle: document.getElementById('show-archived-toggle'), wheelModal: new bootstrap.Modal(document.getElementById('wheel-modal')),
+                        wheelForm: document.getElementById('wheel-form'), modalTitle: document.getElementById('modal-title'),
+                        modalActions: document.getElementById('modal-actions'), notifier: document.getElementById('inline-notifier'),
+                        loadingOverlay: document.getElementById('loading-overlay'), syncStatus: document.getElementById('sync-status-indicator'),
+                        searchInput: document.getElementById('search-input'), printQrsBtn: document.getElementById('print-qrs-btn'),
+                        scanQrBtn: document.getElementById('scan-qr-btn'), qrReaderContainer: document.getElementById('qr-reader-container'),
+                        qrReader: document.getElementById('qr-reader'), closeScannerBtn: document.getElementById('close-scanner-btn'),
+                        qrCodeContainer: document.getElementById('qr-code-container'), qrCodeSection: document.getElementById('qr-code-section'),
+                        printSummaryBtn: document.getElementById('print-summary-btn')
+                    };
+                    this.bindEventListeners();
+                    
+                    // Set the Firebase database reference
+                    this.dbRef = ref(database, 'inventorywheels/wheels');
+                    
+                    await LocalDB.init();
+
+                    // Step 1: Show local data immediately for a fast UI (if available)
+                    const localWheels = await LocalDB.getWheels();
+                    if (localWheels && localWheels.length > 0) {
+                        this.state.wheels = localWheels;
+                        this.render(); // Render local data first
+                    } else {
+                        // Show loader if no local data exists
+                        this.elements.loadingOverlay.style.display = 'flex';
+                    }
+
+                    // Step 2: Connect to Firebase for real-time data
+                    this.listenForRemoteChanges();
+                    
+                    // Step 3: Handle any special links (like an edit link) after data loads
+                    this.handleUrlOnLoad();
+                },
+
+                listenForRemoteChanges() {
+                    this.updateSyncStatus('syncing', 'Connecting...');
+                    onValue(this.dbRef, (snapshot) => {
+                        this.elements.loadingOverlay.style.display = 'none';
+                        const data = snapshot.val();
+                        // Firebase returns null for non-existent nodes.
+                        // We also ensure it's an array for consistency.
+                        this.state.wheels = Array.isArray(data) ? data : [];
+                        
+                        // Update the offline cache (IndexedDB) with the latest data
+                        LocalDB.saveWheels(this.state.wheels).then(() => {
+                            console.log("Local cache updated from Firebase.");
+                        });
+                        
+                        this.render();
+                        this.updateSyncStatus('synced');
+                    }, (error) => {
+                        console.error("Firebase read failed: ", error);
+                        this.updateSyncStatus('error');
+                        this.elements.loadingOverlay.style.display = 'none';
+                        this.elements.mainContent.innerHTML = `<div class="alert alert-danger text-center">Failed to connect to the database. Displaying local data.</div>`;
+                    });
+                },
+                
+                async saveState(optimisticMessage) {
+                    // 1. Sort data and update UI locally for instant feedback
+                    this.state.wheels.sort((a, b) => a.thickness - b.thickness);
+                    this.render();
+                    
+                    // 2. Save to local DB for offline persistence
+                    await LocalDB.saveWheels(this.state.wheels);
+                    
+                    // 3. Push the new state to Firebase
+                    if (!navigator.onLine) {
+                        this.updateSyncStatus('offline');
+                        this.showInlineNotification('You are offline. Changes will sync when you reconnect.', 'info');
+                        return;
+                    }
+                    this.state.isSyncing = true;
+                    this.updateSyncStatus('syncing', optimisticMessage || 'Saving...');
+
+                    set(this.dbRef, this.state.wheels)
+                        .then(() => {
+                            // The onValue listener will automatically update the UI upon success,
+                            // but we can show a temporary status message.
+                            this.updateSyncStatus('synced');
+                        })
+                        .catch((error) => {
+                            console.error("Data could not be saved to Firebase.", error);
+                            this.updateSyncStatus('error');
+                        })
+                        .finally(() => {
+                            this.state.isSyncing = false;
+                        });
+                },
+
+                updateSyncStatus(status, message) {
+                    let content = '';
+                    switch(status) {
+                        case 'syncing': content = `<div class="spinner-border spinner-border-sm text-primary" role="status"></div> <span>${message || 'Syncing...'}</span>`; break;
+                        case 'synced': content = `<i class="bi bi-check-circle-fill text-success"></i> <span class="text-success">Synced</span>`; break;
+                        case 'offline': content = `<i class="bi bi-wifi-off text-muted"></i> <span class="text-muted">Offline</span>`; break;
+                        case 'error': content = `<i class="bi bi-exclamation-triangle-fill text-danger"></i> <span class="text-danger">Sync Failed</span>`; break;
+                    }
+                    this.elements.syncStatus.innerHTML = content;
+                    if(status === 'synced') {
+                        setTimeout(() => this.elements.syncStatus.innerHTML = '', 3000);
+                    }
+                },
+
+                getVisibleWheels() { 
+                    let filtered = this.state.wheels.filter(wheel => wheel.isArchived === this.state.showArchived);
+                    if (this.state.searchQuery) {
+                        const query = this.state.searchQuery.toLowerCase().trim();
+                        filtered = filtered.filter(w => w.thickness.toString().toLowerCase().includes(query));
+                    }
+                    return filtered;
+                },
+
+                render() {
+                    this.elements.createBtn.disabled = this.state.showArchived;
+                    const data = this.getVisibleWheels();
+                    if (this.state.currentView === 'kanban') this.renderKanbanView(data);
+                    else if (this.state.currentView === 'table') this.renderTableView(data);
+                },
+                
+                bindEventListeners() {
+                    window.addEventListener('online', () => this.saveState('Syncing pending changes...')); // Attempt to sync on reconnect
+                    window.addEventListener('offline', () => this.updateSyncStatus('offline'));
+                    this.elements.createBtn.addEventListener('click', () => this.openModal('add'));
+                    this.elements.kanbanBtn.addEventListener('click', () => this.navigateTo('kanban'));
+                    this.elements.listBtn.addEventListener('click', () => this.navigateTo('table'));
+                    this.elements.wheelForm.addEventListener('submit', (e) => this.handleFormSubmit(e));
+                    this.elements.archiveToggle.addEventListener('change', (e) => { this.state.showArchived = e.target.checked; this.render(); });
+                    this.elements.mainContent.addEventListener('click', (e) => {
+                        if (e.target.closest('#qr-print-view')) return;
+                        const card = e.target.closest('.kanban-card');
+                        if (card) this.openModal('edit', card.dataset.id);
+                        const editableCell = e.target.closest('td.editable');
+                        if (editableCell && !editableCell.querySelector('input')) this.makeCellEditable(editableCell);
+                    });
+                    this.elements.mainContent.addEventListener('blur', (e) => { if (e.target.tagName === 'INPUT' && e.target.closest('td.editable')) this.handleCellEdit(e.target); }, true);
+                    this.elements.mainContent.addEventListener('keydown', (e) => {
+                        const input = e.target;
+                        if (input.tagName === 'INPUT' && input.closest('td.editable')) {
+                            if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+                            else if (e.key === 'Escape') { e.preventDefault(); this.render(); }
+                        }
+                    });
+                    this.elements.searchInput.addEventListener('input', e => { this.state.searchQuery = e.target.value; this.render(); });
+                    this.elements.scanQrBtn.addEventListener('click', () => this.startScanner());
+                    this.elements.closeScannerBtn.addEventListener('click', () => this.stopScanner());
+                    this.elements.printQrsBtn.addEventListener('click', () => this.renderPrintQRView());
+                    this.elements.printSummaryBtn.addEventListener('click', () => window.print());
+                },
+
+                navigateTo(view) {
+                    this.state.currentView = view;
+                    this.elements.kanbanBtn.classList.toggle('active', view === 'kanban');
+                    this.elements.listBtn.classList.toggle('active', view === 'table');
+                    this.render();
+                },
+                
+                handleFormSubmit(e) {
+                    e.preventDefault();
+                    const form = this.elements.wheelForm;
+                    if (!form.checkValidity()) { form.classList.add('was-validated'); return; }
+                    const thickness = parseFloat(document.getElementById('wheel-thickness').value);
+                    const quantity = parseInt(document.getElementById('wheel-quantity').value, 10);
+                    const minQuantity = parseInt(document.getElementById('wheel-min-quantity').value, 10);
+                    const editId = document.getElementById('wheel-edit-id').value;
+                    const existing = this.state.wheels.find(w => w.thickness === thickness);
+                    if (existing && existing.docId !== editId) {
+                        this.showInlineNotification('This thickness value already exists.', 'danger');
+                        return;
+                    }
+                    if (editId) {
+                        const index = this.state.wheels.findIndex(w => w.docId === editId);
+                        if (index > -1) Object.assign(this.state.wheels[index], { thickness, quantity, minQuantity });
+                    } else {
+                        this.state.wheels.push({ docId: `wheel_${Date.now()}`, thickness, quantity, minQuantity, isArchived: false });
+                    }
+                    this.elements.wheelModal.hide();
+                    this.saveState('Saving entry...');
+                },
+
+                openModal(mode, docId = null) {
+                    const form = this.elements.wheelForm;
+                    form.reset();
+                    form.classList.remove('was-validated');
+                    this.elements.modalActions.innerHTML = '';
+                    this.elements.qrCodeContainer.innerHTML = '';
+                    this.elements.qrCodeSection.style.display = 'none';
+                    if (mode === 'edit' && docId) {
+                        const wheel = this.state.wheels.find(w => w.docId === docId);
+                        if (wheel) {
+                            this.elements.modalTitle.textContent = 'Edit Wheel Type';
+                            document.getElementById('wheel-edit-id').value = wheel.docId;
+                            document.getElementById('wheel-thickness').value = wheel.thickness;
+                            document.getElementById('wheel-quantity').value = wheel.quantity;
+                            document.getElementById('wheel-min-quantity').value = wheel.minQuantity;
+                            this.setupModalActions(wheel);
+                            this.elements.qrCodeSection.style.display = 'block';
+                            new QRCode(this.elements.qrCodeContainer, { text: wheel.docId, width: 128, height: 128 });
+                        }
+                    } else {
+                        this.elements.modalTitle.textContent = 'Add New Wheel Type';
+                    }
+                    this.elements.wheelModal.show();
+                },
+                
+                // --- باقي الوظائف تبقى كما هي بدون تغيير ---
+                setupModalActions: function(wheel) { this.elements.modalActions.innerHTML = ''; if (wheel.isArchived) { this.elements.modalActions.innerHTML = `<button type="button" class="btn btn-success me-2" data-action="unarchive" data-id="${wheel.docId}"><i class="bi bi-box-arrow-up"></i> Unarchive</button><button type="button" class="btn btn-danger" data-action="delete" data-id="${wheel.docId}"><i class="bi bi-trash3-fill"></i> Delete</button>`; } else { this.elements.modalActions.innerHTML = `<button type="button" class="btn btn-warning" data-action="archive" data-id="${wheel.docId}"><i class="bi bi-archive-fill"></i> Archive</button>`; } this.elements.modalActions.onclick = (e) => { const button = e.target.closest('button'); if (!button) return; const { action, id } = button.dataset; if (action === 'archive') this.toggleArchive(id, true, 'Archiving item...'); if (action === 'unarchive') this.toggleArchive(id, false, 'Restoring item...'); if (action === 'delete') this.deleteWheelPermanently(id); }; },
+                toggleArchive: function(docId, isArchived, message) { const index = this.state.wheels.findIndex(w => w.docId === docId); if (index > -1) { this.state.wheels[index].isArchived = isArchived; this.elements.wheelModal.hide(); this.saveState(message); } },
+                deleteWheelPermanently: function(docId) { if (confirm('Are you sure? This action cannot be undone.')) { this.state.wheels = this.state.wheels.filter(w => w.docId !== docId); this.elements.wheelModal.hide(); this.saveState('Deleting item...'); } },
+                makeCellEditable: function(cell) { const originalValue = cell.textContent.trim(); const key = cell.dataset.key; cell.innerHTML = `<input type="number" class="form-control form-control-sm" value="${originalValue}" data-original-value="${originalValue}" step="${key === 'thickness' ? 'any' : '1'}">`; const input = cell.querySelector('input'); input.focus(); input.select(); },
+                handleCellEdit: function(input) { const docId = input.parentElement.dataset.id; const key = input.parentElement.dataset.key; const originalValue = input.dataset.originalValue; const newValue = parseFloat(input.value); const wheel = this.state.wheels.find(w => w.docId === docId); if (!wheel || isNaN(newValue) || newValue < 0) { this.showInlineNotification('Invalid value.', 'danger'); this.render(); return; } const existing = this.state.wheels.find(w => w.thickness === newValue); if (key === 'thickness' && existing && existing.docId !== docId) { this.showInlineNotification('This thickness value already exists.', 'danger'); this.render(); return; } if (newValue.toString() !== originalValue) { wheel[key] = newValue; this.saveState('Saving update...'); } else { this.render(); } },
+                renderKanbanView: function(data) { const container = this.elements.mainContent; if (data.length === 0) { container.innerHTML = `<div class="text-center text-muted"><div class="card p-5"><p class="mb-0 h5">${this.state.showArchived ? 'No archived items.' : 'No items found. Add a new wheel type to start.'}</p></div></div>`; return; } let content = '<div id="kanban-view-content">'; data.forEach(wheel => { const isLowStock = !wheel.isArchived && wheel.quantity <= wheel.minQuantity; content += `<div class="kanban-card ${wheel.isArchived ? 'opacity-50' : ''}" data-id="${wheel.docId}"><div class="d-flex justify-content-between align-items-start"><div><div class="kanban-card-title">${wheel.thickness} cm</div><div class="kanban-card-body"><span class="${isLowStock ? 'text-danger low-stock-warning' : ''}">Quantity: ${wheel.quantity}</span><small class="d-block text-muted">Min: ${wheel.minQuantity}</small></div></div><img src="${this.DEFAULT_IMAGE_URL}" alt="wheel" class="kanban-card-img"></div>${isLowStock ? '<span class="badge bg-danger-subtle text-danger-emphasis mt-2 align-self-start">Low Stock</span>' : ''}${wheel.isArchived ? '<span class="badge bg-secondary mt-2 align-self-start">Archived</span>' : ''}</div>`; }); container.innerHTML = content + '</div>'; },
+                renderTableView: function(data) { const container = this.elements.mainContent; let tableHtml = `<div class="table-container"><table class="data-table align-middle"><thead><tr><th>Image</th><th>Thickness (cm)</th><th>Quantity on Hand</th><th>Minimum Quantity</th></tr></thead><tbody>`; if (data.length === 0) { tableHtml += `<tr><td colspan="4" class="text-center p-4 text-muted">${this.state.showArchived ? 'No archived items.' : 'No items found.'}</td></tr>`; } else { data.forEach(wheel => { const isLowStock = !wheel.isArchived && wheel.quantity <= wheel.minQuantity; tableHtml += `<tr class="${wheel.isArchived ? 'opacity-50' : ''}"><td><img src="${this.DEFAULT_IMAGE_URL}" alt="wheel" class="list-view-img"></td><td class="editable fw-bold" data-id="${wheel.docId}" data-key="thickness">${wheel.thickness}</td><td class="editable ${isLowStock ? 'text-danger fw-bold' : ''}" data-id="${wheel.docId}" data-key="quantity">${wheel.quantity}</td><td class="editable" data-id="${wheel.docId}" data-key="minQuantity">${wheel.minQuantity}</td></tr>`; }); } container.innerHTML = tableHtml + `</tbody></table></div>`; },
+                showInlineNotification: function(message, type = 'success') { const notifier = this.elements.notifier; clearTimeout(this.state.notifierTimeout); notifier.textContent = message; notifier.className = 'inline-notifier'; notifier.classList.add(type, 'show'); this.state.notifierTimeout = setTimeout(() => { notifier.classList.remove('show'); }, 3000); },
+                handleUrlOnLoad() {
+                    const params = new URLSearchParams(window.location.search);
+                    const editId = params.get('edit');
+                    if (editId && this.state.wheels.some(w => w.docId === editId)) {
+                        setTimeout(() => this.openModal('edit', editId), 100);
+                    }
+                },
+                startScanner() {
+                    this.elements.qrReaderContainer.style.display = 'flex';
+                    if (!this.qrScanner) {
+                        this.qrScanner = new Html5Qrcode("qr-reader");
+                    }
+                    this.qrScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } },
+                        (decodedText) => this.onScanSuccess(decodedText),
+                        (errorMessage) => {}
+                    ).catch(err => console.error("Could not start scanner", err));
+                },
+                stopScanner() {
+                    if (this.qrScanner && this.qrScanner.isScanning) {
+                        this.qrScanner.stop()
+                            .then(() => { this.elements.qrReaderContainer.style.display = 'none'; })
+                            .catch(err => console.error("Error stopping scanner", err));
+                    } else {
+                        this.elements.qrReaderContainer.style.display = 'none';
+                    }
+                },
+                onScanSuccess(decodedText) {
+                    this.stopScanner();
+                    const editId = decodedText.trim();
+                    if (editId && this.state.wheels.some(w => w.docId === editId)) {
+                        this.openModal('edit', editId);
+                    } else {
+                        console.error("Scanned ID not found:", editId);
+                        alert('QR code not found in inventory.');
+                    }
+                },
+                renderPrintQRView() {
+                    this.elements.kanbanBtn.classList.remove('active');
+                    this.elements.listBtn.classList.remove('active');
+                    this.state.currentView = 'print-qr';
+
+                    const wheelsToPrint = this.state.wheels.filter(w => !w.isArchived);
+                    if (wheelsToPrint.length === 0) {
+                        this.elements.mainContent.innerHTML = `<div class="text-center text-muted"><div class="card p-5"><p class="mb-0 h5">No active items to print QR codes for.</p></div></div>`;
+                        return;
+                    }
+                    let content = '<div id="qr-print-view">';
+                    wheelsToPrint.forEach(wheel => {
+                        content += `<div class="qr-print-item">
+                            <div class="qr-code-image-container" id="qr-item-${wheel.docId}"></div>
+                            <div class="qr-code-text">${wheel.thickness} cm</div>
+                        </div>`;
+                    });
+                    this.elements.mainContent.innerHTML = content + '</div>';
+
+                    wheelsToPrint.forEach(wheel => {
+                        const container = document.getElementById(`qr-item-${wheel.docId}`);
+                        new QRCode(container, { text: wheel.docId, width: 150, height: 150 });
+                    });
+                }
+            };
+
+            WheelManagerApp.init();
+
+            // --- بداية كود التحكم في زر الرجوع ---
+            history.pushState({ page: 1 }, "", "");
+
+            window.addEventListener('popstate', function(event) {
+                const openModalElement = document.querySelector('.modal.show');
+                if (openModalElement) {
+                    const modalInstance = bootstrap.Modal.getInstance(openModalElement);
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
+                    history.pushState({ page: 1 }, "", "");
+                } else {
+                    window.location.href = 'index.html';
+                }
+            });
+            // --- نهاية كود التحكم في زر الرجوع ---
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Measurements</title>
+    <meta name="theme-color" content="#674ea7"/>
+    <link rel="manifest" href="manifest.json">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bs-primary-rgb: 103, 78, 167;
+            --bs-secondary-rgb: 233, 236, 239;
+            --bs-body-font-family: 'Inter', sans-serif;
+            --bs-body-bg: #f8f9fa;
+            --bs-card-bg: #ffffff;
+            --bs-card-border-color: #dee2e6;
+            --bs-border-radius: 0.25rem;
+            --bs-box-shadow-sm: 0 .125rem .25rem rgba(0,0,0,.075);
+            --bs-box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+        }
+        body { font-family: var(--bs-body-font-family); background-color: var(--bs-body-bg); }
+        .odoo-app-container { padding: 1rem 1.5rem; }
+        .odoo-control-panel {
+            display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+            padding: 0.75rem; background-color: var(--bs-body-bg); border-bottom: 1px solid var(--bs-card-border-color);
+            gap: 1rem; margin-bottom: 1rem;
+        }
+        .control-panel-left, .control-panel-right { display: flex; align-items: center; gap: 0.75rem; }
+        .search-container { flex-grow: 1; min-width: 250px; max-width: 450px; }
+        .view-switcher .btn.active { background-color: rgb(var(--bs-primary-rgb)); color: white; border-color: rgb(var(--bs-primary-rgb)); }
+        #status-message {
+            transition: opacity 0.5s ease-in-out;
+            opacity: 0;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        #status-message.visible { opacity: 1; }
+        .odoo-main-content { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .kanban-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+        .kanban-card {
+            background-color: var(--bs-card-bg); border: 1px solid var(--bs-card-border-color); border-radius: var(--bs-border-radius);
+            box-shadow: var(--bs-box-shadow-sm); transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer;
+            display: flex; flex-direction: column; padding: 0.75rem;
+        }
+        .kanban-card:hover { transform: translateY(-4px); box-shadow: var(--bs-box-shadow); }
+        .kanban-card-title { font-weight: 700; font-size: 1.0rem; color: #333; margin-bottom: 0.5rem; }
+        .kanban-card-body { font-size: 0.85rem; color: #555; }
+        .kanban-card-footer {
+            margin-top: auto; padding-top: 4px; display: flex;
+            justify-content: space-between; align-items: center;
+            font-size: 12px; color: #212529; font-weight: bold; flex-wrap: wrap; gap: 8px;
+        }
+        .cuts-visualization-bar {
+            display: flex; background-color: #f1f3f5; border: 1px solid #dee2e6;
+            border-radius: 4px; padding: 30px 5px; flex-wrap: nowrap;
+            gap: 0; margin-top: 0.5rem; min-height: 75px; align-items: center;
+            position: relative; overflow: visible;
+        }
+        .cut-segment {
+            position: relative; background: linear-gradient(90deg, #ff0c07 0% 0%, rgb(163 7 7) 100%);
+            height: 24px; display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 500;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3); border-right: 3px solid #e9ecef;
+            transition: width 0.3s ease-in-out;
+        }
+        .kanban-card.is-sub-item .cut-segment {
+            background: linear-gradient(90deg, #216401 0%, #0dde00 100%);
+        }
+        .cut-segment:last-child { border-right: none; }
+        .cut-segment .ruler-mark {
+            content: ''; position: absolute; left: 50%; transform: translateX(-50%);
+            width: 1px; background-color: #6c757d;
+        }
+        .cut-segment .ruler-label {
+            position: absolute; left: 50%; transform: translateX(-50%); font-size: 0.75em;
+            font-weight: 600; color: #343a40; white-space: nowrap; background-color: #f1f3f5;
+            padding: 1px 4px; border-radius: 3px; z-index: 1;
+        }
+        .cut-segment:nth-child(odd) .ruler-mark { height: 10px; top: -10px; }
+        .cut-segment:nth-child(odd) .ruler-label { top: -28px; }
+        .cut-segment:nth-child(even) .ruler-mark { height: 10px; bottom: -10px; }
+        .cut-segment:nth-child(even) .ruler-label { bottom: -28px; }
+        .cuts-visualization-bar.list-view {
+            min-height: auto; padding: 0; overflow: hidden; height: 22px;
+        }
+        .cut-segment.list-view {
+            height: 100%; border-right: 2px solid #fff;
+            font-size: 0.75rem;
+        }
+        .cut-segment.list-view:last-child { border-right: none; }
+        #list-view-content .table { background-color: var(--bs-card-bg); box-shadow: var(--bs-box-shadow-sm); border-radius: var(--bs-border-radius); overflow: hidden; }
+        #list-view-content .table thead { background-color: #f1f3f5; }
+        #list-view-content .table th { font-weight: 600; }
+        #list-view-content .table-hover tbody tr:hover { background-color: rgba(var(--bs-primary-rgb), 0.07); cursor: pointer; }
+        .tags-filter-container { padding: 0.5rem 0.75rem; background-color: #fff; border: 1px solid var(--bs-card-border-color); border-radius: var(--bs-border-radius); margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+        .tag-filter-pill { cursor: pointer; border: 1px solid var(--bs-card-border-color); transition: all 0.2s ease; }
+        .tag-filter-pill.active { background-color: rgb(var(--bs-primary-rgb)); color: white; border-color: rgb(var(--bs-primary-rgb)); }
+        .project-tags-container .badge { font-weight: 600; }
+        .tag-checkbox-pill input[type="checkbox"] { display: none; }
+        .tag-checkbox-pill label {
+            display: inline-block;
+            padding: 0.35em 0.65em;
+            font-size: .9em;
+            font-weight: 600;
+            line-height: 1;
+            color: #6c757d;
+            background-color: #f1f3f5;
+            border: 1px solid #dee2e6;
+            border-radius: 50rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .tag-checkbox-pill input[type="checkbox"]:checked + label {
+            background-color: rgb(var(--bs-primary-rgb));
+            color: #fff;
+            border-color: rgb(var(--bs-primary-rgb));
+        }
+        .wheel-image-group { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+        .wheel-image-preview { width: 40px; height: 40px; object-fit: cover; border-radius: var(--bs-border-radius); background-color: #f1f3f5; }
+        .dynamic-field-group { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+        #image-drop-zone { border: 2px dashed #ccc; border-radius: var(--bs-border-radius); padding: 2rem; text-align: center; color: #6c757d; transition: all 0.2s ease-in-out; }
+        #image-drop-zone.dragover { background-color: #e9ecef; border-color: rgb(var(--bs-primary-rgb)); }
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.8); display: flex; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(4px); }
+        .modal-header { background-color: #f8f9fa; border-bottom: 1px solid #dee2e6; color: #495057; }
+        
+        .gallery-item {
+            background-color: #f1f3f5;
+            border: 1px solid var(--bs-card-border-color);
+            border-radius: var(--bs-border-radius);
+            overflow: hidden;
+            aspect-ratio: 4 / 3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.25rem;
+            cursor: zoom-in;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .gallery-item:hover {
+            background-color: #e9ecef;
+        }
+        .gallery-item img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            transition: transform 0.2s ease-in-out;
+            border-radius: .15rem;
+        }
+        .gallery-item:hover img {
+            transform: scale(1.05);
+        }
+
+        #image-viewer-modal #fullscreen-image {
+            animation: viewerZoomIn 0.3s ease-out;
+        }
+
+#camera-modal {
+    z-index: 1060;
+}
+
+
+
+        @keyframes viewerZoomIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .viewer-nav-btn {
+            font-size: 1.5rem;
+            font-weight: bold;
+            line-height: 1;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            background-color: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .viewer-nav-btn:hover {
+            background-color: rgba(255,255,255,0.2);
+        }
+        
+        #foils-table-container {
+            max-width: 800px;
+            margin: auto;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            .print-area, .print-area * { visibility: visible; }
+            .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+            .no-print { display: none !important; }
+            .cuts-visualization-bar, .cut-segment {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loading-overlay" style="display: none;">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"><span class="visually-hidden">Loading...</span></div>
+    </div>
+
+    <div class="odoo-app-container">
+<header class="d-flex justify-content-between align-items-center pb-2 mb-3 border-bottom no-print">
+    <div class="d-flex align-items-center">
+        <a href="index.html" class="btn btn-light me-3" title="index">
+            <i class="bi bi-arrow-left fs-5"></i>
+        </a>
+        <h1 class="h4 m-0 fw-bold d-flex align-items-center">
+            <i class="bi bi-bounding-box-circles text-primary me-2"></i> Measurements Foil
+        </h1>
+    </div>
+
+</header>
+
+        <div class="odoo-control-panel no-print">
+            <div class="control-panel-left">
+                <button id="create-btn" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i> Create Project</button>
+            </div>
+            <div class="search-container">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="search" id="search-input" class="form-control" placeholder="Search...">
+                </div>
+            </div>
+            <div class="control-panel-right">
+                <span id="status-message"></span> 
+                <div class="btn-group view-switcher">
+                    <button class="btn btn-outline-secondary active" id="kanban-view-btn" title="Kanban View"><i class="bi bi-grid-3x3-gap-fill"></i></button>
+                    <button class="btn btn-outline-secondary" id="list-view-btn" title="List View"><i class="bi bi-list-ul"></i></button>
+                    <button class="btn btn-outline-secondary" id="sub-items-view-btn" title="Sub-items View"><i class="bi bi-diagram-3-fill"></i></button>
+                    <button class="btn btn-outline-secondary" id="foils-view-btn" title="Foils View"><i class="bi bi-layers-fill"></i></button>
+                </div>
+                <button id="print-summary-btn" class="btn btn-outline-secondary" title="Print"><i class="bi bi-printer-fill"></i></button>
+                <button id="force-sync-btn" class="btn btn-outline-warning" title="Clear Local Data & Sync"><i class="bi bi-arrow-clockwise"></i></button>
+            </div>
+        </div>
+        
+        <div id="tags-filter-container" class="tags-filter-container no-print"></div>
+        <main id="odoo-main-content" class="print-area"></main>
+    </div>
+
+    <div class="modal fade" id="project-modal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <form id="project-form">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modal-title">Create New Project</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="project-edit-id">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="project-name" class="form-label">Project Name / PS Type</label>
+                                    <input type="text" id="project-name" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="project-wheels" class="form-label">Assembly Wheels required</label>
+                                    <div class="input-group">
+                                        <input type="number" id="project-wheels" class="form-control" required min="0">
+                                        <button class="btn btn-outline-info d-none" type="button" id="view-wheel-images-btn" title="View Wheel Images"><i class="bi bi-images"></i></button>
+                                        <button class="btn btn-outline-secondary" type="button" id="add-wheel-images-btn" title="Add wheel image"><i class="bi bi-plus-lg"></i></button>
+                                    </div>
+                                </div>
+                                <div id="wheel-images-container" class="mb-3"></div>
+                                <div class="mb-3">
+                                    <label class="form-label">PS Image (optional)</label>
+                                    <div id="image-drop-zone"><p>Drag & Drop or click to select</p></div>
+                                    <input type="file" id="project-image" class="form-control" accept="image/*" hidden>
+                                    <img src="" id="project-image-preview" class="img-fluid rounded mt-2 d-none" alt="Image Preview" style="max-height: 150px;">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Category</label>
+                                    <div id="predefined-tags-container" class="d-flex flex-wrap gap-2">
+                                    </div>
+                                </div>
+                                <hr>
+                                <div id="modal-cuts-visualization" class="mb-3"></div>
+                                <div class="mb-3">
+                                    <label class="form-label">Foil Cuts (cm)</label>
+                                    <div id="foil-cuts-container"></div>
+                                    <button type="button" id="add-cut-btn" class="btn btn-outline-primary btn-sm mt-2"><i class="bi bi-plus-circle"></i> Add Cut</button>
+                                </div>
+                                <hr>
+                                <div class="mb-3">
+                                    <label class="form-label">Sub-items</label>
+                                    <div id="sub-items-summary-container" class="mb-2"></div>
+                                    <button type="button" id="manage-sub-items-btn" class="btn btn-outline-info btn-sm">
+                                        <i class="bi bi-diagram-3"></i> Manage Sub-items
+                                    </button>
+                                </div>
+                                <hr>
+                                <div class="mb-3">
+                                    <label class="form-label">Custom Fields</label>
+                                    <div id="custom-fields-container"></div>
+                                    <button type="button" id="add-custom-field-btn" class="btn btn-outline-secondary btn-sm mt-2"><i class="bi bi-plus-circle"></i> Add Field</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save Project</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="confirmation-modal" tabindex="-1"> <div class="modal-dialog modal-dialog-centered"> <div class="modal-content"><div class="modal-header"><h5 class="modal-title">Confirm Action</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body" id="confirmation-modal-body"></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-danger" id="confirmation-modal-confirm-btn">Confirm</button></div></div> </div> </div>
+    
+    <div class="modal fade" id="wheel-gallery-modal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Assembly Wheels Images</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="gallery-container" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="image-viewer-modal" tabindex="-1">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content bg-black bg-opacity-90">
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; top: 1rem; right: 1.5rem; z-index: 1056;"></button>
+                <button class="btn btn-outline-light viewer-nav-btn" id="viewer-prev-btn" style="position: absolute; top: 50%; left: 1rem; transform: translateY(-50%); z-index: 1055;">&lt;</button>
+                <button class="btn btn-outline-light viewer-nav-btn" id="viewer-next-btn" style="position: absolute; top: 50%; right: 1rem; transform: translateY(-50%); z-index: 1055;">&gt;</button>
+                <div class="modal-body d-flex flex-column align-items-center justify-content-center text-white text-center p-3 h-100">
+                    <div style="flex-grow: 1; display:flex; align-items:center; justify-content:center; width:100%;">
+                       <img id="fullscreen-image" src="" class="img-fluid" style="max-width: 90vw; max-height: 85vh; object-fit: contain; cursor: zoom-out;">
+                    </div>
+                    <div id="viewer-caption" class="mt-2" style="min-height: 2em;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="camera-modal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Capture Image</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center p-2">
+                    <video id="camera-stream" class="img-fluid" autoplay playsinline style="border-radius: var(--bs-border-radius); background-color: #000;"></video>
+                    <canvas id="camera-canvas" class="d-none"></canvas>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="snap-btn" class="btn btn-primary"><i class="bi bi-camera-fill me-1"></i> Snap Photo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade" id="sub-items-list-modal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Manage Sub-items</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small">Add or edit sub-components for this project. Each sub-item can use the cut pattern from another project.</p>
+                    <div id="sub-items-list" class="list-group"></div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Done</button>
+                    <button type="button" class="btn btn-primary" id="add-new-sub-item-btn">
+                        <i class="bi bi-plus-circle me-1"></i> Add New Sub-item
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="sub-item-editor-modal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <form id="sub-item-form">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="sub-item-editor-title">Sub-item Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="sub-item-edit-id">
+                        <input type="hidden" id="sub-item-parent-project-id-for-save">
+                        <div class="row">
+                            <div class="col-lg-5">
+                                <div class="mb-3">
+                                    <label for="sub-item-parent-project" class="form-label">Parent Project / PS Type <span class="text-danger">*</span></label>
+                                    <select id="sub-item-parent-project" class="form-select" required></select>
+                                    <div class="form-text">Select a project to use its cut measurements.</div>
+                                </div>
+                                <div id="sub-item-cuts-visualization" class="mb-3"></div>
+                                <div class="mb-3">
+                                    <label for="sub-item-category-name" class="form-label">Sub-item Name <span class="text-danger">*</span></label>
+                                    <input type="text" id="sub-item-category-name" class="form-control" required placeholder="e.g., Left Door Panel">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Sub-item Image</label>
+                                    <div class="input-group">
+                                        <input type="file" id="sub-item-image" class="form-control" accept="image/*">
+                                        <button class="btn btn-outline-secondary" type="button" id="sub-item-capture-btn"><i class="bi bi-camera"></i></button>
+                                    </div>
+                                    <img src="" id="sub-item-image-preview" class="img-fluid rounded mt-2 d-none" style="max-height: 120px; object-fit: cover;">
+                                </div>
+                            </div>
+                            <div class="col-lg-7">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0">Assign Foils to Cuts</h6>
+                                    <button type="button" id="manage-foils-btn" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil-square me-1"></i>Manage Foils</button>
+                                </div>
+                                <div id="sub-item-foil-table-container" class="table-responsive border rounded" style="max-height: 400px; overflow-y: auto;">
+                                    <p class="text-muted p-3 text-center">Select a parent project to see its cuts here.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle me-1"></i>Save Sub-item</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade" id="foil-manager-modal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Manage Foils</h5>
+                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="new-foil-name-input" class="form-label">Add a new foil type:</label>
+                    <div class="input-group mb-3">
+                        <input type="text" id="new-foil-name-input" class="form-control" placeholder="e.g., Gold Leaf 2cm">
+                        <button class="btn btn-primary" type="button" id="add-foil-btn">Add</button>
+                    </div>
+                    <h6>Existing Foils:</h6>
+                    <ul id="foils-list" class="list-group" style="max-height: 250px; overflow-y: auto;"></ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        
+        const PREDEFINED_TAGS = ['CIMAISE', 'PLINTHE', 'Wall panel', 'CORNICHE', 'CADRE'];
+
+        const GoogleSheetDB = {
+            SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwWrGCmzYh5RGFUesOxpUgu6ZgZBnhPtjLOvFNKICU20DimKU0_mfui4a33X5oCIto/exec',
+            
+            async saveData(data, app, dataType = 'projects') {
+                if (!navigator.onLine) { return; }
+                try {
+                    const url = `${this.SCRIPT_URL}?app=${app}&type=${dataType}`;
+                    const response = await fetch(url, {
+                        method: 'POST', redirect: 'follow', body: JSON.stringify(data),
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    });
+                    const result = await response.json();
+                    if (result.status !== 'success') throw new Error(result.message);
+                } catch (error) {
+                    console.error(`Error saving ${dataType} to Google Sheet:`, error);
+                    PSProjectApp.UI.showStatusMessage(`Failed to sync ${dataType}.`, 'danger');
+                    throw error;
+                }
+            },
+
+            async getData(app, dataType = 'projects') {
+                if (!navigator.onLine) return null;
+                try {
+                    const url = `${this.SCRIPT_URL}?app=${app}&type=${dataType}`;
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return await response.json();
+                } catch (error) {
+                    console.error(`Error fetching ${dataType} from Google Sheet:`, error);
+                    return null;
+                }
+            }
+        };
+        
+        const IndexedDBManager = {
+            db: null,
+            init() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open('MeasurementsDB', 2); // Version updated for new object store
+                    request.onerror = (e) => reject("IndexedDB error: " + e.target.errorCode);
+                    request.onsuccess = (e) => { this.db = e.target.result; resolve(); };
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('projects')) {
+                           db.createObjectStore('projects', { keyPath: 'docId' });
+                        }
+                        if (!db.objectStoreNames.contains('foils')) {
+                           db.createObjectStore('foils', { keyPath: 'id', autoIncrement: true });
+                        }
+                    };
+                });
+            },
+            clearDB() {
+                return new Promise((resolve, reject) => {
+                    if (this.db) { this.db.close(); this.db = null; }
+                    const deleteRequest = indexedDB.deleteDatabase('MeasurementsDB');
+                    deleteRequest.onsuccess = () => { console.log('DB deleted.'); resolve(); };
+                    deleteRequest.onerror = (e) => { console.error('DB deletion error.', e.target.error); reject(e.target.error); };
+                    deleteRequest.onblocked = (e) => { console.warn('DB deletion blocked.'); reject('Deletion blocked.'); };
+                });
+            },
+            saveData(data, storeName) {
+                return new Promise((resolve, reject) => {
+                    const tx = this.db.transaction([storeName], 'readwrite');
+                    const store = tx.objectStore(storeName);
+                    store.clear();
+                    if (Array.isArray(data)) {
+                        data.forEach(item => store.put(item));
+                    }
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = (e) => reject(e.target.error);
+                });
+            },
+            getData(storeName) {
+                return new Promise((resolve, reject) => {
+                    const req = this.db.transaction([storeName], 'readonly').objectStore(storeName).getAll();
+                    req.onsuccess = () => resolve(req.result || []);
+                    req.onerror = (e) => reject(e.target.error);
+                });
+            }
+        };
+        
+        const FoilManager = {
+            foils: [],
+            async init() {
+                const localFoils = await IndexedDBManager.getData('foils');
+                if (localFoils.length > 0) {
+                    this.foils = localFoils.map(f => f.name);
+                } else {
+                    this.foils = ['Default Foil'];
+                }
+                this.syncWithRemote();
+            },
+            async syncWithRemote() {
+                const remoteFoils = await GoogleSheetDB.getData('measurements', 'foils');
+                if (remoteFoils && JSON.stringify(remoteFoils) !== JSON.stringify(this.foils)) {
+                    this.foils = remoteFoils;
+                    await this.saveFoilsToLocal();
+                }
+            },
+            getFoils() { return [...this.foils]; },
+            async saveFoils() {
+                await this.saveFoilsToLocal();
+                await GoogleSheetDB.saveData(this.foils, 'measurements', 'foils');
+            },
+            async saveFoilsToLocal() {
+                const foilObjects = this.foils.map(name => ({ name }));
+                await IndexedDBManager.saveData(foilObjects, 'foils');
+            },
+            async addFoil(name) {
+                if (name && !this.foils.includes(name)) {
+                    this.foils.push(name);
+                    this.foils.sort();
+                    await this.saveFoils();
+                    return true;
+                }
+                return false;
+            },
+            async updateFoil(oldName, newName) {
+                if (!newName || (oldName !== newName && this.foils.includes(newName))) {
+                    PSProjectApp.UI.showStatusMessage('New foil name is invalid or already exists.', 'warning');
+                    return false;
+                }
+                const index = this.foils.findIndex(f => f === oldName);
+                if (index > -1) {
+                    this.foils[index] = newName;
+                    this.foils.sort();
+                    await this.saveFoils();
+                    return true;
+                }
+                return false;
+            },
+            async deleteFoil(name) {
+                this.foils = this.foils.filter(f => f !== name);
+                await this.saveFoils();
+            }
+        };
+
+        const PSProjectApp = {
+            state: { 
+                projects: [], 
+                currentView: 'kanban', 
+                fuse: null, 
+                activeFilterTags: new Set(),
+                viewerImages: [],
+                currentViewerIndex: 0,
+                cameraStream: null,
+                activeImageInput: null,
+                activeProjectSubItems: [],
+                editingSubItemId: null,
+            },
+            elements: {
+                mainContent: document.getElementById('odoo-main-content'),
+                createBtn: document.getElementById('create-btn'),
+                printBtn: document.getElementById('print-summary-btn'),
+                forceSyncBtn: document.getElementById('force-sync-btn'),
+                searchInput: document.getElementById('search-input'),
+                projectModal: new bootstrap.Modal(document.getElementById('project-modal')),
+                confirmationModal: new bootstrap.Modal(document.getElementById('confirmation-modal')),
+                wheelGalleryModal: new bootstrap.Modal(document.getElementById('wheel-gallery-modal')),
+                imageViewerModal: new bootstrap.Modal(document.getElementById('image-viewer-modal')),
+                cameraModal: new bootstrap.Modal(document.getElementById('camera-modal')),
+                subItemsListModal: new bootstrap.Modal(document.getElementById('sub-items-list-modal')),
+                subItemEditorModal: new bootstrap.Modal(document.getElementById('sub-item-editor-modal')),
+                foilManagerModal: new bootstrap.Modal(document.getElementById('foil-manager-modal')),
+                viewSwitcher: { 
+                    kanban: document.getElementById('kanban-view-btn'), 
+                    list: document.getElementById('list-view-btn'),
+                    subItems: document.getElementById('sub-items-view-btn'),
+                    foils: document.getElementById('foils-view-btn')
+                },
+                loadingOverlay: document.getElementById('loading-overlay'),
+                tagsFilterContainer: document.getElementById('tags-filter-container'),
+                statusMessage: document.getElementById('status-message'),
+            },
+
+            async init() {
+                await IndexedDBManager.init();
+                await FoilManager.init();
+                this.bindEventListeners();
+				   this.navigateTo('kanban'); // <--- أضف هذا السطر هنا
+                await this.loadLocalDataFirst();
+                this.syncWithRemote();
+                window.addEventListener('online', () => this.syncWithRemote());
+            },
+
+            async loadLocalDataFirst() {
+                const localData = await IndexedDBManager.getData('projects');
+                this.updateStateAndRender(localData, false);
+                this.UI.showStatusMessage('Offline data loaded.', 'info');
+            },
+
+            async syncWithRemote() {
+                if (!navigator.onLine) { this.UI.showStatusMessage('Working offline.', 'info'); return; }
+                this.UI.showStatusMessage('Updating data...', 'info');
+                const remoteData = await GoogleSheetDB.getData('measurements', 'projects');
+                if (remoteData === null) { this.UI.showStatusMessage('Could not fetch from cloud.', 'warning'); return; }
+                if (remoteData.length === 0 && this.state.projects.length > 0) { this.UI.showStatusMessage('Cloud empty, sync paused.', 'danger'); return; }
+                if (JSON.stringify(remoteData) !== JSON.stringify(this.state.projects)) {
+                    await IndexedDBManager.saveData(remoteData, 'projects');
+                    this.updateStateAndRender(remoteData, false);
+                    this.UI.showStatusMessage('Data updated.', 'success');
+                } else {
+                    this.UI.showStatusMessage('Data is up-to-date.', 'success');
+                }
+                await FoilManager.syncWithRemote();
+            },
+
+            async forceSyncAndReload() {
+                this.UI.setLoading(true);
+                try {
+                    await IndexedDBManager.clearDB();
+                    this.UI.showStatusMessage('Local data cleared.', 'info');
+                    await this.init(); // Re-initialize everything
+                    this.UI.showStatusMessage('Data reset and synced.', 'success');
+                } catch (error) {
+                    console.error('Force sync failed:', error);
+                    this.UI.showStatusMessage(`Error during sync: ${error}`, 'danger');
+                } finally {
+                    this.UI.setLoading(false);
+                }
+            },
+
+            updateStateAndRender(projectList, shouldSave = true) {
+                projectList.sort((a, b) => a.name.localeCompare(b.name));
+                this.state.projects = projectList;
+                this.state.fuse = new Fuse(this.state.projects, { keys: ['name', 'tags', 'customFields.name', 'customFields.value', 'subItems.subCategoryName'], threshold: 0.4, ignoreLocation: true });
+                this.UI.renderCurrentView();
+                if (shouldSave) {
+                    IndexedDBManager.saveData(this.state.projects, 'projects')
+                        .then(() => GoogleSheetDB.saveData(this.state.projects, 'measurements', 'projects'))
+                        .catch(e => console.error("Failed to save state:", e));
+                }
+            },
+            
+            addProject(data) {
+                const newProject = { docId: `proj_${Date.now()}`, ...data, lastUpdated: new Date().toISOString() };
+                this.updateStateAndRender([newProject, ...this.state.projects]);
+                this.UI.showStatusMessage('Project created.', 'success');
+            },
+
+            updateProject(id, data) {
+                const updatedProjects = [...this.state.projects];
+                const index = updatedProjects.findIndex(p => p.docId === id);
+                if (index > -1) {
+                    updatedProjects[index] = { ...updatedProjects[index], ...data, lastUpdated: new Date().toISOString() };
+                    this.updateStateAndRender(updatedProjects);
+                    this.UI.showStatusMessage('Project updated.', 'success');
+                }
+            },
+            
+            deleteProject(id) {
+                const updatedProjects = this.state.projects.filter(p => p.docId !== id);
+                this.updateStateAndRender(updatedProjects);
+                this.UI.showStatusMessage('Project deleted.', 'warning');
+            },
+            
+            async uploadToImgur(file) {
+                if (!navigator.onLine) {
+                    this.UI.showStatusMessage('Image upload requires connection.', 'warning');
+                    return new Promise(resolve => {
+                        const reader = new FileReader();
+                        reader.onload = e => resolve(e.target.result);
+                        reader.readAsDataURL(file);
+                    });
+                }
+                this.UI.setLoading(true);
+                const clientId = 'fac2059bf349912';
+                const formData = new FormData();
+                formData.append('image', file);
+                try {
+                    const response = await fetch('https://api.imgur.com/3/image', {
+                        method: 'POST', headers: { 'Authorization': `Client-ID ${clientId}` }, body: formData
+                    });
+                    if (!response.ok) throw new Error('Imgur upload failed');
+                    const result = await response.json();
+                    return result.data.link;
+                } catch (error) { console.error(error); throw error;
+                } finally { this.UI.setLoading(false); }
+            },
+
+            bindEventListeners() {
+                Object.entries(this.elements.viewSwitcher).forEach(([viewName, btn]) => btn.addEventListener('click', () => this.navigateTo(viewName)));
+                this.elements.printBtn.addEventListener('click', () => this.UI.printView());
+                this.elements.searchInput.addEventListener('input', () => this.UI.renderCurrentView());
+                this.elements.forceSyncBtn.addEventListener('click', () => {
+                    this.UI.showConfirmationModal(
+                        'Are you sure you want to clear all local data? This will remove any unsynced changes and re-download everything from the cloud.',
+                        () => this.forceSyncAndReload()
+                    );
+                });
+                document.getElementById('project-form').addEventListener('submit', e => this.handleFormSubmit(e));
+                document.getElementById('add-cut-btn').addEventListener('click', () => this.UI.addCutInput());
+                document.getElementById('add-custom-field-btn').addEventListener('click', () => this.UI.addCustomFieldInput());
+                document.getElementById('add-wheel-images-btn').addEventListener('click', () => this.UI.addWheelImageInput());
+                
+                const projectModalEl = document.getElementById('project-modal');
+                projectModalEl.addEventListener('click', e => {
+                    if (e.target.closest('.remove-dynamic-field')) {
+                        e.target.closest('.dynamic-field-group, .wheel-image-group').remove();
+                        this.UI.updateModalCutsVisualization();
+                    } else if (e.target.closest('.capture-image-btn')) {
+                        const group = e.target.closest('.wheel-image-group');
+                        if (group) this.UI.initializeCamera(group.querySelector('.wheel-image-input'));
+                    }
+                });
+                projectModalEl.addEventListener('change', e => {
+                    if (e.target.classList.contains('wheel-image-input')) {
+                        const preview = e.target.closest('.wheel-image-group').querySelector('.wheel-image-preview');
+                        this.UI.handleImagePreview(e.target, preview);
+                    }
+                });
+
+                document.getElementById('foil-cuts-container').addEventListener('input', e => {
+                    if(e.target.classList.contains('cut-input')) this.UI.updateModalCutsVisualization();
+                });
+
+                this.elements.mainContent.addEventListener('click', e => {
+                    const projectCard = e.target.closest('.kanban-card[data-id], .list-view-row[data-id]');
+                    const subItemCard = e.target.closest('.kanban-card[data-sub-item-id]');
+                    const deleteBtn = e.target.closest('.delete-project-btn');
+                    const deleteFoilBtn = e.target.closest('.delete-foil-btn');
+
+                    if (deleteBtn) {
+                        e.stopPropagation();
+                        this.UI.showConfirmationModal('Are you sure you want to delete this project?', () => this.deleteProject(deleteBtn.dataset.id));
+                    } else if (projectCard) {
+                        this.UI.openModal('edit', projectCard.dataset.id);
+                    } else if (subItemCard) {
+                        this.UI.openSubItemEditor(subItemCard.dataset.subItemId, subItemCard.dataset.parentProjectId);
+                    } else if (deleteFoilBtn) {
+                        this.UI.showConfirmationModal(`Are you sure you want to delete "${deleteFoilBtn.dataset.name}"?`, () => this.UI.deleteFoil(deleteFoilBtn.dataset.name));
+                    }
+                });
+                
+                this.elements.mainContent.addEventListener('change', e => {
+                     if (e.target.classList.contains('foil-name-input')) {
+                         const oldName = e.target.dataset.originalName;
+                         const newName = e.target.value.trim();
+                         FoilManager.updateFoil(oldName, newName).then(success => {
+                             if(success) e.target.dataset.originalName = newName;
+                             else e.target.value = oldName; // Revert on failure
+                         });
+                     }
+                });
+
+                const dropZone = document.getElementById('image-drop-zone'), fileInput = document.getElementById('project-image'), preview = document.getElementById('project-image-preview');
+                dropZone.addEventListener('click', () => fileInput.click());
+                dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+                dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragleave'));
+                dropZone.addEventListener('drop', e => {
+                    e.preventDefault(); dropZone.classList.remove('dragover');
+                    if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; this.UI.handleImagePreview(fileInput, preview); }
+                });
+                fileInput.addEventListener('change', () => this.UI.handleImagePreview(fileInput, preview));
+
+                this.elements.tagsFilterContainer.addEventListener('click', e => {
+                    if (e.target.classList.contains('tag-filter-pill')) {
+                        const tag = e.target.dataset.tag;
+                        this.state.activeFilterTags.has(tag) ? this.state.activeFilterTags.delete(tag) : this.state.activeFilterTags.add(tag);
+                        this.UI.renderCurrentView();
+                    }
+                });
+                
+                document.getElementById('fullscreen-image').addEventListener('click', () => this.elements.imageViewerModal.hide());
+                document.getElementById('viewer-prev-btn').addEventListener('click', () => this.UI.navigateViewer(-1));
+                document.getElementById('viewer-next-btn').addEventListener('click', () => this.UI.navigateViewer(1));
+                
+                document.getElementById('snap-btn').addEventListener('click', () => this.UI.snapAndSavePhoto());
+                document.getElementById('camera-modal').addEventListener('hidden.bs.modal', () => this.UI.stopCamera());
+                
+                document.getElementById('manage-sub-items-btn').addEventListener('click', () => this.UI.openSubItemsListModal());
+                document.getElementById('add-new-sub-item-btn').addEventListener('click', () => this.UI.openSubItemEditor());
+                document.getElementById('sub-items-list').addEventListener('click', e => {
+                    const editBtn = e.target.closest('.edit-sub-item-btn');
+                    const deleteBtn = e.target.closest('.delete-sub-item-btn');
+                    if (editBtn) this.UI.openSubItemEditor(editBtn.dataset.id);
+                    if (deleteBtn) this.UI.deleteSubItem(deleteBtn.dataset.id);
+                });
+
+                document.getElementById('sub-item-form').addEventListener('submit', e => this.UI.handleSubItemFormSubmit(e));
+                document.getElementById('sub-item-parent-project').addEventListener('change', e => this.UI.handleParentProjectChange(e.target.value));
+                document.getElementById('sub-item-capture-btn').addEventListener('click', () => this.UI.initializeCamera(document.getElementById('sub-item-image')));
+                document.getElementById('sub-item-image').addEventListener('change', e => this.UI.handleImagePreview(e.target, document.getElementById('sub-item-image-preview')));
+                
+                document.getElementById('manage-foils-btn').addEventListener('click', () => this.UI.openFoilManager());
+                document.getElementById('add-foil-btn').addEventListener('click', () => this.UI.addFoil());
+                document.getElementById('new-foil-name-input').addEventListener('keypress', e => { if (e.key === 'Enter') this.UI.addFoil(); });
+                document.getElementById('foils-list').addEventListener('click', e => {
+                    if (e.target.classList.contains('delete-foil-btn')) this.UI.deleteFoil(e.target.dataset.name);
+                });
+            },
+
+            navigateTo(viewName) {
+                this.state.currentView = viewName;
+                Object.values(this.elements.viewSwitcher).forEach(btn => btn.classList.remove('active'));
+                this.elements.viewSwitcher[viewName].classList.add('active');
+                
+                const createBtn = this.elements.createBtn;
+                let newCreateBtn = createBtn.cloneNode(true);
+                createBtn.parentNode.replaceChild(newCreateBtn, createBtn);
+                this.elements.createBtn = newCreateBtn;
+                
+                const searchInput = document.getElementById('search-input');
+                this.elements.tagsFilterContainer.style.display = 'flex';
+                this.elements.printBtn.style.display = 'block';
+
+                if (viewName === 'subItems') {
+                    newCreateBtn.innerHTML = `<i class="bi bi-plus-circle me-1"></i> Create Sub-item`;
+                    newCreateBtn.onclick = () => this.UI.openSubItemEditor();
+                    searchInput.placeholder = "Search Sub-items...";
+                } else if (viewName === 'foils') {
+                    newCreateBtn.innerHTML = `<i class="bi bi-plus-circle me-1"></i> Add Foil`;
+                    newCreateBtn.onclick = () => this.UI.addFoilRow();
+                    searchInput.placeholder = "Search Foils...";
+                    this.elements.tagsFilterContainer.style.display = 'none';
+                    this.elements.printBtn.style.display = 'none';
+                } else {
+                    newCreateBtn.innerHTML = `<i class="bi bi-plus-circle me-1"></i> Create Project`;
+                    newCreateBtn.onclick = () => this.UI.openModal('add');
+                     searchInput.placeholder = "Search Projects...";
+                }
+
+                this.UI.renderCurrentView();
+            },
+
+            async handleFormSubmit(e) {
+                e.preventDefault();
+                this.UI.setLoading(true);
+                const name = document.getElementById('project-name').value.trim();
+                const wheels = parseInt(document.getElementById('project-wheels').value, 10);
+                const editId = document.getElementById('project-edit-id').value;
+                if (!name || isNaN(wheels)) {
+                    this.UI.showStatusMessage("Please fill required fields.", 'danger');
+                    this.UI.setLoading(false);
+                    return;
+                }
+                try {
+                    const mainImageFile = document.getElementById('project-image').files[0];
+                    const existingProject = editId ? this.state.projects.find(p => p.docId === editId) : {};
+                    let mainImageUrl = document.getElementById('project-image-preview').dataset.originalUrl || (existingProject.imageUrl || '');
+                    if (mainImageFile) { mainImageUrl = await this.uploadToImgur(mainImageFile); }
+
+                    const wheelImagePromises = Array.from(document.querySelectorAll('.wheel-image-group')).map(async group => {
+                        const input = group.querySelector('.wheel-image-input');
+                        const preview = group.querySelector('.wheel-image-preview');
+                        if (input.files[0]) return await this.uploadToImgur(input.files[0]);
+                        if (preview.src && !preview.src.startsWith('data:')) return preview.src;
+                        return null;
+                    });
+                    const wheelImageUrls = (await Promise.all(wheelImagePromises)).filter(url => url);
+                    const cuts = Array.from(document.querySelectorAll('#foil-cuts-container .cut-input')).map(input => parseFloat(input.value)).filter(l => !isNaN(l) && l > 0).map(length => ({ length }));
+                    const customFields = Array.from(document.querySelectorAll('#custom-fields-container .custom-field-group')).map(g => ({ name: g.querySelector('.custom-field-name').value.trim(), value: g.querySelector('.custom-field-value').value.trim() })).filter(f => f.name && f.value);
+                    const tags = Array.from(document.querySelectorAll('#predefined-tags-container input[type="checkbox"]:checked')).map(cb => cb.value);
+                    const subItems = this.state.activeProjectSubItems;
+
+                    const projectData = { name, wheels, cuts, customFields, tags, imageUrl: mainImageUrl, wheelImages: wheelImageUrls, subItems };
+                    
+                    editId ? this.updateProject(editId, projectData) : this.addProject(projectData);
+                    this.elements.projectModal.hide();
+                } catch (error) {
+                    console.error("Form submission error:", error);
+                    this.UI.showStatusMessage(`An error occurred: ${error.message}`, 'danger');
+                } finally {
+                    this.UI.setLoading(false);
+                }
+            },
+
+            UI: {
+                setLoading(isLoading) { PSProjectApp.elements.loadingOverlay.style.display = isLoading ? 'flex' : 'none'; },
+
+                renderCurrentView() {
+                    const view = PSProjectApp.state.currentView;
+                    const searchTerm = PSProjectApp.elements.searchInput.value.trim();
+                    
+                    if (view === 'foils') {
+                        let foils = FoilManager.getFoils();
+                        if (searchTerm) {
+                            foils = foils.filter(f => f.toLowerCase().includes(searchTerm.toLowerCase()));
+                        }
+                        this.renderFoilsView(foils);
+                    } else {
+                        let projectsToRender = PSProjectApp.state.projects;
+                        const activeTags = PSProjectApp.state.activeFilterTags;
+                        if (searchTerm) {
+                            projectsToRender = PSProjectApp.state.fuse.search(searchTerm).map(result => result.item);
+                        }
+                        if (activeTags.size > 0) {
+                            projectsToRender = projectsToRender.filter(p => Array.from(activeTags).every(filterTag => (p.tags || []).includes(filterTag)));
+                        }
+                        
+                        this.renderTagsFilterBar();
+                        if (view === 'kanban') this.renderKanbanView(projectsToRender);
+                        else if (view === 'list') this.renderListView(projectsToRender);
+                        else if (view === 'subItems') this.renderSubItemsView(projectsToRender);
+                    }
+                    this.initTooltips();
+                },
+
+                renderKanbanView(projects) {
+                    const container = PSProjectApp.elements.mainContent;
+                    container.className = 'odoo-main-content';
+                    if (projects.length === 0) { container.innerHTML = `<div class="text-center text-muted"><div class="card p-5"><p class="mb-0 h5">No projects found.</p></div></div>`; return; }
+                    container.innerHTML = `<div class="kanban-container">${projects.map(p => this.createKanbanCard(p)).join('')}</div>`;
+                },
+
+                createKanbanCard(project) {
+                    const placeholderImg = `https://placehold.co/80x60/6c757d/ffffff?text=${encodeURIComponent(project.name)}`;
+                    const tagsHtml = (project.tags || []).map(tag => `<span class="badge bg-secondary-subtle text-secondary-emphasis">${tag}</span>`).join(' ');
+                    const imageUrl = (project.imageUrl && (project.imageUrl.startsWith('http') || project.imageUrl.startsWith('data:'))) ? project.imageUrl : placeholderImg;
+                    const subItemsCount = (project.subItems || []).length;
+                    return `
+                    <div class="kanban-card" data-id="${project.docId}">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="flex-grow-1 me-2">
+                               <h5 class="kanban-card-title">${project.name}</h5>
+                               <div class="project-tags-container d-flex flex-wrap gap-1">${tagsHtml}</div>
+                            </div>
+                            <img src="${imageUrl}" alt="${project.name}" class="img-thumbnail" style="width: 80px; height: 60px; object-fit: cover;" onerror="this.onerror=null;this.src='${placeholderImg}';">
+                        </div>
+                        <div class="kanban-card-body">
+                            ${this.createCutsVisualization(project.cuts)}
+                            <div class="mt-3">
+                                ${ (project.customFields || []).slice(0, 1).map(f => `<p class="mb-1 small"><strong>${f.name}:</strong> ${f.value}</p>`).join('')}
+                                ${ (project.customFields || []).length > 1 ? `<p class="mb-1 small text-muted">...and ${(project.customFields || []).length - 1} more fields</p>` : ''}
+                            </div>
+                        </div>
+                        <div class="kanban-card-footer">
+                            <span><i class="bi bi-gear-wide-connected"></i> ${project.wheels}</span>
+                            ${ (project.wheelImages || []).length > 0 ? `<span><i class="bi bi-card-image"></i> ${project.wheelImages.length} Imgs</span>` : ''}
+                            <span><i class="bi bi-scissors"></i> ${(project.cuts || []).length} Cuts</span>
+                            ${ subItemsCount > 0 ? `<span><i class="bi bi-diagram-3"></i> ${subItemsCount} Sub</span>` : ''}
+                            <button class="btn btn-sm btn-outline-danger delete-project-btn no-print ms-auto" data-id="${project.docId}"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </div>`;
+                },
+
+                renderListView(projects) {
+                    const container = PSProjectApp.elements.mainContent;
+                    container.className = 'odoo-main-content';
+                    if (projects.length === 0) { container.innerHTML = `<div class="text-center text-muted"><div class="card p-5"><p class="mb-0 h5">No projects found.</p></div></div>`; return; }
+                    const rowsHtml = projects.map(p => {
+                        const placeholderImg = `https://placehold.co/50x40/6c757d/ffffff?text=${encodeURIComponent(p.name[0] || '?')}`;
+                        const imageUrl = (p.imageUrl && (p.imageUrl.startsWith('http') || p.imageUrl.startsWith('data:'))) ? p.imageUrl : placeholderImg;
+                        const tagsHtml = (p.tags || []).map(tag => `<span class="badge bg-secondary-subtle text-secondary-emphasis">${tag}</span>`).join(' ');
+                        const subItemsCount = (p.subItems || []).length;
+                        return `
+                        <tr class="list-view-row" data-id="${p.docId}">
+                            <td><img src="${imageUrl}" class="img-thumbnail" style="width:50px; height:40px; object-fit: cover;" onerror="this.onerror=null;this.src='${placeholderImg}';"></td>
+                            <td class="fw-bold">${p.name}</td>
+                            <td><div class="d-flex flex-wrap gap-1">${tagsHtml}</div></td>
+                            <td>${p.wheels}</td>
+                            <td>${subItemsCount > 0 ? `${subItemsCount} sub-items` : 'N/A'}</td>
+                            <td>${this.createCutsVisualization(p.cuts, 'list')}</td>
+                            <td class="no-print text-end">
+                                <button class="btn btn-sm btn-outline-danger delete-project-btn" data-id="${p.docId}"><i class="bi bi-trash"></i></button>
+                            </td>
+                        </tr>`;
+                    }).join('');
+
+                    container.innerHTML = `<div id="list-view-content" class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Image</th><th>Project Name</th><th>Category</th><th>Wheels</th><th>Sub-items</th><th style="min-width: 200px;">Cuts Visualization</th><th class="no-print"></th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
+                },
+
+                renderSubItemsView(filteredProjects) {
+                    const container = PSProjectApp.elements.mainContent;
+                    container.className = 'odoo-main-content';
+                    const allSubItems = filteredProjects.flatMap(p => (p.subItems || []).map(sub => ({ ...sub, parentProjectName: p.name, parentProjectDocId: p.docId })));
+                    if (allSubItems.length === 0) { container.innerHTML = `<div class="text-center text-muted"><div class="card p-5"><p class="mb-0 h5">No sub-items found.</p></div></div>`; return; }
+                    const subItemsHtml = allSubItems.map(sub => {
+                        const placeholderImg = `https://placehold.co/80x60/6c757d/ffffff?text=${encodeURIComponent(sub.subCategoryName)}`;
+                        const imageUrl = sub.subCategoryImageUrl || placeholderImg;
+                        const parentWithCuts = PSProjectApp.state.projects.find(p => p.docId === sub.parentProjectId);
+                        const assignedFoilsCount = (sub.foilAssignments || []).filter(fa => fa.foilName).length;
+                        
+                        let cutsForViz = [];
+                        if (parentWithCuts && parentWithCuts.cuts) {
+                            cutsForViz = parentWithCuts.cuts.map((cut, index) => {
+                                const assignment = (sub.foilAssignments || []).find(a => a.cutIndex === index);
+                                return {
+                                    ...cut,
+                                    foilName: assignment ? assignment.foilName : null
+                                };
+                            });
+                        }
+
+                        return `
+                        <div class="kanban-card is-sub-item" data-sub-item-id="${sub.subItemId}" data-parent-project-id="${sub.parentProjectDocId}">
+                             <div class="d-flex justify-content-between align-items-start mb-2">
+                                 <div class="flex-grow-1 me-2">
+                                     <h5 class="kanban-card-title">${sub.subCategoryName}</h5>
+                                     <small class="text-muted d-block">Parent: ${sub.parentProjectName}</small>
+                                 </div>
+                                 <img src="${imageUrl}" alt="${sub.subCategoryName}" class="img-thumbnail" style="width: 80px; height: 60px; object-fit: cover;" onerror="this.onerror=null;this.src='${placeholderImg}';">
+                             </div>
+                             <div class="kanban-card-body">
+                                 ${this.createCutsVisualization(cutsForViz)}
+                             </div>
+                             <div class="kanban-card-footer">
+                                 <span><i class="bi bi-palette-fill"></i> ${assignedFoilsCount} Foils Assigned</span>
+                             </div>
+                        </div>`;
+                    }).join('');
+                    container.innerHTML = `<div class="kanban-container">${subItemsHtml}</div>`;
+                },
+                
+                renderFoilsView(foils) {
+                    const container = PSProjectApp.elements.mainContent;
+                    container.className = 'odoo-main-content';
+                    const rowsHtml = foils.map((foil, index) => `
+                        <tr>
+                            <th scope="row">${index + 1}</th>
+                            <td>
+                                <input type="text" class="form-control form-control-sm foil-name-input" value="${foil}" data-original-name="${foil}">
+                            </td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-danger delete-foil-btn" data-name="${foil}"><i class="bi bi-trash"></i></button>
+                            </td>
+                        </tr>
+                    `).join('');
+
+                    container.innerHTML = `
+                        <div id="foils-table-container" class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Manage Foils</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text text-muted">Add, edit, or delete foil types here. Changes are saved automatically.</p>
+                                <div class="table-responsive">
+                                    <table class="table table-striped align-middle">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 5%;">#</th>
+                                                <th>Foil Name</th>
+                                                <th style="width: 10%;" class="text-end">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="foils-table-body">
+                                            ${rowsHtml}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                },
+                
+                addFoilRow() {
+                    const newFoilName = `New Foil ${FoilManager.getFoils().length + 1}`;
+                    FoilManager.addFoil(newFoilName).then(() => this.renderFoilsView(FoilManager.getFoils()));
+                },
+                
+                async deleteFoil(name) {
+                    await FoilManager.deleteFoil(name);
+                    this.renderFoilsView(FoilManager.getFoils());
+                },
+
+                createCutsVisualization(cuts, viewType = 'default') {
+                    if (!cuts || cuts.length === 0) return `<div class="cuts-visualization-bar ${viewType === 'list' ? 'list-view' : ''}"><small class="text-muted m-auto">No cuts</small></div>`;
+                    const totalLength = cuts.reduce((s, c) => s + c.length, 0);
+                    if(totalLength === 0) return `<div class="cuts-visualization-bar ${viewType === 'list' ? 'list-view' : ''}"><small class="text-muted m-auto">No cuts</small></div>`;
+                    const segmentsHtml = cuts.map(cut => {
+                        const widthPercentage = (cut.length / totalLength) * 100;
+                        const labelContent = (cut.foilName && cut.foilName.trim() !== "")
+                            ? `${cut.foilName} (${cut.length})`
+                            : cut.length;
+                        const titleText = (cut.foilName && cut.foilName.trim() !== "")
+                            ? `${cut.foilName} (${cut.length} cm)`
+                            : `${cut.length} cm`;
+
+                        if (viewType === 'list') {
+                            return `<div class="cut-segment list-view" style="width: ${widthPercentage}%;" data-bs-toggle="tooltip" title="${titleText}">${labelContent}</div>`;
+                        }
+                        return `<div class="cut-segment" style="width: ${widthPercentage}%;" data-bs-toggle="tooltip" title="${titleText}"><div class="ruler-mark"></div><span class="ruler-label">${labelContent}</span></div>`;
+                    }).join('');
+                    return `<div class="cuts-visualization-bar ${viewType === 'list' ? 'list-view' : ''}">${segmentsHtml}</div>`;
+                },
+                
+                renderTagsFilterBar() {
+                    const allTags = new Set(PSProjectApp.state.projects.flatMap(p => p.tags || []));
+                    const container = PSProjectApp.elements.tagsFilterContainer;
+                    if (PREDEFINED_TAGS.length === 0 && allTags.size === 0) { container.innerHTML = ''; container.style.display = 'none'; return; }
+                    container.style.display = 'flex';
+                    let html = '<span class="fw-bold small text-muted me-2">Filter by Category:</span>';
+                    PREDEFINED_TAGS.forEach(tag => {
+                        const isActive = PSProjectApp.state.activeFilterTags.has(tag);
+                        html += `<span class="badge rounded-pill tag-filter-pill ${isActive ? 'active' : 'text-bg-light'}" data-tag="${tag}">${tag}</span>`;
+                    });
+                    container.innerHTML = html;
+                },
+                
+                updateModalCutsVisualization() {
+                    const cuts = Array.from(document.querySelectorAll('#foil-cuts-container .cut-input')).map(input => ({ length: parseFloat(input.value) || 0 }));
+                    document.getElementById('modal-cuts-visualization').innerHTML = this.createCutsVisualization(cuts);
+                    this.initTooltips();
+                },
+
+                showWheelImageGallery(imageUrls) {
+                    const galleryContainer = document.getElementById('gallery-container');
+                    galleryContainer.innerHTML = '';
+                    if (!imageUrls || imageUrls.length === 0) { galleryContainer.innerHTML = '<p class="text-muted col">No images found.</p>'; }
+                    else { imageUrls.forEach((url, index) => {
+                            const imgWrapper = document.createElement('div');
+                            imgWrapper.className = 'col';
+                            imgWrapper.innerHTML = `<div class="gallery-item"><img src="${url}" alt="Wheel Image"></div>`;
+                            imgWrapper.querySelector('.gallery-item').addEventListener('click', () => this.showFullscreenImage(imageUrls, index));
+                            galleryContainer.appendChild(imgWrapper);
+                        });
+                    }
+                    PSProjectApp.elements.wheelGalleryModal.show();
+                },
+
+                updateViewerContent(index) {
+                    PSProjectApp.state.currentViewerIndex = index;
+                    const { viewerImages } = PSProjectApp.state;
+                    const imgElement = document.getElementById('fullscreen-image'), captionElement = document.getElementById('viewer-caption'), prevBtn = document.getElementById('viewer-prev-btn'), nextBtn = document.getElementById('viewer-next-btn');
+                    imgElement.src = viewerImages[index];
+                    imgElement.style.animation = 'none'; imgElement.offsetHeight; imgElement.style.animation = null; 
+                    const hasMultiple = viewerImages.length > 1;
+                    prevBtn.style.display = hasMultiple ? 'block' : 'none';
+                    nextBtn.style.display = hasMultiple ? 'block' : 'none';
+                    captionElement.textContent = hasMultiple ? `Image ${index + 1} of ${viewerImages.length}` : '';
+                },
+
+                navigateViewer(direction) {
+                    const { viewerImages } = PSProjectApp.state;
+                    let newIndex = PSProjectApp.state.currentViewerIndex + direction;
+                    if (newIndex < 0) newIndex = viewerImages.length - 1;
+                    if (newIndex >= viewerImages.length) newIndex = 0;
+                    this.updateViewerContent(newIndex);
+                },
+
+                showFullscreenImage(imageUrls, index) {
+                    PSProjectApp.state.viewerImages = imageUrls;
+                    this.updateViewerContent(index);
+                    PSProjectApp.elements.imageViewerModal.show();
+                },
+
+                openModal(mode, id = null) {
+                    const form = document.getElementById('project-form');
+                    form.reset();
+                    ['foil-cuts-container', 'custom-fields-container', 'predefined-tags-container', 'wheel-images-container', 'modal-cuts-visualization', 'sub-items-summary-container'].forEach(id => document.getElementById(id).innerHTML = '');
+                    const preview = document.getElementById('project-image-preview');
+                    preview.classList.add('d-none'); preview.src = ''; preview.dataset.originalUrl = '';
+                    document.getElementById('project-edit-id').value = (mode === 'edit' && id) ? id : '';
+                    document.getElementById('modal-title').textContent = (mode === 'add') ? 'Create New Project' : 'Edit Project';
+                    
+                    const viewWheelImagesBtn = document.getElementById('view-wheel-images-btn');
+                    viewWheelImagesBtn.classList.add('d-none'); viewWheelImagesBtn.onclick = null;
+                    PSProjectApp.state.activeProjectSubItems = [];
+
+                    this.addPredefinedTagInputs();
+                    if (mode === 'edit' && id) {
+                        const p = PSProjectApp.state.projects.find(proj => proj.docId === id);
+                        if (p) {
+                            document.getElementById('project-name').value = p.name;
+                            document.getElementById('project-wheels').value = p.wheels;
+                            if (p.wheelImages && p.wheelImages.length > 0) {
+                                viewWheelImagesBtn.classList.remove('d-none');
+                                viewWheelImagesBtn.onclick = () => this.showWheelImageGallery(p.wheelImages);
+                            }
+                            if (p.imageUrl) { preview.src = p.imageUrl; preview.dataset.originalUrl = p.imageUrl; preview.classList.remove('d-none'); }
+                            (p.cuts || []).forEach(cut => this.addCutInput(cut.length));
+                            (p.customFields || []).forEach(field => this.addCustomFieldInput(field.name, field.value));
+                            (p.tags || []).forEach(tag => {
+                                const checkbox = document.querySelector(`#predefined-tags-container input[value="${tag}"]`);
+                                if (checkbox) checkbox.checked = true;
+                            });
+                            this.populateWheelImageInputs(p.wheelImages);
+                            PSProjectApp.state.activeProjectSubItems = JSON.parse(JSON.stringify(p.subItems || []));
+                            this.renderSubItemsSummary();
+                        }
+                    }
+                    this.updateModalCutsVisualization();
+                    PSProjectApp.elements.projectModal.show();
+                },
+
+                addPredefinedTagInputs() { document.getElementById('predefined-tags-container').innerHTML = PREDEFINED_TAGS.map(tag => `<div class="tag-checkbox-pill"><input type="checkbox" id="tag-${tag.replace(/\s+/g, '-')}" value="${tag}"><label for="tag-${tag.replace(/\s+/g, '-')}">${tag}</label></div>`).join(''); },
+                addCutInput(value = '') { document.getElementById('foil-cuts-container').insertAdjacentHTML('beforeend', `<div class="dynamic-field-group"><input type="number" class="form-control form-control-sm cut-input" placeholder="Length (cm)" value="${value}" step="any" min="0"><button type="button" class="btn btn-sm btn-outline-danger remove-dynamic-field">&times;</button></div>`); },
+                addCustomFieldInput(name = '', value = '') { document.getElementById('custom-fields-container').insertAdjacentHTML('beforeend', `<div class="dynamic-field-group custom-field-group"><input type="text" class="form-control form-control-sm custom-field-name" placeholder="Field Name" value="${name}"><input type="text" class="form-control form-control-sm custom-field-value" placeholder="Field Value" value="${value}"><button type="button" class="btn btn-sm btn-outline-danger remove-dynamic-field">&times;</button></div>`); },
+                addWheelImageInput(imageUrl = '') { document.getElementById('wheel-images-container').insertAdjacentHTML('beforeend', `<div class="wheel-image-group"><img src="${imageUrl||""}" class="wheel-image-preview ${imageUrl?'':'d-none'}"><input type="file" class="form-control form-control-sm wheel-image-input" accept="image/*"><button type="button" class="btn btn-sm btn-outline-secondary capture-image-btn" title="Capture from camera"><i class="bi bi-camera"></i></button><button type="button" class="btn btn-sm btn-outline-danger remove-dynamic-field">&times;</button></div>`); },
+                populateWheelImageInputs(existingImages = []) { const container = document.getElementById('wheel-images-container'); container.innerHTML = ''; (existingImages || []).forEach(imageUrl => this.addWheelImageInput(imageUrl)); },
+                handleImagePreview(fileInput, previewElement) { const file = fileInput.files[0]; if (file && file.type.startsWith('image/')) { const reader = new FileReader(); reader.onload = e => { previewElement.src = e.target.result; previewElement.classList.remove('d-none'); }; reader.readAsDataURL(file); } },
+                printView() { window.print(); },
+                showStatusMessage(message, level = 'success') { const el = PSProjectApp.elements.statusMessage; el.textContent = message; el.className = `me-2 text-${level} visible`; setTimeout(() => el.classList.remove('visible'), 4000); },
+                showConfirmationModal(m,onC){const M=document.getElementById('confirmation-modal');M.querySelector('.modal-body').textContent=m;const cB=M.querySelector('#confirmation-modal-confirm-btn'),nB=cB.cloneNode(true);cB.parentNode.replaceChild(nB,cB);nB.addEventListener('click',()=>{onC();PSProjectApp.elements.confirmationModal.hide();},{once:true});PSProjectApp.elements.confirmationModal.show();},
+                initTooltips(){[...document.querySelectorAll('[data-bs-toggle="tooltip"]')].forEach(e=>new bootstrap.Tooltip(e));},
+                initializeCamera(fileInput) { if (!('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices)) { this.showStatusMessage('Camera API not available.', 'danger'); return; } PSProjectApp.state.activeImageInput = fileInput; const video = document.getElementById('camera-stream'); navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then(stream => { PSProjectApp.state.cameraStream = stream; video.srcObject = stream; PSProjectApp.elements.cameraModal.show(); }).catch(err => { console.error("Camera error:", err); this.showStatusMessage('Could not access camera.', 'danger'); }); },
+                snapAndSavePhoto() { const video = document.getElementById('camera-stream'), canvas = document.getElementById('camera-canvas'), context = canvas.getContext('2d'), input = PSProjectApp.state.activeImageInput; if (!input || !PSProjectApp.state.cameraStream) return; const preview = input.id === 'sub-item-image' ? document.getElementById('sub-item-image-preview') : input.closest('.wheel-image-group').querySelector('.wheel-image-preview'); canvas.width = video.videoWidth; canvas.height = video.videoHeight; context.drawImage(video, 0, 0, canvas.width, canvas.height); canvas.toBlob(blob => { const file = new File([blob], `capture_${Date.now()}.jpg`, { type: 'image/jpeg' }); const dataTransfer = new DataTransfer(); dataTransfer.items.add(file); input.files = dataTransfer.files; this.handleImagePreview(input, preview); PSProjectApp.elements.cameraModal.hide(); }, 'image/jpeg', 0.9); },
+                stopCamera() { if (PSProjectApp.state.cameraStream) { PSProjectApp.state.cameraStream.getTracks().forEach(track => track.stop()); PSProjectApp.state.cameraStream = null; } },
+                renderSubItemsSummary() { const container = document.getElementById('sub-items-summary-container'); const subItems = PSProjectApp.state.activeProjectSubItems; if (subItems.length === 0) container.innerHTML = `<p class="text-muted small mb-0">No sub-items added yet.</p>`; else container.innerHTML = `<p class="small mb-0"><strong>${subItems.length}</strong> sub-item(s) configured. Click 'Manage' to edit.</p>`; },
+                openSubItemsListModal() { this.renderSubItemsList(); PSProjectApp.elements.subItemsListModal.show(); },
+                renderSubItemsList() { const container = document.getElementById('sub-items-list'); const subItems = PSProjectApp.state.activeProjectSubItems; if(subItems.length === 0) { container.innerHTML = `<p class="text-muted text-center p-4">No sub-items. Click 'Add New' to start.</p>`; return; } container.innerHTML = subItems.map(item => { const parentProject = PSProjectApp.state.projects.find(p => p.docId === item.parentProjectId); return `<div class="list-group-item d-flex justify-content-between align-items-center"><div><h6 class="mb-1">${item.subCategoryName}</h6><small class="text-muted">Based on: ${parentProject ? parentProject.name : 'Unknown'}</small></div><div><button class="btn btn-sm btn-outline-primary edit-sub-item-btn" data-id="${item.subItemId}"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-outline-danger delete-sub-item-btn" data-id="${item.subItemId}"><i class="bi bi-trash"></i></button></div></div>`; }).join(''); },
+                deleteSubItem(subItemId) { PSProjectApp.state.activeProjectSubItems = PSProjectApp.state.activeProjectSubItems.filter(item => item.subItemId !== subItemId); this.renderSubItemsList(); this.renderSubItemsSummary(); },
+                openSubItemEditor(subItemId = null, parentProjectId = null) { const form = document.getElementById('sub-item-form'); form.reset(); PSProjectApp.state.editingSubItemId = subItemId; document.getElementById('sub-item-parent-project-id-for-save').value = parentProjectId || ''; document.getElementById('sub-item-cuts-visualization').innerHTML = ''; document.getElementById('sub-item-foil-table-container').innerHTML = '<p class="text-muted p-3 text-center">Select parent project.</p>'; const preview = document.getElementById('sub-item-image-preview'); preview.src = ''; preview.classList.add('d-none'); this.populateParentProjectDropdown(); if (subItemId && parentProjectId) { const parentProject = PSProjectApp.state.projects.find(p => p.docId === parentProjectId); const item = parentProject?.subItems.find(i => i.subItemId === subItemId); if(item){ document.getElementById('sub-item-editor-title').textContent = 'Edit Sub-item'; document.getElementById('sub-item-edit-id').value = item.subItemId; document.getElementById('sub-item-parent-project').value = item.parentProjectId; document.getElementById('sub-item-category-name').value = item.subCategoryName; if (item.subCategoryImageUrl) { preview.src = item.subCategoryImageUrl; preview.classList.remove('d-none'); } this.handleParentProjectChange(item.parentProjectId, item.foilAssignments); } } else { document.getElementById('sub-item-editor-title').textContent = 'Add New Sub-item'; document.getElementById('sub-item-edit-id').value = ''; } PSProjectApp.elements.subItemEditorModal.show(); },
+                populateParentProjectDropdown() { const select = document.getElementById('sub-item-parent-project'); const projects = PSProjectApp.state.projects; select.innerHTML = '<option value="" selected disabled>-- Select a Project --</option>'; projects.forEach(p => { if (p.cuts && p.cuts.length > 0) select.innerHTML += `<option value="${p.docId}">${p.name}</option>`; }); },
+                handleParentProjectChange(projectId, existingAssignments = []) { const parentProject = PSProjectApp.state.projects.find(p => p.docId === projectId); if (!parentProject) return; document.getElementById('sub-item-cuts-visualization').innerHTML = this.createCutsVisualization(parentProject.cuts); this.initTooltips(); this.renderFoilAssignmentTable(parentProject.cuts, existingAssignments); },
+                renderFoilAssignmentTable(cuts, assignments = []) { const container = document.getElementById('sub-item-foil-table-container'); if (!cuts || cuts.length === 0) { container.innerHTML = '<p class="text-muted p-3 text-center">Project has no cuts.</p>'; return; } const foilOptions = FoilManager.getFoils().map(f => `<option value="${f}">${f}</option>`).join(''); const tableRows = cuts.map((cut, index) => `<tr><td>${index + 1}</td><td>${cut.length} cm</td><td><select class="form-select form-select-sm foil-assignment-select" data-cut-index="${index}"><option value="">-- Select --</option>${foilOptions}</select></td></tr>`).join(''); container.innerHTML = `<table class="table table-sm table-bordered mb-0"><thead class="table-light"><tr><th>#</th><th>Length</th><th>Foil</th></tr></thead><tbody>${tableRows}</tbody></table>`; assignments.forEach(a => { const sel = container.querySelector(`select[data-cut-index="${a.cutIndex}"]`); if(sel) sel.value = a.foilName; }); },
+                async handleSubItemFormSubmit(e) { e.preventDefault(); this.setLoading(true); try { let parentProjectId = document.getElementById('sub-item-parent-project').value; const subCategoryName = document.getElementById('sub-item-category-name').value.trim(); if (!parentProjectId || !subCategoryName) { this.showStatusMessage('Please fill all required fields.', 'danger'); return; } let subCategoryImageUrl = document.getElementById('sub-item-image-preview').src; const imageFile = document.getElementById('sub-item-image').files[0]; if (imageFile) subCategoryImageUrl = await PSProjectApp.uploadToImgur(imageFile); else if (subCategoryImageUrl.startsWith('data:')) subCategoryImageUrl = ''; const foilAssignments = Array.from(document.querySelectorAll('.foil-assignment-select')).map(sel => ({ cutIndex: parseInt(sel.dataset.cutIndex, 10), foilName: sel.value })).filter(a => a.foilName); if (PSProjectApp.elements.projectModal._isShown) { const subItemId = PSProjectApp.state.editingSubItemId || `sub_${Date.now()}`; const subItemData = { subItemId, parentProjectId, subCategoryName, subCategoryImageUrl, foilAssignments }; if (PSProjectApp.state.editingSubItemId) { const index = PSProjectApp.state.activeProjectSubItems.findIndex(i => i.subItemId === PSProjectApp.state.editingSubItemId); PSProjectApp.state.activeProjectSubItems[index] = subItemData; } else { PSProjectApp.state.activeProjectSubItems.push(subItemData); } this.renderSubItemsList(); this.renderSubItemsSummary(); } else { const allProjects = [...PSProjectApp.state.projects]; const parentProject = allProjects.find(p => p.docId === parentProjectId); if (!parentProject) throw new Error("Parent project not found!"); if (!parentProject.subItems) parentProject.subItems = []; const editingId = document.getElementById('sub-item-edit-id').value; if (editingId) { const subItemIndex = parentProject.subItems.findIndex(si => si.subItemId === editingId); if (subItemIndex > -1) parentProject.subItems[subItemIndex] = { ...parentProject.subItems[subItemIndex], parentProjectId, subCategoryName, subCategoryImageUrl, foilAssignments }; } else { const subItemId = `sub_${Date.now()}`; parentProject.subItems.push({ subItemId, parentProjectId, subCategoryName, subCategoryImageUrl, foilAssignments }); } PSProjectApp.updateStateAndRender(allProjects); } PSProjectApp.elements.subItemEditorModal.hide(); } catch (error) { console.error("Sub-item save error:", error); this.showStatusMessage('Failed to save sub-item.', 'danger'); } finally { this.setLoading(false); } },
+                openFoilManager() { this.renderFoilsList(); PSProjectApp.elements.foilManagerModal.show(); },
+                renderFoilsList() { const list = document.getElementById('foils-list'), foils = FoilManager.getFoils(); if (foils.length === 0) list.innerHTML = `<li class="list-group-item text-muted">No foils defined.</li>`; else list.innerHTML = foils.map(name => `<li class="list-group-item d-flex justify-content-between align-items-center">${name}<button class="btn btn-sm btn-outline-danger delete-foil-btn" data-name="${name}">&times;</button></li>`).join(''); },
+                async addFoil() {
+                    const input = document.getElementById('new-foil-name-input');
+                    const name = input.value.trim();
+                    const success = await FoilManager.addFoil(name);
+                    if (success) {
+                        this.renderFoilsList();
+                        input.value = '';
+                    } else if (name) {
+                        this.showStatusMessage('Foil name already exists.', 'warning');
+                    }
+                },
+                async deleteFoil(name) {
+                    await FoilManager.deleteFoil(name);
+                    this.renderFoilsList();
+                }
+            }
+        };
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(reg => console.log('ServiceWorker registered.', reg)).catch(err => console.log('ServiceWorker registration failed: ', err));
+            });
+        }
+
+        PSProjectApp.init();
+
+        history.pushState({ page: 1 }, "", "");
+        window.addEventListener('popstate', function(event) {
+            const openModalElement = document.querySelector('.modal.show');
+            if (openModalElement) {
+                const modalInstance = bootstrap.Modal.getInstance(openModalElement);
+                if (modalInstance) modalInstance.hide();
+                history.pushState({ page: 1 }, "", "");
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+    });
+    </script>
+</body>
+</html>
