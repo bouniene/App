@@ -180,7 +180,7 @@
             color: #333;
         }
         .ps-block .ps-value {
-            color: #524848;
+            color: #4f3838;
             margin-left: 5px;
         }
 
@@ -497,7 +497,7 @@
                 print-color-adjust: exact !important;
             }
             .ps-value {
-                color: #524848 !important;
+                color: #4f3838 !important;
             }
             .date-span {
                 font-weight: 800 !important;
@@ -528,6 +528,11 @@
     <!-- App Header -->
     <header class="app-header no-print">
         <div class="d-flex align-items: center">
+             <!-- New Back Button -->
+             <button id="go-back-btn" class="btn btn-outline-secondary me-2" title="رجوع">
+                 <i class="bi bi-arrow-left"></i>
+             </button>
+
              <button id="panel-toggle-btn" class="btn btn-outline-secondary me-3" title="Show/Hide Controls Panel">
                  <i class="bi bi-layout-sidebar-inset"></i>
             </button>
@@ -850,6 +855,16 @@
             },
 
             bindEventListeners() {
+                // NEW: Back Button Event Listener
+                document.getElementById('go-back-btn').addEventListener('click', () => {
+                    if (window.history.length > 1) {
+                        window.history.back();
+                    } else {
+                        // Fallback if no history (optional: go to home or alert)
+                        console.log("No history to go back to.");
+                    }
+                });
+
                 this.elements.panelToggleBtn.addEventListener('click', () => this.UI.toggleControlsPanel());
                 document.getElementById('toggle-logo-btn').addEventListener('click', () => this.UI.toggleLogo());
                 document.getElementById('change-logo-btn').addEventListener('click', () => this.ImageHandler.showModal('logo'));
