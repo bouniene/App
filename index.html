@@ -769,7 +769,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!apps) return '';
         let cardsHtml = apps.map(app => {
             const isFolder = app.type === 'folder';
-            const href = isFolder ? 'javascript:void(0)' : app.url;
+            const href = isFolder ? `#${app.title}` : app.url; // CHANGED: href uses title hash for folders
             const targetAttr = isFolder ? `data-target="page-${app.id}"` : `href="${href}"`;
             const editButton = showAddCards ? `<button class="edit-app-btn" data-id="${app.id}" title="تعديل"><span class="material-icons">edit</span></button>` : '';
             const folderIndicator = isFolder && showAddCards ? `<span class="folder-indicator" title="يحتوي على تطبيقات فرعية"><span class="material-icons">folder</span></span>` : '';
@@ -791,7 +791,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // ### MODIFIED: renderPreviewAndFinal now includes Logo AND responsive h1 classes ###
     const renderPreviewAndFinal = (showAddCards, includeEditButton) => {
         let allPages = {};
-        const buildSubPages=(apps,parentIdForBack)=>{if(!apps)return;apps.forEach(app=>{if(app.type==="folder"){const e=`page-${app.id}`,t=`<a href="javascript:void(0)" class="back-btn" data-target="${parentIdForBack}"><span class="material-icons">arrow_forward</span></a>`;allPages[app.id]=`<div id="${e}" class="dashboard-page"><header class="dashboard-header">${t}<h1 class="text-xl sm:text-2xl font-bold">${app.title}</h1></header><main class="app-grid-container"><div class="app-grid">${generatePagesRecursive(app.children,e,showAddCards)}</div></main></div>`;app.children&&buildSubPages(app.children,e)}})};
+        const buildSubPages=(apps,parentIdForBack)=>{if(!apps)return;apps.forEach(app=>{if(app.type==="folder"){const e=`page-${app.id}`,t=`<a href="javascript:void(0)" class="back-btn" data-target="${parentIdForBack}"><span class="material-icons">arrow_forward</span></a>`;
+        // CHANGED: Added data-folder-name attribute
+        allPages[app.id]=`<div id="${e}" class="dashboard-page" data-folder-name="${app.title}"><header class="dashboard-header">${t}<h1 class="text-xl sm:text-2xl font-bold">${app.title}</h1></header><main class="app-grid-container"><div class="app-grid">${generatePagesRecursive(app.children,e,showAddCards)}</div></main></div>`;app.children&&buildSubPages(app.children,e)}})};
         
         buildSubPages(appData, 'main-dashboard');
         
@@ -807,7 +809,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const mainCards = generatePagesRecursive(appData, 'main-dashboard', showAddCards);
         
-        const mainDashboard = `<div id="main-dashboard" class="dashboard-page active">
+        // CHANGED: Added data-folder-name="" for root
+        const mainDashboard = `<div id="main-dashboard" class="dashboard-page active" data-folder-name="">
             <header class="dashboard-header">
                 ${logoContainer}
                 <h1 class="text-xl sm:text-2xl font-bold">${dashboardTitleInput.value}</h1>
@@ -842,7 +845,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.preventDefault();
                 const targetId = link.getAttribute('data-target');
                 previewBody.querySelector('.dashboard-page.active')?.classList.remove('active');
-                previewBody.querySelector(`#${targetId}`)?.classList.add('active');
+                const targetPage = previewBody.querySelector(`#${targetId}`);
+                if(targetPage) {
+                    targetPage.classList.add('active');
+                    // CHANGED: Update Hash
+                    const folderName = targetPage.getAttribute('data-folder-name');
+                    if (folderName !== null) {
+                        // Update the URL hash with the folder name
+                        window.location.hash = folderName;
+                    }
+                }
             };
         });
     };
