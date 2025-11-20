@@ -158,14 +158,35 @@
             padding-bottom: 0.8rem;
             margin-bottom: 1rem;
         }
+        /* NEW: Wrapper for logo and Ps block */
+        .header-left {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
         .page-header img.company-logo {
             max-width: 130px;
             max-height: 60px;
             object-fit: contain;
             cursor: pointer;
         }
+        /* NEW: Ps Block Styles */
+        .ps-block {
+            margin-top: 0.75rem;
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+        .ps-block .ps-title {
+            color: #333;
+        }
+        .ps-block .ps-value {
+            color: #524848;
+            margin-left: 5px;
+        }
+
         .page-header .title-block {
             text-align: right;
+            flex-shrink: 0; /* Prevent shrinking */
         }
         .page-header h1 {
             font-size: 1.8rem;
@@ -177,6 +198,11 @@
             margin: 0;
             font-size: 0.85rem;
             color: #555;
+        }
+
+        /* Reverted Date Styling + Bold */
+        .date-span {
+            font-weight: 800;
         }
         
         .page-section {
@@ -209,21 +235,62 @@
             text-align: center;
             vertical-align: middle;
         }
+        /* MODIFIED: Notes Cell Alignment - Now Centered */
+        .custom-table td[data-key="notes"] {
+            vertical-align: top;
+            text-align: center; /* Changed to Center */
+            padding: 0.6rem;
+        }
         .custom-table th {
             background-color: #f8f9fa;
             font-weight: 600;
         }
         .custom-table .table-image {
-             width: 50px;
-             height: 50px;
+             /* MODIFIED: Width is now 100% of the cell */
+             width: 100%; 
+             height: 50px; /* Default height */
              object-fit: cover;
              cursor: pointer;
              border-radius: 4px;
+             transition: height 0.1s ease;
         }
          .custom-table .table-image:hover {
             outline: 2px solid rgb(var(--bs-primary-rgb));
         }
+        /* NEW: Row Resizing Styles */
+        .resizable-cell {
+            position: relative;
+        }
+        .row-resizer-handle {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            cursor: ns-resize;
+        }
+        /* NEW: Column Resizing Styles */
+        .custom-table th {
+            position: relative; /* Needed for the handle */
+        }
+        .col-resizer-handle {
+            position: absolute;
+            top: 0;
+            right: -3px; /* Positioned slightly outside */
+            width: 6px;
+            height: 100%;
+            cursor: col-resize;
+            z-index: 10;
+        }
+        .col-resizer-handle:hover {
+            background-color: rgba(var(--bs-primary-rgb), 0.2);
+        }
+        .table-actions-cell {
+            position: relative;
+            width: 50px; 
+        }
 
+        /* MODIFIED: Notes Section - Now Centered */
         .notes-section {
             border: 1px solid #eee;
             padding: 0.8rem;
@@ -232,6 +299,7 @@
             min-height: 80px;
             white-space: pre-wrap;
             font-size: 0.85rem;
+            text-align: center; /* Centered */
         }
 
         /* --- NEW/UPDATED Visual Foil Bar Styles --- */
@@ -354,7 +422,22 @@
             font-size: 0.9rem;
         }
 
-        /* --- Print Styles --- */
+        /* Rule Item Style in Modal */
+        .rule-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 8px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+        .rule-color-preview {
+            width: 24px; height: 24px; border-radius: 4px; border: 1px solid #ccc;
+        }
+
+        /* --- Print Styles (Enhanced for WYSIWYG) --- */
         @page {
             size: A4;
             margin: 0; /* Let HTML control margins */
@@ -363,6 +446,8 @@
             body { 
                 background-color: white !important; 
                 font-size: 10pt;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
             .no-print { 
                 display: none !important; 
@@ -378,23 +463,18 @@
                 gap: 0;
             }
 
-            /* Core Logic: Use table display for repeating headers/footers */
+            /* Ensure pages start new sheets */
             .a4-page {
-                display: table;
+                margin: 0;
                 width: 100%;
                 box-shadow: none;
                 border: none;
                 page-break-after: always;
+                min-height: 297mm; /* Enforce height */
+                padding: 12mm; /* Ensure padding matches screen */
             }
             .a4-page:last-of-type {
                 page-break-after: auto;
-            }
-            .page-header {
-                display: table-header-group;
-            }
-            .page-footer {
-                display: table-footer-group;
-                position: static; /* Override screen styling */
             }
 
             /* --- Read-only and color adjustments --- */
@@ -406,9 +486,21 @@
                  -webkit-user-modify: read-only !important;
              }
             
-            .visual-bar-segment, .foil-repetition-badge {
+            /* Force background colors for conditional formatting */
+            td[style*="background-color"] {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
+            }
+            
+            .visual-bar-segment, .foil-repetition-badge, .ps-value {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .ps-value {
+                color: #524848 !important;
+            }
+            .date-span {
+                font-weight: 800 !important;
             }
             
             .foil-repetition-badge {
@@ -435,7 +527,7 @@
 
     <!-- App Header -->
     <header class="app-header no-print">
-        <div class="d-flex align-items-center">
+        <div class="d-flex align-items: center">
              <button id="panel-toggle-btn" class="btn btn-outline-secondary me-3" title="Show/Hide Controls Panel">
                  <i class="bi bi-layout-sidebar-inset"></i>
             </button>
@@ -444,8 +536,10 @@
                  Work Order System
             </h4>
         </div>
-        <div class="ms-auto d-flex align-items-center gap-2">
+        <div class="ms-auto d-flex align-items: center gap-2">
             <div class="btn-group">
+                <!-- Highlight Rules Button Moved Here -->
+                <button class="btn btn-outline-secondary" id="manage-rules-btn" title="Highlight Rules"><i class="bi bi-gear"></i></button>
                 <button class="btn btn-outline-secondary" id="toggle-logo-btn" title="Toggle Logo"><i class="bi bi-card-image"></i></button>
                 <button class="btn btn-outline-secondary" id="change-logo-btn" title="Change Logo"><i class="bi bi-pencil-square"></i></button>
             </div>
@@ -468,9 +562,19 @@
                 </button>
             </div>
             
+            <!-- Ps: Value Section -->
+            <div class="control-section">
+                <h5><i class="bi bi-tags"></i>2. Ps: Value (for active page)</h5>
+                <select id="ps-value-select" class="form-select">
+                    <option value="100">100</option>
+                    <option value="75">75</option>
+                    <option value="75-1">75-1</option>
+                </select>
+            </div>
+            
             <!-- Notes Section -->
             <div class="control-section">
-                <h5><i class="bi bi-chat-left-text"></i>2. Additional Notes (for active page)</h5>
+                <h5><i class="bi bi-chat-left-text"></i>3. Additional Notes (for active page)</h5>
                 <textarea id="notes-content" class="form-control" rows="5" placeholder="Add any special instructions..."></textarea>
             </div>
         </aside>
@@ -491,37 +595,52 @@
                 <button class="btn btn-sm btn-danger delete-page-btn" title="Delete Page"><i class="bi bi-trash"></i></button>
             </div>
             <header class="page-header">
-                <div class="logo-container">
-                    <img src="https://i.imgur.com/4l4rBjF.png" alt="Company Logo" class="company-logo" data-image-target="logo">
+                <!-- Header Left Wrapper -->
+                <div class="header-left">
+                    <div class="logo-container">
+                        <img src="https://i.imgur.com/4l4rBjF.png" alt="Company Logo" class="company-logo" data-image-target="logo">
+                    </div>
+                    <!-- Ps Block -->
+                    <div class="ps-block">
+                        <span class="ps-title">Ps:</span>
+                        <span class="ps-value" data-key="psValue" contenteditable="true">100</span>
+                    </div>
                 </div>
+                
                 <div class="title-block">
                     <h1 data-key="title" contenteditable="true">Production Work Order</h1>
                     <p>
-                        <strong>ID:</strong> <span data-key="id" contenteditable="true">WO-001</span> | 
-                        <strong>Date:</strong> <span data-key="date" contenteditable="true">2025-10-21</span>
+                        <strong>ID:</strong> <span data-key="id" contenteditable="true">WO-001</span> |
+                        <!-- Reverted Date Structure but Bold -->
+                        <strong>Date:</strong> <span data-key="date" contenteditable="true" class="date-span">2025-10-21</span>
                     </p>
-                    <p><strong>To:</strong> <span data-key="recipient" contenteditable="true">Production Dept.</span></p>
+                    <p class="mt-1"><strong>To:</strong> <span data-key="recipient" contenteditable="true">Production Dept.</span></p>
                 </div>
             </header>
             
             <section class="page-section" data-section="customTable">
                 <div class="page-section-header">
                     <h3><i class="bi bi-table me-2"></i>Specifications Table</h3>
-                    <button class="btn btn-sm btn-outline-success add-row-btn no-print" title="Add Blank Row"><i class="bi bi-plus-lg"></i></button>
+                    <!-- MODIFIED: Added Delete All button -->
+                    <div class="btn-group no-print">
+                        <button class="btn btn-sm btn-outline-success add-row-btn" title="Add Blank Row"><i class="bi bi-plus-lg"></i></button>
+                        <button class="btn btn-sm btn-outline-info duplicate-last-row-btn" title="Duplicate Last Row"><i class="bi bi-clipboard-plus"></i></button>
+                        <button class="btn btn-sm btn-outline-danger delete-all-rows-btn" title="Delete ALL Rows"><i class="bi bi-trash-fill"></i></button>
+                    </div>
                 </div>
                 <div class="custom-table-render" data-key="customTable"></div>
             </section>
             
             <section class="page-section" data-section="visualBars">
                 <div class="page-section-header">
-                     <h3><i class="bi bi-rulers me-2"></i>Foil Composition</h3>
+                      <h3><i class="bi bi-rulers me-2"></i>Foil Composition</h3>
                 </div>
                  <div class="visual-bars-render" data-key="visualBars"></div>
             </section>
 
             <section class="page-section" data-section="notes">
                  <div class="page-section-header">
-                      <h3><i class="bi bi-chat-left-text me-2"></i>Notes</h3>
+                        <h3><i class="bi bi-chat-left-text me-2"></i>Notes</h3>
                  </div>
                 <div data-key="notes" contenteditable="true" class="notes-section"></div>
             </section>
@@ -544,6 +663,42 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary" id="confirmationModalConfirm">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Rules Management Modal -->
+    <div class="modal fade" id="rulesModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Highlight Rules</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted">Define rules to color the "Product" cell if it contains specific text (e.g., "p" or "v"). <br><span class="text-danger fw-bold">*Auto: Cells without letters (empty/numbers) turn RED.</span></p>
+                    <div id="rules-list-container" class="mb-3">
+                        <!-- Rules will be rendered here -->
+                    </div>
+                    <hr>
+                    <h6>Add New Rule</h6>
+                    <div class="row g-2 align-items-end">
+                        <div class="col-5">
+                            <label class="form-label small">Text/Letter</label>
+                            <input type="text" class="form-control form-control-sm" id="new-rule-text" placeholder="e.g. p">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label small">Color</label>
+                            <input type="color" class="form-control form-control-sm form-control-color w-100" id="new-rule-color" value="#d1e7dd">
+                        </div>
+                        <div class="col-3">
+                            <button class="btn btn-sm btn-primary w-100" id="add-rule-btn">Add</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -604,7 +759,12 @@
                 logoVisible: true,
                 pages: [],
                 activePageIndex: 0,
-                currentImageTarget: null, // { type: 'logo'/'table', rowIndex? }
+                currentImageTarget: null, 
+                // NEW: Formatting Rules State
+                formattingRules: [
+                    { text: 'p', color: '#d1e7dd' }, // Default Light Green
+                    { text: 'v', color: '#d1e7dd' }  // Default Light Green
+                ]
             },
 
             elements: {
@@ -613,6 +773,7 @@
                 pageTemplate: document.getElementById('a4-page-template'),
                 controlsPanel: document.getElementById('controls-panel'),
                 panelToggleBtn: document.getElementById('panel-toggle-btn'),
+                psValueSelect: document.getElementById('ps-value-select'),
                 notesContent: document.getElementById('notes-content'),
                 pageControlsContainer: document.getElementById('page-controls-container'),
                 imageUploadInput: document.getElementById('image-upload-input'),
@@ -620,25 +781,72 @@
                 confirmationModalTitle: document.getElementById('confirmationModalTitle'),
                 confirmationModalBody: document.getElementById('confirmationModalBody'),
                 confirmationModalConfirmBtn: document.getElementById('confirmationModalConfirm'),
+                // New Rules Elements
+                rulesModal: new bootstrap.Modal(document.getElementById('rulesModal')),
+                rulesListContainer: document.getElementById('rules-list-container'),
+                newRuleText: document.getElementById('new-rule-text'),
+                newRuleColor: document.getElementById('new-rule-color'),
+                addRuleBtn: document.getElementById('add-rule-btn')
             },
             
             tomSelectInstances: [],
+            dbSaveTimeout: null,
 
             async init() {
-                this.showLoading(true, "Initializing Application...");
+                // Load local data first
+                this.showLoading(true, "Loading local data...");
                 this.bindEventListeners();
-                this.addNewPage();
                 
                 try {
-                    await Promise.all([this.fetchFirebaseData(), this.fetchGSheetData()]);
-                    this.UI.updateAllSelectors();
+                    await this.DB.init();
+                    const cachedState = await this.DB.loadData();
+                    
+                    if (cachedState) {
+                        if (cachedState.pages && cachedState.pages.length > 0) {
+                            this.state.pages = cachedState.pages;
+                            this.state.logoUrl = cachedState.logoUrl || 'https://i.imgur.com/4l4rBjF.png';
+                            this.state.logoVisible = cachedState.logoVisible !== undefined ? cachedState.logoVisible : true;
+                            this.state.activePageIndex = 0;
+                            
+                            // Load formatting rules if they exist
+                            if (cachedState.formattingRules) {
+                                this.state.formattingRules = cachedState.formattingRules;
+                            }
+                            
+                            this.UI.renderAllPages();
+                            this.UI.renderAllPageControls();
+                            this.setActivePage(0);
+                            
+                            document.querySelectorAll('.logo-container').forEach(el => {
+                                el.style.display = this.state.logoVisible ? 'block' : 'none';
+                            });
+                        } else {
+                            this.addNewPage(); 
+                        }
+                    } else {
+                        this.addNewPage();
+                    }
                 } catch (error) {
-                    console.error("Failed to load initial data:", error);
-                    this.UI.showConfirmation("Loading Error", "An error occurred while loading initial data. Please check your internet connection and try again.", () => window.location.reload());
+                    console.error("Error loading from IndexedDB:", error);
+                    this.addNewPage(); 
                 }
                 
                 this.updateFormFromState();
-                this.showLoading(false);
+                this.showLoading(false); 
+                
+                // Start background fetch
+                this.fetchAndRefreshData();
+            },
+
+            async fetchAndRefreshData() {
+                try {
+                    console.log("Starting background data fetch...");
+                    await Promise.all([this.fetchFirebaseData(), this.fetchGSheetData()]);
+                    this.UI.updateAllSelectors();
+                    console.log("Background data fetch complete. Selectors updated.");
+                } catch (error) {
+                    console.error("Failed to load background data:", error);
+                }
             },
 
             bindEventListeners() {
@@ -647,6 +855,14 @@
                 document.getElementById('change-logo-btn').addEventListener('click', () => this.ImageHandler.showModal('logo'));
                 document.getElementById('print-btn').addEventListener('click', () => window.print());
                 document.getElementById('add-page-btn-sidebar').addEventListener('click', () => this.addNewPage());
+                
+                // Rules Management
+                document.getElementById('manage-rules-btn').addEventListener('click', () => this.UI.openRulesModal());
+                this.elements.addRuleBtn.addEventListener('click', () => this.UI.addNewRule());
+                
+                // --- Form Controls ---
+                this.elements.psValueSelect.addEventListener('change', () => this.updateStateFromForm());
+                this.elements.notesContent.addEventListener('input', () => this.updateStateFromForm());
                 
                 // --- Main Preview Panel Event Delegation ---
                 this.elements.previewContainer.addEventListener('click', (e) => {
@@ -674,6 +890,18 @@
                     if (e.target.closest('.add-row-btn')) {
                          this.TableManager.addBlankRow(pageIndex);
                     }
+                    // Duplicate last row button
+                    if (e.target.closest('.duplicate-last-row-btn')) {
+                        this.TableManager.duplicateLastRow(pageIndex);
+                    }
+                    // NEW: Delete ALL rows button
+                    if (e.target.closest('.delete-all-rows-btn')) {
+                        this.UI.showConfirmation(
+                            "Delete ALL Rows?",
+                            "Are you sure you want to delete ALL rows in this table? This cannot be undone.",
+                            () => this.TableManager.deleteAllRows(pageIndex)
+                        );
+                    }
                 });
 
                 // --- ContentEditable State Update ---
@@ -683,8 +911,9 @@
                     if (!pageElement) return;
                     const pageIndex = parseInt(pageElement.dataset.index, 10);
 
-                    // General page data (title, date, etc.)
-                    if (target.hasAttribute('contenteditable') && target.dataset.key) {
+                    // FIX: Ensure we don't update page notes when editing table cells
+                    // General page data (title, date, etc.) but NOT table content
+                    if (target.hasAttribute('contenteditable') && target.dataset.key && !target.closest('.custom-table-render')) {
                         this.updateStateFromPreview(pageIndex, target.dataset.key, target.innerHTML);
                     }
                     // Table cell data
@@ -692,8 +921,6 @@
                         this.TableManager.updateStateFromTableCell(target);
                     }
                 }, true);
-                
-                this.elements.notesContent.addEventListener('input', () => this.updateStateFromForm());
                 
                 // --- Sidebar Page Control Click ---
                 this.elements.pageControlsContainer.addEventListener('click', (e) => {
@@ -707,13 +934,38 @@
                 // --- Image Handling Events ---
                 this.elements.imageUploadInput.addEventListener('change', (e) => this.ImageHandler.handleFileSelect(e));
                 document.addEventListener('paste', (e) => this.ImageHandler.handlePaste(e));
+
+                // --- Table Resizing Events ---
+                this.elements.previewContainer.addEventListener('mousedown', (e) => {
+                    if (e.target.classList.contains('row-resizer-handle')) {
+                        this.TableManager.startResize(e);
+                    }
+                    if (e.target.classList.contains('col-resizer-handle')) {
+                        this.TableManager.startColResize(e);
+                    }
+                });
+                document.addEventListener('mousemove', (e) => {
+                    if (this.TableManager.isResizing) {
+                        this.TableManager.doResize(e);
+                    }
+                    if (this.TableManager.isColResizing) {
+                        this.TableManager.doColResize(e);
+                    }
+                });
+                document.addEventListener('mouseup', () => {
+                    this.TableManager.stopResize();
+                    this.TableManager.stopColResize();
+                });
+                document.addEventListener('mouseleave', () => {
+                    this.TableManager.stopResize();
+                    this.TableManager.stopColResize();
+                });
             },
 
             // =================================================================
             // =========== Data Fetching Methods ===============================
             // =================================================================
             async fetchFirebaseData() {
-                this.showLoading(true, "Fetching data from Firebase...");
                 try {
                     const samplesRef = ref(database, 'samples');
                     const foilsRef = ref(database, 'rolls');
@@ -739,7 +991,6 @@
             },
 
             async fetchGSheetData() {
-                this.showLoading(true, "Fetching data from Google Sheet...");
                 try {
                     const response = await fetch('https://opensheet.elk.sh/1xa8jeqLMMgoPIqJn7mVtRVJsq1WWnKGJ-2Hzx5WLiHM/Foil-modeles');
                     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -747,12 +998,11 @@
                     if(Array.isArray(data)){
                         this.state.gSheetSamples = data.filter(s => s && s['Sample Name']);
                     } else {
-                        console.warn("Google Sheet data is not in expected format (array).", data);
                         this.state.gSheetSamples = [];
                     }
                 } catch (error) {
                     console.error("Error fetching Google Sheet data:", error);
-                    this.state.gSheetSamples = []; // Ensure it's an empty array on failure
+                    this.state.gSheetSamples = [];
                 }
             },
             
@@ -761,21 +1011,31 @@
             // =================================================================
             addNewPage() {
                 const newPageIndex = this.state.pages.length;
+                // MODIFIED: Always default to Current Date
+                const today = new Date().toISOString().split('T')[0];
+                
+                // MODIFIED: Random ID Generation
+                const randomStr = Math.random().toString(36).substr(2, 6).toUpperCase();
+                const randomID = `WO-${randomStr}`;
+
                 const newPage = {
                     title: 'Production Work Order',
-                    id: `WO-${String(newPageIndex + 1).padStart(3, '0')}`,
-                    date: new Date().toISOString().split('T')[0],
+                    id: randomID,
+                    date: today, // Auto-sets to today
                     recipient: 'Production Dept.',
+                    psValue: '100',
                     notes: '',
                     customTable: {
                         headers: ['Image', 'Product', 'Qty/Box', 'Qty/Unit', 'Foil Name(s)', 'Notes'],
-                        rows: [] // Will be an array of objects
+                        rows: [],
+                        colWidths: ['10%', '20%', '10%', '10%', '30%', '20%']
                     }
                 };
                 this.state.pages.push(newPage);
                 this.UI.addPageToDOM(newPage, newPageIndex);
                 this.UI.addPageControl(newPageIndex);
                 this.setActivePage(newPageIndex);
+                this.saveStateToDB();
             },
 
             deletePage(index) {
@@ -797,6 +1057,7 @@
                          this.UI.renderAllPages();
                          this.UI.renderAllPageControls();
                          this.setActivePage(this.state.activePageIndex);
+                         this.saveStateToDB();
                      }
                  );
             },
@@ -816,13 +1077,17 @@
                 const activePage = this.state.pages[this.state.activePageIndex];
                 if (!activePage) return;
                 activePage.notes = this.elements.notesContent.value;
+                activePage.psValue = this.elements.psValueSelect.value;
+                
                 this.UI.updatePageInDOM(activePage, this.state.activePageIndex);
+                this.saveStateToDB();
             },
 
             updateStateFromPreview(pageIndex, key, value) {
                 const page = this.state.pages[pageIndex];
                 if (page && page.hasOwnProperty(key)) {
                     page[key] = value;
+                    this.saveStateToDB();
                 }
             },
             
@@ -830,7 +1095,7 @@
                 const activePage = this.state.pages[this.state.activePageIndex];
                 if (!activePage) return;
                 this.elements.notesContent.value = activePage.notes;
-                // Full preview update is handled by setActivePage
+                this.elements.psValueSelect.value = activePage.psValue || '100';
             },
             
             addProductToTable(sourceAndId, pageIndex) {
@@ -859,7 +1124,6 @@
                         newRowData.foils = newRowData.associatedFoils.map(f => f.name).join(' + ');
                     }
                 } else if (sourceType === 'gsheet') {
-                    // Note: Google Sheet data uses index as ID
                     product = this.state.gSheetSamples[id];
                     if (product) {
                         const foilText = product['Foil Components'] || product['Components (Foils)'] || product['foil'] || '';
@@ -886,6 +1150,74 @@
                 this.elements.loadingOverlay.style.display = show ? 'flex' : 'none';
                 this.elements.loadingOverlay.querySelector('p').textContent = message;
             },
+
+            saveStateToDB() {
+                if (this.dbSaveTimeout) {
+                    clearTimeout(this.dbSaveTimeout);
+                }
+                this.dbSaveTimeout = setTimeout(async () => {
+                    if (!this.DB.db) return;
+                    const stateToSave = {
+                        pages: this.state.pages,
+                        logoUrl: this.state.logoUrl,
+                        logoVisible: this.state.logoVisible,
+                        // Save formatting rules
+                        formattingRules: this.state.formattingRules
+                    };
+                    try {
+                        await this.DB.saveData(stateToSave);
+                        console.log("State saved to IndexedDB.");
+                    } catch (error) {
+                        console.error("Error saving state to IDB:", error);
+                    }
+                }, 1000);
+            },
+        };
+
+        // =================================================================
+        // =========== IndexedDB Helper ====================================
+        // =================================================================
+        WorkOrderApp.DB = {
+            db: null,
+            init() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open('workOrderDB', 1);
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        if (!db.objectStoreNames.contains('appState')) {
+                            db.createObjectStore('appState', { keyPath: 'id' });
+                        }
+                    };
+                    request.onsuccess = (event) => {
+                        this.db = event.target.result;
+                        resolve();
+                    };
+                    request.onerror = (event) => {
+                        console.error("IndexedDB error:", event.target.error);
+                        reject(event.target.error);
+                    };
+                });
+            },
+            saveData(state) {
+                if (!this.db) return Promise.reject("DB not initialized.");
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction(['appState'], 'readwrite');
+                    const store = transaction.objectStore('appState');
+                    const request = store.put({ id: 'mainState', ...state });
+                    request.onsuccess = () => resolve();
+                    request.onerror = (event) => reject(event.target.error);
+                });
+            },
+            loadData() {
+                if (!this.db) return Promise.reject("DB not initialized.");
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction(['appState'], 'readonly');
+                    const store = transaction.objectStore('appState');
+                    const request = store.get('mainState');
+                    request.onsuccess = (event) => resolve(event.target.result);
+                    request.onerror = (event) => reject(event.target.error);
+                });
+            }
         };
 
         // =================================================================
@@ -976,6 +1308,7 @@
                 document.querySelectorAll('.logo-container').forEach(el => {
                     el.style.display = WorkOrderApp.state.logoVisible ? 'block' : 'none';
                 });
+                WorkOrderApp.saveStateToDB();
             },
             
             addPageToDOM(pageData, index) {
@@ -993,18 +1326,18 @@
                 pageElement.querySelector('.company-logo').src = WorkOrderApp.state.logoUrl;
 
                 // Update general page data
-                for (const key of ['title', 'id', 'date', 'recipient', 'notes']) {
-                     const element = pageElement.querySelector(`[data-key="${key}"]`);
-                     if (element && element.innerHTML !== pageData[key]) {
-                         element.innerHTML = pageData[key];
-                     }
+                for (const key of ['title', 'id', 'date', 'recipient', 'notes', 'psValue']) {
+                      const element = pageElement.querySelector(`[data-key="${key}"]`);
+                      if (element && element.innerHTML !== pageData[key]) {
+                          element.innerHTML = pageData[key];
+                      }
                 }
                 
                 // Update table
                 const tableContainer = pageElement.querySelector(`[data-key="customTable"]`);
                 tableContainer.innerHTML = WorkOrderApp.TableManager.generateHtml(pageData.customTable, index);
 
-                // --- UPDATED FOIL RENDERING LOGIC ---
+                // Render Foils
                 const visualBarsContainer = pageElement.querySelector(`[data-key="visualBars"]`);
                 let allFoilCardsHtml = '';
                 
@@ -1019,7 +1352,7 @@
                     const uniqueFoilNamesInRow = [...new Set(allFoilNamesInRow)];
                     
                     let productCardContent = '';
-                    let colorOffset = 0; // Reset color offset for each product card
+                    let colorOffset = 0; 
 
                     uniqueFoilNamesInRow.forEach(foilName => {
                         const allInstancesOfThisFoil = WorkOrderApp.state.firebaseFoils.filter(f => f.name === foilName);
@@ -1053,7 +1386,7 @@
                                 </div>
                             `;
                         }
-                        colorOffset++; // Increment color for the next DISTINCT foil name
+                        colorOffset++;
                     });
 
                     if (productCardContent) {
@@ -1108,8 +1441,6 @@
                 const { elements } = WorkOrderApp;
                 elements.confirmationModalTitle.textContent = title;
                 elements.confirmationModalBody.textContent = body;
-
-                // Clone and replace the button to remove old event listeners
                 const newConfirmBtn = elements.confirmationModalConfirmBtn.cloneNode(true);
                 elements.confirmationModalConfirmBtn.parentNode.replaceChild(newConfirmBtn, elements.confirmationModalConfirmBtn);
                 elements.confirmationModalConfirmBtn = newConfirmBtn;
@@ -1119,6 +1450,60 @@
                     elements.confirmationModal.hide();
                 });
                 elements.confirmationModal.show();
+            },
+
+            // NEW: Rules Management Methods
+            openRulesModal() {
+                this.renderRulesList();
+                WorkOrderApp.elements.rulesModal.show();
+            },
+
+            renderRulesList() {
+                const container = WorkOrderApp.elements.rulesListContainer;
+                container.innerHTML = '';
+                
+                if (WorkOrderApp.state.formattingRules.length === 0) {
+                    container.innerHTML = '<p class="text-muted text-center small">No rules defined.</p>';
+                    return;
+                }
+
+                WorkOrderApp.state.formattingRules.forEach((rule, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'rule-item';
+                    div.innerHTML = `
+                        <div class="rule-color-preview" style="background-color: ${rule.color}"></div>
+                        <div class="flex-grow-1 small">Contains: <strong>"${rule.text}"</strong></div>
+                        <button class="btn btn-sm btn-outline-danger delete-rule-btn"><i class="bi bi-trash"></i></button>
+                    `;
+                    
+                    div.querySelector('.delete-rule-btn').addEventListener('click', () => {
+                        this.deleteRule(index);
+                    });
+                    
+                    container.appendChild(div);
+                });
+            },
+
+            addNewRule() {
+                const text = WorkOrderApp.elements.newRuleText.value.trim();
+                const color = WorkOrderApp.elements.newRuleColor.value;
+                
+                if (!text) return;
+
+                WorkOrderApp.state.formattingRules.push({ text, color });
+                WorkOrderApp.elements.newRuleText.value = '';
+                this.renderRulesList();
+                WorkOrderApp.saveStateToDB();
+                // Refresh UI to apply new rules immediately
+                this.renderAllPages();
+            },
+
+            deleteRule(index) {
+                WorkOrderApp.state.formattingRules.splice(index, 1);
+                this.renderRulesList();
+                WorkOrderApp.saveStateToDB();
+                // Refresh UI to remove applied rules immediately
+                this.renderAllPages();
             }
         };
         
@@ -1126,6 +1511,24 @@
         // =========== Sub-Managers for Cleaner Code =======================
         // =================================================================
         WorkOrderApp.TableManager = {
+            isResizing: false,
+            resizingRowData: null, 
+            resizingRowElement: null,
+            startY: 0,
+            startHeight: 0,
+            
+            isColResizing: false,
+            resizingColData: null,
+
+            duplicateLastRow(pageIndex) {
+                const targetPage = WorkOrderApp.state.pages[pageIndex];
+                if (!targetPage || targetPage.customTable.rows.length === 0) return;
+                const lastRow = targetPage.customTable.rows[targetPage.customTable.rows.length - 1];
+                const newRow = JSON.parse(JSON.stringify(lastRow));
+                newRow.id = crypto.randomUUID(); 
+                this.addSpecificRow(pageIndex, newRow);
+            },
+
             addBlankRow(pageIndex) {
                 const newRow = { 
                     id: crypto.randomUUID(), image: '', product: '', qtyBox: '', 
@@ -1134,29 +1537,85 @@
                 this.addSpecificRow(pageIndex, newRow);
             },
             
+            // NEW: Delete ALL Rows Function
+            deleteAllRows(pageIndex) {
+                const targetPage = WorkOrderApp.state.pages[pageIndex];
+                if (targetPage) {
+                    targetPage.customTable.rows = []; // Clear array
+                    WorkOrderApp.UI.updatePageInDOM(targetPage, pageIndex);
+                    WorkOrderApp.saveStateToDB();
+                }
+            },
+            
             addSpecificRow(pageIndex, rowData) {
                 const targetPage = WorkOrderApp.state.pages[pageIndex];
                 if (!targetPage) return;
-                rowData.id = crypto.randomUUID(); // Ensure unique ID
+                rowData.id = crypto.randomUUID();
                 targetPage.customTable.rows.push(rowData);
                 WorkOrderApp.UI.updatePageInDOM(targetPage, pageIndex);
+                WorkOrderApp.saveStateToDB();
             },
 
             generateHtml(tableData, pageIndex) {
                  if (!tableData) return '';
-                let html = `<table class="custom-table"><thead><tr>`;
-                tableData.headers.forEach(header => html += `<th>${header}</th>`);
+                let html = `<table class="custom-table">`;
+
+                const colWidths = tableData.colWidths || ['10%', '20%', '10%', '10%', '30%', '20%'];
+                html += `<colgroup>`;
+                colWidths.forEach(width => {
+                    html += `<col style="width: ${width};">`;
+                });
+                html += `<col style="width: 50px;">`; // Actions column
+                html += `</colgroup>`;
+                
+                html += `<thead><tr>`;
+                tableData.headers.forEach((header, index) => {
+                    const resizer = (index < tableData.headers.length - 1)
+                        ? `<div class="col-resizer-handle" data-col-index="${index}"></div>`
+                        : '';
+                    html += `<th>${header}${resizer}</th>`;
+                });
                 html += `<th class="no-print"></th></tr></thead><tbody>`;
                 
                 tableData.rows.forEach((row, rowIndex) => {
-                    html += `<tr data-row-index="${rowIndex}" data-row-id="${row.id}">
-                        <td><img src="${row.image || 'https://placehold.co/50x50/e9ecef/adb5bd?text=?'}" class="table-image" alt="Product thumbnail"></td>
-                        <td contenteditable="true" data-key="product">${row.product}</td>
+                    const rowStyle = row.height ? `height: ${row.height}px;` : '';
+                    const imgStyle = row.height ? `height: ${row.height}px;` : '';
+
+                    // NEW: Calculate Highlight Color
+                    let cellStyle = '';
+                    const productText = (row.product || '').toLowerCase();
+                    
+                    // Check for NO LETTERS (Unicode compliant for Arabic/English etc)
+                    // \p{L} matches any Unicode letter
+                    const hasLetters = /\p{L}/u.test(productText);
+
+                    if (!hasLetters) {
+                         // If NO letters found (empty, numbers only, symbols only), make it RED
+                         cellStyle = 'background-color: #ffcccc;'; 
+                    } else {
+                        // Otherwise, check user defined rules
+                        for (const rule of WorkOrderApp.state.formattingRules) {
+                            if (productText.includes(rule.text.toLowerCase())) {
+                                cellStyle = `background-color: ${rule.color};`;
+                                // Stop at first match
+                                break;
+                            }
+                        }
+                    }
+
+                    html += `<tr data-row-index="${rowIndex}" data-row-id="${row.id}" style="${rowStyle}">
+                        <td class="resizable-cell">
+                            <img src="${row.image || 'https://placehold.co/50x50/e9ecef/adb5bd?text=?'}" class="table-image" alt="Product thumbnail" style="${imgStyle}">
+                            <div class="row-resizer-handle"></div>
+                        </td>
+                        <td contenteditable="true" data-key="product" style="${cellStyle}">${row.product}</td>
                         <td contenteditable="true" data-key="qtyBox">${row.qtyBox}</td>
                         <td contenteditable="true" data-key="qtyUnit">${row.qtyUnit}</td>
                         <td contenteditable="true" data-key="foils">${row.foils}</td>
                         <td contenteditable="true" data-key="notes">${row.notes}</td>
-                        <td class="no-print"><button class="btn btn-sm btn-outline-danger delete-row-btn" title="Delete Row"><i class="bi bi-trash"></i></button></td>
+                        <td class="no-print table-actions-cell">
+                            <button class="btn btn-sm btn-outline-danger delete-row-btn" title="Delete Row"><i class="bi bi-trash"></i></button>
+                        </td>
                     </tr>`;
                 });
                 html += '</tbody></table>';
@@ -1171,11 +1630,34 @@
                 const tableData = WorkOrderApp.state.pages[pageIndex]?.customTable;
                 if (!tableData || !tableData.rows[rowIndex] || key === undefined) return;
                 
-                tableData.rows[rowIndex][key] = cellElement.textContent;
+                const newValue = cellElement.textContent;
+                tableData.rows[rowIndex][key] = newValue;
+                WorkOrderApp.saveStateToDB();
                 
-                // If foil names are changed, we need to re-render to update the visual bars
                 if(key === 'foils') {
                     WorkOrderApp.UI.updatePageInDOM(WorkOrderApp.state.pages[pageIndex], pageIndex);
+                }
+                
+                // NEW: Re-evaluate highlight if product changes (Same Logic as generateHtml)
+                if (key === 'product') {
+                    const productText = newValue.toLowerCase();
+                    let foundColor = '';
+                    
+                    // Check if it HAS letters
+                    const hasLetters = /\p{L}/u.test(productText);
+
+                    if (!hasLetters) {
+                         foundColor = '#ffcccc'; // RED if no letters
+                    } else {
+                        // Check user rules
+                        for (const rule of WorkOrderApp.state.formattingRules) {
+                            if (productText.includes(rule.text.toLowerCase())) {
+                                foundColor = rule.color;
+                                break;
+                            }
+                        }
+                    }
+                    cellElement.style.backgroundColor = foundColor;
                 }
             },
 
@@ -1184,6 +1666,124 @@
                 if (targetPage && targetPage.customTable.rows[rowIndex]) {
                     targetPage.customTable.rows.splice(rowIndex, 1);
                     WorkOrderApp.UI.updatePageInDOM(targetPage, pageIndex);
+                    WorkOrderApp.saveStateToDB();
+                }
+            },
+
+            startResize(e) {
+                e.preventDefault();
+                this.isResizing = true;
+                this.resizingRowElement = e.target.closest('tr');
+                const pageIndex = parseInt(e.target.closest('.a4-page').dataset.index, 10);
+                const rowIndex = parseInt(this.resizingRowElement.dataset.rowIndex, 10);
+                
+                this.resizingRowData = { pageIndex, rowIndex };
+                this.startY = e.pageY;
+                this.startHeight = this.resizingRowElement.offsetHeight;
+            },
+
+            doResize(e) {
+                if (!this.isResizing) return;
+                const diff = e.pageY - this.startY;
+                let newHeight = this.startHeight + diff;
+                newHeight = Math.max(50, newHeight);
+                
+                this.resizingRowElement.style.height = `${newHeight}px`;
+                const img = this.resizingRowElement.querySelector('.table-image');
+                if (img) {
+                    img.style.height = `${newHeight}px`;
+                }
+            },
+
+            stopResize() {
+                if (this.isResizing) {
+                    this.isResizing = false;
+                    const { pageIndex, rowIndex } = this.resizingRowData;
+                    const newHeight = this.resizingRowElement.offsetHeight;
+                    
+                    const rowData = WorkOrderApp.state.pages[pageIndex]?.customTable.rows[rowIndex];
+                    if (rowData) {
+                        rowData.height = newHeight;
+                    }
+                    
+                    WorkOrderApp.saveStateToDB();
+                    
+                    this.resizingRowData = null;
+                    this.resizingRowElement = null;
+                }
+            },
+
+            startColResize(e) {
+                e.preventDefault();
+                this.isColResizing = true;
+                
+                const handle = e.target;
+                const pageIndex = parseInt(e.target.closest('.a4-page').dataset.index, 10);
+                const colIndex = parseInt(handle.dataset.colIndex, 10);
+                const table = handle.closest('.custom-table');
+                const colgroup = table.querySelector('colgroup');
+                const cols = colgroup.querySelectorAll('col');
+                
+                const thisCol = cols[colIndex];
+                const nextCol = cols[colIndex + 1];
+
+                this.resizingColData = {
+                    pageIndex,
+                    colIndex,
+                    table,
+                    cols,
+                    startX: e.pageX,
+                    startWidth: thisCol.offsetWidth,
+                    nextColStartWidth: nextCol.offsetWidth,
+                };
+                
+                document.body.style.userSelect = 'none';
+            },
+
+            doColResize(e) {
+                if (!this.isColResizing) return;
+                
+                const { pageIndex, colIndex, table, cols, startX, startWidth, nextColStartWidth } = this.resizingColData;
+                const diff = e.pageX - startX;
+                
+                let newWidth = startWidth + diff;
+                let newNextWidth = nextColStartWidth - diff;
+
+                const minWidth = 50;
+
+                if (newWidth < minWidth) {
+                    newWidth = minWidth;
+                    newNextWidth = startWidth + nextColStartWidth - minWidth;
+                }
+                if (newNextWidth < minWidth) {
+                    newNextWidth = minWidth;
+                    newWidth = startWidth + nextColStartWidth - minWidth;
+                }
+
+                const totalWidth = table.offsetWidth;
+                const newWidthPercent = (newWidth / totalWidth) * 100;
+                const newNextWidthPercent = (newNextWidth / totalWidth) * 100;
+
+                cols[colIndex].style.width = `${newWidthPercent}%`;
+                cols[colIndex + 1].style.width = `${newNextWidthPercent}%`;
+            },
+
+            stopColResize() {
+                if (this.isColResizing) {
+                    this.isColResizing = false;
+                    document.body.style.userSelect = '';
+
+                    if(this.resizingColData) {
+                        const { pageIndex, cols } = this.resizingColData;
+                        const page = WorkOrderApp.state.pages[pageIndex];
+                        if (page) {
+                            const newWidths = Array.from(cols).slice(0, -1).map(col => col.style.width);
+                            page.customTable.colWidths = newWidths;
+                            WorkOrderApp.saveStateToDB();
+                        }
+                    }
+                    
+                    this.resizingColData = null;
                 }
             }
         };
@@ -1195,7 +1795,6 @@
                 WorkOrderApp.state.currentImageTarget = { type, rowIndex };
                 this.modal.show();
                 
-                // Bind listeners once
                 if (!this.listenersAttached) {
                      document.getElementById('image-chooser-upload').addEventListener('click', () => {
                          WorkOrderApp.elements.imageUploadInput.click();
@@ -1235,7 +1834,6 @@
             },
             
             processUrl(url) {
-                // Basic URL validation
                  try {
                      new URL(url);
                      this.updateImage(url);
@@ -1259,14 +1857,14 @@
 
                 if (target.type === 'logo') {
                     WorkOrderApp.state.logoUrl = dataURL;
-                    // Update all visible logos
-                     document.querySelectorAll('.company-logo').forEach(img => img.src = dataURL);
+                    document.querySelectorAll('.company-logo').forEach(img => img.src = dataURL);
                 } else if (target.type === 'table') {
                     activePage.customTable.rows[target.rowIndex].image = dataURL;
                     WorkOrderApp.UI.updatePageInDOM(activePage, WorkOrderApp.state.activePageIndex);
                 }
                 
                 WorkOrderApp.state.currentImageTarget = null;
+                WorkOrderApp.saveStateToDB(); 
             }
         };
 
@@ -1275,4 +1873,3 @@
     </script>
 </body>
 </html>
-
