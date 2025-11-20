@@ -823,20 +823,39 @@ document.addEventListener('DOMContentLoaded', () => {
         return { mainDashboard, subPagesHtml, footer: `<footer class="dashboard-footer"><p>${footerTextInput.value}</p></footer>` };
     };
 
+    // ### MODIFIED: Update Preview Logic with Hash Support ###
     const updatePreview = () => {
         const activePageElement = previewBody.querySelector('.dashboard-page.active');
         const activePageId = activePageElement ? activePageElement.id : 'main-dashboard';
 
+        // Check hash first - if hash exists, it takes precedence
+        const hash = decodeURIComponent(window.location.hash.substring(1));
+        
         const { mainDashboard, subPagesHtml, footer } = renderPreviewAndFinal(isEditMode, true);
         previewBody.innerHTML = `<div style="display: contents;">${mainDashboard}${subPagesHtml}</div>${footer}`;
         
-        const defaultActivePage = previewBody.querySelector('.dashboard-page.active');
-        if (defaultActivePage) {
-            defaultActivePage.classList.remove('active');
+        // Logic to determine which page to show
+        let pageToShow = null;
+
+        // 1. Try Hash
+        if (hash) {
+            pageToShow = previewBody.querySelector(`.dashboard-page[data-folder-name="${hash}"]`);
         }
-        const pageToRestore = previewBody.querySelector(`#${activePageId}`);
-        if (pageToRestore) {
-            pageToRestore.classList.add('active');
+
+        // 2. If no hash match, try restoring ID (edit mode refreshes)
+        if (!pageToShow) {
+            pageToShow = previewBody.querySelector(`#${activePageId}`);
+        }
+
+        // 3. Fallback to main
+        if (!pageToShow) {
+            pageToShow = document.getElementById('main-dashboard');
+        }
+
+        // Apply active class
+        if (pageToShow) {
+            previewBody.querySelectorAll('.dashboard-page.active').forEach(el => el.classList.remove('active'));
+            pageToShow.classList.add('active');
         }
         
         previewBody.querySelectorAll('a[data-target]').forEach(link => {
@@ -858,6 +877,25 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         });
     };
+    
+    // ### NEW: Handle Browser Back/Forward Buttons ###
+    const handleHashChange = () => {
+        const hash = decodeURIComponent(window.location.hash.substring(1));
+        const activePage = previewBody.querySelector('.dashboard-page.active');
+        if (activePage) activePage.classList.remove('active');
+        
+        if (hash) {
+            const targetPage = previewBody.querySelector(`.dashboard-page[data-folder-name="${hash}"]`);
+            if (targetPage) {
+                targetPage.classList.add('active');
+                return;
+            }
+        }
+        // Fallback to main dashboard if hash not found or empty
+        const main = document.getElementById('main-dashboard');
+        if (main) main.classList.add('active');
+    };
+    window.addEventListener('hashchange', handleHashChange);
     
     // ### MODIFIED: This debouncer now triggers sync AFTER updating the preview ###
     let timeout;
