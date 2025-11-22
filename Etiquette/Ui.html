@@ -451,6 +451,99 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         background-color: #6c757d;
         color: white;
     }
+	
+/* --- تنسيق الجسم لضمان عدم تغطية المحتوى --- */
+    body {
+      /* padding-top: ارتفاع الشريط العلوي (50px) + مسافة جمالية (20px) = 70px
+         الهوامش الجانبية تبقى كما هي في كودك الأصلي لضمان مكان القوائم 
+      */
+      padding: 70px 180px 20px 280px !important; 
+      transition: padding 0.3s ease-in-out;
+    }
+
+    /* --- تنسيق الشريط العلوي (محصور في الوسط) --- */
+    .top-navbar {
+        position: fixed;
+        top: 0;
+        height: 50px;
+        background-color: #212529; /* لون خلفية الشريط */
+        
+        /* هنا السحر: نحدد بدايته ونهايته بناءً على عرض القوائم الجانبية */
+        left: 260px;  /* يبدأ بعد القائمة اليسرى تماماً */
+        right: 160px; /* ينتهي قبل القائمة اليمنى تماماً */
+        
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        z-index: 900; /* أقل من القوائم الجانبية حتى لا يغطي عليها عند الفتح في الموبايل */
+    }
+
+    /* باقي تنسيقات عناصر الشريط كما هي */
+    .menu-trigger {
+        color: #fff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        padding: 5px 10px;
+        border-radius: 4px;
+        transition: background 0.3s;
+        font-size: 0.9em;
+    }
+    .menu-trigger:hover { background-color: rgba(255,255,255,0.1); }
+
+    .nav-links { display: flex; gap: 5px; }
+
+    .nav-sq {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 60px; /* تصغير العرض قليلاً ليتناسب مع المساحة */
+        height: 30px;
+        background-color: #495057;
+        color: #fff;
+        text-decoration: none;
+        font-size: 12px;
+        border-radius: 3px;
+        font-weight: bold;
+        transition: all 0.2s ease;
+    }
+    .nav-sq:hover { background-color: #0d6efd; color: white; }
+    .nav-sq.active { background-color: #0d6efd; border: 1px solid #rgba(255,255,255,0.5); }
+
+    /* --- تنسيق خاص للموبايل (هام جداً) --- */
+    /* عندما تختفي القوائم الجانبية في الشاشات الصغيرة، يجب أن يمتد الشريط العلوي */
+    @media (max-width: 1024px) {
+        .top-navbar {
+            left: 0 !important;
+            right: 0 !important;
+            width: 100%;
+            z-index: 900;
+        }
+        
+        body {
+            /* تعديل الهوامش في الموبايل */
+            padding: 60px 15px 20px 15px !important;
+        }
+        
+        /* إنزال أزرار فتح القوائم في الموبايل لتكون تحت الشريط */
+        .mobile-toggle-btn {
+            top: 60px !important; 
+        }
+    }
+
+    @media print {
+        .top-navbar { display: none !important; }
+        body { padding: 0 !important; }
+    }
+    
+    /* تنسيق الجدول (نفس السابق) */
+    .codes-table-container { max-height: 65vh; overflow-y: auto; }
+    .codes-table th { position: sticky; top: 0; background: #f8f9fa; z-index: 2; }
+    .code-cell { font-family: 'Courier New', monospace; font-weight: bold; color: #d63384; direction: ltr; }	
+	
+	
     @media print {
       body {
         padding: 0 !important;
@@ -693,7 +786,21 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
     /* --- END: أنماط الطباعة المجمعة --- */
   </style>
 </head>
-<body>
+
+
+
+<div class="top-navbar">
+    <div class="menu-trigger" onclick="openCodesModal()">
+        <span class="material-icons">menu</span>
+        <span style="margin-right: 8px; font-weight: bold;">قائمة الرموز</span>
+    </div>
+    
+    <div class="nav-links">
+        <a href="Deco4.html" class="nav-sq" id="link-Deco4">Deco4</a>
+        <a href="2EMEC.html" class="nav-sq" id="link-2EMEC">2EMEC</a>
+        <a href="valpaint.html" class="nav-sq" id="link-valpaint">valpaint</a>
+    </div>
+  </div>
   <div id="mobile-overlay"></div>
   <button id="toggle-controls-btn" class="mobile-toggle-btn left">
     <span class="material-icons">settings</span>
@@ -1016,6 +1123,36 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
     </div>
   </div>
   <div id="temp-render-container" style="position: absolute; top: -9999px; left: -9999px; opacity: 0;"></div>
+  
+  
+  <div id="codesModal" class="print-modal-overlay">
+      <div class="batch-modal-content" style="width: 800px;"> <div class="modal-header">
+            <span class="material-icons">qr_code_2</span>
+            دليل رموز المنتجات والباراركود
+        </div>
+        <div class="modal-body">
+            <div class="codes-table-container">
+                <table class="table table-bordered table-hover codes-table">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>اسم المودال (الظاهري)</th>
+                            <th>الاسم البديل (Code)</th>
+                            <th>الكود الضوئي (QR String)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="codesTableBody">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button onclick="closeCodesModal()" class="btn-cancel">إغلاق</button>
+        </div>
+      </div>
+  </div>
+  
+  
+  
 <script>
     const refData = {
     "CIMAISE 209-1": { "pcs": "66", "width": "40", "thickness": "10" },
@@ -1223,6 +1360,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         window.print();
         hideBatchPrintModal();
     }
+	
     document.addEventListener('DOMContentLoaded', () => {
         const grid = document.querySelector('#editor-page .labels-grid');
         const template = grid.querySelector('.label-box');
@@ -1660,5 +1798,6 @@ function updateURLHash() {
      history.replaceState(null, '', '#' + newHash);
     }
 }
+
 </script>
 </body></html>
