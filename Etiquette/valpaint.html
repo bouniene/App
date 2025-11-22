@@ -695,13 +695,21 @@
     <span class="material-icons">view_list</span>
   </button>
   <div class="controls">
-    <div class="control-group"><button id="go-back-btn" class="btn btn-outline-secondary" style="margin-right: 10px; border: none; color: #adb5bd; display: flex; align-items: center; justify-content: center; padding: 5px;" title="رجوع">
-       <span class="material-icons">arrow_back</span>
+    <div class="control-group">
+<div class="d-flex align-items-center mb-3" style="border-bottom: 1px solid #333; padding-bottom: 10px; gap: 10px;">
+    
+    <button id="go-back-btn" class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center" 
+            style="width: 32px; height: 32px; padding: 0; border-color: #495057;" 
+            title="رجوع">
+        <span class="material-icons" style="font-size: 1.2rem; color: #adb5bd;">arrow_back</span> 
     </button>
-        <h2 class="text-center fw-bold" style="color: #0d6efd;">
-          <span class="material-icons">print</span>
-          Etiquette
-        </h2>
+
+    <h2 class="fw-bold m-0 d-flex align-items-center gap-2" style="color: #0d6efd; font-size: 1.4rem;">
+        <span class="material-icons">print</span>
+        Etiquette
+    </h2>
+    
+</div>
         <button class="print-btn" onclick="showPrintDialog()">طباعة الصفحة الحالية</button>
         <button class="print-btn" onclick="showBatchPrintDialog()" style="background-color: #198754; margin-top: 5px;">
             <span class="material-icons" style="font-size: 1.2em; vertical-align: middle;">dynamic_feed</span>
