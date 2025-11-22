@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>étiquette</title>
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    /* أنماط الشريط الجانبي الأيسر (الآن للإعدادات .controls) */
+    .controls { /* كان على اليمين، الآن على اليسار */
+      position: fixed;
+      left: 0; /* تم التغيير: الآن على اليسار */
+      right: auto; /* إضافة لضمان الموقع */
+      top: 0;
+      height: 100vh;
+      width: 260px; /* عرض الشريط (كان عرض .controls الأصلي) */
+      background: #f8f9fa;
+      padding: 20px;
+      background-color: #212529;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1); /* ظل على اليمين (لأنه الآن على اليسار) */
+      z-index: 990;  
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      border-bottom: none;
+      margin-bottom: 0;
+      
+    }
+
+    .controls * {
+      color: #adb5bd !important;
+    }
+
+
+    /* أنماط الشريط الجانبي الأيمن (الآن لقائمة المنتجات .sidebar) */
+    .sidebar { /* كان على اليسار، الآن على اليمين */
+      position: fixed;
+      right: 0; /* تم التغيير: الآن على اليمين */
+      left: auto; /* إضافة لضمان الموقع */
+      top: 0;
+      height: 100vh;
+      width: 160px; /* عرض الشريط (كان عرض .sidebar الأصلي) */
+      background: #f8f9fa;
+      padding: 5px 5px;
+      box-shadow: -2px 0 5px rgba(0,0,0,0.1); /* ظل على اليسار (لأنه الآن على اليمين) */
+      z-index: 1000;  
+      overflow-y: auto;
+    }
+
+    .sidebar-button {
+      display: block;
+      width: 100%;
+      padding: 1px;
+      margin: 8px 0;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      color: white;
+      text-align: center !important;
+      transition: transform 0.2s, box-shadow 0.2s;
+      font-size: 14px;
+    }
+
+    .sidebar-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+    }
+
+    /* ألوان الفئات للأزرار الجانبية (الآن في الشريط الأيمن) */
+    .CIMAISE { background: #d61e1e; }
+    .PLINTHE { background: #525045; }
+    .CADRE { background: #4dabf7; }
+    .Wall-panel { background: #f783ac; }
+    .CORNICHE { background: #ff922b; }
+    .CORNIERE { background: #94d82d; }
+
+    /* تعديل الهوامش الرئيسية لـ body لتعكس الترتيب الجديد */
+    body {
+      font-family: Arial, sans-serif;
+      direction: rtl;
+      margin: 0;
+      padding: 20px 180px 20px 280px;  
+      background: #f0f0f0;
+      line-height: 1.6;
+      transition: padding 0.3s ease-in-out;
+    }
+    
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .controls label {
+      font-weight: bold;
+      margin-bottom: 0;
+      font-size: 0.9em;
+      color: #adb5bd;
+    }
+
+    .controls input[type="text"],
+    .controls input[list],
+    .controls input[type="file"] {
+      padding: 8px 6px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 100%;  
+      box-sizing: border-box;
+      min-width: auto;
+      direction: ltr;
+    }
+      .controls input[type="file"] {
+        padding: 3px;
+        background: #fff;
+      }
+
+    .controls button.print-btn {
+      padding: 10px 20px;
+      font-size: 14px;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      transition: background-color 0.3s ease;
+      margin-top: 15px;
+      width: 100%;
+    }
+
+    .controls button.print-btn:hover {
+      background-color: #0056b3;
+    }
+    
+    .control-group #hide-container {
+      display: grid !important;  
+      grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));  
+      gap: 8px !important;  
+      padding-top: 5px;
+    }
+
+    #hide-container label {
+      font-size: 0.9em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 3px 5px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      background-color: #212529;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    #hide-container label:hover {
+      background-color: #f0f0f0;
+    }
+    #hide-container input[type="checkbox"] {
+      margin: 0;  
+    }
+    
+    /* NEW: Styles for display options */
+    .display-options {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background-color: #2c3034;
+        padding: 10px;
+        border-radius: 4px;
+    }
+
+    .display-options label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        font-size: 0.9em !important;
+    }
+
+    .display-options input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+    }
+
+    .a4-container {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;  
+      padding: 15mm 10mm 10mm 10mm;
+      background: #fff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    /* --- CHANGE: Page Header Style --- */
+    .page-header {
+        position: absolute;
+        top: 0.9mm;
+        left: 10mm;
+        right: 10mm;
+        height: 12mm; /* Increased height */
+        box-sizing: border-box;
+        overflow: hidden;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-text {
+        text-align: center;
+        font-size: 14px;
+        font-weight: bold;
+        color: #333;
+        flex-grow: 1;
+    }
+
+    .header-logo {
+        max-height: 10mm;
+        max-width: 40mm;
+        object-fit: contain;
+    }
+
+    .labels-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(4, calc((297mm - 20mm) / 4 - 3mm));
+      gap: 6mm;
+      width: 100%;
+      height: calc(297mm - 20mm);
+    }
+
+    .label-box {
+      position: relative;
+      overflow: hidden;
+      background: #fff;
+      text-align: center;
+      border: 1px dashed #eee;
+    }
+    
+    /* NEW: CSS classes to control visibility */
+    .label-box.hide-qr .qr-code-container {
+        visibility: hidden;
+    }
+    /* CHANGE: The .bg-shape is no longer hidden by this class */
+    .label-box.hide-shapes .corner-shape,
+    .label-box.hide-shapes .bubble-container {
+        visibility: hidden;
+    }
+
+    /* --- CHANGE: QR container is now a flex column to hold the image and text --- */
+    .qr-code-container {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 60px;
+        z-index: 15;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .qr-code-container img {
+        width: 55px !important; /* Increased size */
+        height: 55px !important; /* Increased size */
+        padding: 2px;
+        background: white;
+        border: 1px solid #eee;
+        box-sizing: border-box;
+    }
+    
+    /* --- NEW & CHANGED: Style for the unique ID below the QR code --- */
+    .qr-unique-id {
+        width: 55px; /* Match QR code width */
+        font-size: 10px; /* Slightly larger font */
+        font-weight: bold; /* Make it bolder */
+        color: #333;
+        margin-top: 2px;
+        font-family: 'Courier New', Courier, monospace;
+        letter-spacing: 1px; /* Increase spacing */
+        text-align: center; /* Center the text */
+        box-sizing: border-box;
+        overflow: hidden; /* Prevent overflow */
+    }
+
+    .corner-shape {
+      position: absolute;
+      top: 15px;
+      left: 0;
+      width: 40px;
+      height: 40px;
+      z-index: 10;
+      transform-origin: top left;
+      transition: all 0.3s ease;
+    }
+
+    .bubble-container {
+        position: absolute;
+        top: 15px;
+        right: 70px; /* Adjusted to not overlap with the larger QR container */
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px;
+        align-items: center;
+        justify-content: flex-end;
+        z-index: 10;
+        pointer-events: none;
+        max-width: 50%;
+        max-height: 40px;
+        overflow: hidden;
+        padding: 1px;
+    }
+
+
+    .bubble {
+      display: block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: #ccc;
+      box-shadow:
+        inset 0 0 1px rgba(255, 255, 255, 0.5),
+        0 1px 1px rgba(0,0,0,0.1);
+      flex-shrink: 0;
+      transition: background-color 0.3s ease;
+    }
+
+.label-box .bg-shape {
+  position: absolute;
+  top: 0;      /* بدل bottom: 0 */
+  left: 0;
+  width: 100%;
+  height: 100%; /* اجعلها تملأ الارتفاع أيضًا */
+  object-fit: cover; /* تغطي بدون تشويه النسبة */
+  z-index: 1;
+}
+
+
+    .label-box .logo {
+      position: absolute;
+      top: 10mm;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 43mm;
+      height: auto;
+      z-index: 2;
+    }
+
+    .label-box .text-area {
+      position: absolute;
+      top: calc(8mm + 15mm + 5mm);
+      left: 5%;
+      width: 90%;
+      z-index: 3;
+      font-size: 16px;
+      color: #000;
+      text-align: center;
+      line-height: 1.3;
+    }
+
+.label-box .text-area .ref {
+  font-weight: bold;
+  font-size: 1.1em;
+  margin-bottom: 4px;
+  word-wrap: break-word;
+  text-align: left;
+  padding-left: 55px; /* مسافة بادئة */
+  direction: ltr;
+}
+
+html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
+  direction: ltr !important;
+
+}
+
+    .label-box .text-area .pcs { margin-bottom: 4px;  text-align: left;
+  padding-left: 55px; /* مسافة بادئة */ }
+    .label-box .text-area .dim { margin-bottom: 4px;    text-align: left;
+  padding-left: 55px; /* مسافة بادئة */}
+
+    .label-box.hidden {
+      visibility: hidden;
+      
+    }
+    
+    /* نافذة الطباعة المنبثقة */
+    .print-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 1050;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        visibility: hidden;
+        opacity: 0;
+        transition: opacity 0.3s, visibility 0.3s;
+    }
+    .print-modal-overlay.visible {
+        visibility: visible;
+        opacity: 1;
+    }
+    .print-modal {
+        background: #fff;
+        padding: 25px;
+        border-radius: 8px;
+        width: 300px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .print-modal h3 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        color: #333;
+    }
+    .print-modal input {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 20px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 1.2em;
+        text-align: center;
+    }
+    .print-modal .modal-actions button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1em;
+        margin: 0 5px;
+    }
+    .print-modal .btn-confirm {
+        background-color: #007bff;
+        color: white;
+    }
+     .print-modal .btn-cancel {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    /* === START: NEW BATCH PRINT MODAL STYLES === */
+    .batch-modal-content {
+      background: #fff;
+      border-radius: 12px;
+      width: 950px; /* A wider modal */
+      max-width: 95vw;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.25);
+      display: flex;
+      flex-direction: column;
+      max-height: 90vh;
+    }
+    .batch-modal-content .modal-header {
+      padding: 15px 25px;
+      border-bottom: 1px solid #e9ecef;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.25rem;
+      font-weight: 500;
+      color: #212529;
+    }
+    .batch-modal-content .modal-body {
+      padding: 20px 25px;
+      overflow-y: auto;
+      flex-grow: 1;
+    }
+    .batch-modal-content .modal-footer {
+      padding: 15px 25px;
+      border-top: 1px solid #e9ecef;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .batch-modal-content .table thead {
+      position: sticky;
+      top: -1px; /* To prevent flickering */
+      background: #f8f9fa;
+      z-index: 10;
+    }
+    .batch-modal-content .table th {
+      font-weight: 600;
+    }
+    .batch-modal-content .table td {
+      vertical-align: middle;
+    }
+    #batch-print-list .page-break-row td {
+      background-color: #e9ecef;
+      padding: 8px;
+      text-align: center;
+    }
+    #batch-print-list .page-break-row input {
+      border: 1px dashed #6c757d;
+      background-color: #f8f9fa;
+      text-align: center;
+    }
+    /* === END: NEW BATCH PRINT MODAL STYLES === */
+
+    @media print {
+      body {
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      /* إخفاء كل شيء ما عدا حاوية الطباعة */
+      body > *:not(#print-output) {
+        display: none !important;
+      }
+
+      #print-output {
+        display: block !important;
+      }
+      
+      /* تطبيق الأنماط على كل صفحة A4 داخل حاوية الطباعة */
+      #print-output .a4-container {
+        display: block !important;
+        width: 210mm;
+        min-height: 217mm;
+        height: 297mm;
+        margin: 0;
+        padding: 15mm 10mm 10mm 10mm; /* تم تعديل الهامش العلوي ليتناسب مع رأس الصفحة */
+        box-shadow: none;
+        box-sizing: border-box;
+        page-break-after: always; /* الأهم للطباعة متعددة الصفحات */
+      }
+      
+      #print-output .a4-container:last-child {
+        page-break-after: auto;
+      }
+
+      /* --- REMOVED border from print styles --- */
+      #print-output .page-header {
+          /* border-bottom: none; */
+      }
+      
+      #print-output .labels-grid {
+          display: grid !important;
+          grid-template-columns: repeat(2, 1fr);
+          grid-template-rows: repeat(4, calc((297mm - 45mm) / 4 - 3mm));
+          gap: 8mm;
+          width: 100%;
+          height: calc(297mm - 20mm);
+      }
+      
+      #print-output .label-box {
+          border: 0px dashed #eee; /* إبقاء الحدود المنقطة لرؤيتها إن أردت */
+      }
+      #print-output .label-box.hidden {
+          visibility: hidden !important;
+      }
+
+      /* NEW: Style for page break text when printing */
+      .page-break-text-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        font-size: 24pt;
+        color: #333;
+        font-weight: bold;
+        text-align: center;
+      }
+
+      @page {
+        size: A4;
+        margin: 0; /* تم نقل الهوامش إلى حاوية a4-container */
+      }
+    }
+
+    /* --- START: Mobile Responsive Styles --- */
+
+    /* غطاء شفاف عند فتح القوائم الجانبية */
+    #mobile-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 980; /* أقل من القوائم، أعلى من المحتوى */
+      display: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    #mobile-overlay.visible {
+      display: block;
+      opacity: 1;
+    }
+
+    /* أزرار التحكم في القوائم الجانبية على الجوال */
+    .mobile-toggle-btn {
+      display: none; /* مخفية افتراضيًا، تظهر في الميديا كويري */
+      position: fixed;
+      top: 15px;
+      width: 50px;
+      height: 50px;
+      background-color: #0d6efd;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      z-index: 1010;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+    .mobile-toggle-btn.left {
+      left: 15px;
+    }
+    .mobile-toggle-btn.right {
+      right: 15px;
+    }
+
+    /* ميديا كويري للأجهزة اللوحية والجوال */
+    @media (max-width: 1024px) {
+      /* إظهار أزرار التحكم للجوال */
+      .mobile-toggle-btn {
+        display: flex;
+      }
+
+      /* تعديل هوامش الصفحة وإخفاء القوائم الجانبية افتراضيًا */
+      body {
+        padding: 80px 15px 20px 15px; /* هوامش جديدة للجوال */
+      }
+
+      /* --- انتقالات القوائم الجانبية --- */
+      .controls, .sidebar {
+        transition: transform 0.3s ease-in-out;
+        z-index: 999;
+      }
+
+      /* القائمة اليسرى (الإعدادات) - الحالة الأولية */
+      .controls {
+        transform: translateX(-100%);
+        width: 280px; /* عرض مناسب للجوال */
+      }
+      .controls.open {
+        transform: translateX(0);
+      }
+
+      /* القائمة اليمنى (المنتجات) - الحالة الأولية */
+      .sidebar {
+        transform: translateX(100%);
+        width: 200px;
+      }
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      /* --- تعديل حجم صفحة A4 --- */
+      .a4-viewport {
+        width: 100%;
+        margin: 0 auto;
+      }
+      .a4-container {
+        /* استخدام transform لتصغير الصفحة لتناسب الشاشة */
+        transform-origin: top center; /* تغيير نقطة الأصل للتوسيط */
+      }
+      
+      /* تعديل نافذة الطباعة لتكون في المنتصف على الجوال */
+      .print-modal {
+        width: 90%;
+        max-width: 320px;
+      }
+    }
+
+    /* تعديلات إضافية للشاشات الصغيرة جدًا */
+    @media (max-width: 480px) {
+      .labels-grid {
+        /* عرض الملصقات في عمود واحد */
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      .label-box .text-area {
+        font-size: 14px; /* تصغير الخط قليلاً */
+      }
+    }
+    /* --- END: Mobile Responsive Styles --- */
+
+  </style>
+</head>
+<body>
+
+  <div id="mobile-overlay"></div>
+  <button id="toggle-controls-btn" class="mobile-toggle-btn left">
+    <span class="material-icons">settings</span>
+  </button>
+  <button id="toggle-sidebar-btn" class="mobile-toggle-btn right">
+    <span class="material-icons">view_list</span>
+  </button>
+  <div class="controls">
+    <div class="control-group">
+        <h2 class="text-center fw-bold" style="color: #0d6efd;">
+          <span class="material-icons">print</span>
+          Etiquette
+        </h2>
+        <button class="print-btn" onclick="showPrintDialog()">طباعة الصفحة الحالية</button>
+        <button class="print-btn" onclick="showBatchPrintDialog()" style="background-color: #198754; margin-top: 5px;">
+            <span class="material-icons" style="font-size: 1.2em; vertical-align: middle;">dynamic_feed</span>
+            طباعة مجمعة
+        </button>
+    </div>
+
+    <div class="control-group">
+        <label for="headerLogoFileInput">تحميل صورة للرأس (يمين):</label>
+        <input type="file" id="headerLogoFileInput" accept="image/*">
+    </div>
+    
+    <div class="control-group">
+      <label for="refInput">Référence</label>
+      <input list="refOptions" id="refInput" value="" placeholder="مثال: CIMAISE 207-1"/>
+      <datalist id="refOptions">
+        <option value="CIMAISE 209-1"></option>
+        <option value="CIMAISE 208-1"></option>
+        <option value="CIMAISE 207-1"></option>
+        <option value="CIMAISE 206-1"></option>
+        <option value="CIMAISE 204-1"></option>
+        <option value="CIMAISE 203-1"></option>
+        <option value="CIMAISE 202-1"></option>
+        <option value="CIMAISE 201-1"></option>
+        <option value="CIMAISE 200-1"></option>
+        <option value="PLINTHE 106-1"></option>
+        <option value="PLINTHE 105-1"></option>
+        <option value="PLINTHE 104-1"></option>
+        <option value="PLINTHE 103-1"></option>
+        <option value="PLINTHE 101-1"></option>
+        <option value="PLINTHE 100-1"></option>
+        <option value="Wall panel 402-1"></option>
+        <option value="Wall panel 401-1"></option>
+        <option value="Wall panel 400-1"></option>
+        <option value="CORNIERE 351-1"></option>
+        <option value="CORNICHE 301-1"></option>
+        <option value="CORNICHE 300-1"></option>
+        <option value="CADRE 706-1"></option>
+        <option value="CADRE 705-1"></option>
+        <option value="CADRE 704-1"></option>
+        <option value="CADRE 703-1"></option>
+        <option value="CADRE 702-1"></option>
+        <option value="CADRE 701-1"></option>
+        <option value="CADRE 700-1"></option>
+      </datalist>
+    </div>
+    <div class="control-group"> <label for="pcsInput">العدد/كرتون:</label> <input type="text" id="pcsInput" value="15" placeholder="مثال: 15"> </div>
+    <div class="control-group"> <label for="widthInput">العرض (مم):</label> <input type="text" id="widthInput" value="100" placeholder="مثال: 64"> </div>
+    <div class="control-group"> <label for="thicknessInput">السمك (مم):</label> <input type="text" id="thicknessInput" value="12" placeholder="مثال: 39"> </div>
+    
+    <div class="control-group">
+        <label>خيارات العرض</label>
+        <div class="display-options">
+            <label>
+                <input type="checkbox" id="toggleQrCode" >
+                <span>إظهار QR Code</span>
+            </label>
+            <label>
+                <input type="checkbox" id="toggleSameCodeInRow" checked>
+                <span>رمز موحد لكل سطر</span>
+            </label>
+        <label>
+                <input type="checkbox" id="toggleShapes">
+                <span>إظهار الأشكال الملونة</span>
+            </label>  
+        </div>
+    </div>
+    
+    <div class="control-group">
+      <label>إخفاء الملصقات</label>
+      <div id="hide-container">
+        </div>
+    </div>
+
+  </div>
+
+  <div class="sidebar">
+    <button class="sidebar-button CIMAISE" data-ref="CIMAISE 200-1">CIMAISE 200-1</button>
+    <button class="sidebar-button CIMAISE" data-ref="CIMAISE 201-1">CIMAISE 201-1</button>
+    <button class="sidebar-button CIMAISE" data-ref="CIMAISE 202-1">CIMAISE 202-1</button>
+    <button class="sidebar-button CIMAISE" data-ref="CIMAISE 203-1">CIMAISE 203-1</button>
+    <button class="sidebar-button CIMAISE" data-ref="CIMAISE 204-1">CIMAISE 204-1</button>
+    <button class="sidebar-button CIMAISE" data-ref="CIMAISE 205-1">CIMAISE 205-1</button>
+    <button class="sidebar-button CIMAISE" data-ref="CIMAISE 206-1">CIMAISE 206-1</button>
+    <button class="sidebar-button CIMAISE" data-ref="CIMAISE 207-1">CIMAISE 207-1</button>
+    <button class="sidebar-button CIMAISE" data-ref="CIMAISE 208-1">CIMAISE 208-1</button>
+    <button class="sidebar-button CIMAISE" data-ref="CIMAISE 209-1">CIMAISE 209-1</button>
+
+    <button class="sidebar-button PLINTHE" data-ref="PLINTHE 100-1">PLINTHE 100-1</button>
+    <button class="sidebar-button PLINTHE" data-ref="PLINTHE 101-1">PLINTHE 101-1</button>
+    <button class="sidebar-button PLINTHE" data-ref="PLINTHE 103-1">PLINTHE 103-1</button>
+    <button class="sidebar-button PLINTHE" data-ref="PLINTHE 104-1">PLINTHE 104-1</button>
+    <button class="sidebar-button PLINTHE" data-ref="PLINTHE 105-1">PLINTHE 105-1</button>
+    <button class="sidebar-button PLINTHE" data-ref="PLINTHE 106-1">PLINTHE 106-1</button>
+
+    <button class="sidebar-button Wall-panel" data-ref="WP.200.1">Wall panel 400-1</button>
+    <button class="sidebar-button Wall-panel" data-ref="WP.201.1">Wall panel 401-1</button>
+    <button class="sidebar-button Wall-panel" data-ref="WP.202.1">Wall panel 402-1</button>
+    
+    <button class="sidebar-button CORNICHE" data-ref="CORNICHE 300-1">CORNICHE 300-1</button>
+    <button class="sidebar-button CORNICHE" data-ref="CORNICHE 301-1">CORNICHE 301-1</button>
+        
+    <button class="sidebar-button CORNIERE" data-ref="CORNIERE 351-1">CORNIERE 351-1</button>
+        
+    <button class="sidebar-button CADRE" data-ref="CADRE 700-1">CADRE 700-1</button>
+    <button class="sidebar-button CADRE" data-ref="CADRE 701-1">CADRE 701-1</button>
+    <button class="sidebar-button CADRE" data-ref="CADRE 702-1">CADRE 702-1</button>
+    <button class="sidebar-button CADRE" data-ref="CADRE 703-1">CADRE 703-1</button>
+    <button class="sidebar-button CADRE" data-ref="CADRE 704-1">CADRE 704-1</button>
+    <button class="sidebar-button CADRE" data-ref="CADRE 705-1">CADRE 705-1</button>
+    <button class="sidebar-button CADRE" data-ref="CADRE 706-1">CADRE 706-1</button>
+  </div>
+  
+  <div id="editor-page">
+    <div class="a4-viewport">
+      <div id="a4" class="a4-container">
+        <div class="page-header">
+          <div class="header-text" contenteditable="true">...</div>
+          <img id="headerLogo" class="header-logo" src="" alt="Header Logo" style="display: none;">
+        </div>
+
+        <div class="labels-grid">
+          <div class="label-box">
+            <div class="qr-code-container"></div>
+            <div class="corner-shape"></div>
+            <div class="bubble-container"></div>
+            <img class="bg-shape" src="https://i.imgur.com/csZfnUg.png" alt="">
+            <div class="text-area">
+              <div class="ref">Référence : CIMAISE 123-5</div>
+              <div class="pcs">PCS/Carton: 15</div>
+              <div class="dim">Dimensions: 100 x 12 mm</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="print-output" style="display: none;"></div>
+
+  <div id="printModal" class="print-modal-overlay">
+      <div class="print-modal">
+          <h3>عدد النسخ للطباعة</h3>
+          <input type="number" id="pageCountInput" value="1" min="1">
+          <div class="modal-actions">
+              <button id="confirmPrintBtn" class="btn-confirm">تأكيد الطباعة</button>
+              <button id="cancelPrintBtn" class="btn-cancel">إلغاء</button>
+          </div>
+      </div>
+  </div>
+
+<div id="batchPrintModal" class="print-modal-overlay">
+  <div class="batch-modal-content">
+    <div class="modal-header">
+      <span class="material-icons">settings_applications</span>
+      إعدادات الطباعة المجمعة
+    </div>
+    <div class="modal-body">
+      <div id="batch-print-table-container">
+        <table class="table table-bordered table-striped table-hover">
+          <thead style="text-align: center; font-size: 0.9em;">
+            <tr>
+              <th style="width: 25%;">اختيار المنتج</th>
+              <th style="width: 25%;">Référence (للطباعة)</th>
+              <th style="width: 30%;">نص رأس الصفحة</th>
+              <th style="width: 10%;">عدد الصفحات</th>
+              <th style="width: 10%;">إزالة</th>
+            </tr>
+          </thead>
+          <tbody id="batch-print-list">
+            </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div>
+        <button id="addBatchRowBtn" class="btn btn-sm btn-outline-primary">إضافة منتج آخر</button>
+        <button id="addPageBreakBtn" class="btn btn-sm btn-outline-secondary">إضافة فاصل صفحات</button>
+      </div>
+      <div>
+        <button id="cancelBatchPrintBtn" class="btn-cancel">إلغاء</button>
+        <button id="confirmBatchPrintBtn" class="btn-confirm" style="background-color: #198754;">تأكيد الطباعة المجمعة</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="temp-render-container" style="position: absolute; top: -9999px; left: -9999px; opacity: 0;"></div>
+<script>
+    const refData = {
+      'CIMAISE 209-1': { pcs: '66', width: '40', thickness: '10' }, 'CIMAISE 208-1': { pcs: '29', width: '70', thickness: '15' }, 'CIMAISE 207-1': { pcs: '50', width: '40', thickness: '16' }, 'CIMAISE 206-1': { pcs: '120', width: '25', thickness: '12' }, 'CIMAISE 204-1': { pcs: '104', width: '31', thickness: '10' }, 'CIMAISE 203-1': { pcs: '72', width: '15', thickness: '35' }, 'CIMAISE 202-1': { pcs: '30', width: '60', thickness: '21' }, 'CIMAISE 201-1': { pcs: '65', width: '40', thickness: '13' }, 'CIMAISE 200-1': { pcs: '40', width: '52', thickness: '19' }, 'PLINTHE 106-1': { pcs: '20', width: '100', thickness: '15' }, 'PLINTHE 105-1': { pcs: '',  width: '100', thickness: '15' }, 'PLINTHE 104-1': { pcs: '18', width: '121', thickness: '15' }, 'PLINTHE 103-1': { pcs: '37', width: '71',  thickness: '11' }, 'PLINTHE 101-1': { pcs: '12', width: '110', thickness: '22' }, 'PLINTHE 100-1': { pcs: '24', width: '100', thickness: '22' },
+      'WP.202.1': { pcs: '20', width: '118', thickness: '12' },  
+      'WP.201.1': { pcs: '56', width: '34',  thickness: '20' },  
+      'WP.200.1': { pcs: '13', width: '121', thickness: '21' },  
+      'CORNIERE 351-1':     { pcs: '84', width: '30',  thickness: '20' }, 'CORNICHE 301-1':   { pcs: '21', width: '72',  thickness: '41' }, 'CORNICHE 300-1':   { pcs: '14', width: '100', thickness: '47' }, 'CADRE 706-1':         { pcs: '15', width: '64',  thickness: '39' }, 'CADRE 705-1':         { pcs: '22', width: '37',  thickness: '34' }, 'CADRE 704-1':         { pcs: '',   width: '',    thickness: ''     }, 'CADRE 703-1':         { pcs: '66', width: '24',   thickness: '20'     }, 'CADRE 702-1':         { pcs: '25', width: '42',  thickness: '30' }, 'CADRE 701-1':         { pcs: '44',   width: '45',   thickness: '20'     }, 'CADRE 700-1':         { pcs: '77', width: '20',  thickness: '20' }
+    };
+    const refInput = document.getElementById('refInput');
+    const pcsInput = document.getElementById('pcsInput');
+    const widthInput = document.getElementById('widthInput');
+    const thicknessInput = document.getElementById('thicknessInput');
+    const headerLogoFileInput = document.getElementById('headerLogoFileInput');
+    function calculateWeeksAndDayOfWeek(d){const a=new Date(d),e=new Date,t=Math.abs(e-a),n=Math.floor(t/864e5),s=Math.floor(n/7);return`${s}-${(e.getDay()+1)%7}`}
+    function generateShortUniqueId(){const d=Math.random().toString(36).substring(2,6),a=String(Math.floor(1e3*Math.random())).padStart(3,"0");return(d+a).slice(0,7)}
+    function formatRefForQR(d){const a=["CIMAISE","PLINTHE","Wall panel","CORNIERE","CADRE","CORNICHE","Référence :"];let e=d.trim(),t=!0;for(;t;){t=!1;for(const n of a){const s=new RegExp(`^${n.replace(/[-\/\\^$*+?.()|[\]{}]/g,"\\$&")}\\s*`,"i");if(s.test(e)){e=e.replace(s,""),t=!0;break}}}return e}
+    function getStyleAttributesFromRef(d){if (!d || typeof d !== 'string') {return { color: '#cccccc', size: 30 };}
+        const a=d.trim();let e=0,t="DEFAULT";const n=a.match(/(\d)-\d+$/);n&&n[1]&&(t=n[1],e=parseInt(t,10));const s=100*e%360,r=0===e||1===e?30+20*e:70+3*e,i=8===e||0===e?40:50+2*e,o=Math.min(100,Math.max(0,r)),l=Math.min(100,Math.max(0,i)),c=`hsl(${s}, ${o}%, ${l}%)`;let g=0;const h=t.length>0?t:"X";for(let m=0;m<h.length;m++)g=h.charCodeAt(m)+(g<<5)-g,g&=g;return{color:c,size:30+Math.abs(g)%21}}
+    function getCornerRotation(d){if (!d || typeof d !== 'string') return 0;
+        const a=d.toUpperCase().trim();return a.startsWith("PLINTHE")?0:a.startsWith("CADRE")?0:a.startsWith("WALL PANEL")?15:a.startsWith("CIMAISE")?-10:a.startsWith("CORNIERE")?0:0}
+    function getCornerShapeClipPath(d){if (!d || typeof d !== 'string') return "polygon(0 0, 100% 0, 0 100%)";
+        const a=d.toUpperCase().trim();return a.startsWith("CIMAISE")?"polygon(0 0, 100% 0, 100% 40%, 40% 40%, 40% 100%, 0 100%)":a.startsWith("PLINTHE")?"polygon(0 0, 100% 0, 100% 100%, 30% 100%, 0 70%)":a.startsWith("CADRE")?"polygon(0 0, 100% 0, 100% 100%, 0 100%)":a.startsWith("WALL PANEL")?"polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)":a.startsWith("CORNIERE")?"polygon(0 0, 30% 0, 30% 70%, 0 100%)":"polygon(0 0, 100% 0, 0 100%)"}
+    function getLastSuffixNumber(d){if (!d || typeof d !== 'string') return null;
+        const a=d.trim().match(/-(\d+)$/);return a?parseInt(a[1],10):null}
+    function updateLabelQR(d,a){const e=d.querySelector(".qr-code-container");if(!e)return;e.innerHTML="";const t=d.querySelector(".ref").textContent||"Référence : N/A",n=t.trim(),s=calculateWeeksAndDayOfWeek("2024-05-11"),r=formatRefForQR(n),i=`https://deco4.net/?d=${r}(${s})${a}`;new QRCode(e,{text:i,width:55,height:55,colorDark:"#d61e1e",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.L});const o=document.createElement("div");o.className="qr-unique-id",o.textContent=a,e.appendChild(o)}
+    function updateLabels(){const d=refInput.value.trim();refData.hasOwnProperty(d)&&(pcsInput.value=refData[d].pcs,widthInput.value=refData[d].width,thicknessInput.value=refData[d].thickness);const a=pcsInput.value.trim(),e=widthInput.value.trim(),t=thicknessInput.value.trim(),n=document.getElementById("toggleQrCode").checked,s=document.getElementById("toggleShapes").checked,r=document.getElementById("toggleSameCodeInRow").checked,{color:i,size:o}=getStyleAttributesFromRef(d),l=getCornerRotation(d),c=getCornerShapeClipPath(d),g=getLastSuffixNumber(d),h=g>0?g:0,m=Math.max(20,o*(g>=2?.8:1));let p="";document.querySelectorAll("#editor-page .label-box").forEach((u,f)=>{const b=u.querySelector(".ref");b.dataset.manual||(b.textContent="Référence : "+(d||"N/A"));const y=u.querySelector(".pcs");y.dataset.manual||(y.textContent="PCS/Carton: "+(a||"N/A"));const v=u.querySelector(".dim");v.dataset.manual||(v.textContent=`Dimensions: ${e||"N/A"} x ${t||"N/A"} mm`),u.classList.toggle("hide-qr",!n),u.classList.toggle("hide-shapes",!s);const w=u.querySelector(".corner-shape");w&&(w.style.backgroundColor=i,w.style.width=`${m}px`,w.style.height=`${m}px`,w.style.transform=`rotate(${l}deg)`,w.style.clipPath=c);const L=u.querySelector(".bubble-container");if(L){L.innerHTML="";for(let C=0;C<h;C++){const I=document.createElement("div");I.classList.add("bubble"),I.style.backgroundColor=i,L.appendChild(I)}}let q;r?f%2==0?(p=generateShortUniqueId(),q=p):q=p:q=generateShortUniqueId(),updateLabelQR(u,q)})}
+    function generateAndPrintPages(d){const a=document.getElementById("print-output");a.innerHTML="";const e=document.getElementById("a4"),t=document.getElementById("toggleSameCodeInRow").checked;for(let n=0;n<d;n++){const s=e.cloneNode(!0);s.removeAttribute("id");const r=s.querySelector(".header-text");r&&r.removeAttribute("contenteditable");let i="";const o=s.querySelectorAll(".label-box");o.forEach((l,c)=>{const g=document.querySelectorAll("#editor-page .label-box")[c];g&&(l.innerHTML=g.innerHTML,l.className=g.className);let h;t?c%2==0?(i=generateShortUniqueId(),h=i):h=i:h=generateShortUniqueId(),updateLabelQR(l,h)}),a.appendChild(s)}window.print()}
+    function showPrintDialog(){document.getElementById("printModal").classList.add("visible")}
+    function hidePrintDialog(){document.getElementById("printModal").classList.remove("visible")}
+
+    const batchPrintModal = document.getElementById('batchPrintModal');
+    const batchPrintList = document.getElementById('batch-print-list');
+    const sidebarButtons = document.querySelectorAll('.sidebar .sidebar-button');
+    const refOptionsHTML = Array.from(sidebarButtons)
+        .map(button => `<option value="${button.dataset.ref}">${button.textContent.trim()}</option>`)
+        .join('');
+    
+    // === BATCH DATA PERSISTENCE FUNCTIONS ===
+    function saveBatchData() {
+        const rows = document.querySelectorAll('#batch-print-list tr');
+        const dataToSave = [];
+        rows.forEach(row => {
+            const type = row.dataset.type;
+            if (type === 'product') {
+                const ref = row.querySelector('.batch-ref-input').value;
+                const quantity = row.querySelector('.batch-quantity-input').value;
+                const selectedValue = row.querySelector('.batch-ref-select').value;
+                const headerText = row.querySelector('.batch-header-input').value;
+                dataToSave.push({ type: 'product', ref, quantity, selectedValue, headerText });
+            } else if (type === 'break') {
+                const text = row.querySelector('.page-break-input').value;
+                dataToSave.push({ type: 'break', text });
+            }
+        });
+        localStorage.setItem('batchPrintData', JSON.stringify(dataToSave));
+    }
+
+    function loadBatchData() {
+        const savedDataJSON = localStorage.getItem('batchPrintData');
+        if (!savedDataJSON) return false;
+        try {
+            const savedData = JSON.parse(savedDataJSON);
+            batchPrintList.innerHTML = ''; 
+            if (savedData.length === 0) return false;
+            savedData.forEach(item => {
+                if (item.type === 'product') createBatchRow(item);
+                else if (item.type === 'break') createPageBreakRow(item);
+            });
+            return true;
+        } catch (e) {
+            console.error("Failed to load batch data from localStorage", e);
+            return false;
+        }
+    }
+
+    // === ROW CREATION FUNCTIONS ===
+    function createBatchRow(data = { ref: '', quantity: 1, selectedValue: '', headerText: '' }) {
+        const tr = document.createElement('tr');
+        tr.dataset.type = 'product';
+        tr.innerHTML = `
+            <td><select class="form-select batch-ref-select"><option value="">-- اختر منتج --</option>${refOptionsHTML}</select></td>
+            <td><input type="text" class="form-control batch-ref-input"></td>
+            <td><input type="text" class="form-control batch-header-input" placeholder="اختياري..."></td>
+            <td><input type="number" class="form-control batch-quantity-input" min="1"></td>
+            <td class="text-center"><button class="btn btn-danger btn-sm remove-batch-row-btn w-100">X</button></td>
+        `;
+        
+        const selectEl = tr.querySelector('.batch-ref-select');
+        const refInputEl = tr.querySelector('.batch-ref-input');
+        const headerInputEl = tr.querySelector('.batch-header-input');
+        const quantityEl = tr.querySelector('.batch-quantity-input');
+
+        selectEl.value = data.selectedValue || '';
+        refInputEl.value = data.ref || '';
+        headerInputEl.value = data.headerText || '';
+        quantityEl.value = data.quantity || 1;
+
+        selectEl.addEventListener('change', () => { refInputEl.value = selectEl.value; saveBatchData(); });
+        refInputEl.addEventListener('input', saveBatchData);
+        headerInputEl.addEventListener('input', saveBatchData);
+        quantityEl.addEventListener('input', saveBatchData);
+
+        tr.querySelector('.remove-batch-row-btn').addEventListener('click', () => { tr.remove(); saveBatchData(); });
+        batchPrintList.appendChild(tr);
+    }
+
+    function createPageBreakRow(data = { text: '' }) {
+        const tr = document.createElement('tr');
+        tr.dataset.type = 'break';
+        tr.classList.add('page-break-row');
+        tr.innerHTML = `
+            <td colspan="4"><input type="text" class="form-control page-break-input" placeholder="اكتب نصًا للفاصل (اختياري) أو اتركه فارغًا لصفحة بيضاء"></td>
+            <td class="text-center"><button class="btn btn-danger btn-sm remove-batch-row-btn w-100">X</button></td>
+        `;
+
+        const inputEl = tr.querySelector('.page-break-input');
+        inputEl.value = data.text || '';
+        inputEl.addEventListener('input', saveBatchData);
+        tr.querySelector('.remove-batch-row-btn').addEventListener('click', () => { tr.remove(); saveBatchData(); });
+        batchPrintList.appendChild(tr);
+    }
+
+    // === MODAL VISIBILITY ===
+    function showBatchPrintDialog() {
+        const dataLoaded = loadBatchData();
+        if (!dataLoaded) {
+            createBatchRow();
+            saveBatchData();
+        }
+        batchPrintModal.classList.add('visible');
+    }
+
+    function hideBatchPrintDialog() {
+        batchPrintModal.classList.remove('visible');
+    }
+
+    // === LABEL & PRINTING LOGIC ===
+    function populateLabel(labelElement, ref) {
+        const initialDataRef = refData.hasOwnProperty(ref) ? ref : Object.keys(refData).find(key => key === ref) || Object.keys(refData).find(key => ref.startsWith(key.split(' ')[0]));
+        const data = refData[initialDataRef] || { pcs: 'N/A', width: 'N/A', thickness: 'N/A' };
+        
+        labelElement.classList.remove('hidden');
+        const pcs = data.pcs || 'N/A';
+        const width = data.width || 'N/A';
+        const thickness = data.thickness || 'N/A';
+        const showQr = document.getElementById('toggleQrCode').checked;
+        const showShapes = document.getElementById('toggleShapes').checked;
+
+        labelElement.querySelector('.ref').textContent = `Référence : ${ref}`;
+        labelElement.querySelector('.pcs').textContent = `PCS/Carton: ${pcs}`;
+        labelElement.querySelector('.dim').textContent = `Dimensions: ${width} x ${thickness} mm`;
+        labelElement.classList.toggle('hide-qr', !showQr);
+        labelElement.classList.toggle('hide-shapes', !showShapes);
+
+        const { color, size } = getStyleAttributesFromRef(initialDataRef);
+        const rotation = getCornerRotation(initialDataRef);
+        const clipPath = getCornerShapeClipPath(initialDataRef);
+        const suffix = getLastSuffixNumber(initialDataRef);
+        const bubbleCount = suffix > 0 ? suffix : 0;
+        const shapeSize = Math.max(20, size * (suffix >= 2 ? 0.8 : 1));
+
+        const cornerShape = labelElement.querySelector('.corner-shape');
+        if (cornerShape) {
+            cornerShape.style.backgroundColor = color;
+            cornerShape.style.width = `${shapeSize}px`;
+            cornerShape.style.height = `${shapeSize}px`;
+            cornerShape.style.transform = `rotate(${rotation}deg)`;
+            cornerShape.style.clipPath = clipPath;
+        }
+
+        const bubbleContainer = labelElement.querySelector('.bubble-container');
+        if (bubbleContainer) {
+            bubbleContainer.innerHTML = '';
+            for (let i = 0; i < bubbleCount; i++) {
+                const bubble = document.createElement('div');
+                bubble.classList.add('bubble');
+                bubble.style.backgroundColor = color;
+                bubbleContainer.appendChild(bubble);
+            }
+        }
+        updateLabelQR(labelElement, generateShortUniqueId());
+    }
+
+    function generateBatchPrintPages() {
+        const printOutput = document.getElementById('print-output');
+        printOutput.innerHTML = '';
+        const rows = document.querySelectorAll('#batch-print-list tr');
+        const templatePage = document.getElementById('a4');
+        const originalHeaderText = templatePage.querySelector('.header-text').textContent;
+
+        if (rows.length === 0) {
+            alert('الرجاء إضافة منتجات للطباعة.');
+            return;
+        }
+
+        rows.forEach(row => {
+            if (row.dataset.type === 'product') {
+                const ref = row.querySelector('.batch-ref-input').value.trim();
+                const pageCount = parseInt(row.querySelector('.batch-quantity-input').value, 10) || 0;
+                const headerText = row.querySelector('.batch-header-input').value.trim();
+
+                if (ref && pageCount > 0) {
+                    for (let i = 0; i < pageCount; i++) {
+                        const newPage = templatePage.cloneNode(true);
+                        newPage.removeAttribute('id');
+                        
+                        const pageHeaderTextEl = newPage.querySelector('.header-text');
+                        pageHeaderTextEl.textContent = headerText || originalHeaderText;
+                        pageHeaderTextEl.removeAttribute('contenteditable');
+
+                        const labelBoxes = newPage.querySelectorAll('.label-box');
+                        labelBoxes.forEach(box => {
+                            populateLabel(box, ref);
+                        });
+                        printOutput.appendChild(newPage);
+                    }
+                }
+            } else if (row.dataset.type === 'break') {
+                const breakText = row.querySelector('.page-break-input').value.trim();
+                const breakPage = templatePage.cloneNode(true);
+                breakPage.removeAttribute('id');
+                const grid = breakPage.querySelector('.labels-grid');
+                grid.innerHTML = ''; 
+                
+                if (breakText) {
+                    const textContainer = document.createElement('div');
+                    textContainer.className = 'page-break-text-container';
+                    textContainer.textContent = breakText;
+                    grid.appendChild(textContainer);
+                }
+                printOutput.appendChild(breakPage);
+            }
+        });
+        
+        if (printOutput.children.length > 0) {
+            window.print();
+        } else {
+            alert('لم يتم تحديد أي صفحات للطباعة. الرجاء التحقق من الكميات والمنتجات.');
+        }
+    }
+    
+    // === EVENT LISTENERS & INITIALIZATION ===
+    document.addEventListener('DOMContentLoaded', () => {
+        const grid = document.querySelector('#editor-page .labels-grid');
+        const template = grid.querySelector('.label-box');
+        grid.innerHTML = '';
+        for (let i = 0; i < 8; i++) {
+            const clone = template.cloneNode(true);
+            grid.appendChild(clone);
+            const refEl = clone.querySelector('.ref');
+            refEl.setAttribute('contenteditable', 'true');
+            refEl.addEventListener('input', () => { refEl.dataset.manual = 'true'; updateLabels(); });
+            ['.pcs', '.dim'].forEach(selector => {
+                const el = clone.querySelector(selector);
+                el.setAttribute('contenteditable', 'true');
+                el.addEventListener('input', () => el.dataset.manual = 'true');
+            });
+        }
+        const hideContainer = document.getElementById('hide-container');
+        for (let i = 0; i < 8; i++) {
+            const lbl = document.createElement('label');
+            lbl.innerHTML = `<input type="checkbox" class="hide-checkbox" data-index="${i}" /> ${i + 1}`;
+            hideContainer.appendChild(lbl);
+        }
+        document.querySelectorAll('.hide-checkbox').forEach(cb => {
+            cb.addEventListener('change', function() {
+                document.querySelectorAll('#editor-page .label-box')[this.dataset.index].classList.toggle('hidden', this.checked);
+            });
+        });
+        document.querySelectorAll('.sidebar-button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.label-box [data-manual]').forEach(el => el.removeAttribute('data-manual'));
+                refInput.value = button.dataset.ref;
+                updateLabels();
+            });
+        });
+        refInput.addEventListener('input', () => {
+            document.querySelectorAll('.label-box [data-manual]').forEach(el => el.removeAttribute('data-manual'));
+            updateLabels();
+        });
+        [pcsInput, widthInput, thicknessInput].forEach(el => el.addEventListener('input', updateLabels));
+        ['toggleQrCode', 'toggleShapes', 'toggleSameCodeInRow'].forEach(id => document.getElementById(id).addEventListener('change', updateLabels));
+        
+        document.getElementById('confirmPrintBtn').addEventListener('click', () => {
+            const pageCount = parseInt(document.getElementById('pageCountInput').value, 10);
+            if (pageCount > 0) { hidePrintDialog(); generateAndPrintPages(pageCount); } 
+            else { console.error('الرجاء إدخال عدد صحيح أكبر من صفر.'); }
+        });
+        
+        document.getElementById('cancelPrintBtn').addEventListener('click', hidePrintDialog);
+        document.getElementById('addBatchRowBtn').addEventListener('click', ()=>{createBatchRow(); saveBatchData();});
+        document.getElementById('addPageBreakBtn').addEventListener('click', ()=>{createPageBreakRow(); saveBatchData();});
+        document.getElementById('cancelBatchPrintBtn').addEventListener('click', hideBatchPrintDialog);
+        document.getElementById('confirmBatchPrintBtn').addEventListener('click', generateBatchPrintPages);
+
+        headerLogoFileInput.addEventListener('change', () => {
+            const headerLogo = document.getElementById('headerLogo');
+            if (headerLogoFileInput.files && headerLogoFileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) { headerLogo.src = e.target.result; headerLogo.style.display = 'block'; }
+                reader.readAsDataURL(headerLogoFileInput.files[0]);
+            } else { headerLogo.src = ''; headerLogo.style.display = 'none'; }
+        });
+
+        window.addEventListener('paste', async (e) => {
+            const activeElement = document.activeElement;
+            if (activeElement.isContentEditable || ['INPUT', 'TEXTAREA'].includes(activeElement.tagName)) return;
+            e.preventDefault();
+            const imageFile = Array.from(e.clipboardData.files).find(file => file.type.startsWith('image/'));
+            if (imageFile) {
+                const headerLogo = document.getElementById('headerLogo');
+                headerLogo.src = URL.createObjectURL(imageFile);
+                headerLogo.style.display = 'block';
+                headerLogoFileInput.value = '';
+            }
+        });
+
+        const toggleControlsBtn = document.getElementById('toggle-controls-btn');
+        const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
+        const controlsPanel = document.querySelector('.controls');
+        const sidebarPanel = document.querySelector('.sidebar');
+        const mobileOverlay = document.getElementById('mobile-overlay');
+        function closeSidebars() {
+            controlsPanel.classList.remove('open');
+            sidebarPanel.classList.remove('open');
+            mobileOverlay.classList.remove('visible');
+        }
+        toggleControlsBtn.addEventListener('click', (e) => { e.stopPropagation(); const isOpen = controlsPanel.classList.toggle('open'); if(isOpen) { sidebarPanel.classList.remove('open'); mobileOverlay.classList.add('visible'); } else { mobileOverlay.classList.remove('visible'); } });
+        toggleSidebarBtn.addEventListener('click', (e) => { e.stopPropagation(); const isOpen = sidebarPanel.classList.toggle('open'); if(isOpen) { controlsPanel.classList.remove('open'); mobileOverlay.classList.add('visible'); } else { mobileOverlay.classList.remove('visible'); } });
+        mobileOverlay.addEventListener('click', closeSidebars);
+
+        function scaleA4Page() {
+            const a4Container = document.getElementById('a4');
+            const a4Viewport = document.querySelector('.a4-viewport');
+            if (window.innerWidth <= 1024) {
+                const availableWidth = a4Viewport.offsetWidth;
+                const a4PixelWidth = 794;
+                if (availableWidth < a4PixelWidth) {
+                    const scale = availableWidth / a4PixelWidth;
+                    a4Container.style.transform = `scale(${scale})`;
+                    a4Viewport.style.height = `${a4Container.getBoundingClientRect().height}px`;
+                } else { a4Container.style.transform = 'none'; a4Viewport.style.height = 'auto'; }
+            } else { a4Container.style.transform = 'none'; a4Viewport.style.height = 'auto'; }
+        }
+        window.addEventListener('resize', scaleA4Page);
+        updateLabels();
+        scaleA4Page();
+    });
+</script>
+</body>
+</html>

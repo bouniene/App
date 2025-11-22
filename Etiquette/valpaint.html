@@ -9,48 +9,40 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bwip-js/3.0.4/bwip-js-min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   
   <style>
-    /* أنماط الشريط الجانبي الأيسر (الآن للإعدادات .controls) */
-    .controls { /* كان على اليمين، الآن على اليسار */
+    /* --- CSS Styles --- */
+    .controls {
       position: fixed;
-      left: 0; /* تم التغيير: الآن على اليسار */
-      right: auto; /* إضافة لضمان الموقع */
+      left: 0;
+      right: auto;
       top: 0;
       height: 100vh;
-      width: 260px; /* عرض الشريط (كان عرض .controls الأصلي) */
-      background: #f8f9fa;
-      padding: 20px;
+      width: 260px;
       background-color: #212529;
-      box-shadow: 2px 0 5px rgba(0,0,0,0.1); /* ظل على اليمين (لأنه الآن على اليسار) */
+      padding: 20px;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
       z-index: 990;  
       overflow-y: auto;
       display: flex;
       flex-direction: column;
       gap: 15px;
-      border-bottom: none;
-      margin-bottom: 0;
-      
     }
 
-    .controls * {
-      color: #adb5bd !important;
-    }
+    .controls * { color: #adb5bd !important; }
 
-
-    /* أنماط الشريط الجانبي الأيمن (الآن لقائمة المنتجات .sidebar) */
-    .sidebar { /* كان على اليسار، الآن على اليمين */
+    .sidebar {
       position: fixed;
-      right: 0; /* تم التغيير: الآن على اليمين */
-      left: auto; /* إضافة لضمان الموقع */
+      right: 0;
+      left: auto;
       top: 0;
       height: 100vh;
-      width: 160px; /* عرض الشريط (كان عرض .sidebar الأصلي) */
+      width: 160px;
       background: #f8f9fa;
       padding: 5px 5px;
-      box-shadow: -2px 0 5px rgba(0,0,0,0.1); /* ظل على اليسار (لأنه الآن على اليمين) */
+      box-shadow: -2px 0 5px rgba(0,0,0,0.1);
       z-index: 1000;  
       overflow-y: auto;
     }
@@ -68,14 +60,42 @@
       text-align: center !important;
       transition: transform 0.2s, box-shadow 0.2s;
       font-size: 14px;
+      position: relative;
     }
 
     .sidebar-button:hover {
       transform: translateY(-2px);
       box-shadow: 0 3px 8px rgba(0,0,0,0.2);
     }
+    
+    .edit-icon {
+        position: absolute;
+        left: 4px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 16px !important;
+        color: rgba(255, 255, 255, 0.7) !important;
+        cursor: pointer;
+        transition: color 0.2s;
+        display: none;
+    }
+    .sidebar-button:hover .edit-icon { display: block; color: rgba(255, 255, 255, 1) !important; }
+    
+    .sidebar-button.is-new::after {
+        content: 'new';
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        background-color: #ffc107;
+        color: #000;
+        font-size: 9px;
+        font-weight: bold;
+        padding: 1px 4px;
+        border-radius: 4px;
+        transform: rotate(15deg);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
 
-    /* ألوان الفئات للأزرار الجانبية (الآن في الشريط الأيمن) */
     .CIMAISE { background: #d61e1e; }
     .PLINTHE { background: #525045; }
     .CADRE { background: #4dabf7; }
@@ -83,7 +103,6 @@
     .CORNICHE { background: #ff922b; }
     .CORNIERE { background: #94d82d; }
 
-    /* تعديل الهوامش الرئيسية لـ body لتعكس الترتيب الجديد */
     body {
       font-family: Arial, sans-serif;
       direction: rtl;
@@ -94,22 +113,10 @@
       transition: padding 0.3s ease-in-out;
     }
     
-    .control-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
+    .control-group { display: flex; flex-direction: column; gap: 6px; }
+    .controls label { font-weight: bold; margin-bottom: 0; font-size: 0.9em; color: #adb5bd; }
 
-    .controls label {
-      font-weight: bold;
-      margin-bottom: 0;
-      font-size: 0.9em;
-      color: #adb5bd;
-    }
-
-    .controls input[type="text"],
-    .controls input[list],
-    .controls input[type="file"] {
+    .controls input[type="text"], .controls input[list], .controls input[type="file"] {
       padding: 8px 6px;
       font-size: 14px;
       border: 1px solid #ccc;
@@ -119,12 +126,9 @@
       min-width: auto;
       direction: ltr;
     }
-      .controls input[type="file"] {
-        padding: 3px;
-        background: #fff;
-      }
+    .controls input[type="file"] { padding: 3px; background: #fff; }
 
-    .controls button.print-btn {
+    .controls button.print-btn, .controls button.action-btn {
       padding: 10px 20px;
       font-size: 14px;
       cursor: pointer;
@@ -133,13 +137,15 @@
       border: none;
       border-radius: 4px;
       transition: background-color 0.3s ease;
-      margin-top: 15px;
+      margin-top: 5px;
       width: 100%;
     }
-
-    .controls button.print-btn:hover {
-      background-color: #0056b3;
-    }
+    .controls button.print-btn:hover { background-color: #0056b3; }
+    .controls .add-model-btn { background-color: #198754; } 
+    .controls .add-model-btn:hover { background-color: #157347; }
+    .controls .export-btn { background-color: #6c757d; } 
+    .controls .export-btn:hover { background-color: #5c636a; }
+    .buttons-container { display: flex; gap: 10px; }
     
     .control-group #hide-container {
       display: grid !important;  
@@ -147,7 +153,6 @@
       gap: 8px !important;  
       padding-top: 5px;
     }
-
     #hide-container label {
       font-size: 0.9em;
       display: flex;
@@ -161,14 +166,9 @@
       cursor: pointer;
       transition: background-color 0.2s;
     }
-    #hide-container label:hover {
-      background-color: #f0f0f0;
-    }
-    #hide-container input[type="checkbox"] {
-      margin: 0;  
-    }
+    #hide-container label:hover { background-color: #f0f0f0; }
+    #hide-container input[type="checkbox"] { margin: 0; }
     
-    /* NEW: Styles for display options */
     .display-options {
         display: flex;
         flex-direction: column;
@@ -177,19 +177,8 @@
         padding: 10px;
         border-radius: 4px;
     }
-
-    .display-options label {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-        font-size: 0.9em !important;
-    }
-
-    .display-options input[type="checkbox"] {
-        width: 16px;
-        height: 16px;
-    }
+    .display-options label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9em !important; }
+    .display-options input[type="checkbox"] { width: 16px; height: 16px; }
 
     .a4-container {
       width: 210mm;
@@ -202,37 +191,25 @@
       position: relative;
     }
 
-    /* --- CHANGE: Page Header Style --- */
     .page-header {
         position: absolute;
         top: 0.9mm;
         left: 10mm;
         right: 10mm;
-        height: 12mm; /* Increased height */
+        height: 12mm;
         box-sizing: border-box;
         overflow: hidden;
         display: flex;
         justify-content: space-between;
         align-items: center;
     }
+    .header-text { text-align: center; font-size: 14px; font-weight: bold; color: #333; flex-grow: 1; }
+    .header-logo { max-height: 10mm; max-width: 40mm; object-fit: contain; }
 
-    .header-text {
-        text-align: center;
-        font-size: 14px;
-        font-weight: bold;
-        color: #333;
-        flex-grow: 1;
-    }
-
-    .header-logo {
-        max-height: 10mm;
-        max-width: 40mm;
-        object-fit: contain;
-    }
-
-    .labels-grid {
+.labels-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(2, 1fr); /* عمودين */
+      /* تقسيم الارتفاع على 4 صفوف بالضبط مع مراعاة الهوامش */
       grid-template-rows: repeat(4, calc((297mm - 20mm) / 4 - 3mm));
       gap: 6mm;
       width: 100%;
@@ -247,48 +224,44 @@
       border: 1px dashed #eee;
     }
     
-    /* NEW: CSS classes to control visibility */
-    .label-box.hide-qr .qr-code-container {
-        visibility: hidden;
-    }
-    /* CHANGE: The .bg-shape is no longer hidden by this class */
-    .label-box.hide-shapes .corner-shape,
-    .label-box.hide-shapes .bubble-container {
-        visibility: hidden;
-    }
+    .label-box.hide-qr .qr-code-container { visibility: hidden; }
+    .label-box.hide-shapes .corner-shape, .label-box.hide-shapes .bubble-container { visibility: hidden; }
 
-    /* --- CHANGE: QR container is now a flex column to hold the image and text --- */
+    /* --- تعديل مكان Data Matrix ليكون في الأسفل على اليمين --- */
     .qr-code-container {
         position: absolute;
-        top: 4px;
-        right: 4px;
-        width: 60px;
+        top: auto;        
+        bottom: 5px;      /* أسفل */
+        right: 5px;       /* يمين */
+        left: auto;      
+        width: 48px;      /* تصغير عرض الحاوية قليلاً */
         z-index: 15;
         display: flex;
         flex-direction: column;
         align-items: center;
     }
-    .qr-code-container img {
-        width: 55px !important; /* Increased size */
-        height: 55px !important; /* Increased size */
-        padding: 2px;
-        background: white;
-        border: 1px solid #eee;
+    
+    /* تنسيق عنصر الكانفس (Data Matrix) - شفاف وبدون حدود */
+    .qr-code-container canvas {
+        width: 44px !important; /* تصغير الحجم قليلاً */
+        height: 44px !important;
+        padding: 0;
+        background: transparent; /* خلفية شفافة */
+        border: none; /* بدون إطار */
         box-sizing: border-box;
     }
     
-    /* --- NEW & CHANGED: Style for the unique ID below the QR code --- */
     .qr-unique-id {
-        width: 55px; /* Match QR code width */
-        font-size: 10px; /* Slightly larger font */
-        font-weight: bold; /* Make it bolder */
+        width: 44px; /* مطابقة لعرض الرمز الجديد */
+        font-size: 9px; /* تصغير الخط قليلاً */
+        font-weight: bold;
         color: #333;
-        margin-top: 2px;
+        margin-top: 1px;
         font-family: 'Courier New', Courier, monospace;
-        letter-spacing: 1px; /* Increase spacing */
-        text-align: center; /* Center the text */
+        letter-spacing: 1px;
+        text-align: center;
         box-sizing: border-box;
-        overflow: hidden; /* Prevent overflow */
+        overflow: hidden;
     }
 
     .corner-shape {
@@ -305,7 +278,7 @@
     .bubble-container {
         position: absolute;
         top: 15px;
-        right: 70px; /* Adjusted to not overlap with the larger QR container */
+        right: 70px;
         display: flex;
         flex-wrap: wrap;
         gap: 2px;
@@ -319,30 +292,26 @@
         padding: 1px;
     }
 
-
     .bubble {
       display: block;
       width: 10px;
       height: 10px;
       border-radius: 50%;
       background-color: #ccc;
-      box-shadow:
-        inset 0 0 1px rgba(255, 255, 255, 0.5),
-        0 1px 1px rgba(0,0,0,0.1);
+      box-shadow: inset 0 0 1px rgba(255, 255, 255, 0.5), 0 1px 1px rgba(0,0,0,0.1);
       flex-shrink: 0;
       transition: background-color 0.3s ease;
     }
 
-.label-box .bg-shape {
-  position: absolute;
-  top: 0;      /* بدل bottom: 0 */
-  left: 0;
-  width: 100%;
-  height: 100%; /* اجعلها تملأ الارتفاع أيضًا */
-  object-fit: cover; /* تغطي بدون تشويه النسبة */
-  z-index: 1;
-}
-
+    .label-box .bg-shape {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: 1;
+    }
 
     .label-box .logo {
       position: absolute;
@@ -366,146 +335,68 @@
       line-height: 1.3;
     }
 
-.label-box .text-area .ref {
-  font-weight: bold;
-  font-size: 1.1em;
-  margin-bottom: 4px;
-  word-wrap: break-word;
-  text-align: left;
-  padding-left: 55px; /* مسافة بادئة */
-  direction: ltr;
-}
-
-html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
-  direction: ltr !important;
-
-}
-
-    .label-box .text-area .pcs { margin-bottom: 4px;  text-align: left;
-  padding-left: 55px; /* مسافة بادئة */ }
-    .label-box .text-area .dim { margin-bottom: 4px;    text-align: left;
-  padding-left: 55px; /* مسافة بادئة */}
-
-    .label-box.hidden {
-      visibility: hidden;
-      
+    .label-box .text-area .ref {
+        font-weight: bold;
+        font-size: 1.1em;
+        margin-bottom: 4px;
+        word-wrap: break-word;
+        text-align: left;
+        padding-left: 55px;
+        direction: ltr;
     }
     
-    /* نافذة الطباعة المنبثقة */
-    .print-modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.6);
-        z-index: 1050;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        visibility: hidden;
-        opacity: 0;
-        transition: opacity 0.3s, visibility 0.3s;
-    }
-    .print-modal-overlay.visible {
-        visibility: visible;
-        opacity: 1;
-    }
-    .print-modal {
-        background: #fff;
-        padding: 25px;
-        border-radius: 8px;
-        width: 300px;
-        text-align: center;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    }
-    .print-modal h3 {
-        margin-top: 0;
-        margin-bottom: 20px;
-        color: #333;
-    }
-    .print-modal input {
-        width: 100%;
-        padding: 10px;
-        margin-bottom: 20px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        font-size: 1.2em;
-        text-align: center;
-    }
-    .print-modal .modal-actions button {
-        padding: 10px 20px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 1em;
-        margin: 0 5px;
-    }
-    .print-modal .btn-confirm {
-        background-color: #007bff;
-        color: white;
-    }
-     .print-modal .btn-cancel {
-        background-color: #6c757d;
-        color: white;
-    }
+    html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button { direction: ltr !important; }
 
-    /* === START: NEW BATCH PRINT MODAL STYLES === */
+    .label-box .text-area .pcs { margin-bottom: 4px;  text-align: left; padding-left: 55px; }
+    .label-box .text-area .dim { margin-bottom: 4px;    text-align: left; padding-left: 55px; }
+    .label-box.hidden { visibility: hidden; }
+    
+    /* Modals */
+    .modal-overlay, .print-modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.6); z-index: 1050;
+        display: flex; align-items: center; justify-content: center;
+        visibility: hidden; opacity: 0; transition: opacity 0.3s, visibility 0.3s;
+    }
+    .modal-overlay.visible, .print-modal-overlay.visible { visibility: visible; opacity: 1; }
+    .modal-content, .print-modal {
+        background: #fff; padding: 25px; border-radius: 8px; width: 350px;
+        text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .modal-content h3, .print-modal h3 { margin-top: 0; margin-bottom: 20px; color: #333; }
+    .modal-content .form-group { margin-bottom: 15px; text-align: left; }
+    .modal-content .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; font-size: 0.9rem; }
+    .modal-content .form-group.inline { display: flex; gap: 10px; }
+    .modal-content .form-group.inline > div { flex: 1; }
+    .modal-content input, .modal-content select, .print-modal input {
+        width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; box-sizing: border-box;
+    }
+    .modal-content .checkbox-group { display: flex; align-items: center; justify-content: flex-start; gap: 8px; }
+    .modal-content .checkbox-group input { width: auto; margin-bottom: 0; }
+    .modal-content .modal-actions, .print-modal .modal-actions { margin-top: 20px; }
+    .modal-content button, .print-modal button {
+        padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; margin: 0 5px;
+    }
+    .btn-confirm { background-color: #007bff; color: white; }
+    .btn-cancel { background-color: #6c757d; color: white; }
+
+    /* Batch Modal */
     .batch-modal-content {
-      background: #fff;
-      border-radius: 12px;
-      width: 950px; /* A wider modal */
-      max-width: 95vw;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.25);
-      display: flex;
-      flex-direction: column;
-      max-height: 90vh;
+      background: #fff; border-radius: 12px; width: 950px; max-width: 95vw;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.25); display: flex; flex-direction: column; max-height: 90vh;
     }
     .batch-modal-content .modal-header {
-      padding: 15px 25px;
-      border-bottom: 1px solid #e9ecef;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 1.25rem;
-      font-weight: 500;
-      color: #212529;
+      padding: 15px 25px; border-bottom: 1px solid #e9ecef; display: flex; align-items: center; gap: 10px; font-size: 1.25rem; font-weight: 500; color: #212529;
     }
-    .batch-modal-content .modal-body {
-      padding: 20px 25px;
-      overflow-y: auto;
-      flex-grow: 1;
-    }
+    .batch-modal-content .modal-body { padding: 20px 25px; overflow-y: auto; flex-grow: 1; }
     .batch-modal-content .modal-footer {
-      padding: 15px 25px;
-      border-top: 1px solid #e9ecef;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      padding: 15px 25px; border-top: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center;
     }
-    .batch-modal-content .table thead {
-      position: sticky;
-      top: -1px; /* To prevent flickering */
-      background: #f8f9fa;
-      z-index: 10;
-    }
-    .batch-modal-content .table th {
-      font-weight: 600;
-    }
-    .batch-modal-content .table td {
-      vertical-align: middle;
-    }
-    #batch-print-list .page-break-row td {
-      background-color: #e9ecef;
-      padding: 8px;
-      text-align: center;
-    }
-    #batch-print-list .page-break-row input {
-      border: 1px dashed #6c757d;
-      background-color: #f8f9fa;
-      text-align: center;
-    }
-    /* === END: NEW BATCH PRINT MODAL STYLES === */
+    .batch-modal-content .table thead { position: sticky; top: -1px; background: #f8f9fa; z-index: 10; }
+    .batch-modal-content .table th { font-weight: 600; }
+    .batch-modal-content .table td { vertical-align: middle; }
+    #batch-print-list .page-break-row td { background-color: #e9ecef; padding: 8px; text-align: center; }
+    #batch-print-list .page-break-row input { border: 1px dashed #6c757d; background-color: #f8f9fa; text-align: center; }
 
     @media print {
       body {
@@ -538,9 +429,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         page-break-after: auto;
       }
 
-      /* --- REMOVED border from print styles --- */
       #print-output .page-header {
-          /* border-bottom: none; */
       }
       
       #print-output .labels-grid {
@@ -559,17 +448,6 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
           visibility: hidden !important;
       }
 
-      /* NEW: Style for page break text when printing */
-      .page-break-text-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100%;
-        font-size: 24pt;
-        color: #333;
-        font-weight: bold;
-        text-align: center;
-      }
 
       @page {
         size: A4;
@@ -668,9 +546,9 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
       }
       
       /* تعديل نافذة الطباعة لتكون في المنتصف على الجوال */
-      .print-modal {
+      .modal-content {
         width: 90%;
-        max-width: 320px;
+        max-width: 350px;
       }
     }
 
@@ -686,7 +564,6 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
       }
     }
     /* --- END: Mobile Responsive Styles --- */
-
   </style>
 </head>
 <body>
@@ -709,6 +586,10 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
             <span class="material-icons" style="font-size: 1.2em; vertical-align: middle;">dynamic_feed</span>
             طباعة مجمعة
         </button>
+        <div class="buttons-container">
+            <button id="addModelBtn" class="action-btn add-model-btn">اضافة</button>
+            <button id="exportAppBtn" class="action-btn export-btn">تصدير</button>
+        </div>
     </div>
 
     <div class="control-group">
@@ -720,34 +601,36 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
       <label for="refInput">Référence</label>
       <input list="refOptions" id="refInput" value="" placeholder="مثال: CIMAISE 207-1"/>
       <datalist id="refOptions">
-        <option value="CIMAISE 209-1"></option>
-        <option value="CIMAISE 208-1"></option>
-        <option value="CIMAISE 207-1"></option>
-        <option value="CIMAISE 206-1"></option>
-        <option value="CIMAISE 204-1"></option>
-        <option value="CIMAISE 203-1"></option>
-        <option value="CIMAISE 202-1"></option>
-        <option value="CIMAISE 201-1"></option>
         <option value="CIMAISE 200-1"></option>
-        <option value="PLINTHE 106-1"></option>
-        <option value="PLINTHE 105-1"></option>
-        <option value="PLINTHE 104-1"></option>
-        <option value="PLINTHE 103-1"></option>
-        <option value="PLINTHE 101-1"></option>
+        <option value="CIMAISE 201-1"></option>
+        <option value="CIMAISE 202-1"></option>
+        <option value="CIMAISE 203-1"></option>
+        <option value="CIMAISE 204-1"></option>
+        <option value="CIMAISE 206-1"></option>
+        <option value="CIMAISE 207-1"></option>
+        <option value="CIMAISE 208-1"></option>
+        <option value="CIMAISE 209-1"></option>
         <option value="PLINTHE 100-1"></option>
-        <option value="Wall panel 402-1"></option>
-        <option value="Wall panel 401-1"></option>
+        <option value="PLINTHE 101-1"></option>
+        <option value="PLINTHE 103-1"></option>
+        <option value="PLINTHE 104-1"></option>
+        <option value="PLINTHE 105-1"></option>
+        <option value="PLINTHE 106-1"></option>
         <option value="Wall panel 400-1"></option>
+        <option value="Wall panel 401-1"></option>
+        <option value="Wall panel 402-1"></option>
         <option value="CORNIERE 351-1"></option>
-        <option value="CORNICHE 301-1"></option>
         <option value="CORNICHE 300-1"></option>
-        <option value="CADRE 706-1"></option>
-        <option value="CADRE 705-1"></option>
-        <option value="CADRE 704-1"></option>
-        <option value="CADRE 703-1"></option>
-        <option value="CADRE 702-1"></option>
-        <option value="CADRE 701-1"></option>
-        <option value="CADRE 700-1"></option>
+        <option value="CORNICHE 301-1"></option>
+        <option value="CORNIERE 353-1"></option>
+        <option value="PLINTHE 116-1"></option>
+        <option value="CIMAISE 217-1"></option>
+        <option value="PLINTHE 109-1"></option>
+        <option value="PLINTHE 117-1"></option>
+        <option value="CIMAISE 215-1"></option>
+        <option value="CIMAISE 216-1"></option>
+        <option value="CORNICHE 315-1"></option>
+        <option value="PLINTHE 102-1"></option>
       </datalist>
     </div>
     <div class="control-group"> <label for="pcsInput">العدد/كرتون:</label> <input type="text" id="pcsInput" value="15" placeholder="مثال: 15"> </div>
@@ -758,7 +641,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         <label>خيارات العرض</label>
         <div class="display-options">
             <label>
-                <input type="checkbox" id="toggleQrCode" >
+                <input type="checkbox" id="toggleQrCode" checked>
                 <span>إظهار QR Code</span>
             </label>
             <label>
@@ -786,35 +669,35 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
     <button class="sidebar-button CIMAISE" data-ref="CIMAISE 202-1">CIMAISE 202-1</button>
     <button class="sidebar-button CIMAISE" data-ref="CIMAISE 203-1">CIMAISE 203-1</button>
     <button class="sidebar-button CIMAISE" data-ref="CIMAISE 204-1">CIMAISE 204-1</button>
-    <button class="sidebar-button CIMAISE" data-ref="CIMAISE 205-1">CIMAISE 205-1</button>
     <button class="sidebar-button CIMAISE" data-ref="CIMAISE 206-1">CIMAISE 206-1</button>
     <button class="sidebar-button CIMAISE" data-ref="CIMAISE 207-1">CIMAISE 207-1</button>
     <button class="sidebar-button CIMAISE" data-ref="CIMAISE 208-1">CIMAISE 208-1</button>
     <button class="sidebar-button CIMAISE" data-ref="CIMAISE 209-1">CIMAISE 209-1</button>
+    <button class="sidebar-button CIMAISE is-new" data-ref="CIMAISE 215-1">CIMAISE 215-1</button>
+    <button class="sidebar-button CIMAISE is-new" data-ref="CIMAISE 216-1">CIMAISE 216-1</button>
+    <button class="sidebar-button CIMAISE is-new" data-ref="CIMAISE 217-1">CIMAISE 217-1</button>
 
     <button class="sidebar-button PLINTHE" data-ref="PLINTHE 100-1">PLINTHE 100-1</button>
     <button class="sidebar-button PLINTHE" data-ref="PLINTHE 101-1">PLINTHE 101-1</button>
+    <button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 102-1">PLINTHE 102-1</button>
     <button class="sidebar-button PLINTHE" data-ref="PLINTHE 103-1">PLINTHE 103-1</button>
     <button class="sidebar-button PLINTHE" data-ref="PLINTHE 104-1">PLINTHE 104-1</button>
     <button class="sidebar-button PLINTHE" data-ref="PLINTHE 105-1">PLINTHE 105-1</button>
     <button class="sidebar-button PLINTHE" data-ref="PLINTHE 106-1">PLINTHE 106-1</button>
+    <button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 109-1">PLINTHE 109-1</button>
+    <button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 116-1">PLINTHE 116-1</button>
+    <button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 117-1">PLINTHE 117-1</button>
 
-    <button class="sidebar-button Wall-panel" data-ref="WP.200.1">Wall panel 400-1</button>
-    <button class="sidebar-button Wall-panel" data-ref="WP.201.1">Wall panel 401-1</button>
-    <button class="sidebar-button Wall-panel" data-ref="WP.202.1">Wall panel 402-1</button>
+    <button class="sidebar-button Wall-panel" data-ref="Wall panel 400-1">Wall panel 400-1</button>
+    <button class="sidebar-button Wall-panel" data-ref="Wall panel 401-1">Wall panel 401-1</button>
+    <button class="sidebar-button Wall-panel" data-ref="Wall panel 402-1">Wall panel 402-1</button>
     
     <button class="sidebar-button CORNICHE" data-ref="CORNICHE 300-1">CORNICHE 300-1</button>
     <button class="sidebar-button CORNICHE" data-ref="CORNICHE 301-1">CORNICHE 301-1</button>
-        
+    <button class="sidebar-button CORNICHE is-new" data-ref="CORNICHE 315-1">CORNICHE 315-1</button>
+
     <button class="sidebar-button CORNIERE" data-ref="CORNIERE 351-1">CORNIERE 351-1</button>
-        
-    <button class="sidebar-button CADRE" data-ref="CADRE 700-1">CADRE 700-1</button>
-    <button class="sidebar-button CADRE" data-ref="CADRE 701-1">CADRE 701-1</button>
-    <button class="sidebar-button CADRE" data-ref="CADRE 702-1">CADRE 702-1</button>
-    <button class="sidebar-button CADRE" data-ref="CADRE 703-1">CADRE 703-1</button>
-    <button class="sidebar-button CADRE" data-ref="CADRE 704-1">CADRE 704-1</button>
-    <button class="sidebar-button CADRE" data-ref="CADRE 705-1">CADRE 705-1</button>
-    <button class="sidebar-button CADRE" data-ref="CADRE 706-1">CADRE 706-1</button>
+    <button class="sidebar-button CORNIERE is-new" data-ref="CORNIERE 353-1">CORNIERE 353-1</button>
   </div>
   
   <div id="editor-page">
@@ -832,7 +715,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
             <div class="bubble-container"></div>
             <img class="bg-shape" src="https://i.imgur.com/csZfnUg.png" alt="">
             <div class="text-area">
-              <div class="ref">Référence : CIMAISE 123-5</div>
+              <div class="ref">Référence : C.5.2.1</div>
               <div class="pcs">PCS/Carton: 15</div>
               <div class="dim">Dimensions: 100 x 12 mm</div>
             </div>
@@ -891,15 +774,139 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
   </div>
 </div>
 
+  <div id="modelModal" class="modal-overlay" data-mode="add">
+      <div class="modal-content">
+          <h3 id="modelModalTitle">إضافة مودال جديد</h3>
+          <input type="hidden" id="originalModelRef" value=""> 
+          <div class="form-group">
+              <label for="modelCategory">نوع المودال:</label>
+              <select id="modelCategory">
+                  <option value="CIMAISE">CIMAISE</option>
+                  <option value="PLINTHE">PLINTHE</option>
+                  <option value="Wall-panel">Wall panel</option>
+                  <option value="CORNICHE">CORNICHE</option>
+                  <option value="CORNIERE">CORNIERE</option>
+                  <option value="CADRE">CADRE</option>
+              </select>
+          </div>
+          <div class="form-group">
+              <label for="modelNumber">رقم الموديل (الاسم الظاهري):</label>
+              <input type="text" id="modelNumber" placeholder="مثال: 200-1">
+          </div>
+          <div class="form-group">
+              <label for="modelLookupRef">الاسم المرافق (للبيانات والقصاصة):</label>
+              <input type="text" id="modelLookupRef" placeholder="مثال: 5218-1">
+          </div>
+          <div class="form-group">
+              <label for="modelPcs">PCS/Carton:</label>
+              <input type="text" id="modelPcs" placeholder="مثال: 15">
+          </div>
+          <div class="form-group inline">
+              <div>
+                <label for="modelWidth">العرض (مم):</label>
+                <input type="text" id="modelWidth" placeholder="مثال: 64">
+              </div>
+              <div>
+                <label for="modelThickness">السمك (مم):</label>
+                <input type="text" id="modelThickness" placeholder="مثال: 39">
+              </div>
+            </div>
+          <div class="form-group checkbox-group">
+              <input type="checkbox" id="modelIsNew">
+              <label for="modelIsNew">إضافة علامة "جديد"</label>
+          </div>
+          <div class="modal-actions">
+              <button id="saveModelBtn" class="btn-confirm">حفظ</button>
+              <button id="cancelModelBtn" class="btn-cancel">إلغاء</button>
+          </div>
+      </div>
+  </div>
+
 <div id="temp-render-container" style="position: absolute; top: -9999px; left: -9999px; opacity: 0;"></div>
 <script>
-    const refData = {
-      'CIMAISE 209-1': { pcs: '66', width: '40', thickness: '10' }, 'CIMAISE 208-1': { pcs: '29', width: '70', thickness: '15' }, 'CIMAISE 207-1': { pcs: '50', width: '40', thickness: '16' }, 'CIMAISE 206-1': { pcs: '120', width: '25', thickness: '12' }, 'CIMAISE 204-1': { pcs: '104', width: '31', thickness: '10' }, 'CIMAISE 203-1': { pcs: '72', width: '15', thickness: '35' }, 'CIMAISE 202-1': { pcs: '30', width: '60', thickness: '21' }, 'CIMAISE 201-1': { pcs: '65', width: '40', thickness: '13' }, 'CIMAISE 200-1': { pcs: '40', width: '52', thickness: '19' }, 'PLINTHE 106-1': { pcs: '20', width: '100', thickness: '15' }, 'PLINTHE 105-1': { pcs: '',  width: '100', thickness: '15' }, 'PLINTHE 104-1': { pcs: '18', width: '121', thickness: '15' }, 'PLINTHE 103-1': { pcs: '37', width: '71',  thickness: '11' }, 'PLINTHE 101-1': { pcs: '12', width: '110', thickness: '22' }, 'PLINTHE 100-1': { pcs: '24', width: '100', thickness: '22' },
-      'WP.202.1': { pcs: '20', width: '118', thickness: '12' },  
-      'WP.201.1': { pcs: '56', width: '34',  thickness: '20' },  
-      'WP.200.1': { pcs: '13', width: '121', thickness: '21' },  
-      'CORNIERE 351-1':     { pcs: '84', width: '30',  thickness: '20' }, 'CORNICHE 301-1':   { pcs: '21', width: '72',  thickness: '41' }, 'CORNICHE 300-1':   { pcs: '14', width: '100', thickness: '47' }, 'CADRE 706-1':         { pcs: '15', width: '64',  thickness: '39' }, 'CADRE 705-1':         { pcs: '22', width: '37',  thickness: '34' }, 'CADRE 704-1':         { pcs: '',   width: '',    thickness: ''     }, 'CADRE 703-1':         { pcs: '66', width: '24',   thickness: '20'     }, 'CADRE 702-1':         { pcs: '25', width: '42',  thickness: '30' }, 'CADRE 701-1':         { pcs: '44',   width: '45',   thickness: '20'     }, 'CADRE 700-1':         { pcs: '77', width: '20',  thickness: '20' }
+    let refData = {
+      'C.5.2.1':     { pcs: '40', width: '52', thickness: '2900' }, 
+      'C.4.1':       { pcs: '65', width: '40', thickness: '2900' }, 
+      'C.6.1':       { pcs: '30', width: '60', thickness: '2900' }, 
+      'C.3.5.1':     { pcs: '72', width: '35', thickness: '2900' }, 
+      'C.3.1':       { pcs: '104', width: '31', thickness: '2900' }, 
+      'C.2.5.1':     { pcs: '120', width: '25', thickness: '2900' }, 
+      'C.4.2':       { pcs: '50', width: '40', thickness: '2900' }, 
+      'C.7.1':       { pcs: '29', width: '70', thickness: '2900' }, 
+      'C.3.5.1':   { pcs: '66', width: '40', thickness: '2900' }, 
+      'CP.10.1':     { pcs: '24', width: '100', thickness: '2900' }, 
+      'P.11.1':      { pcs: '12', width: '110', thickness: '2900' }, 
+      'P.7.1':       { pcs: '37', width: '71', thickness: '2900' }, 
+      'P.12.1':      { pcs: '18', width: '121', thickness: '2900' }, 
+      'P.10.1':      { pcs: '24', width: '100', thickness: '2900' }, 
+      'P.10.2':      { pcs: '20', width: '100', thickness: '2900' }, 
+      'WP.200.1':    { pcs: '13', width: '121', thickness: '2900' }, 
+      'WP.201.1':    { pcs: '56', width: '34', thickness: '2900' }, 
+      'WP.202.1':    { pcs: '20', width: '118', thickness: '2900' }, 
+      'Cr.3.1':      { pcs: '84', width: '30', thickness: '2900' }, 
+      'Cr.10.1':     { pcs: '14', width: '100', thickness: '2900' }, 
+      'Cr.7.1':      { pcs: '21', width: '72', thickness: '2900' }, 
+      'CR.3.2':      { pcs: '108', width: '30', thickness: '2900' }, 
+      'P.10.3':      { pcs: '26', width: '100', thickness: '2900' }, 
+      'C.2.5.2':     { pcs: '125', width: '25', thickness: '2900' }, 
+      'PL.10.1':     { pcs: '15', width: '100', thickness: '2900' }, 
+      'PLINTHE 117-1': { pcs: '17', width: '120', thickness: '2900' }, 
+      'C.6.2':       { pcs: '33', width: '60', thickness: '2900' }, 
+      'C.4.3':       { pcs: '65', width: '40', thickness: '2900' }, 
+      'CR.5.7.1':    { pcs: '22', width: '57', thickness: '2900' }, 
+      'CP.14.4.1':   { pcs: '14', width: '144', thickness: '2900' } 
     };
+
+    let referenceMap = {
+      'CIMAISE 200-1': 'C.5.2.1',
+      'CIMAISE 201-1': 'C.4.1',
+      'CIMAISE 202-1': 'C.6.1',
+      'CIMAISE 203-1': 'C.3.5.1',
+      'CIMAISE 204-1': 'C.3.1',
+      'CIMAISE 206-1': 'C.2.5.1',
+      'CIMAISE 207-1': 'C.4.2',
+      'CIMAISE 208-1': 'C.7.1',
+      'CIMAISE 209-1': 'C.3.5.1-B',
+      'PLINTHE 100-1': 'CP.10.1',
+      'PLINTHE 101-1': 'P.11.1',
+      'PLINTHE 103-1': 'P.7.1',
+      'PLINTHE 104-1': 'P.12.1',
+      'PLINTHE 105-1': 'P.10.1',
+      'PLINTHE 106-1': 'P.10.2',
+      'Wall panel 400-1': 'WP.200.1',
+      'Wall panel 401-1': 'WP.201.1',
+      'Wall panel 402-1': 'WP.202.1',
+      'CORNIERE 351-1': 'Cr.3.1',
+      'CORNICHE 300-1': 'Cr.10.1',
+      'CORNICHE 301-1': 'Cr.7.1',
+      'CORNIERE 353-1': 'CR.3.2',
+      'PLINTHE 116-1': 'P.10.3',
+      'CIMAISE 217-1': 'C.2.5.2',
+      'PLINTHE 109-1': 'PL.10.1',
+      'PLINTHE 117-1': 'PLINTHE 117-1',
+      'CIMAISE 215-1': 'C.6.2',
+      'CIMAISE 216-1': 'C.4.3',
+      'CORNICHE 315-1': 'CR.5.7.1',
+      'PLINTHE 102-1': 'CP.14.4.1'
+    };
+
+    let reverseReferenceMap = {};
+    
+    function initReferenceMaps() {
+        reverseReferenceMap = {};
+        for (const key in referenceMap) {
+            reverseReferenceMap[referenceMap[key]] = key;
+        }
+        document.querySelectorAll('.sidebar-button').forEach(btn => {
+            const ref = btn.dataset.ref;
+            if(!referenceMap[ref] && refData[ref]) {
+                referenceMap[ref] = ref;
+                reverseReferenceMap[ref] = ref;
+            }
+        });
+    }
+    initReferenceMaps();
+
     const refInput = document.getElementById('refInput');
     const pcsInput = document.getElementById('pcsInput');
     const widthInput = document.getElementById('widthInput');
@@ -916,20 +923,97 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         const a=d.toUpperCase().trim();return a.startsWith("CIMAISE")?"polygon(0 0, 100% 0, 100% 40%, 40% 40%, 40% 100%, 0 100%)":a.startsWith("PLINTHE")?"polygon(0 0, 100% 0, 100% 100%, 30% 100%, 0 70%)":a.startsWith("CADRE")?"polygon(0 0, 100% 0, 100% 100%, 0 100%)":a.startsWith("WALL PANEL")?"polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)":a.startsWith("CORNIERE")?"polygon(0 0, 30% 0, 30% 70%, 0 100%)":"polygon(0 0, 100% 0, 0 100%)"}
     function getLastSuffixNumber(d){if (!d || typeof d !== 'string') return null;
         const a=d.trim().match(/-(\d+)$/);return a?parseInt(a[1],10):null}
-    function updateLabelQR(d,a){const e=d.querySelector(".qr-code-container");if(!e)return;e.innerHTML="";const t=d.querySelector(".ref").textContent||"Référence : N/A",n=t.trim(),s=calculateWeeksAndDayOfWeek("2024-05-11"),r=formatRefForQR(n),i=`https://deco4.net/?d=${r}(${s})${a}`;new QRCode(e,{text:i,width:55,height:55,colorDark:"#d61e1e",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.L});const o=document.createElement("div");o.className="qr-unique-id",o.textContent=a,e.appendChild(o)}
-    function updateLabels(){const d=refInput.value.trim();refData.hasOwnProperty(d)&&(pcsInput.value=refData[d].pcs,widthInput.value=refData[d].width,thicknessInput.value=refData[d].thickness);const a=pcsInput.value.trim(),e=widthInput.value.trim(),t=thicknessInput.value.trim(),n=document.getElementById("toggleQrCode").checked,s=document.getElementById("toggleShapes").checked,r=document.getElementById("toggleSameCodeInRow").checked,{color:i,size:o}=getStyleAttributesFromRef(d),l=getCornerRotation(d),c=getCornerShapeClipPath(d),g=getLastSuffixNumber(d),h=g>0?g:0,m=Math.max(20,o*(g>=2?.8:1));let p="";document.querySelectorAll("#editor-page .label-box").forEach((u,f)=>{const b=u.querySelector(".ref");b.dataset.manual||(b.textContent="Référence : "+(d||"N/A"));const y=u.querySelector(".pcs");y.dataset.manual||(y.textContent="PCS/Carton: "+(a||"N/A"));const v=u.querySelector(".dim");v.dataset.manual||(v.textContent=`Dimensions: ${e||"N/A"} x ${t||"N/A"} mm`),u.classList.toggle("hide-qr",!n),u.classList.toggle("hide-shapes",!s);const w=u.querySelector(".corner-shape");w&&(w.style.backgroundColor=i,w.style.width=`${m}px`,w.style.height=`${m}px`,w.style.transform=`rotate(${l}deg)`,w.style.clipPath=c);const L=u.querySelector(".bubble-container");if(L){L.innerHTML="";for(let C=0;C<h;C++){const I=document.createElement("div");I.classList.add("bubble"),I.style.backgroundColor=i,L.appendChild(I)}}let q;r?f%2==0?(p=generateShortUniqueId(),q=p):q=p:q=generateShortUniqueId(),updateLabelQR(u,q)})}
+    
+    // توليد Data Matrix باستخدام bwip-js
+// دالة محدثة لتوليد QR بناءً على محتوى الملصق
+function updateLabelQR(labelBox) {
+        const qrContainer = labelBox.querySelector(".qr-code-container");
+        if (!qrContainer) return;
+        qrContainer.innerHTML = "";
+        
+        // 1. قراءة المرجع
+        const refText = labelBox.querySelector(".ref").textContent.replace("Référence : ", "").trim() || "N/A";
+        
+        // 2. قراءة العدد
+        // نستخدم Regex لاستخراج الأرقام فقط من نص العدد لتجنب الأخطاء إذا مسحت كلمة PCS
+        const pcsContent = labelBox.querySelector(".pcs").textContent;
+        const pcsMatch = pcsContent.match(/(\d+)/); // البحث عن أول رقم
+        const pcsVal = pcsMatch ? pcsMatch[0] : "0";
+
+        // 3. قراءة الأبعاد وحساب الطول
+        const dimContent = labelBox.querySelector(".dim").textContent;
+        // تنظيف النص: نحذف كلمة Dimensions و cm أو mm وأي مسافات
+        // نفترض الصيغة: رقم x رقم
+        const cleanDim = dimContent.replace(/Dimensions:|cm|mm/gi, "").trim();
+        const parts = cleanDim.split('x');
+        
+        let calculatedLength = 0;
+        
+        // إذا وجدنا جزئين (عرض x طول)، نأخذ الجزء الثاني
+        if (parts.length >= 2) {
+            const val = parseFloat(parts[1].trim());
+            if (!isNaN(val)) {
+                calculatedLength = val / 10; // المعادلة: الطول تقسيم 10
+            }
+        }
+
+        // تكوين النص: Ref-Length-PCS
+        const qrString = `${refText}-${calculatedLength}-${pcsVal}`;
+        
+        const canvas = document.createElement('canvas');
+        try {
+            bwipjs.toCanvas(canvas, {
+                bcid:        'datamatrix',        
+                text:        qrString,
+                scale:       3,                
+                height:      10,              
+                width:       10,              
+                includetext: false,            
+                barcolor:    '000000' 
+            });
+            canvas.style.width = '44px';
+            canvas.style.height = '44px';
+            qrContainer.appendChild(canvas);
+        } catch (e) {
+            console.error(e);
+        }
+        
+    }
+    
+    function updateLabels(){
+        const userInput = refInput.value.trim();
+        const lookupRef = referenceMap[userInput] || userInput;
+        
+        if (refData.hasOwnProperty(lookupRef)) {
+            pcsInput.value = refData[lookupRef].pcs;
+            widthInput.value = refData[lookupRef].width;
+            thicknessInput.value = refData[lookupRef].thickness;
+        }
+        
+        const a=pcsInput.value.trim(),e=widthInput.value.trim(),t=thicknessInput.value.trim(),n=document.getElementById("toggleQrCode").checked,s=document.getElementById("toggleShapes").checked,r=document.getElementById("toggleSameCodeInRow").checked,{color:i,size:o}=getStyleAttributesFromRef(lookupRef),l=getCornerRotation(lookupRef),c=getCornerShapeClipPath(lookupRef),g=getLastSuffixNumber(lookupRef),h=g>0?g:0,m=Math.max(20,o*(g>=2?.8:1));let p="";
+        
+        document.querySelectorAll("#editor-page .label-box").forEach((u,f)=>{
+            const b=u.querySelector(".ref");
+            b.dataset.manual||(b.textContent="Référence : "+(lookupRef||"N/A"));
+            
+            const y=u.querySelector(".pcs");y.dataset.manual||(y.textContent="PCS/Carton: "+(a||"N/A"));
+            
+            const v=u.querySelector(".dim");
+            const widthCm = e ? (parseFloat(e) / 10) : "N/A";
+            const thickCm = t ? (parseFloat(t) / 10) : "N/A";
+            v.dataset.manual||(v.textContent=`Dimensions: ${widthCm} x ${thickCm} cm`);
+            
+            u.classList.toggle("hide-qr",!n),u.classList.toggle("hide-shapes",!s);const w=u.querySelector(".corner-shape");w&&(w.style.backgroundColor=i,w.style.width=`${m}px`,w.style.height=`${m}px`,w.style.transform=`rotate(${l}deg)`,w.style.clipPath=c);const L=u.querySelector(".bubble-container");if(L){L.innerHTML="";for(let C=0;C<h;C++){const I=document.createElement("div");I.classList.add("bubble"),I.style.backgroundColor=i,L.appendChild(I)}}let q;r?f%2==0?(p=generateShortUniqueId(),q=p):q=p:q=generateShortUniqueId(),updateLabelQR(u,q)
+        })
+    }
+    
     function generateAndPrintPages(d){const a=document.getElementById("print-output");a.innerHTML="";const e=document.getElementById("a4"),t=document.getElementById("toggleSameCodeInRow").checked;for(let n=0;n<d;n++){const s=e.cloneNode(!0);s.removeAttribute("id");const r=s.querySelector(".header-text");r&&r.removeAttribute("contenteditable");let i="";const o=s.querySelectorAll(".label-box");o.forEach((l,c)=>{const g=document.querySelectorAll("#editor-page .label-box")[c];g&&(l.innerHTML=g.innerHTML,l.className=g.className);let h;t?c%2==0?(i=generateShortUniqueId(),h=i):h=i:h=generateShortUniqueId(),updateLabelQR(l,h)}),a.appendChild(s)}window.print()}
     function showPrintDialog(){document.getElementById("printModal").classList.add("visible")}
     function hidePrintDialog(){document.getElementById("printModal").classList.remove("visible")}
 
     const batchPrintModal = document.getElementById('batchPrintModal');
     const batchPrintList = document.getElementById('batch-print-list');
-    const sidebarButtons = document.querySelectorAll('.sidebar .sidebar-button');
-    const refOptionsHTML = Array.from(sidebarButtons)
-        .map(button => `<option value="${button.dataset.ref}">${button.textContent.trim()}</option>`)
-        .join('');
     
-    // === BATCH DATA PERSISTENCE FUNCTIONS ===
     function saveBatchData() {
         const rows = document.querySelectorAll('#batch-print-list tr');
         const dataToSave = [];
@@ -966,13 +1050,19 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
             return false;
         }
     }
+    
+    function updateRefOptionsHTML() {
+        const buttons = document.querySelectorAll('.sidebar .sidebar-button');
+        return Array.from(buttons)
+        .map(button => `<option value="${button.dataset.ref}">${button.textContent.trim()}</option>`)
+        .join('');
+    }
 
-    // === ROW CREATION FUNCTIONS ===
     function createBatchRow(data = { ref: '', quantity: 1, selectedValue: '', headerText: '' }) {
         const tr = document.createElement('tr');
         tr.dataset.type = 'product';
         tr.innerHTML = `
-            <td><select class="form-select batch-ref-select"><option value="">-- اختر منتج --</option>${refOptionsHTML}</select></td>
+            <td><select class="form-select batch-ref-select"><option value="">-- اختر منتج --</option>${updateRefOptionsHTML()}</select></td>
             <td><input type="text" class="form-control batch-ref-input"></td>
             <td><input type="text" class="form-control batch-header-input" placeholder="اختياري..."></td>
             <td><input type="number" class="form-control batch-quantity-input" min="1"></td>
@@ -1006,7 +1096,6 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
             <td colspan="4"><input type="text" class="form-control page-break-input" placeholder="اكتب نصًا للفاصل (اختياري) أو اتركه فارغًا لصفحة بيضاء"></td>
             <td class="text-center"><button class="btn btn-danger btn-sm remove-batch-row-btn w-100">X</button></td>
         `;
-
         const inputEl = tr.querySelector('.page-break-input');
         inputEl.value = data.text || '';
         inputEl.addEventListener('input', saveBatchData);
@@ -1014,35 +1103,32 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         batchPrintList.appendChild(tr);
     }
 
-    // === MODAL VISIBILITY ===
     function showBatchPrintDialog() {
         const dataLoaded = loadBatchData();
-        if (!dataLoaded) {
-            createBatchRow();
-            saveBatchData();
-        }
+        if (!dataLoaded) { createBatchRow(); saveBatchData(); }
         batchPrintModal.classList.add('visible');
     }
 
-    function hideBatchPrintDialog() {
-        batchPrintModal.classList.remove('visible');
-    }
+    function hideBatchPrintDialog() { batchPrintModal.classList.remove('visible'); }
 
-    // === LABEL & PRINTING LOGIC ===
     function populateLabel(labelElement, ref) {
-        const initialDataRef = refData.hasOwnProperty(ref) ? ref : Object.keys(refData).find(key => key === ref) || Object.keys(refData).find(key => ref.startsWith(key.split(' ')[0]));
+        const lookupRef = referenceMap[ref] || ref;
+        let initialDataRef = lookupRef;
+        if(!refData.hasOwnProperty(lookupRef)) {
+            initialDataRef = Object.keys(refData).find(key => key === lookupRef) || Object.keys(refData).find(key => lookupRef.startsWith(key.split(' ')[0]));
+        }
         const data = refData[initialDataRef] || { pcs: 'N/A', width: 'N/A', thickness: 'N/A' };
-        
         labelElement.classList.remove('hidden');
-        const pcs = data.pcs || 'N/A';
-        const width = data.width || 'N/A';
-        const thickness = data.thickness || 'N/A';
         const showQr = document.getElementById('toggleQrCode').checked;
         const showShapes = document.getElementById('toggleShapes').checked;
 
-        labelElement.querySelector('.ref').textContent = `Référence : ${ref}`;
-        labelElement.querySelector('.pcs').textContent = `PCS/Carton: ${pcs}`;
-        labelElement.querySelector('.dim').textContent = `Dimensions: ${width} x ${thickness} mm`;
+        labelElement.querySelector('.ref').textContent = `Référence : ${lookupRef}`; 
+        labelElement.querySelector('.pcs').textContent = `PCS/Carton: ${data.pcs || 'N/A'}`;
+        
+        const widthCm = data.width ? (parseFloat(data.width) / 10) : "N/A";
+        const thickCm = data.thickness ? (parseFloat(data.thickness) / 10) : "N/A";
+        labelElement.querySelector('.dim').textContent = `Dimensions: ${widthCm} x ${thickCm} cm`;
+        
         labelElement.classList.toggle('hide-qr', !showQr);
         labelElement.classList.toggle('hide-shapes', !showShapes);
 
@@ -1061,7 +1147,6 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
             cornerShape.style.transform = `rotate(${rotation}deg)`;
             cornerShape.style.clipPath = clipPath;
         }
-
         const bubbleContainer = labelElement.querySelector('.bubble-container');
         if (bubbleContainer) {
             bubbleContainer.innerHTML = '';
@@ -1082,30 +1167,22 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         const templatePage = document.getElementById('a4');
         const originalHeaderText = templatePage.querySelector('.header-text').textContent;
 
-        if (rows.length === 0) {
-            alert('الرجاء إضافة منتجات للطباعة.');
-            return;
-        }
+        if (rows.length === 0) { alert('الرجاء إضافة منتجات للطباعة.'); return; }
 
         rows.forEach(row => {
             if (row.dataset.type === 'product') {
                 const ref = row.querySelector('.batch-ref-input').value.trim();
                 const pageCount = parseInt(row.querySelector('.batch-quantity-input').value, 10) || 0;
                 const headerText = row.querySelector('.batch-header-input').value.trim();
-
                 if (ref && pageCount > 0) {
                     for (let i = 0; i < pageCount; i++) {
                         const newPage = templatePage.cloneNode(true);
                         newPage.removeAttribute('id');
-                        
                         const pageHeaderTextEl = newPage.querySelector('.header-text');
                         pageHeaderTextEl.textContent = headerText || originalHeaderText;
                         pageHeaderTextEl.removeAttribute('contenteditable');
-
                         const labelBoxes = newPage.querySelectorAll('.label-box');
-                        labelBoxes.forEach(box => {
-                            populateLabel(box, ref);
-                        });
+                        labelBoxes.forEach(box => { populateLabel(box, ref); });
                         printOutput.appendChild(newPage);
                     }
                 }
@@ -1115,7 +1192,6 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
                 breakPage.removeAttribute('id');
                 const grid = breakPage.querySelector('.labels-grid');
                 grid.innerHTML = ''; 
-                
                 if (breakText) {
                     const textContainer = document.createElement('div');
                     textContainer.className = 'page-break-text-container';
@@ -1125,31 +1201,301 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
                 printOutput.appendChild(breakPage);
             }
         });
-        
-        if (printOutput.children.length > 0) {
-            window.print();
-        } else {
-            alert('لم يتم تحديد أي صفحات للطباعة. الرجاء التحقق من الكميات والمنتجات.');
-        }
+        if (printOutput.children.length > 0) { window.print(); } else { alert('لم يتم تحديد أي صفحات للطباعة.'); }
     }
     
-    // === EVENT LISTENERS & INITIALIZATION ===
-    document.addEventListener('DOMContentLoaded', () => {
+    const modelModal = document.getElementById('modelModal');
+    const modelModalTitle = document.getElementById('modelModalTitle');
+    const originalModelRefInput = document.getElementById('originalModelRef');
+    const modelCategorySelect = document.getElementById('modelCategory');
+    const modelNumberInput = document.getElementById('modelNumber');
+    const modelLookupRefInput = document.getElementById('modelLookupRef');
+    const modelPcsInput = document.getElementById('modelPcs');
+    const modelWidthInput = document.getElementById('modelWidth');
+    const modelThicknessInput = document.getElementById('modelThickness');
+    const modelIsNewCheckbox = document.getElementById('modelIsNew');
+
+    function openModelModal(mode, displayRef = null) {
+        originalModelRefInput.value = '';
+        modelLookupRefInput.value = '';
+        if (mode === 'add') {
+            modelModalTitle.textContent = 'إضافة مودال جديد';
+            modelModal.dataset.mode = 'add';
+            modelCategorySelect.value = 'CIMAISE';
+            modelNumberInput.value = '';
+            modelPcsInput.value = '';
+            modelWidthInput.value = '';
+            modelThicknessInput.value = '';
+            modelIsNewCheckbox.checked = false;
+        } else if (mode === 'edit' && displayRef) {
+            const lookupRef = referenceMap[displayRef] || displayRef;
+            if (!refData[lookupRef]) return;
+            modelModalTitle.textContent = 'تعديل المودال';
+            modelModal.dataset.mode = 'edit';
+            originalModelRefInput.value = displayRef;
+            const data = refData[lookupRef];
+            const button = document.querySelector(`.sidebar-button[data-ref="${displayRef}"]`);
+            
+            const categories = ['CIMAISE', 'PLINTHE', 'Wall-panel', 'CORNICHE', 'CORNIERE', 'CADRE'];
+            let category = 'CIMAISE';
+            let number = displayRef;
+            for (const cat of categories) {
+                const prefix = cat === 'Wall-panel' ? 'Wall panel ' : cat.toUpperCase() + ' ';
+                if (displayRef.toUpperCase().startsWith(prefix.toUpperCase()) || (cat === 'Wall-panel' && displayRef.startsWith('WP'))) {
+                   if(displayRef.startsWith('WP')) {
+                       category = 'Wall-panel';
+                       number = displayRef; 
+                   } else {
+                       category = cat;
+                       number = displayRef.substring(cat.length).trim();
+                   }
+                   break;
+                }
+            }
+            modelCategorySelect.value = category;
+            modelNumberInput.value = number;
+            modelLookupRefInput.value = lookupRef;
+            modelPcsInput.value = data.pcs;
+            modelWidthInput.value = data.width;
+            modelThicknessInput.value = data.thickness;
+            modelIsNewCheckbox.checked = button ? button.classList.contains('is-new') : false;
+        } else { return; }
+        modelModal.classList.add('visible');
+    }
+    
+    function hideModelModal() { modelModal.classList.remove('visible'); }
+    
+    function saveModel() {
+        const mode = modelModal.dataset.mode;
+        const originalDisplayRef = originalModelRefInput.value;
+        const category = modelCategorySelect.value;
+        const number = modelNumberInput.value.trim();
+        let newLookupRef = modelLookupRefInput.value.trim();
+        const pcs = modelPcsInput.value.trim();
+        const width = modelWidthInput.value.trim();
+        const thickness = modelThicknessInput.value.trim();
+        const isNew = modelIsNewCheckbox.checked;
+
+        if (!number || !pcs || !width || !thickness) { alert('الرجاء تعبئة جميع الحقول.'); return; }
+
+        let newDisplayRef = '';
+        if(category === 'Wall-panel' && !number.startsWith('Wall panel')) {
+             newDisplayRef = `Wall panel ${number}`;
+        } else {
+             newDisplayRef = `${category} ${number}`;
+        }
+        if (!newLookupRef) { newLookupRef = newDisplayRef; }
+
+        if (mode === 'add' && (document.querySelector(`[data-ref="${newDisplayRef}"]`))) {
+            alert('هذا المودال موجود بالفعل.'); return;
+        }
+        if (mode === 'edit' && originalDisplayRef) {
+             delete referenceMap[originalDisplayRef];
+             delete reverseReferenceMap[referenceMap[originalDisplayRef]];
+             const button = document.querySelector(`.sidebar-button[data-ref="${originalDisplayRef}"]`);
+             if (button) button.remove();
+             const option = document.querySelector(`#refOptions option[value="${originalDisplayRef}"]`);
+             if (option) option.remove();
+        }
+
+        refData[newLookupRef] = { pcs, width, thickness };
+        referenceMap[newDisplayRef] = newLookupRef;
+        reverseReferenceMap[newLookupRef] = newDisplayRef;
+        
+        const newButton = document.createElement('button');
+        newButton.className = `sidebar-button ${category}`;
+        if (isNew) newButton.classList.add('is-new');
+        newButton.dataset.ref = newDisplayRef;
+        
+        attachButtonListeners(newButton);
+        insertButtonInOrder(newButton, category);
+
+        const newOption = document.createElement('option');
+        newOption.value = newDisplayRef;
+        document.getElementById('refOptions').appendChild(newOption);
+        
+        hideModelModal();
+    }
+
+    function insertButtonInOrder(newButton, category) {
+        const sidebar = document.querySelector('.sidebar');
+        const categoryOrder = ['CIMAISE', 'PLINTHE', 'Wall-panel', 'CORNICHE', 'CORNIERE', 'CADRE'];
+        const sameCategoryButtons = document.querySelectorAll(`.sidebar-button.${category}`);
+        if (sameCategoryButtons.length > 0) {
+            const lastButton = sameCategoryButtons[sameCategoryButtons.length - 1];
+            lastButton.after(newButton);
+            return;
+        }
+        const categoryIndex = categoryOrder.indexOf(category);
+        for (let i = categoryIndex - 1; i >= 0; i--) {
+            const prevCategory = categoryOrder[i];
+            const precedingButtons = document.querySelectorAll(`.sidebar-button.${prevCategory}`);
+            if (precedingButtons.length > 0) {
+                const lastButton = precedingButtons[precedingButtons.length - 1];
+                lastButton.after(newButton);
+                return;
+            }
+        }
+        for (let i = categoryIndex + 1; i < categoryOrder.length; i++) {
+            const nextCategory = categoryOrder[i];
+            const nextGroupButton = document.querySelector(`.sidebar-button.${nextCategory}`);
+            if (nextGroupButton) { nextGroupButton.before(newButton); return; }
+        }
+        sidebar.appendChild(newButton);
+    }
+
+    function attachButtonListeners(button) {
+        const displayRef = button.dataset.ref; // الاسم الظاهري (مثل CIMAISE 200-1)
+
+        // 1. الشريط الجانبي الأيمن: نعرض الاسم الظاهري كما هو (بدون تغيير)
+        button.textContent = displayRef;
+        
+        // إضافة أيقونة التعديل (edit)
+        const oldIcon = button.querySelector('.edit-icon');
+        if(oldIcon) oldIcon.remove();
+        const editIcon = document.createElement('span');
+        editIcon.className = 'material-icons edit-icon';
+        editIcon.textContent = 'edit';
+        editIcon.addEventListener('click', (e) => {
+            e.stopPropagation(); 
+            openModelModal('edit', displayRef);
+        });
+        button.appendChild(editIcon);
+        
+        // 2. عند النقر (التأثير على الشريط الأيسر والملصق)
+        button.addEventListener('click', (e) => {
+            if (e.target.classList.contains('edit-icon')) return;
+            document.querySelectorAll('.label-box [data-manual]').forEach(el => el.removeAttribute('data-manual'));
+            
+            // هنا التغيير: نجلب الكود (C.5.2.1) ونضعه في خانة الإدخال (الشريط الأيسر)
+            const codeRef = referenceMap[displayRef] || displayRef;
+            refInput.value = codeRef; 
+            
+            // نستخرج الرقم (200-1) من الاسم الظاهري لوضعه في رأس الصفحة
+            const numberPart = displayRef.split(' ').pop();
+            document.querySelector('.header-text').textContent = ` ${numberPart}`;
+            
+            updateLabels();
+            updateURLHash();
+        });
+    }
+    
+    function exportApplication() {
+        const refDataString = `let refData = ${JSON.stringify(refData, null, 4)};`;
+        let currentHtml = document.documentElement.outerHTML;
+        const refDataRegex = /let refData = \{[^;]*\};/;
+        currentHtml = currentHtml.replace(refDataRegex, refDataString);
+        const blob = new Blob([currentHtml], { type: 'text/html' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        const now = new Date();
+        const timestamp = `${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}`;
+        a.download = `etiquette-app-${timestamp}.html`; 
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+    }
+
+    function loadModelFromURL() {
+        const hash = window.location.hash.substring(1).trim();
+        if (!hash) return;
+        
+        const parts = hash.split('+');
+        const modelHash = decodeURIComponent(parts[0]);
+        const headerFromURL = parts.length > 1 ? decodeURIComponent(parts[1]) : null;
+
+        if (modelHash) {
+            const lookupRef = Object.keys(refData).find(key => key.endsWith(' ' + modelHash));
+            if (lookupRef) {
+                refInput.value = lookupRef;
+                
+                if (!headerFromURL) {
+                    const displayRef = reverseReferenceMap[lookupRef] || lookupRef;
+                    const numberPart = displayRef.split(' ').pop();
+                    document.querySelector('.header-text').textContent = ` ${numberPart}`;
+                }
+            } else {
+                 refInput.value = modelHash; 
+            }
+        }
+        
+        if (headerFromURL !== null) {
+            document.querySelector('.header-text').textContent = headerFromURL;
+        }
+        updateLabels();
+    }
+
+    function updateURLHash() {
+        const headerText = document.querySelector('.header-text').textContent.trim();
+        const refValue = refInput.value.trim();
+        
+        if (!refValue) { 
+            history.replaceState(null, '', window.location.pathname + window.location.search); 
+            return; 
+        }
+
+        let modelIdentifier = refValue;
+        const categories = ['Wall-panel', 'CIMAISE', 'PLINTHE', 'CORNICHE', 'CORNIERE', 'CADRE'];
+        for (const cat of categories) {
+            const prefix = cat === 'Wall-panel' ? 'Wall panel ' : cat + ' ';
+            if (refValue.startsWith(prefix)) {
+                modelIdentifier = refValue.substring(prefix.length);
+                break;
+            }
+        }
+
+        let newHash = encodeURIComponent(modelIdentifier);
+        if (headerText && headerText !== "...") {
+            newHash += `+${encodeURIComponent(headerText)}`;
+        }
+
+        if ('#' + newHash !== window.location.hash) {
+           history.replaceState(null, '', '#' + newHash);
+        }
+    }
+
+document.addEventListener('DOMContentLoaded', () => {
         const grid = document.querySelector('#editor-page .labels-grid');
         const template = grid.querySelector('.label-box');
         grid.innerHTML = '';
+        
+        // إنشاء 8 قصاصات
         for (let i = 0; i < 8; i++) {
             const clone = template.cloneNode(true);
             grid.appendChild(clone);
+            
+            // --- إعداد مراقبة التعديل اليدوي ---
+            
+            // 1. مراقبة المرجع (Ref)
             const refEl = clone.querySelector('.ref');
             refEl.setAttribute('contenteditable', 'true');
-            refEl.addEventListener('input', () => { refEl.dataset.manual = 'true'; updateLabels(); });
-            ['.pcs', '.dim'].forEach(selector => {
-                const el = clone.querySelector(selector);
-                el.setAttribute('contenteditable', 'true');
-                el.addEventListener('input', () => el.dataset.manual = 'true');
+            refEl.addEventListener('input', function() { 
+                this.dataset.manual = 'true'; // منع التحديث العام من تغيير ما كتبته
+                updateLabelQR(clone);         // تحديث الـ QR لهذه القصاصة فقط
             });
+
+            // 2. مراقبة العدد (PCS)
+            const pcsEl = clone.querySelector('.pcs');
+            pcsEl.setAttribute('contenteditable', 'true');
+            pcsEl.addEventListener('input', function() { 
+                this.dataset.manual = 'true'; 
+                updateLabelQR(clone); 
+            });
+
+            // 3. مراقبة الأبعاد (Dimensions) - هذا ما طلبته
+            const dimEl = clone.querySelector('.dim');
+            dimEl.setAttribute('contenteditable', 'true');
+            dimEl.addEventListener('input', function() { 
+                this.dataset.manual = 'true'; 
+                updateLabelQR(clone); // بمجرد تغيير رقم الطول، سيتغير الكود فوراً
+            });
+            
+            // تحديث أولي للقصاصة
+            updateLabelQR(clone);
         }
+        
+        // ... (باقي كود التهيئة الخاص بأزرار الإخفاء والأزرار الجانبية يبقى كما هو) ...
         const hideContainer = document.getElementById('hide-container');
         for (let i = 0; i < 8; i++) {
             const lbl = document.createElement('label');
@@ -1161,31 +1507,39 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
                 document.querySelectorAll('#editor-page .label-box')[this.dataset.index].classList.toggle('hidden', this.checked);
             });
         });
+        
         document.querySelectorAll('.sidebar-button').forEach(button => {
-            button.addEventListener('click', () => {
-                document.querySelectorAll('.label-box [data-manual]').forEach(el => el.removeAttribute('data-manual'));
-                refInput.value = button.dataset.ref;
-                updateLabels();
-            });
+            attachButtonListeners(button);
         });
+        
         refInput.addEventListener('input', () => {
             document.querySelectorAll('.label-box [data-manual]').forEach(el => el.removeAttribute('data-manual'));
             updateLabels();
+            updateURLHash();
         });
+        
+        document.querySelector('.header-text').addEventListener('input', updateURLHash);
+
         [pcsInput, widthInput, thicknessInput].forEach(el => el.addEventListener('input', updateLabels));
         ['toggleQrCode', 'toggleShapes', 'toggleSameCodeInRow'].forEach(id => document.getElementById(id).addEventListener('change', updateLabels));
         
+        // ... (تأكد من بقاء باقي مستمعي الأزرار والطباعة والمودال كما هم في كودك الأصلي) ...
+        
+        // (أضف بقية المستمعين للأزرار هنا مثل confirmPrintBtn, exportAppBtn ...الخ)
         document.getElementById('confirmPrintBtn').addEventListener('click', () => {
             const pageCount = parseInt(document.getElementById('pageCountInput').value, 10);
             if (pageCount > 0) { hidePrintDialog(); generateAndPrintPages(pageCount); } 
-            else { console.error('الرجاء إدخال عدد صحيح أكبر من صفر.'); }
         });
-        
         document.getElementById('cancelPrintBtn').addEventListener('click', hidePrintDialog);
         document.getElementById('addBatchRowBtn').addEventListener('click', ()=>{createBatchRow(); saveBatchData();});
         document.getElementById('addPageBreakBtn').addEventListener('click', ()=>{createPageBreakRow(); saveBatchData();});
         document.getElementById('cancelBatchPrintBtn').addEventListener('click', hideBatchPrintDialog);
         document.getElementById('confirmBatchPrintBtn').addEventListener('click', generateBatchPrintPages);
+        
+        document.getElementById('addModelBtn').addEventListener('click', () => openModelModal('add'));
+        document.getElementById('cancelModelBtn').addEventListener('click', hideModelModal);
+        document.getElementById('saveModelBtn').addEventListener('click', saveModel);
+        document.getElementById('exportAppBtn').addEventListener('click', exportApplication);
 
         headerLogoFileInput.addEventListener('change', () => {
             const headerLogo = document.getElementById('headerLogo');
@@ -1195,20 +1549,8 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
                 reader.readAsDataURL(headerLogoFileInput.files[0]);
             } else { headerLogo.src = ''; headerLogo.style.display = 'none'; }
         });
-
-        window.addEventListener('paste', async (e) => {
-            const activeElement = document.activeElement;
-            if (activeElement.isContentEditable || ['INPUT', 'TEXTAREA'].includes(activeElement.tagName)) return;
-            e.preventDefault();
-            const imageFile = Array.from(e.clipboardData.files).find(file => file.type.startsWith('image/'));
-            if (imageFile) {
-                const headerLogo = document.getElementById('headerLogo');
-                headerLogo.src = URL.createObjectURL(imageFile);
-                headerLogo.style.display = 'block';
-                headerLogoFileInput.value = '';
-            }
-        });
-
+        
+        // دوال الـ Mobile والـ Resize
         const toggleControlsBtn = document.getElementById('toggle-controls-btn');
         const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
         const controlsPanel = document.querySelector('.controls');
@@ -1237,8 +1579,11 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
             } else { a4Container.style.transform = 'none'; a4Viewport.style.height = 'auto'; }
         }
         window.addEventListener('resize', scaleA4Page);
+        
+        // تشغيل أولي
         updateLabels();
         scaleA4Page();
+        loadModelFromURL();
     });
 </script>
 </body>
