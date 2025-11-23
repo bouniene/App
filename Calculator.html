@@ -1,0 +1,3726 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Production Management System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script src="backup.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<style>
+/* Custom CSS (Mostly for Bootstrap) */
+:root {
+--bs-primary: #007bff;
+--bs-primary-rgb: 0, 123, 255;
+--bs-body-font-family: "Cairo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+--bs-body-font-size: 0.85rem;
+--bs-body-color: #333;
+}
+
+/* --- NEW: Connection Status Indicator --- */
+#connection-status {
+width: 12px;
+height: 12px;
+border-radius: 50%;
+transition: background-color 0.5s ease;
+}
+#connection-status.connected {
+background-color: #28a745; /* Green */
+box-shadow: 0 0 8px #28a745;
+}
+#connection-status.disconnected {
+background-color: #dc3545; /* Red */
+box-shadow: 0 0 8px #dc3545;
+}
+input[type="date"] {
+    direction: ltr !important;
+    text-align: left !important;
+}
+
+body {
+background-color: #f8f9fa;
+}
+
+.main-container {
+display: flex;
+height: 100vh;
+overflow: hidden;
+}
+
+/* --- Sidebar --- */
+#sidebar {
+width: 250px;
+min-width: 250px;
+background-color: #fff;
+border-left: 1px solid #dee2e6;
+display: flex;
+flex-direction: column;
+}
+/* --- START: Custom Date Input Styles --- */
+.custom-date-container {
+    display: flex;
+    align-items: center;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    padding: 0.1rem 0.2rem;
+    background-color: #fff;
+    cursor: pointer;
+    font-size: 0.75rem;
+    height: 27.6px; /* Match form-control-sm height */
+    position: relative; /* Needed for the hidden input */
+}
+.custom-date-container:hover {
+    border-color: #86b7fe;
+}
+.date-part {
+    padding: 0 5px;
+    text-align: center;
+    color: #495057;
+}
+.date-month {
+    font-weight: bold;
+    background-color: #e9ecef;
+    border-radius: 0.2rem;
+    color: #007bff;
+}
+.date-day, .date-year {
+    color: #6c757d;
+}
+.hidden-date-input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none; /* Make it unclickable directly */
+}
+/* --- END: Custom Date Input Styles --- */
+#sidebar-content { flex-grow: 1; overflow-y: auto; }
+.sidebar-header { border-bottom: 1px solid #dee2e6; height: 50px; }
+.list-group-item {
+border: none;
+padding: 0.6rem 1rem;
+cursor: pointer;
+user-select: none;
+}
+.list-group-item.active {
+font-weight: 700;
+background-color: var(--bs-primary) !important;
+color: white !important;
+}
+
+.folder-header { font-weight: 600; }
+.folder-toggle { transition: transform 0.2s; }
+.folder.collapsed .folder-toggle { transform: rotate(-90deg); }
+.po-item { padding-right: 1.5rem !important; }
+.po-item.sortable-ghost { background-color: #e9ecef; }
+.po-item.sortable-chosen { cursor: grabbing; }
+
+.folder {
+background-color: #f8f9fa;
+border-bottom: 1px solid #dee2e6;
+padding-bottom: 0.5rem;
+margin-bottom: 0.5rem;
+}
+
+.folder:last-child {
+border-bottom: none;
+margin-bottom: 0;
+}
+
+/* --- Main Content & Tables --- */
+#main-container-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+#top-nav { height: 50px; background-color: #fff; border-bottom: 1px solid #dee2e6; z-index: 10; gap: 1rem; }
+#main-content-area { flex-grow: 1; overflow-y: auto; padding: 1rem; }
+.production-order-card {
+background-color: #fff;
+border: 1px solid #dee2e6;
+border-radius: 0.5rem;
+margin-bottom: 1rem;
+box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.card-header {
+background-color: #f8f9fa;
+border-bottom: 1px solid #dee2e6;
+font-weight: 700;
+padding: 0.5rem 1rem;
+}
+.card-body {
+padding: 1rem;
+}
+/* --- تنسيق جديد: إجبار حقول التاريخ على البدء من اليسار --- */
+input[type="date"] {
+direction: ltr !important;
+text-align: left !important;
+}
+.table-compact th, .table-compact td {
+padding: 0.25rem 0.4rem !important;
+font-size: 0.75rem !important;
+vertical-align: middle;
+text-align: center;
+}
+.table-compact input[type="date"] {
+font-size: 0.75rem !important;
+padding: 0.1rem 0.2rem;
+border: 1px solid #dee2e6;
+background: transparent;
+}
+
+thead th {
+background-color: #e9ecef;
+font-weight: 700;
+}
+.raw-materials-table .row-starting td { background-color: #fff0b3; }
+.raw-materials-table .row-added td { background-color: #c8e6c9; }
+.raw-materials-table .row-remaining td { background-color: #ffcdd2; }
+.raw-materials-table .row-calculated td { background-color: #b3e5fc; font-weight: bold; }
+.raw-materials-table .row-locked td {
+background-color: #e9ecef !important;
+color: #6c757d;
+}
+.raw-materials-table .row-locked td:first-child {
+background-color: #f8f9fa !important;
+}
+
+.added-stock-entry td {
+background-color: #f0fff8;
+border-bottom: 1px solid #d1e7dd;
+}
+.added-stock-entry td:first-child {
+border-right: 3px solid var(--bs-primary);
+font-weight: normal;
+background-color: #f8f9fa;
+}
+
+.raw-materials-table th:first-child,
+.raw-materials-table td:first-child {
+font-weight: bold;
+text-align: right;
+background-color: #f8f9fa;
+}
+
+th[contenteditable="true"]:focus, td[contenteditable="true"]:focus, span[contenteditable="true"]:focus {
+outline: 2px solid var(--bs-primary);
+box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.25);
+background-color: #fff;
+}
+#daily-production-table .day-start-row td {
+border-top: 2px solid #6c757d;
+}
+.day-total-summary-cell {
+padding: 2px !important;
+vertical-align: top !important;
+}
+
+/* --- START: Force LTR typing and CENTER alignment --- */
+.table th,
+.table td {
+direction: ltr !important;
+text-align: center !important;
+}
+/* افتراضياً: إخفاء التاريخ الموجود بجانب الاسم */
+.po-date-label {
+    display: none !important;
+}
+
+/* عندما يتم تفعيل هذا الكلاس على الـ Sidebar، يتم إظهار التواريخ */
+#sidebar.show-dates-enabled .po-date-label {
+    display: inline !important;
+}
+/* استثناء أي خلية تحتوي على div.mt-1 */
+.table th:has(> .mt-1),
+.table td:has(> .mt-1) {
+direction: initial !important;
+text-align: initial !important;
+}
+/* --- END --- */
+
+
+/* --- START: Fix for summary tables direction --- */
+.day-total-summary-cell .table,
+.day-total-summary-cell .table th,
+.day-total-summary-cell .table td {
+direction: rtl !important;
+text-align: right !important;
+}
+
+#grand-total-summary-wrapper .table,
+#grand-total-summary-wrapper .table th,
+#grand-total-summary-wrapper .table td {
+direction: rtl !important;
+text-align: right !important;
+}
+/* --- END --- */
+
+/* Adjust Values Modal Styles */
+.adjust-row-plus td { background-color: #e8f5e9 !important; }
+.adjust-row-minus td { background-color: #ffebee !important; }
+.adjust-row-result td { background-color: #e3f2fd !important; font-weight: bold; border-top: 2px solid #6c757d !important; }
+</style>
+
+<style>
+@media print {
+body {
+background-color: #fff !important;
+font-size: 10pt;
+}
+#sidebar, .no-print {
+display: none !important;
+}
+.main-container {
+display: block !important;
+height: auto !important;
+}
+#main-container-wrapper {
+overflow: visible !important;
+}
+#main-content-area {
+padding: 0 !important;
+overflow: visible !important;
+}
+.production-order-card {
+border: 1px solid #ccc;
+box-shadow: none;
+page-break-inside: avoid;
+}
+.card-header {
+background-color: #f2f2f2 !important;
+}
+.table, .table td, .table th {
+border-color: #999 !important;
+}
+thead th {
+background-color: #e9ecef !important;
+}
+.table-responsive {
+overflow: visible;
+}
+/* Remove background colors to save ink */
+.raw-materials-table .row-starting td,
+.raw-materials-table .row-added td,
+.raw-materials-table .row-remaining td,
+.raw-materials-table .row-calculated td,
+.raw-materials-table .row-locked td,
+.added-stock-entry td {
+background-color: #fff !important;
+-webkit-print-color-adjust: exact;
+color-adjust: exact;
+}
+a {
+text-decoration: none;
+color: #000;
+}
+.print-header {
+display: block !important;
+text-align: center;
+margin-bottom: 1.5rem;
+border-bottom: 2px solid #000;
+padding-bottom: 1rem;
+}
+}
+.print-header {
+display: none;
+}
+</style>
+</head>
+<body>
+
+<div class="main-container">
+<main id="main-container-wrapper">
+<nav id="top-nav" class="d-flex align-items-center justify-content-between px-3 no-print">
+<div class="d-flex align-items-center">
+<h5 id="current-view-name" class="fs-6 fw-bold mb-0 text-nowrap"></h5>
+<div class="dropdown ms-3">
+<div class="d-flex align-items-center gap-2">
+<button id="notes-icon-button"
+class="btn btn-link text-secondary p-0 position-relative"
+type="button" data-bs-toggle="dropdown" aria-expanded="false"
+style="display: none; line-height: 1;">
+<i class="fas fa-bell fs-5"></i>
+<span id="notes-badge"
+class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+style="font-size: 0.6em;"></span>
+</button>
+
+<a href="tabl.html" target="_blank" class="btn btn-link text-secondary p-0 position-relative" style="line-height: 1;">
+<i class="fas fa-table fs-5"></i>
+</a>
+
+</div>
+
+<ul id="notes-dropdown-menu" class="dropdown-menu dropdown-menu-start p-2 shadow-lg" style="width: 380px; max-height: 450px; overflow-y: auto;">
+</ul>
+</div>
+</div>
+<div id="global-search-container" style="display: none;">
+<input type="search" id="global-search-input" class="form-control form-control-sm" placeholder="بحث...">
+</div>
+<div class="action-buttons d-flex align-items-center gap-3">
+
+<div class="action-buttons d-flex align-items-center gap-3">
+    <div class="vr"></div>
+    <div class="backup-controls d-flex gap-2">
+        <button id="import-btn" class="btn btn-sm btn-outline-warning" title="استعادة نسخة احتياطية من ملف">
+            <i class="fas fa-upload me-1"></i>
+        </button>
+        <button id="export-btn" class="btn btn-sm btn-outline-info" title="تصدير كامل البيانات إلى ملف">
+            <i class="fas fa-download me-1"></i>
+        </button>
+    </div>
+    <div class="button-container text-nowrap"></div>
+    </div>
+<input type="file" id="import-file-input" accept="application/json" style="display: none;">
+<div class="button-container text-nowrap"></div>
+<div id="connection-status-container" class="d-flex align-items-center gap-2" title="حالة الاتصال بالخادم">
+<div id="connection-status" class="disconnected"></div>
+<span id="connection-text" class="small text-muted">غير متصل</span>
+</div>
+</div>
+</nav>
+<div id="main-content-area">
+<div id="welcome-screen"></div>
+<div id="production-order-wrapper"></div>
+<div id="inventory-wrapper" class="d-none"></div>
+</div>
+</main>
+<aside id="sidebar" class="no-print">
+    <div id="db-header-btn" class="sidebar-header d-flex align-items-center justify-content-between p-3" style="cursor: pointer;" title="العودة إلى لوحة التحكم">
+        <h6 class="mb-0 fw-bold"><i class="fas fa-database text-primary me-2"></i>قاعدة البيانات</h6>
+    </div>
+    
+<div class="px-2 pt-2 pb-1">
+    <div class="d-flex align-items-center gap-2">
+        <input type="text" id="sidebar-search-input" class="form-control form-control-sm" placeholder="بحث في الأوامر...">
+        
+        <div class="form-check form-switch" title="إظهار/إخفاء التواريخ">
+            <input class="form-check-input" type="checkbox" id="show-dates-toggle" style="cursor: pointer;">
+        </div>
+    </div>
+</div>
+    <div class="p-2 border-bottom">
+        <button id="new-po-btn" class="btn btn-primary w-100 mb-2 btn-sm"><i class="fas fa-plus me-1"></i> أمر إنتاج جديد</button>
+    </div>
+<div class="list-group list-group-flush border-bottom">
+<a id="inventory-btn" class="list-group-item list-group-item-action"><i class="fas fa-warehouse me-2"></i> المخزون</a>
+</div>
+<div id="sidebar-content">
+<div id="folders-container" class="list-group list-group-flush"></div>
+</div>
+</aside>
+</div>
+
+<div class="modal fade" id="new-po-modal" tabindex="-1">
+<div class="modal-dialog modal-dialog-centered">
+<div class="modal-content">
+<div class="modal-header py-2"><h6 class="modal-title">إنشاء أمر إنتاج جديد</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body py-3">
+
+<div class="mb-2">
+<label class="form-label mb-1">Production Order</label>
+<input type="text" class="form-control form-control-sm mb-1"
+id="po-product-name" placeholder="Product Name" required autocomplete="off">
+<input type="text" class="form-control form-control-sm mb-1"
+id="po-number" placeholder="Production Number (optional)" autocomplete="off">
+<input type="hidden" id="new-po-name" name="po_name" autocomplete="off">
+</div>
+
+<script>
+const productInput = document.getElementById("po-product-name");
+const numberInput = document.getElementById("po-number");
+const resultInput = document.getElementById("new-po-name");
+
+function updateResult() {
+const product = productInput.value.trim();
+const number = numberInput.value.trim();
+if (product && number) {
+resultInput.value = `${product}/${number}`;
+} else if (product) {
+resultInput.value = product;
+} else {
+resultInput.value = "";
+}
+}
+
+productInput.addEventListener("input", updateResult);
+numberInput.addEventListener("input", updateResult);
+</script>
+
+<div class="mb-2">
+<label for="new-po-date" class="form-label mb-1">تاريخ أمر الإنتاج</label>
+<div class="d-flex align-items-center">
+<input type="date" class="form-control form-control-sm" id="new-po-date" required>
+<span id="new-po-date-day" class="small text-muted ms-2"></span>
+</div>
+</div>
+<div class="mb-2"><label for="new-po-line" class="form-label mb-1">خط الإنتاج</label><select class="form-select form-select-sm" id="new-po-line"><option value="PS100">PS100</option><option value="PS75">PS75</option><option value="PS75-1">PS75-1</option></select></div>
+<hr>
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <label class="form-label mb-0 fw-bold">المنتجات المستهدفة</label>
+    <button type="button" id="add-target-product-btn" class="btn btn-sm btn-outline-primary py-0 px-2"><i class="fas fa-plus"></i></button>
+</div>
+<div id="target-products-container">
+    </div>
+</div>
+<div class="modal-footer py-2"><button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">إلغاء</button><button type="button" id="save-new-po-btn" class="btn btn-primary btn-sm">حفظ</button></div>
+</div>
+</div>
+</div>
+<div class="modal fade" id="add-group-modal" tabindex="-1">
+<div class="modal-dialog modal-dialog-centered modal-sm">
+<div class="modal-content">
+<div class="modal-header py-2"><h6 class="modal-title">إضافة مجموعة جديدة</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body py-3">
+<label for="new-group-select" class="form-label mb-1">اختر المجموعة</label>
+<select id="new-group-select" class="form-select"></select>
+</div>
+<div class="modal-footer py-2">
+<button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">إلغاء</button>
+<button type="button" id="save-new-group-btn" class="btn btn-primary btn-sm">إضافة</button>
+</div>
+</div>
+</div>
+</div>
+<div class="modal fade" id="note-modal" tabindex="-1">
+<div class="modal-dialog modal-dialog-centered">
+<div class="modal-content">
+<div class="modal-header py-2">
+<h6 class="modal-title" id="note-modal-title">إضافة/تعديل ملاحظة</h6>
+<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body py-3">
+<textarea id="note-textarea" class="form-control" rows="5" placeholder="أدخل ملاحظتك هنا..."></textarea>
+</div>
+<div class="modal-footer py-2">
+<button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">إلغاء</button>
+<button type="button" id="save-note-btn" class="btn btn-primary btn-sm">حفظ الملاحظة</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Modal For Adjusting Values (Calculations) -->
+<div class="modal fade" id="adjust-values-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header py-2 bg-light">
+          <h6 class="modal-title fw-bold" id="adjust-modal-title">تعديل القيم</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <div class="d-flex justify-content-between mb-3 no-print">
+                 <div class="btn-group">
+                    <button type="button" class="btn btn-success btn-sm" id="adjust-add-plus"><i class="fas fa-plus me-1"></i> سطر جمع</button>
+                    <button type="button" class="btn btn-danger btn-sm" id="adjust-add-minus"><i class="fas fa-minus me-1"></i> سطر طرح</button>
+                 </div>
+                 <span class="text-muted small" id="adjust-hint-text"></span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered table-sm text-center align-middle" id="adjust-table">
+                    <thead class="table-light">
+                        <!-- Headers injected via JS -->
+                    </thead>
+                    <tbody>
+                        <!-- Rows injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">إغلاق</button>
+          <button type="button" class="btn btn-primary btn-sm" id="adjust-save-btn">حفظ وتطبيق</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div id="context-menu" class="dropdown-menu"></div>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/2.0.3/js/dataTables.js"></script>
+<script src="https://cdn.datatables.net/2.0.3/js/dataTables.bootstrap5.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+// --- STATE & CONFIGURATION ---
+
+const MONTH_NAMES_AR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+let state = {
+productionOrders: [], inventory: { stockAdditions: [] },
+rawMaterials: ['GB', 'GC Y', 'HIPS korea', 'HIPS 330', 'SOD', 'PUR', 'N 7000', 'DOP', 'MS 1008', 'MS BALCK', 'K Fasda', 'MS Marron', 'Carton (2_9)'],
+sidebarCollapsed: { 'قيد التنفيذ': false, 'قيد الانتظار': false, 'مكتمل': false, 'مؤرشف': true },
+activeView: 'welcome', activePOId: null, contextTarget: null
+};
+
+// --- Flags to manage connection and data synchronization state ---
+let isConnected = false;
+let isDataReady = false;
+
+let isLocalChange = false;
+let timeTargetInterval = null;
+let rowClipboardData = null; // حافظة لنسخ ولصق صفوف المواد الخام
+let adjustModalState = {
+    originalValues: [],
+    materialNames: [],
+    rowType: '', // 'starting' | 'remaining' | 'calculated'
+    rows: [] // Array of { type: 'plus'|'minus', values: [] }
+};
+const adjustValuesModal = new bootstrap.Modal(document.getElementById('adjust-values-modal'));
+
+let dataTableInstance = null;
+
+const parseLocaleFloat = (numStr) => {
+    if (typeof numStr !== 'string') {
+        return parseFloat(numStr) || 0;
+    }
+    const sanitizedStr = numStr.trim().replace(/[,\٫]/g, '.');
+    return parseFloat(sanitizedStr) || 0;
+};
+// كود البحث في الشريط الجانبي
+// --- منطق البحث المتقدم في الشريط الجانبي ---
+const searchInput = document.getElementById('sidebar-search-input');
+const dateToggle = document.getElementById('show-dates-toggle');
+const sidebarElement = document.getElementById('sidebar');
+
+// 1. التعامل مع البحث
+searchInput.addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase().trim();
+    const folders = document.querySelectorAll('.folder');
+
+    folders.forEach(folder => {
+        const poItems = folder.querySelectorAll('.po-item');
+        let hasVisibleItems = false;
+
+        poItems.forEach(item => {
+            // نجلب معرف أمر الإنتاج من العنصر
+            const poId = item.dataset.poId;
+            // نعثر على بيانات الأمر الفعلية من الذاكرة (state)
+            const po = state.productionOrders.find(p => p.id === poId);
+
+            let isMatch = false;
+
+            if (po) {
+                // 1. البحث في اسم أمر الإنتاج
+                if (po.name && po.name.toLowerCase().includes(searchTerm)) {
+                    isMatch = true;
+                }
+                
+                // 2. البحث في التاريخ الرئيسي للأمر (إذا لم نجد تطابقاً بعد)
+                if (!isMatch && po.date && po.date.includes(searchTerm)) {
+                    isMatch = true;
+                }
+
+                // 3. البحث داخل تواريخ جداول الإنتاج اليومي (الميزة الجديدة)
+                if (!isMatch && po.products && po.products.length > 0) {
+                    // نتحقق هل يوجد أي يوم داخل المصفوفة يحتوي تاريخه على كلمة البحث
+                    const hasInternalDate = po.products.some(dayEntry => 
+                        dayEntry.date && dayEntry.date.includes(searchTerm)
+                    );
+                    
+                    if (hasInternalDate) {
+                        isMatch = true;
+                    }
+                }
+            }
+
+            // ملاحظة: لم نقم بالبحث في po.productionLine وبالتالي تم تجاهله تلقائياً
+
+            // إظهار أو إخفاء العنصر بناءً على النتيجة
+            if (searchTerm === '' || isMatch) {
+                item.style.setProperty('display', 'flex', 'important');
+                hasVisibleItems = true;
+            } else {
+                item.style.setProperty('display', 'none', 'important');
+            }
+        });
+
+        // التحكم في ظهور المجلد (Folder)
+        const listContainer = folder.querySelector('.po-list-container');
+        
+        if (searchTerm === '') {
+            // إعادة الوضع الطبيعي عند مسح البحث
+            folder.style.display = 'block';
+            const status = listContainer.dataset.status;
+            const isCollapsed = state.sidebarCollapsed[status];
+            
+            if (isCollapsed) {
+                folder.classList.add('collapsed');
+                listContainer.style.display = 'none';
+            } else {
+                folder.classList.remove('collapsed');
+                listContainer.style.display = 'block';
+            }
+        } else {
+            // أثناء البحث
+            if (hasVisibleItems) {
+                folder.style.display = 'block';
+                folder.classList.remove('collapsed'); // فتح المجلد إجبارياً
+                listContainer.style.display = 'block';
+            } else {
+                folder.style.display = 'none';
+            }
+        }
+    });
+});
+
+// 2. التعامل مع زر إظهار/إخفاء التواريخ
+// تأكد أن المربع غير محدد عند تحميل الصفحة
+dateToggle.checked = false; 
+sidebarElement.classList.remove('show-dates-enabled');
+
+dateToggle.addEventListener('change', function(e) {
+    if (e.target.checked) {
+        // إذا تم التحديد، أضف الكلاس الذي يظهر التواريخ
+        sidebarElement.classList.add('show-dates-enabled');
+    } else {
+        // إذا أزيل التحديد، احذف الكلاس فتختفي التواريخ
+        sidebarElement.classList.remove('show-dates-enabled');
+    }
+});
+
+
+const newPOModal = new bootstrap.Modal(document.getElementById('new-po-modal'));
+const addGroupModal = new bootstrap.Modal(document.getElementById('add-group-modal'));
+const noteModal = new bootstrap.Modal(document.getElementById('note-modal'));
+const PRODUCTION_GROUPS = ['A', 'B', 'C', 'D'];
+const elements = {
+foldersContainer: document.getElementById('folders-container'),
+welcomeScreen: document.getElementById('welcome-screen'), productionOrderWrapper: document.getElementById('production-order-wrapper'), inventoryWrapper: document.getElementById('inventory-wrapper'),
+currentViewNameEl: document.getElementById('current-view-name'), contextMenu: document.getElementById('context-menu'), globalSearchContainer: document.getElementById('global-search-container'),
+globalSearchInput: document.getElementById('global-search-input'), inventoryBtn: document.getElementById('inventory-btn'),
+actionButtons: document.querySelector('.action-buttons .button-container'),
+connectionStatus: document.getElementById('connection-status'),
+connectionText: document.getElementById('connection-text')
+};
+const sanitizeKey = (key) => key.replace(/[.#$[\]/]/g, '_');
+
+// --- START: IndexedDB Helper for Local Caching ---
+const idbHelper = {
+db: null,
+dbName: 'ProductionAppDB',
+storeName: 'appStateStore',
+init: function() {
+return new Promise((resolve, reject) => {
+const request = indexedDB.open(this.dbName, 1);
+request.onerror = (event) => {
+console.error("IndexedDB error:", request.error);
+reject("IndexedDB error: " + request.error);
+};
+request.onsuccess = (event) => {
+this.db = event.target.result;
+resolve();
+};
+request.onupgradeneeded = (event) => {
+const db = event.target.result;
+if (!db.objectStoreNames.contains(this.storeName)) {
+db.createObjectStore(this.storeName);
+}
+};
+});
+},
+set: function(stateData) {
+return new Promise((resolve, reject) => {
+if (!this.db) {
+return reject("IndexedDB is not initialized.");
+}
+const transaction = this.db.transaction([this.storeName], 'readwrite');
+const store = transaction.objectStore(this.storeName);
+const request = store.put(JSON.parse(JSON.stringify(stateData)), 'mainState');
+request.onsuccess = () => resolve();
+request.onerror = () => reject(request.error);
+});
+},
+get: function() {
+return new Promise((resolve, reject) => {
+if (!this.db) {
+return reject("IndexedDB is not initialized.");
+}
+const transaction = this.db.transaction([this.storeName], 'readonly');
+const store = transaction.objectStore(this.storeName);
+const request = store.get('mainState');
+request.onsuccess = () => resolve(request.result);
+request.onerror = () => reject(request.error);
+});
+}
+};
+// --- END: IndexedDB Helper ---
+
+// --- DATABASE (Firebase Realtime Database) ---
+const firebaseConfig = {
+apiKey: "AIzaSyCaBkl26zD1jR7-P9MWv7d4uD0T0QXUrnQ",
+authDomain: "appd-326a4.firebaseapp.com",
+databaseURL: "https://appd-326a4-default-rtdb.firebaseio.com",
+projectId: "appd-326a4",
+storageBucket: "appd-326a4.firebasestorage.app",
+messagingSenderId: "1001287247517",
+appId: "1:1001287247517:web:4c6e2a3b1cbada09821674",
+measurementId: "G-Y9FGL8S1N2"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+try {
+firebase.database().setPersistenceEnabled(true)
+.then(() => {
+console.log("Firebase persistence enabled.");
+})
+.catch((error) => {
+if (error.code == 'failed-precondition') {
+console.log("Persistence failed: Multiple tabs open.");
+} else if (error.code == 'unimplemented') {
+console.log("Persistence failed: Browser not supported.");
+}
+});
+} catch (e) {
+console.error("Firebase persistence initialization error: ", e);
+}
+
+
+const database = firebase.database();
+const dbRef = database.ref('data7777');
+
+const connectedRef = firebase.database().ref(".info/connected");
+connectedRef.on("value", (snap) => {
+isConnected = snap.val() === true;
+if (isConnected) {
+console.log("Connected to Firebase.");
+elements.connectionStatus.classList.remove('disconnected');
+elements.connectionStatus.classList.add('connected');
+elements.connectionText.textContent = 'متصل';
+} else {
+console.log("Disconnected from Firebase.");
+elements.connectionStatus.classList.remove('connected');
+elements.connectionStatus.classList.add('disconnected');
+elements.connectionText.textContent = 'غير متصل';
+}
+});
+
+
+const db = {
+connectAndSync: () => {
+return new Promise((resolve, reject) => {
+let isFirstLoad = true;
+
+dbRef.on('value', (snapshot) => {
+
+if (!isDataReady) {
+isDataReady = true;
+console.log("Initial data sync from Firebase (server/cache) is complete. Writes are now enabled.");
+}
+
+if (isLocalChange) {
+isLocalChange = false;
+return;
+}
+
+console.log("Data snapshot received from Firebase. Syncing...");
+const loadedState = snapshot.val();
+
+if (loadedState) {
+state.productionOrders = loadedState.productionOrders || [];
+state.sidebarCollapsed = loadedState.sidebarCollapsed || { 'قيد التنفيذ': false, 'قيد الانتظار': false, 'مكتمل': false, 'مؤرشف': true };
+if (loadedState.rawMaterials) { state.rawMaterials = loadedState.rawMaterials; }
+state.inventory = loadedState.inventory || { stockAdditions: [] };
+
+state.productionOrders.forEach(po => {
+if (!po) return;
+if (!po.hasOwnProperty('id')) po.id = `po_${Date.now()}_${Math.random()}`;
+if (!po.hasOwnProperty('productionLine')) po.productionLine = '';
+if (!po.hasOwnProperty('targetProducts')) po.targetProducts = [];
+
+if (po.hasOwnProperty('targetType')) {
+    po.targetProducts = po.targetProducts.map(prod => ({
+        ...prod,
+        targetType: po.targetType
+    }));
+
+    if (po.targetType === 'time' && po.timeTarget) {
+        po.targetProducts = po.targetProducts.map(prod => ({
+            ...prod,
+            duration: po.timeTarget.duration || 0,
+            startTime: po.timeTarget.startTime || null
+        }));
+    }
+    
+    delete po.targetType;
+    delete po.timeTarget;
+}
+
+if (po.targetProducts) {
+    po.targetProducts.forEach(prod => {
+        if (prod && !prod.hasOwnProperty('targetType')) {
+            prod.targetType = 'quantity';
+        }
+    });
+}
+
+
+if (!po.status) po.status = 'قيد الانتظار';
+if (!po.hasOwnProperty('materialsList')) { po.materialsList = [...state.rawMaterials]; }
+if (!po.products) po.products = [];
+if (!po.rawMaterials) po.rawMaterials = {};
+if (!po.rawMaterials.starting) po.rawMaterials.starting = {};
+if (!po.rawMaterials.remaining) po.rawMaterials.remaining = {};
+if (!po.rawMaterials.hasOwnProperty('addedEntries')) po.rawMaterials.addedEntries = [];
+if (!po.rawMaterials.hasOwnProperty('addedCollapsed')) po.rawMaterials.addedCollapsed = false;
+if (!po.rawMaterials.hasOwnProperty('startingLocked')) po.rawMaterials.startingLocked = false;
+if (!po.rawMaterials.hasOwnProperty('mixCalculator')) {
+po.rawMaterials.mixCalculator = { hipsRatio: '25', msRatio: '1.5', note: '' };
+}
+if (po.rawMaterials.mixCalculator && !po.rawMaterials.mixCalculator.hasOwnProperty('note')) {
+po.rawMaterials.mixCalculator.note = '';
+}
+if (!po.rawMaterials.adjustments) po.rawMaterials.adjustments = {}; // Ensure adjustment storage exists
+
+if (po.products && po.products.length > 0) {
+po.products.forEach(dayEntry => {
+if(!dayEntry) return;
+if (dayEntry.groups) {
+dayEntry.groups.forEach(group => {
+if(!group) return;
+if (!group.hasOwnProperty('mixesCount')) group.mixesCount = '';
+if (!group.products) group.products = [];
+group.products.forEach(product => {
+if(!product) return;
+if (!product.hasOwnProperty('kg')) product.kg = '';
+if (!product.hasOwnProperty('spoiledMix')) product.spoiledMix = '';
+if (!product.hasOwnProperty('note')) product.note = '';
+if (!product.hasOwnProperty('noteTimestamp')) product.noteTimestamp = null;
+});
+});
+}
+});
+}
+});
+
+idbHelper.set(state).then(() => {
+console.log("Firebase data synced and saved to IndexedDB.");
+}).catch(err => {
+console.error("Failed to save synced data to IndexedDB:", err);
+});
+}
+
+if (isFirstLoad) {
+isFirstLoad = false;
+resolve();
+}
+
+renderApp();
+
+}, (error) => {
+console.error("Firebase read failed: ", error);
+alert("فشل الاتصال بقاعدة البيانات. قد لا يتم حفظ التغييرات.");
+if (isFirstLoad) {
+isFirstLoad = false;
+reject(error);
+}
+});
+});
+},
+
+update: (updates) => {
+if (!isDataReady) {
+alert("لا يمكن حفظ التغييرات الآن. لم تتم مزامنة البيانات الأولية من الخادم. يرجى التأكد من اتصالك بالإنترنت والمحاولة مرة أخرى.");
+console.warn("Write operation blocked: Initial data sync not complete.");
+return;
+}
+
+if (!updates || Object.keys(updates).length === 0) {
+return;
+}
+
+const poIndexesToUpdate = new Set();
+for (const key in updates) {
+if (key.startsWith('productionOrders/')) {
+const match = key.match(/^productionOrders\/(\d+)\//);
+if (match && match[1]) {
+poIndexesToUpdate.add(match[1]);
+}
+}
+}
+
+if (poIndexesToUpdate.size > 0) {
+const timestamp = new Date().toISOString();
+poIndexesToUpdate.forEach(index => {
+updates[`productionOrders/${index}/lastModified`] = timestamp;
+});
+}
+
+isLocalChange = true;
+
+idbHelper.set(state).catch(err => {
+console.error("Failed to update IndexedDB cache on local change:", err);
+});
+
+dbRef.update(updates).catch(err => {
+console.error("Failed to update Firebase:", err);
+isLocalChange = false; 
+alert("فشل حفظ التغييرات. قد لا تتم مزامنة بياناتك بشكل صحيح.");
+});
+}
+};
+
+const normalizeProductName = (name) => {
+if (typeof name !== 'string') return '';
+return name.toLowerCase().replace(/\s+/g, '');
+};
+
+const formatDateWithArabicDay = (dateString) => {
+if (!dateString) return '';
+const days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+const date = new Date(dateString);
+if (isNaN(date.getTime())) {
+    return `تاريخ غير صالح: ${dateString}`;
+}
+const dayName = days[date.getDay()];
+const year = date.getFullYear();
+const month = String(date.getMonth() + 1).padStart(2, '0');
+const day = String(date.getDate()).padStart(2, '0');
+const formattedDate = `${year}-${month}-${day}`;
+return `${dayName}، <span class="ltr-date">${formattedDate}</span>`;
+};
+
+const formatDateTimeReadable = (dateInput) => {
+    if (!dateInput) return '---';
+    const date = new Date(dateInput);
+    if (isNaN(date.getTime())) return '---';
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `${day}/${month}/${year}, ${hours}:${minutes}`;
+};
+
+
+const formatNumber = (num) => {
+const roundedNum = parseFloat(Number(num).toFixed(2)); return roundedNum.toString();
+};
+
+const updateMixCalculator = () => {
+const noteText = $('#production-order-wrapper [data-mix-field="note"]').text();
+const ratioHipsText = $('#production-order-wrapper [data-mix-field="hipsRatio"]').text();
+const ratioMsText = $('#production-order-wrapper [data-mix-field="msRatio"]').text();
+const a4 = parseFloat(noteText) || 0;
+const a2 = parseFloat(ratioHipsText) || 0;
+const b2 = parseFloat(ratioMsText) || 0;
+let b5 = 0;
+if ((a2 + b2) > 0) {
+b5 = (a4 * b2) / (a2 + b2);
+}
+const a5 = a4 - b5;
+$('#mix-result-hips').text(formatNumber(a5));
+$('#mix-result-ms').text(formatNumber(b5));
+};
+
+const calculateFinalInventory = () => {
+const finalTotals = Object.fromEntries(state.rawMaterials.map(m => [m, 0]));
+(state.inventory.stockAdditions || []).forEach(addition => { for (const material in addition.values) { if (finalTotals.hasOwnProperty(material)) { finalTotals[material] += parseFloat(addition.values[material]) || 0; } } });
+state.productionOrders.forEach(po => {
+if (po && po.status === 'مكتمل') {
+const totalAdded = Object.fromEntries(po.materialsList.map(m => [m, 0]));
+(po.rawMaterials.addedEntries || []).forEach(entry => { po.materialsList.forEach(material => { totalAdded[material] += parseFloat(entry[material]) || 0; }); });
+po.materialsList.forEach(material => {
+const consumption = (parseFloat(po.rawMaterials.starting[material]) || 0) + totalAdded[material] - (parseFloat(po.rawMaterials.remaining[material]) || 0);
+if (consumption > 0 && finalTotals.hasOwnProperty(material)) {
+finalTotals[material] -= consumption;
+}
+});
+}
+});
+return finalTotals;
+};
+
+const calculateTotalProduced = (po, productName) => {
+let total = { qtyBox: 0, qtyPiece: 0 };
+if (!po.products) return total;
+const normalizedTargetName = normalizeProductName(productName);
+po.products.forEach(day => {
+if(day && day.groups) {
+day.groups.forEach(group => {
+if(group && group.products) {
+group.products.forEach(p => {
+if (p && normalizeProductName(p.name) === normalizedTargetName) {
+total.qtyBox += parseFloat(p.qtyBox) || 0;
+total.qtyPiece += parseFloat(p.qtyPiece) || 0;
+}
+});
+}
+});
+}
+});
+return total;
+};
+
+const renderSidebar = () => {
+document.querySelectorAll('#sidebar .active').forEach(el => el.classList.remove('active'));
+if (state.activeView === 'inventory') { elements.inventoryBtn.classList.add('active'); }
+const sidebarContainer = elements.foldersContainer;
+sidebarContainer.innerHTML = '';
+const statuses = [
+{ title: 'قيد التنفيذ', status: 'قيد التنفيذ', icon: 'fa-folder text-warning' },
+{ title: 'قيد الانتظار', status: 'قيد الانتظار', icon: 'fa-folder text-warning' },
+{ title: 'مكتمل', status: 'مكتمل', icon: 'fa-check-circle text-success' },
+{ title: 'مؤرشف', status: 'مؤرشف', icon: 'fa-archive text-secondary' }
+];
+
+statuses.forEach(group => {
+const isCollapsed = state.sidebarCollapsed[group.status];
+const folderEl = document.createElement('div');
+folderEl.className = 'folder' + (isCollapsed ? ' collapsed' : '');
+const header = document.createElement('a');
+header.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center folder-header';
+header.innerHTML = `<div><i class="fas fa-chevron-down folder-toggle me-2"></i><i class="fas ${group.icon} me-2"></i>${group.title}</div>`;
+header.addEventListener('click', () => {
+state.sidebarCollapsed[group.status] = !state.sidebarCollapsed[group.status];
+db.update({ [`sidebarCollapsed/${group.status}`]: state.sidebarCollapsed[group.status] });
+renderSidebar();
+});
+folderEl.appendChild(header);
+const posContainer = document.createElement('div');
+posContainer.className = 'list-group list-group-flush po-list-container';
+if (isCollapsed) posContainer.style.display = 'none';
+posContainer.dataset.status = group.status;
+
+// التعديل: تصفية + ترتيب تنازلي حسب التاريخ (الأحدث أولاً)
+const filteredPOs = state.productionOrders
+    .filter(p => p && p.status === group.status)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));filteredPOs.forEach(po => {
+posContainer.appendChild(createPOItemEl(po));
+});
+folderEl.appendChild(posContainer);
+sidebarContainer.appendChild(folderEl);
+});
+initSortable();
+attachSidebarEventListeners();
+if (searchInput.value.trim() !== '') {
+        // نطلق حدث "input" يدوياً ليقوم كود البحث بإعادة تصفية القائمة الجديدة
+        searchInput.dispatchEvent(new Event('input'));
+    }
+};
+
+const initSortable = () => {
+document.querySelectorAll('.po-list-container').forEach(container => {
+new Sortable(container, {
+group: 'productionOrders',
+animation: 150,
+handle: '.po-item',
+onEnd: (evt) => {
+const poId = evt.item.dataset.poId;
+const newStatus = evt.to.dataset.status;
+const poIndex = state.productionOrders.findIndex(p => p && p.id === poId);
+
+if (poIndex > -1) {
+const movedPO = state.productionOrders[poIndex];
+const updates = {};
+
+if (movedPO.status !== newStatus) {
+movedPO.status = newStatus;
+updates[`productionOrders/${poIndex}/status`] = newStatus;
+
+if (newStatus === 'قيد التنفيذ' && movedPO.targetProducts) {
+    movedPO.targetProducts.forEach((product, productIndex) => {
+        if (product.targetType === 'time' && !product.startTime) {
+            const startTime = firebase.database.ServerValue.TIMESTAMP;
+            product.startTime = startTime;
+            updates[`productionOrders/${poIndex}/targetProducts/${productIndex}/startTime`] = startTime;
+        }
+    });
+}
+}
+
+const newOrder = [];
+document.querySelectorAll('.po-item').forEach(item => {
+const id = item.dataset.poId;
+const po = state.productionOrders.find(p => p && p.id === id);
+if(po) newOrder.push(po);
+});
+state.productionOrders = newOrder;
+
+updates['productionOrders'] = state.productionOrders;
+db.update(updates);
+
+renderApp();
+}
+}
+});
+});
+};
+
+const createPOItemEl = (po) => {
+    const poEl = document.createElement('a');
+    const isActive = state.activeView === 'productionOrder' && state.activePOId === po.id;
+    poEl.className = `list-group-item list-group-item-action po-item d-flex justify-content-between align-items-center ${isActive ? 'active' : ''}`;
+    poEl.dataset.poId = po.id;
+    
+    // تجهيز عرض خط الإنتاج
+    const lineInfo = po.productionLine ? `<span class="text-danger small fw-normal ms-1">(${po.productionLine})</span>` : '';
+    
+    // تجهيز عرض التاريخ (التعديل الجديد)
+const dateInfo = po.date ? `<span class="text-muted small ms-1 po-date-label" style="font-size: 0.75rem;">[${po.date}]</span>` : '';
+
+poEl.innerHTML = `
+    <div class="text-truncate" style="max-width: 190px;">
+        <i class="far fa-file-alt me-2"></i>${po.name}${lineInfo}${dateInfo}
+    </div>
+    <div>
+        <i class="fas fa-ellipsis-v context-menu-trigger" data-type="po" data-id="${po.id}"></i>
+    </div>`;
+    return poEl;
+};
+
+const generateTargetCardsHtml = (po) => {
+    if (!po || !po.targetProducts || po.targetProducts.length === 0) {
+        return '';
+    }
+
+    const productCards = po.targetProducts.map((p, productIndex) => { // Added productIndex
+        if (!p) return '';
+
+        if (p.targetType === 'time') {
+            const targetDurationHours = p.duration || 0;
+            const targetDurationMs = targetDurationHours * 60 * 60 * 1000;
+
+            let elapsedTimeMs = 0;
+            let progressPercentage = 0;
+            let cardStateClasses = 'bg-white';
+            let titleColorClass = 'text-gray-800';
+            let textColorClass = 'text-gray-600';
+            let textBoldColorClass = 'text-gray-800';
+            let progressBgClass = 'bg-gradient-to-r from-blue-500 to-cyan-400';
+            let statusText = 'لم يبدأ بعد';
+
+            let startTimeFormatted = '---';
+            let endTimeFormatted = '---';
+
+            if (p.startTime) {
+                const startDate = new Date(p.startTime);
+                startTimeFormatted = startDate.toLocaleString('ar-DZ', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+                const endDate = new Date(startDate.getTime() + targetDurationMs);
+                endTimeFormatted = endDate.toLocaleString('ar-DZ', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            }
+
+            if (p.startTime && (po.status === 'قيد التنفيذ' || po.status === 'مكتمل')) {
+                const endTime = new Date();
+                elapsedTimeMs = endTime - new Date(p.startTime);
+
+                if (targetDurationMs > 0) {
+                    progressPercentage = (elapsedTimeMs / targetDurationMs) * 100;
+                }
+                statusText = po.status === 'مكتمل' ? 'مكتمل' : 'قيد التنفيذ';
+                if (progressPercentage >= 100) {
+                    if (po.status !== 'مكتمل') statusText = 'الهدف مكتمل';
+                    cardStateClasses = 'bg-green-50 border border-green-300';
+                    titleColorClass = 'text-green-900';
+                    textColorClass = 'text-green-700';
+                    textBoldColorClass = 'text-green-900';
+                    progressBgClass = 'bg-green-500';
+                }
+            }
+
+            const formatDuration = (ms) => {
+                if (ms < 0) ms = 0;
+                const totalSeconds = Math.floor(ms / 1000);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            };
+            
+            return `<div class="${cardStateClasses} rounded-xl shadow-md p-3 w-72 flex flex-col font-[Cairo]">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-sm font-bold ${titleColorClass}">${p.name}</h3>
+                    <span class="text-xs font-semibold bg-blue-100 text-blue-800 px-2 py-1 rounded-full">${statusText}</span>
+                </div>
+                <div class="${textColorClass} text-xs mb-1">
+                    <div class="flex justify-between font-medium">
+                        <p>الهدف:</p>
+                        <p><span class="font-bold ${textBoldColorClass}">${targetDurationHours}</span> <span class="text-gray-500">ساعة</span></p>
+                    </div>
+                    <div class="flex justify-between font-medium">
+                        <p>الوقت المنقضي:</p>
+                        <p><span class="font-bold ${textBoldColorClass}">${formatDuration(elapsedTimeMs)}</span></p>
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-200 mt-2 pt-1 text-xs ${textColorClass}">
+                    <div class="flex justify-between font-medium">
+                        <p>تاريخ البداية:</p>
+                        <p><span class="font-mono font-bold ${textBoldColorClass}">${startTimeFormatted}</span></p>
+                    </div>
+                    <div class="flex justify-between font-medium">
+                        <p>الانتهاء المتوقع:</p>
+                        <p><span class="font-mono font-bold ${textBoldColorClass}">${endTimeFormatted}</span></p>
+                    </div>
+                </div>
+
+                <div class="w-full bg-gray-200 rounded-full h-2.5 mt-auto mb-1">
+                    <div class="${progressBgClass} h-2.5 rounded-full" style="width: ${progressPercentage > 100 ? 100 : progressPercentage}%"></div>
+                </div>
+                <div class="text-xs text-center font-bold ${textBoldColorClass}">${Math.min(100, Math.round(progressPercentage))}%</div>
+            </div>`;
+        }
+        else { // Default to quantity
+            const totalProduced = calculateTotalProduced(po, p.name);
+            const targetQtyBox = parseFloat(p.qtyBox) || 0;
+            const targetQtyPiece = parseFloat(p.qtyPiece) || 0;
+
+            let boxProgress = targetQtyBox > 0 ? Math.min(1, totalProduced.qtyBox / targetQtyBox) : 0;
+            let pieceProgress = targetQtyPiece > 0 ? Math.min(1, totalProduced.qtyPiece / targetQtyPiece) : 0;
+            let overallProgress = 0;
+            if (targetQtyBox > 0 && targetQtyPiece > 0) {
+                overallProgress = (boxProgress + pieceProgress) / 2;
+            } else if (targetQtyBox > 0) {
+                overallProgress = boxProgress;
+            } else if (targetQtyPiece > 0) {
+                overallProgress = pieceProgress;
+            }
+            const progressPercentage = overallProgress * 100;
+
+            let cardStateClasses = 'bg-white';
+            let titleColorClass = 'text-gray-800';
+            let textColorClass = 'text-gray-600';
+            let textBoldColorClass = 'text-gray-800';
+            let progressBgClass = 'bg-gradient-to-r from-blue-500 to-cyan-400';
+
+            const isOverTarget = (targetQtyBox > 0 && totalProduced.qtyBox >= targetQtyBox + 2) || (targetQtyPiece > 0 && totalProduced.qtyPiece >= targetQtyPiece + 2);
+            const isTargetMet = (targetQtyBox > 0 || targetQtyPiece > 0) && (totalProduced.qtyBox >= targetQtyBox) && (totalProduced.qtyPiece >= targetQtyPiece);
+
+            if (isOverTarget) {
+                cardStateClasses = 'bg-red-50 border border-red-300';
+                titleColorClass = 'text-red-900';
+                textColorClass = 'text-red-700';
+                textBoldColorClass = 'text-red-900';
+                progressBgClass = 'bg-red-500';
+            } else if (isTargetMet) {
+                cardStateClasses = 'bg-green-50 border border-green-300';
+                titleColorClass = 'text-green-900';
+                textColorClass = 'text-green-700';
+                textBoldColorClass = 'text-green-900';
+                progressBgClass = 'bg-green-500';
+            }
+
+            return `<div class="${cardStateClasses} rounded-xl shadow-md p-3 w-56 flex flex-col font-[Cairo]"><div class="flex justify-between items-center mb-2"><h3 class="text-base font-bold ${titleColorClass}">${p.name}</h3><span class="text-xs font-semibold bg-blue-100 text-blue-800 px-2 py-1 rounded-full">${po.productionLine || ''}</span></div><div class="${textColorClass} text-xs mb-2"><div class="flex justify-between font-medium"><p>الهدف: <span class="font-bold ${textBoldColorClass}">${targetQtyBox}</span> <span class="text-gray-500">علبة</span></p><p><span class="font-bold ${textBoldColorClass}">${targetQtyPiece}</span> <span class="text-gray-500">حبة</span></p></div></div><div class="w-full bg-gray-200 rounded-full h-2 mb-1"><div class="${progressBgClass} h-2 rounded-full" style="width: ${progressPercentage > 100 ? 100 : progressPercentage}%"></div></div><div class="text-xs flex justify-between font-semibold ${textColorClass}"><span>العلب: ${totalProduced.qtyBox}</span><span>الحبات: ${totalProduced.qtyPiece}</span><span class="font-bold ${textBoldColorClass}">${Math.round(progressPercentage)}%</span></div></div>`;
+        }
+    }).join('');
+    
+    return `<div class="production-order-card"><div class="card-header">الهدف من أمر الإنتاج</div><div class="card-body"><div class="flex flex-row flex-wrap gap-4">${productCards}</div></div></div>`;
+};
+
+
+const renderProductionOrderView = () => {
+if (timeTargetInterval) {
+clearInterval(timeTargetInterval);
+timeTargetInterval = null;
+}
+const po = state.productionOrders.find(p => p.id === state.activePOId);
+if (!po) { renderWelcomeScreen(); return; }
+
+elements.currentViewNameEl.textContent = `أمر الإنتاج: ${po.name}`;
+elements.actionButtons.innerHTML = `
+<button id="add-new-day-btn" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i> إضافة يوم</button>
+<button id="print-po-btn" class="btn btn-secondary btn-sm"><i class="fas fa-print me-1"></i> طباعة</button>
+<button id="export-po-btn" class="btn btn-success btn-sm"><i class="fas fa-file-excel me-1"></i> تحميل Excel</button>
+`;
+
+elements.globalSearchContainer.style.display = 'none'; elements.welcomeScreen.classList.add('d-none');
+elements.inventoryWrapper.classList.add('d-none'); elements.productionOrderWrapper.classList.remove('d-none');
+
+const targetProductsHtml = generateTargetCardsHtml(po);
+
+const hasActiveTimeTarget = po.targetProducts && po.targetProducts.some(p => p.targetType === 'time' && p.startTime);
+if (po.status === 'قيد التنفيذ' && hasActiveTimeTarget) {
+    timeTargetInterval = setInterval(() => {
+        const currentPO = state.productionOrders.find(p => p.id === state.activePOId);
+        if (!currentPO || currentPO.status !== 'قيد التنفيذ') {
+            clearInterval(timeTargetInterval);
+            return;
+        }
+        const targetsWrapper = document.getElementById('po-targets-wrapper');
+        if (targetsWrapper) {
+            targetsWrapper.innerHTML = generateTargetCardsHtml(currentPO);
+        } else {
+             clearInterval(timeTargetInterval);
+        }
+    }, 1000);
+}
+
+
+const materialsHeader = po.materialsList.map((m, idx) => `<th contenteditable="true" data-type="material-header" data-col-index="${idx}">${m}</th>`).join('');
+const isStartingLocked = po.rawMaterials.startingLocked;
+const startingCells = po.materialsList.map((m, idx) => `<td contenteditable="${!isStartingLocked}" data-type="starting" data-col-index="${idx}">${po.rawMaterials.starting[m] || 0}</td>`).join('');
+const lockIconClass = isStartingLocked ? 'fa-lock' : 'fa-lock-open';
+const lockIconTitle = isStartingLocked ? 'فتح التحرير' : 'قفل التحرير';
+const copyPasteBtns = (canCopy, canPaste, rowType) => {
+    // التحقق هل توجد تعديلات محفوظة لهذا النوع من الصفوف
+    const adjustments = po.rawMaterials.adjustments && po.rawMaterials.adjustments[rowType];
+    const hasAdjustments = adjustments && adjustments.length > 0;
+    
+    // إذا وجدت تعديلات، اجعل الزر أحمر، وإلا اجعله رمادياً عادياً
+    // btn-danger: لون أحمر
+    // btn-outline-secondary: لون رمادي (الوضع الافتراضي)
+    const btnClass = hasAdjustments ? 'btn-danger text-white' : 'btn-outline-secondary';
+    const btnTitle = hasAdjustments ? 'توجد تعديلات (اضغط للعرض)' : 'حاسبة/تعديل';
+
+    return `
+    <div class="btn-group btn-group-sm ms-2 no-print">
+        <button class="btn ${btnClass} py-0 px-1" data-action="open-adjust-modal" data-row-type="${rowType}" title="${btnTitle}"><i class="fas fa-plus"></i></button>
+        ${canCopy ? `<button class="btn btn-outline-info py-0 px-1" data-action="copy-row-data" title="نسخ قيم الصف"><i class="fas fa-copy"></i></button>` : ''}
+        ${canPaste ? `<button class="btn btn-outline-warning py-0 px-1" data-action="paste-row-data" title="لصق القيم المنسوخة"><i class="fas fa-paste"></i></button>` : ''}
+    </div>`;
+};
+
+const startingRowHtml = `
+    <tr class="row-starting ${isStartingLocked ? 'row-locked' : ''}" data-row-type="starting">
+        <td title="الكمية التي بدأت بها العمل" class="d-flex align-items-center">
+            <span>المخزون الابتدائي</span>
+            <div class="d-flex align-items-center">
+                ${copyPasteBtns(true, true, 'starting')}
+                <i class="fas ${lockIconClass} text-secondary ms-2 no-print" style="cursor: pointer;" data-action="toggle-starting-lock" title="${lockIconTitle}"></i>
+            </div>
+        </td>
+        ${startingCells}
+    </tr>`;
+    const addedTotals = Object.fromEntries(po.materialsList.map(m => [m, 0]));
+(po.rawMaterials.addedEntries || []).forEach(entry => { po.materialsList.forEach(m => { addedTotals[m] += parseLocaleFloat(entry[m]); }); });
+const totalAddedCells = po.materialsList.map(m => `<td>${formatNumber(addedTotals[m])}</td>`).join('');
+const toggleIconClass = po.rawMaterials.addedCollapsed ? 'fa-chevron-left' : 'fa-chevron-down';
+let addedRowsHtml = `<tr class="row-added"><td class="fw-bold" style="white-space: nowrap;">المخزون المضاف <i class="fas fa-plus-circle text-success ms-2 no-print" style="cursor: pointer;" data-action="add-stock-entry" title="إضافة سجل مخزون جديد"></i>${(po.rawMaterials.addedEntries || []).length > 0 ? `<i class="fas ${toggleIconClass} toggle-added-entries ms-1 no-print" style="cursor: pointer;" title="إظهار/إخفاء السجلات"></i>` : ''}</td>${totalAddedCells}</tr>`;
+if (!po.rawMaterials.addedCollapsed) {
+(po.rawMaterials.addedEntries || []).forEach((entry, entryIndex) => {
+const entryCells = po.materialsList.map((m, colIndex) => `<td contenteditable="true" data-type="added-entry" data-entry-index="${entryIndex}" data-col-index="${colIndex}">${entry[m] || ''}</td>`).join('');
+
+const today = new Date().toISOString().split('T')[0];
+
+const dateValue = entry.date || today;
+let day = 'DD', monthName = 'شهر', year = 'YYYY';
+
+if (dateValue && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+    const dateParts = dateValue.split('-');
+    year = dateParts[0];
+    const monthIndex = parseInt(dateParts[1], 10) - 1;
+    day = dateParts[2];
+    monthName = MONTH_NAMES_AR[monthIndex] || 'شهر';
+}
+
+const firstCellHtml = `
+    <td class="text-center no-print">
+        <div class="d-flex align-items-center justify-content-center gap-2">
+            <button class="btn btn-sm btn-outline-danger p-0" style="width: 1.5rem; height: 1.5rem;" data-action="delete-stock-entry" data-entry-index="${entryIndex}" title="حذف السجل"><i class="fas fa-trash-alt"></i></button>
+            
+            <div class="custom-date-container" title="تغيير التاريخ">
+                <span class="date-part date-day">${day}</span>
+                <span class="date-part date-month">${monthName}</span>
+                <span class="date-part date-year">${year}</span>
+                
+                <input type="date" class="hidden-date-input"
+                       data-field="added_entry_date" 
+                       data-entry-index="${entryIndex}" 
+                       value="${dateValue}">
+            </div>
+        </div>
+    </td>
+`;
+
+addedRowsHtml += `<tr class="added-stock-entry" data-entry-index="${entryIndex}">${firstCellHtml}${entryCells}</tr>`;
+
+});
+}
+
+const remainingCells = po.materialsList.map((m, idx) => `<td contenteditable="true" data-type="remaining" data-col-index="${idx}">${po.rawMaterials.remaining[m] || 0}</td>`).join('');
+const consumptionCells = po.materialsList.map(m => { const consumption = parseLocaleFloat(po.rawMaterials.starting[m]) + addedTotals[m] - parseLocaleFloat(po.rawMaterials.remaining[m]); return `<td>${formatNumber(consumption > 0 ? consumption : 0)}</td>`; }).join('');
+
+const mixCalculatorHtml = `
+<table class="table table-bordered table-compact text-center" style="width: 100px;">
+<thead><tr><th>HIPS</th><th>MS</th></tr></thead>
+<tbody>
+<tr>
+<td contenteditable="true" data-mix-field="hipsRatio">${po.rawMaterials.mixCalculator?.hipsRatio || '25'}</td>
+<td contenteditable="true" data-mix-field="msRatio">${po.rawMaterials.mixCalculator?.msRatio || '1.5'}</td>
+</tr>
+<tr><th colspan="2" style="background-color: #8B0000; color: white;">المتبقي</th></tr>
+<tr>
+<td colspan="2" contenteditable="true" data-mix-field="note">${po.rawMaterials.mixCalculator?.note || ''}</td>
+</tr>
+<tr>
+<td id="mix-result-hips">0</td>
+<td id="mix-result-ms">0</td>
+</tr>
+</tbody>
+</table>`;
+
+
+
+
+
+let html = `
+<div class="print-header">
+<h2>تقرير أمر الإنتاج: ${po.name}</h2>
+<p><strong>تاريخ الأمر:</strong> ${po.date} | <strong>الحالة:</strong> ${po.status}</p>
+</div>
+<div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-white border rounded small no-print"><div class="d-flex align-items-center gap-2"><strong>الاسم/الرقم:</strong><span contenteditable="true" data-field="name" class="p-1 border-bottom border-1 border-dashed" style="display: inline-block; min-width: 150px;">${po.name}</span></div><div class="d-flex align-items-center gap-2"><strong>التاريخ:</strong><input type="date" class="form-control form-control-sm d-inline-block" style="width: auto;" data-field="date" value="${po.date}"><span class="small text-muted ps-2">${formatDateWithArabicDay(po.date)}</span></div><div class="d-flex align-items-center gap-2"><strong>الحالة:</strong><select class="form-select form-select-sm d-inline-block" style="width: auto;" data-field="status"><option value="قيد الانتظار" ${po.status === 'قيد الانتظار' ? 'selected' : ''}>قيد الانتظار</option><option value="قيد التنفيذ" ${po.status === 'قيد التنفيذ' ? 'selected' : ''}>قيد التنفيذ</option><option value="مكتمل" ${po.status === 'مكتمل' ? 'selected' : ''}>مكتمل</option><option value="مؤرشف" ${po.status === 'مؤرشف' ? 'selected' : ''}>مؤرشف</option></select></div></div>
+
+<div id="po-targets-wrapper">${targetProductsHtml}</div>
+
+<div class="production-order-card">
+<div class="production-order-card">
+<div class="card-header d-flex justify-content-between align-items-center py-2 px-3 mb-1">
+<span>استهلاك المواد الخام</span>
+<span class="text-muted no-print">حساب الـ HIPS المتبقي</span>
+</div>
+
+<div class="card-body p-2">
+<div class="d-flex flex-row gap-3 align-items-start">
+<div class="table-responsive flex-grow-1">
+<table class="table table-bordered table-compact raw-materials-table mb-0">
+<thead><tr><th>المادة</th>${materialsHeader}</tr></thead>
+<tbody>${startingRowHtml}${addedRowsHtml}
+<tr class="row-remaining" data-row-type="remaining"><td class="d-flex align-items-center gap-3" title="الكمية المتبقية بعد الانتهاء"><span>المخزون المتبقي</span> ${copyPasteBtns(true, true, 'remaining')}</td>${remainingCells}</tr>
+<tr class="row-calculated" data-row-type="calculated"><td class="d-flex align-items-center gap-3"><span>الاستهلاك المحسوب</span> ${copyPasteBtns(true, false, 'calculated')}</td>${consumptionCells}</tr></tbody>
+</table>
+</div>
+<div class="no-print">${mixCalculatorHtml}</div>
+</div>
+</div>
+</div>
+<div class="production-order-card">
+<div class="card-header">الإنتاج اليومي</div>
+<div class="card-body p-0">
+<div class="table-responsive">
+<table class="table table-bordered table-compact mb-0" id="daily-production-table">
+<thead>
+<tr>
+<th style="width:80px; white-space:nowrap;">التاريخ</th>
+<th>إجمالي إنتاج اليوم</th>
+<th style="min-width: 150px;">المجموعة</th>
+<th>المنتج</th>
+<th>العدد بالعلبة</th>
+<th>العدد بالحبة</th>
+<th>Déchets (kg)</th>
+<th>Fasda (kg)</th>
+<th class="no-print"></th>
+<th class="no-print"></th>
+<th class="no-print" style="min-width: 40px;">إجراءات</th>
+</tr>
+</thead>
+<tbody>${generateProductsHtml(po)}</tbody>
+</table>
+</div>
+</div>
+</div>
+
+
+<div class="d-flex flex-row-reverse gap-3 align-items-start" id="summary-section-container">
+<div class="flex-shrink-0" id="print-mixes-summary">
+${generateMixesSummaryHtml(po)}
+</div>
+
+<div class="flex-shrink-0" id="print-consumption-summary">
+${generateConsumptionSummaryHtml(po)}
+</div>
+
+<div class="flex-grow-1">
+<div class="production-order-card">
+
+
+<div class="card-header d-flex justify-content-between align-items-center">
+    <span>المجموع الكلي</span>
+    <div class="btn-group no-print" role="group">
+        <button id="copy-summary-btn" class="btn btn-sm btn-outline-secondary" title="نسخ الجدول">
+            <i class="fas fa-copy me-1"></i> 
+        </button>
+        <button id="open-calculator-btn" class="btn btn-sm btn-outline-info" title="فتح في الحاسبة">
+            <i class="fas fa-calculator me-1"></i> 
+        </button>
+        <button id="print-summary-btn" class="btn btn-sm btn-outline-dark">
+            <i class="fas fa-print me-1"></i> طباعة الملخص
+        </button>
+    </div>
+</div>
+
+
+<div class="card-body p-2" id="grand-total-summary-wrapper">${generateGrandTotalSummaryHtml(po)}</div>
+</div>
+</div>
+</div>`;
+elements.productionOrderWrapper.innerHTML = html;
+updateMixCalculator();
+};
+
+const generateDaySummaryHtml = (dayEntry) => {
+const daySummary = {};
+if (dayEntry.groups && dayEntry.groups.length > 0) {
+dayEntry.groups.forEach(group => {
+if (!group || !group.products) return;
+group.products.forEach(p => {
+if (!p) return;
+const originalName = p.name ? p.name.trim() : '';
+const normalizedName = normalizeProductName(originalName);
+
+if (normalizedName && normalizedName !== normalizeProductName('منتج جديد')) {
+if (!daySummary[normalizedName]) {
+daySummary[normalizedName] = { qtyBox: 0, qtyPiece: 0, isWaste: false, displayName: originalName };
+}
+daySummary[normalizedName].qtyBox += parseLocaleFloat(p.qtyBox);
+daySummary[normalizedName].qtyPiece += parseLocaleFloat(p.qtyPiece);
+}
+const dechetsValue = parseLocaleFloat(p.kg);
+if (dechetsValue > 0) {
+if (!daySummary['Déchets']) { daySummary['Déchets'] = { kg: 0, isWaste: true };}
+daySummary['Déchets'].kg += dechetsValue;
+}
+const spoiledMixValue = parseLocaleFloat(p.spoiledMix);
+if (spoiledMixValue > 0) {
+if (!daySummary['Fasda']) { daySummary['Fasda'] = { kg: 0, isWaste: true };}
+daySummary['Fasda'].kg += spoiledMixValue;
+}
+});
+});
+}
+
+let summaryHtml = '';
+const summaryKeys = Object.keys(daySummary);
+const wasteKeys = ['Déchets', 'Fasda'];
+summaryKeys.sort((a, b) => {
+const aIsWaste = wasteKeys.includes(a);
+const bIsWaste = wasteKeys.includes(b);
+if (aIsWaste && !bIsWaste) return 1;
+if (!aIsWaste && bIsWaste) return -1;
+return a.localeCompare(b);
+});
+
+if (summaryKeys.length > 0) {
+summaryHtml = `<table class="table table-sm table-bordered mb-0" style="font-size: 0.7rem; background-color: #fff;"><thead class="table-light"><tr><th>المنتج</th><th>العلبة</th><th>الحبة</th><th>kg</th></tr></thead><tbody>`;
+summaryKeys.forEach(nameKey => {
+const totals = daySummary[nameKey];
+const displayName = totals.displayName || nameKey;
+if (totals.isWaste) {
+if (totals.kg > 0) {
+summaryHtml += `<tr><td class="text-end fw-bold" style="white-space: nowrap;">${displayName}</td><td></td><td></td><td>${formatNumber(totals.kg)}</td></tr>`;
+}
+} else {
+if (totals.qtyBox > 0 || totals.qtyPiece > 0) {
+summaryHtml += `<tr><td class="text-end fw-bold" style="white-space: nowrap;">${displayName}</td><td>${formatNumber(totals.qtyBox)}</td><td>${formatNumber(totals.qtyPiece)}</td><td></td></tr>`;
+}
+}
+});
+summaryHtml += '</tbody></table>';
+}
+return summaryHtml;
+};
+
+const generateMixesSummaryHtml = (po) => {
+let totalMixes = 0;
+if (po.products && po.products.length > 0) {
+po.products.forEach(dayEntry => {
+if (dayEntry && dayEntry.groups && dayEntry.groups.length > 0) {
+dayEntry.groups.forEach(group => {
+if (group) totalMixes += parseLocaleFloat(group.mixesCount);
+});
+}
+});
+}
+if (totalMixes === 0) return '';
+return `
+<div class="production-order-card" style="width: 200px;">
+<div class="card-header">ملخص الخلطات</div>
+<div class="card-body p-2">
+<table class="table table-sm table-bordered mb-0" style="font-size: 0.8rem;">
+<thead class="table-light"><tr><th class="text-center">المجموع الكلي للخلطات</th></tr></thead>
+<tbody><tr><td class="text-center fw-bold fs-5">${formatNumber(totalMixes)}</td></tr></tbody>
+</table>
+</div>
+</div>`;
+};
+
+
+const generateConsumptionSummaryHtml = (po) => {
+    const addedTotals = Object.fromEntries(po.materialsList.map(m => [m, 0]));
+    (po.rawMaterials.addedEntries || []).forEach(entry => {
+        po.materialsList.forEach(m => {
+            addedTotals[m] += parseLocaleFloat(entry[m]);
+        });
+    });
+
+    const consumptionData = po.materialsList.map(m => {
+        const consumption = parseLocaleFloat(po.rawMaterials.starting[m]) +
+                              addedTotals[m] -
+                              parseLocaleFloat(po.rawMaterials.remaining[m]);
+        return {
+            name: m,
+            value: formatNumber(consumption > 0 ? consumption : 0)
+        };
+    }).filter(item => parseLocaleFloat(item.value) > 0);
+
+    if (consumptionData.length === 0) return '';
+
+    const tableRows = consumptionData.map(item => `
+    <tr>
+        <td class="text-end fw-bold">${item.name}</td>
+        <td class="text-center">${item.value}</td>
+    </tr>
+    `).join('');
+
+    return `
+    <div class="production-order-card" style="width: 250px;">
+<div class="card-header d-flex justify-content-between align-items-center">
+    <span>ملخص الاستهلاك (kg)</span>
+    <button class="btn btn-sm btn-outline-secondary p-1 no-print" data-action="copy-consumption-summary" title="نسخ البيانات فقط">
+        <i class="fas fa-copy"></i>
+    </button>
+</div>
+        <div class="card-body p-2">
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered mb-0" style="font-size: 0.8rem;">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="text-end">المادة</th>
+                            <th class="text-center">الاستهلاك</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>`;
+};
+const generateGrandTotalSummaryHtml = (po) => {
+const grandTotalSummary = {};
+if (po.products && po.products.length > 0) {
+po.products.forEach(dayEntry => {
+if (dayEntry && dayEntry.groups && dayEntry.groups.length > 0) {
+dayEntry.groups.forEach(group => {
+if (!group || !group.products) return;
+group.products.forEach(p => {
+if (!p) return;
+const originalName = p.name ? p.name.trim() : '';
+const normalizedName = normalizeProductName(originalName);
+if (normalizedName && normalizedName !== normalizeProductName('منتج جديد')) {
+if (!grandTotalSummary[normalizedName]) { grandTotalSummary[normalizedName] = { qtyBox: 0, qtyPiece: 0, isWaste: false, displayName: originalName };}
+grandTotalSummary[normalizedName].qtyBox += parseLocaleFloat(p.qtyBox);
+grandTotalSummary[normalizedName].qtyPiece += parseLocaleFloat(p.qtyPiece);
+
+}
+const dechetsValue = parseLocaleFloat(p.kg);
+if (dechetsValue > 0) {
+if (!grandTotalSummary['Déchets']) { grandTotalSummary['Déchets'] = { kg: 0, isWaste: true, displayName: 'Déchets' };}
+grandTotalSummary['Déchets'].kg += dechetsValue;
+}
+const spoiledMixValue = parseLocaleFloat(p.spoiledMix);
+if (spoiledMixValue > 0) {
+if (!grandTotalSummary['Fasda']) { grandTotalSummary['Fasda'] = { kg: 0, isWaste: true, displayName: 'Fasda' };}
+grandTotalSummary['Fasda'].kg += spoiledMixValue;
+}
+});
+});
+}
+});
+}
+
+let summaryHtml = '';
+const summaryKeys = Object.keys(grandTotalSummary);
+const wasteKeys = ['Déchets', 'Fasda'];
+summaryKeys.sort((a, b) => {
+const aIsWaste = wasteKeys.includes(a);
+const bIsWaste = wasteKeys.includes(b);
+if (aIsWaste && !bIsWaste) return 1;
+if (!aIsWaste && bIsWaste) return -1;
+return a.localeCompare(b);
+});
+
+if (summaryKeys.length > 0) {
+summaryHtml = `<table class="table table-sm table-bordered mb-0" style="font-size: 0.8rem;"><thead class="table-light"><tr><th>المنتج</th><th>مجموع العلب</th><th>مجموع الحبات</th><th>kg</th></tr></thead><tbody>`;
+summaryKeys.forEach(nameKey => {
+const totals = grandTotalSummary[nameKey];
+const displayName = totals.displayName || nameKey;
+if (totals.isWaste) {
+if (totals.kg > 0) {
+summaryHtml += `<tr><td class="text-end fw-bold" style="white-space: nowrap;">${displayName}</td><td></td><td></td><td>${formatNumber(totals.kg)}</td></tr>`;
+}
+} else {
+if (totals.qtyBox > 0 || totals.qtyPiece > 0) {
+summaryHtml += `<tr><td class="text-end fw-bold" style="white-space: nowrap;">${displayName}</td><td>${formatNumber(totals.qtyBox)}</td><td>${formatNumber(totals.qtyPiece)}</td><td></td></tr>`;
+}
+}
+});
+summaryHtml += '</tbody></table>';
+} else {
+summaryHtml = '<p class="text-center text-muted mb-0 small">لا يوجد إنتاج مسجل.</p>';
+}
+return summaryHtml;
+}
+
+
+
+
+const generateProductsHtml = (po) => {
+if (!po.products || po.products.length === 0) return `<tr><td colspan="11" class="text-center p-3">لم تتم إضافة أيام عمل.</td></tr>`;
+let allRowsHtml = '';
+po.products.forEach((dayEntry, dayIndex) => {
+if (!dayEntry) return;
+let totalRowsForDay = 0;
+if (dayEntry.groups && dayEntry.groups.length > 0) { dayEntry.groups.forEach(group => { totalRowsForDay += (group && group.products) ? (group.products.length > 0 ? group.products.length : 1) : 1; }); }
+totalRowsForDay = Math.max(1, totalRowsForDay);
+const summaryHtml = generateDaySummaryHtml(dayEntry);
+let isFirstRowOfDay = true;
+if (dayEntry.groups && dayEntry.groups.length > 0) {
+dayEntry.groups.forEach((group, groupIndex) => {
+if (!group) return;
+const totalRowsForGroup = Math.max(1, (group.products || []).length); let isFirstRowOfGroup = true;
+if (group.products && group.products.length > 0) {
+group.products.forEach((product, productIndex) => {
+if (!product) return;
+let rowHtml = isFirstRowOfDay ? '<tr class="day-start-row">' : '<tr>';
+
+
+if (isFirstRowOfDay) {
+
+
+
+
+ rowHtml += `<td rowspan="${totalRowsForDay}" style="min-width: 190px;"><span class="small d-block text-center fw-bold mb-1 no-print">${formatDateWithArabicDay(dayEntry.date)}</span><input type="date" class="form-control form-control-sm no-print" data-day-index="${dayIndex}" data-field="day_date" value="${dayEntry.date}"><span class="d-block d-print-block">${dayEntry.date}</span></td><td rowspan="${totalRowsForDay}" class="day-total-summary-cell" data-day-index="${dayIndex}">${summaryHtml}</td>`; }
+
+
+
+if (isFirstRowOfGroup) {
+rowHtml += `<td rowspan="${totalRowsForGroup}" class="fw-bold align-middle">
+<div class="d-flex flex-column h-100 justify-content-between">
+<div>
+<span contenteditable="true" data-field="group_name" data-day-index="${dayIndex}" data-group-index="${groupIndex}" class="flex-grow-1 text-center">${group.groupName}</span>
+</div>
+<div class="mt-1 d-flex align-items-center justify-content-center gap-1 no-print" style="font-size: 0.70rem;">
+<div class="d-flex gap-1 ms-2">
+<button class="btn btn-outline-success btn-sm p-1" data-action="add-product-to-group" data-day-index="${dayIndex}" data-group-index="${groupIndex}" title="إضافة منتج للمجموعة"><i class="fas fa-plus"></i></button>
+<button class="btn btn-outline-danger btn-sm p-1" data-action="delete-group" data-day-index="${dayIndex}" data-group-index="${groupIndex}" title="حذف المجموعة"><i class="fas fa-trash"></i></button>
+</div>|
+<label class="fw-normal mb-0 text-muted">الخلطات:</label>
+<input type="number" class="form-control form-control-sm text-center p-0" style="width: 40px; height: 1.2rem; font-size: 0.7rem;"
+data-field="mixes_count" data-day-index="${dayIndex}" data-group-index="${groupIndex}" value="${group.mixesCount || ''}">
+</div>
+</div>
+</td>`;
+}
+const noteIconClass = product.note ? 'text-success' : 'text-secondary';
+const noteTitle = product.note ? product.note : 'إضافة/تعديل ملاحظة';
+rowHtml += `<td contenteditable="true" data-field="product_name" data-day-index="${dayIndex}" data-group-index="${groupIndex}" data-product-index="${productIndex}">${product.name}</td><td contenteditable="true" data-field="qty_box" data-day-index="${dayIndex}" data-group-index="${groupIndex}" data-product-index="${productIndex}">${product.qtyBox || ''}</td><td contenteditable="true" data-field="qty_piece" data-day-index="${dayIndex}" data-group-index="${groupIndex}" data-product-index="${productIndex}">${product.qtyPiece || ''}</td><td contenteditable="true" data-field="kg" data-day-index="${dayIndex}" data-group-index="${groupIndex}" data-product-index="${productIndex}">${product.kg || ''}</td><td contenteditable="true" data-field="spoiled_mix" data-day-index="${dayIndex}" data-group-index="${groupIndex}" data-product-index="${productIndex}">${product.spoiledMix || ''}</td><td class="no-print"><button class="btn btn-outline-danger btn-sm p-1" data-action="delete-product" data-day-index="${dayIndex}" data-group-index="${groupIndex}" data-product-index="${productIndex}" title="حذف المنتج"><i class="fas fa-times"></i></button></td><td class="no-print"><button class="btn btn-sm p-1" data-action="edit-note" data-day-index="${dayIndex}" data-group-index="${groupIndex}" data-product-index="${productIndex}" title="${noteTitle}"><i class="fas fa-comment ${noteIconClass}"></i></button></td>`;
+if (isFirstRowOfDay) { rowHtml += `<td rowspan="${totalRowsForDay}" class="no-print"><div class="d-flex flex-column gap-2"><button class="btn btn-primary btn-sm p-1" data-action="add-group" data-day-index="${dayIndex}" title="إضافة مجموعة لليوم"><i class="fas fa-plus"></i></button><button class="btn btn-danger btn-sm p-1" data-action="delete-day" data-day-index="${dayIndex}" title="حذف اليوم بالكامل"><i class="fas fa-trash"></i></button></div></td>`; }
+rowHtml += '</tr>'; allRowsHtml += rowHtml; isFirstRowOfDay = false; isFirstRowOfGroup = false;
+});
+}
+});
+} else { allRowsHtml += `<tr class="day-start-row"><td style="min-width: 190px;"><span class="small d-block text-center fw-bold mb-1 no-print">${formatDateWithArabicDay(dayEntry.date)}</span><input type="date" class="form-control form-control-sm no-print" data-day-index="${dayIndex}" data-field="day_date" value="${dayEntry.date}"><span class="d-block d-print-block">${dayEntry.date}</span></td><td class="day-total-summary-cell" data-day-index="${dayIndex}"></td><td colspan="8" class="text-muted">لا توجد مجموعات منتجات لهذا اليوم.</td><td class="no-print"><div class="d-flex flex-column gap-2"><button class="btn btn-primary btn-sm p-1" data-action="add-group" data-day-index="${dayIndex}" title="إضافة مجموعة لليوم"><i class="fas fa-plus"></i></button><button class="btn btn-danger btn-sm p-1" data-action="delete-day" data-day-index="${dayIndex}" title="حذف اليوم بالكامل"><i class="fas fa-trash"></i></button></div></td></tr>`; }
+});
+return allRowsHtml;
+};
+
+
+
+
+// =================================================================
+// START: NEW INVENTORY LOGIC
+// =================================================================
+const getAllUniqueMaterials = () => {
+    const materials = new Set(state.rawMaterials); // Start with the default list
+    state.productionOrders.forEach(po => {
+        if (po && po.materialsList) {
+            po.materialsList.forEach(m => materials.add(m));
+        }
+    });
+    (state.inventory.stockAdditions || []).forEach(addition => {
+        if (addition && addition.values) {
+            Object.keys(addition.values).forEach(m => materials.add(m));
+        }
+    });
+    return Array.from(materials);
+};
+
+const getInventoryTransactions = () => {
+    let transactions = [];
+    let originalAdditionIndex = 0;
+
+    (state.inventory.stockAdditions || []).forEach(addition => {
+        if (!addition) return;
+        transactions.push({
+            type: 'addition',
+            date: addition.timestamp,
+            source: 'إضافة مخزون مباشر',
+            values: addition.values,
+            isEditable: true,
+            originalIndex: originalAdditionIndex++
+        });
+    });
+
+    const activeStatuses = ['قيد التنفيذ', 'قيد الانتظار', 'مكتمل'];
+    state.productionOrders.forEach(po => {
+        if (po && activeStatuses.includes(po.status)) {
+            
+            const totalAddedInPO = Object.fromEntries(po.materialsList.map(m => [m, 0]));
+            (po.rawMaterials.addedEntries || []).forEach(entry => {
+                if (entry) {
+                    po.materialsList.forEach(material => {
+                        totalAddedInPO[material] += parseFloat(entry[material]) || 0;
+                    });
+                }
+            });
+
+            const committedStockValues = {};
+            let hasCommittedStock = false;
+
+            po.materialsList.forEach(material => {
+                const committedAmount = totalAddedInPO[material];
+                
+                if (committedAmount > 0) {
+                    committedStockValues[material] = -committedAmount; 
+                    hasCommittedStock = true;
+                }
+            });
+
+            if (hasCommittedStock) {
+                transactions.push({
+                    type: 'consumption',
+                    date: po.date,
+                    source: `مخصوم لـ: ${po.name} (${po.status})`,
+                    values: committedStockValues,
+                    isEditable: false
+                });
+            }
+        }
+    });
+
+    transactions.sort((a, b) => {
+        const dateA = new Date(a.date).getTime();
+        const dateB = new Date(b.date).getTime();
+        if (isNaN(dateA) || isNaN(dateB)) return 0;
+        return dateB - dateA;
+    });
+
+    return transactions;
+};
+
+const renderInventoryView = () => {
+    elements.currentViewNameEl.textContent = "إدارة المخزون";
+    elements.actionButtons.innerHTML = `<button id="add-stock-btn" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i> إضافة مخزون جديد</button>`;
+    elements.globalSearchContainer.style.display = 'block';
+    elements.welcomeScreen.classList.add('d-none');
+    elements.productionOrderWrapper.classList.add('d-none');
+    elements.inventoryWrapper.classList.remove('d-none');
+
+    const allMaterials = getAllUniqueMaterials();
+    const transactions = getInventoryTransactions();
+
+    const headerHtml = `<th>التاريخ</th><th>المصدر</th>${allMaterials.map(m => `<th>${m}</th>`).join('')}<th>إجراء</th>`;
+
+    const bodyHtml = transactions.map(tx => {
+        const rowClass = tx.type === 'consumption' ? 'class="table-danger"' : '';
+        const dateHtml = tx.date ? formatDateWithArabicDay(tx.date) : '---';
+        const sourceHtml = `<td>${tx.source}</td>`;
+
+        const valuesHtml = allMaterials.map(material => {
+            const value = tx.values ? tx.values[material] : '';
+            const editable = tx.isEditable ? 'contenteditable="true"' : '';
+            const formattedValue = (value !== undefined && value !== null && value !== '') ? formatNumber(value) : '';
+            return `<td ${editable} data-material-name="${material}">${formattedValue}</td>`;
+        }).join('');
+
+        const actionHtml = tx.isEditable
+            ? `<td><button class="btn btn-sm btn-outline-danger" data-action="delete-stock" data-addition-index="${tx.originalIndex}" title="حذف"><i class="fas fa-trash-alt"></i></button></td>`
+            : '<td></td>';
+        
+        const originalIndexAttr = tx.isEditable ? `data-addition-index="${tx.originalIndex}"` : '';
+
+        return `<tr ${rowClass} ${originalIndexAttr}><td>${dateHtml}</td>${sourceHtml}${valuesHtml}${actionHtml}</tr>`;
+
+    }).join('');
+
+    const finalInventory = Object.fromEntries(allMaterials.map(m => [m, 0]));
+    transactions.forEach(tx => {
+        if(tx.values){
+            for (const material in tx.values) {
+                if (finalInventory.hasOwnProperty(material)) {
+                    finalInventory[material] += parseFloat(tx.values[material]) || 0;
+                }
+            }
+        }
+    });
+
+    const summaryHtml = `<tr class="table-primary fw-bold">
+        <td colspan="2">الرصيد النهائي الحالي</td>
+        ${allMaterials.map(material => `<td>${formatNumber(finalInventory[material])}</td>`).join('')}
+        <td></td>
+    </tr>`;
+
+    elements.inventoryWrapper.innerHTML = `<div class="card"><div class="card-body p-0"><div class="table-responsive"><table id="inventory-table" class="table table-bordered table-compact mb-0"><thead><tr>${headerHtml}</tr></thead><tbody>${bodyHtml}</tbody><tfoot>${summaryHtml}</tfoot></table></div></div></div>`;
+    
+    if (dataTableInstance) dataTableInstance.destroy();
+    dataTableInstance = new DataTable('#inventory-table', {
+        paging: false,
+        info: false,
+        searching: true,
+        dom: 't',
+        "order": [] 
+    });
+};
+// =================================================================
+// END: NEW INVENTORY LOGIC
+// =================================================================
+
+const getAllNotesSorted = () => {
+const allNotes = [];
+state.productionOrders.forEach(po => {
+if (po && po.products) {
+po.products.forEach(day => {
+if (day && day.groups) {
+day.groups.forEach(group => {
+if (group && group.products) {
+group.products.forEach(product => {
+if (product && product.note && product.noteTimestamp) {
+allNotes.push({ note: product.note, timestamp: product.noteTimestamp, poId: po.id, poName: po.name, groupName: group.groupName, productName: product.name });
+}
+});
+}
+});
+}
+});
+}
+});
+allNotes.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+return allNotes;
+};
+
+const generateNotesListHtml = (notes) => {
+if (notes.length === 0) {
+return '<div class="flex-shrink-0 w-96"><div class="bg-gray-100 rounded-lg h-full flex flex-col"><div class="bg-gray-400 text-gray-900 font-bold text-sm p-3 rounded-t-lg">الملاحظات</div><div class="p-3 text-center text-sm text-gray-500">لا توجد ملاحظات مسجلة.</div></div></div>';
+}
+let notesHtml = notes.map(n => {
+const noteDate = new Date(n.timestamp).toLocaleString('ar-DZ', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+return `
+<div class="bg-white p-3 rounded-md shadow-sm mb-3 cursor-pointer hover:shadow-lg transition-shadow note-card" data-po-id="${n.poId}">
+<p class="text-sm text-gray-800 mb-2" style="white-space: pre-wrap;">${n.note}</p>
+<div class="border-t pt-2 text-xs text-gray-500">
+<p class="font-semibold text-gray-700">${n.productName} <span class="font-normal text-gray-500">/ مجموعة</span> ${n.groupName}</p>
+<p class="font-normal"><em>${n.poName}</em></p>
+<p class="text-left font-mono mt-1">${noteDate}</p>
+</div>
+</div>`;
+}).join('');
+return `<div class="flex-shrink-0 w-96"><div class="bg-gray-100 rounded-lg h-full flex flex-col"><div class="bg-gray-400 text-gray-900 font-bold text-sm p-3 rounded-t-lg flex justify-between items-center"><span>الملاحظات الأخيرة</span><span class="bg-white/50 text-xs font-mono rounded-full px-2 py-0.5">${notes.length}</span></div><div class="p-2 flex-grow h-[calc(100vh-12rem)] overflow-y-auto">${notesHtml}</div></div></div>`;
+};
+
+const updateNotesNotification = () => {
+const notes = getAllNotesSorted();
+const badge = document.getElementById('notes-badge');
+const button = document.getElementById('notes-icon-button');
+const dropdownContainer = document.getElementById('notes-dropdown-menu');
+if (notes.length > 0) {
+badge.textContent = notes.length;
+button.style.display = 'block';
+} else {
+button.style.display = 'none';
+}
+if (notes.length === 0) {
+dropdownContainer.innerHTML = '<li><span class="dropdown-item-text p-2 text-center text-muted small d-block">لا توجد ملاحظات.</span></li>';
+return;
+}
+dropdownContainer.innerHTML = '<li><h6 class="dropdown-header">أحدث الملاحظات</h6></li>' + notes.map(n => {
+const noteDate = new Date(n.timestamp).toLocaleString('ar-DZ', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+return `
+<li>
+<a class="dropdown-item p-2 note-dropdown-item" href="#" data-po-id="${n.poId}">
+<p class="mb-1 small text-wrap text-body-secondary" style="white-space: pre-wrap;">${n.note}</p>
+<div class="d-flex justify-content-between align-items-center mt-2">
+<small class="fw-bold" style="font-size: 0.7rem;">${n.productName} / ${n.poName}</small>
+<small class="text-muted" style="font-size: 0.7rem;">${noteDate}</small>
+</div>
+</a>
+</li>`;
+}).join('<li><hr class="dropdown-divider my-1"></li>');
+};
+
+const generateTargetSummaryHtml = (po) => {
+if (!po || !po.targetProducts || po.targetProducts.length === 0) return '';
+
+const productsHtml = po.targetProducts.map(p => {
+    if (!p) return '';
+    if (p.targetType === 'time') {
+        return `
+        <div class="flex items-center justify-between text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded-full">
+            <span class="font-bold">${p.name}</span>
+            <span><i class="fas fa-clock me-1 text-blue-400"></i>${p.duration || 0} ساعة</span>
+        </div>`;
+    } else {
+        return `
+        <div class="flex items-center justify-between text-xs text-gray-600">
+            <span class="font-bold text-gray-800">${p.name}</span>
+            <div class="flex items-center gap-2">
+                <span><i class="fas fa-box me-1 text-gray-400"></i>${p.qtyBox || 0}</span>
+                <span><i class="fas fa-cube me-1 text-gray-400"></i>${p.qtyPiece || 0}</span>
+            </div>
+        </div>`;
+    }
+}).join('');
+
+return `
+<div>
+    <h5 class="text-xs font-bold text-gray-600 mb-1">المنتجات المستهدفة:</h5>
+    <div class="space-y-1">
+        ${productsHtml}
+    </div>
+</div>`;
+};
+
+
+const renderWelcomeScreen = () => {
+elements.productionOrderWrapper.classList.add('d-none');
+elements.inventoryWrapper.classList.add('d-none');
+elements.welcomeScreen.classList.remove('d-none');
+elements.currentViewNameEl.textContent = 'لوحة التحكم';
+elements.actionButtons.innerHTML = '';
+elements.globalSearchContainer.style.display = 'none';
+
+const pendingPOs = state.productionOrders.filter(p => p && p.status === 'قيد الانتظار').sort((a, b) => b.date.localeCompare(a.date));
+const inProgressPOs = state.productionOrders.filter(p => p && p.status === 'قيد التنفيذ').sort((a, b) => b.date.localeCompare(a.date));
+const completedPOs = state.productionOrders.filter(p => p && p.status === 'مكتمل').sort((a, b) => b.date.localeCompare(a.date));
+
+const createKanbanColumn = (title, pos, headerColorClass) => {
+let poCardsHtml = pos.map(po => {
+const summaryTableHtml = generateGrandTotalSummaryHtml(po);
+const targetSummaryHtml = generateTargetSummaryHtml(po);
+
+return `
+<div class="bg-white p-3 rounded-md shadow-sm mb-3 cursor-pointer hover:shadow-lg transition-shadow" data-po-id="${po.id}">
+<div class="flex justify-between items-center mb-2">
+<p class="font-bold text-sm text-gray-900">${po.name}</p>
+<span class="text-xs font-mono bg-gray-200 text-gray-600 px-2 py-1 rounded">${po.date}</span>
+</div>
+<div class="mb-2">
+${targetSummaryHtml}
+</div>
+<div class="border-t pt-2 mt-2">
+<h4 class="text-xs font-bold text-gray-600 mb-1">ملخص الإنتاج الكلي:</h4>
+${summaryTableHtml}
+</div>
+</div>`;
+}).join('');
+
+if (pos.length === 0) {
+poCardsHtml = '<div class="p-3 rounded-md text-center text-sm text-gray-500">لا توجد أوامر إنتاج هنا.</div>';
+}
+return `<div class="flex-shrink-0 w-80"><div class="bg-gray-100 rounded-lg h-full flex flex-col"><div class="${headerColorClass} font-bold text-sm p-3 rounded-t-lg flex justify-between items-center"><span>${title}</span><span class="bg-white/50 text-xs font-mono rounded-full px-2 py-0.5">${pos.length}</span></div><div class="p-2 flex-grow h-[calc(100vh-12rem)] overflow-y-auto">${poCardsHtml}</div></div></div>`;
+};
+const allNotes = getAllNotesSorted();
+const kanbanBoardHtml = `
+${createKanbanColumn('قيد التنفيذ', inProgressPOs, 'bg-yellow-400 text-yellow-900')}
+${createKanbanColumn('قيد الانتظار', pendingPOs, 'bg-blue-400 text-blue-900')}
+${createKanbanColumn('مكتمل', completedPOs, 'bg-green-400 text-green-900')}
+`;
+const notesListHtml = generateNotesListHtml(allNotes);
+
+elements.welcomeScreen.className = 'h-full';
+elements.welcomeScreen.innerHTML = `<div class="flex flex-row gap-4 rtl:space-x-reverse h-full pb-4 overflow-x-auto">${kanbanBoardHtml}${notesListHtml}</div>`;
+
+document.querySelectorAll('#welcome-screen [data-po-id]').forEach(card => {
+card.addEventListener('click', () => {
+state.activeView = 'productionOrder';
+state.activePOId = card.dataset.poId;
+renderApp();
+});
+});
+};
+
+const renderApp = () => {
+if (timeTargetInterval) {
+clearInterval(timeTargetInterval);
+timeTargetInterval = null;
+}
+renderSidebar();
+switch(state.activeView) {
+case 'inventory': renderInventoryView(); break;
+case 'productionOrder': renderProductionOrderView(); break;
+default: renderWelcomeScreen(); break;
+}
+updateNotesNotification();
+};
+
+const attachSidebarEventListeners = () => {
+document.querySelectorAll('.po-item').forEach(el => el.addEventListener('click', e => { if (!e.target.closest('.context-menu-trigger')) { state.activeView = 'productionOrder'; state.activePOId = el.dataset.poId; renderApp(); } }));
+document.querySelectorAll('.context-menu-trigger').forEach(el => el.addEventListener('click', showContextMenu));
+};
+document.getElementById('db-header-btn').addEventListener('click', () => {
+state.activeView = 'welcome';
+state.activePOId = null;
+renderApp();
+});
+
+const addTargetProductRow = (product = {}) => {
+    const { name = '', qtyBox = '', qtyPiece = '', targetType = 'quantity', duration = '' } = product;
+    const container = document.getElementById('target-products-container');
+    const row = document.createElement('div');
+    row.className = 'd-flex gap-2 mb-2 target-product-row align-items-center';
+    const isTime = targetType === 'time';
+    row.innerHTML = `
+        <input type="text" class="form-control form-control-sm target-product-name flex-grow-1" placeholder="اسم المنتج" value="${name}">
+        <select class="form-select form-select-sm target-product-type" style="width: 120px;">
+            <option value="quantity" ${!isTime ? 'selected' : ''}>بالكمية</option>
+            <option value="time" ${isTime ? 'selected' : ''}>بالوقت</option>
+        </select>
+        <div class="quantity-fields" style="display: ${!isTime ? 'flex' : 'none'}; gap: 0.5rem;">
+            <input type="number" class="form-control form-control-sm target-product-qty-box" placeholder="علبة" style="width: 70px;" value="${qtyBox}">
+            <input type="number" class="form-control form-control-sm target-product-qty-piece" placeholder="حبة" style="width: 70px;" value="${qtyPiece}">
+        </div>
+        <div class="time-fields" style="display: ${isTime ? 'flex' : 'none'}; gap: 0.5rem;">
+             <input type="number" class="form-control form-control-sm target-product-duration" placeholder="ساعات" style="width: 70px;" value="${duration}">
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-danger remove-target-product-btn"><i class="fas fa-times"></i></button>
+    `;
+    container.appendChild(row);
+};
+
+document.getElementById('new-po-btn').addEventListener('click', () => {
+const today = new Date().toISOString().split('T')[0];
+document.getElementById('new-po-name').value = '';
+document.getElementById('new-po-date').value = today;
+document.getElementById('new-po-date-day').textContent = formatDateWithArabicDay(today).split('،')[0];
+document.getElementById('new-po-line').value = 'PS100';
+document.getElementById('target-products-container').innerHTML = '';
+addTargetProductRow();
+newPOModal.show();
+});
+$('#new-po-date').on('change', function() {
+const daySpan = document.getElementById('new-po-date-day');
+if (this.value) {
+daySpan.textContent = formatDateWithArabicDay(this.value).split('،')[0];
+} else {
+daySpan.textContent = '';
+}
+});
+
+$('#new-po-modal').on('change', '.target-product-type', function() {
+    const row = $(this).closest('.target-product-row');
+    const type = $(this).val();
+    if (type === 'time') {
+        row.find('.quantity-fields').hide();
+        row.find('.time-fields').css('display', 'flex');
+    } else {
+        row.find('.quantity-fields').css('display', 'flex');
+        row.find('.time-fields').hide();
+    }
+});
+
+document.getElementById('add-target-product-btn').addEventListener('click', () => addTargetProductRow());
+$('#target-products-container').on('click', '.remove-target-product-btn', function() { $(this).closest('.target-product-row').remove(); });
+$('#new-po-modal').on('shown.bs.modal', () => $('#po-product-name').focus());
+$('#new-po-modal').on('hidden.bs.modal', function () {
+$('#save-new-po-btn').removeAttr('data-edit-po-id');
+$('#new-po-modal .modal-title').text('إنشاء أمر إنتاج جديد');
+
+document.getElementById('po-product-name').value = '';
+document.getElementById('po-number').value = '';
+document.getElementById('new-po-name').value = '';
+document.getElementById('target-products-container').innerHTML = '';
+});
+
+document.getElementById('save-new-po-btn').addEventListener('click', () => {
+const editId = $('#save-new-po-btn').attr('data-edit-po-id');
+const name = document.getElementById('new-po-name').value.trim();
+const date = document.getElementById('new-po-date').value;
+if (!name || !date) return alert("يرجى إدخال اسم وتاريخ لأمر الإنتاج.");
+
+const productionLine = document.getElementById('new-po-line').value;
+const targetProducts = [];
+
+document.querySelectorAll('#target-products-container .target-product-row').forEach(row => {
+    const productName = row.querySelector('.target-product-name').value.trim();
+    if (productName) {
+        const productTargetType = row.querySelector('.target-product-type').value;
+
+        if (productTargetType === 'quantity') {
+            const productQtyBox = row.querySelector('.target-product-qty-box').value.trim();
+            const productQtyPiece = row.querySelector('.target-product-qty-piece').value.trim();
+            targetProducts.push({
+                name: productName,
+                targetType: 'quantity',
+                qtyBox: productQtyBox || '0',
+                qtyPiece: productQtyPiece || '0'
+            });
+        } else { // type is 'time'
+            const duration = row.querySelector('.target-product-duration').value.trim();
+            targetProducts.push({
+                name: productName,
+                targetType: 'time',
+                duration: parseFloat(duration) || 0,
+                startTime: null
+            });
+        }
+    }
+});
+
+
+if (editId) {
+    const poToUpdate = state.productionOrders.find(p => p.id === editId);
+    if (poToUpdate) {
+        poToUpdate.name = name;
+        poToUpdate.date = date;
+        poToUpdate.productionLine = productionLine;
+        poToUpdate.targetProducts = targetProducts;
+        delete poToUpdate.targetType; 
+        delete poToUpdate.timeTarget; 
+    }
+} else {
+    const newPO = {
+        id: `po_${Date.now()}`, name, date, status: 'قيد الانتظار', productionLine,
+        targetProducts,
+        products: [], materialsList: [...state.rawMaterials],
+        rawMaterials: { starting: {}, addedEntries: [], addedCollapsed: false, remaining: {}, startingLocked: false, mixCalculator: { hipsRatio: '25', msRatio: '1.5', note: '' }, adjustments: {} }
+    };
+    state.productionOrders.push(newPO);
+    state.activeView = 'productionOrder';
+    state.activePOId = newPO.id;
+}
+db.update({ 'productionOrders': state.productionOrders });
+newPOModal.hide();
+renderApp();
+});
+
+elements.inventoryBtn.addEventListener('click', () => { state.activeView = 'inventory'; state.activePOId = null; renderApp(); });
+
+
+$('#production-order-wrapper')
+.on('focusout', 'td[contenteditable="true"]:not([data-mix-field]), th[contenteditable="true"], span[contenteditable="true"]', function() {
+const po = state.productionOrders.find(p => p.id === state.activePOId);
+if (!po) return;
+const poIndex = state.productionOrders.findIndex(p => p.id === po.id);
+if (poIndex < 0) return;
+
+const el = $(this); const newValue = el.text().trim().replace(/[,\٫]/g, '.');
+let changed = false; let fullRenderNeeded = false; const type = el.data('type');
+
+if (type === 'material-header') {
+const colIndex = el.data('col-index');
+const oldName = po.materialsList[colIndex];
+if (oldName && newValue && oldName !== newValue) {
+po.materialsList[colIndex] = newValue;
+const dataObjects = [po.rawMaterials.starting, po.rawMaterials.remaining];
+(po.rawMaterials.addedEntries || []).forEach(entry => dataObjects.push(entry));
+dataObjects.forEach(obj => {
+if (obj && obj.hasOwnProperty(oldName)) {
+obj[newValue] = obj[oldName];
+delete obj[oldName];
+}
+});
+db.update({ [`productionOrders/${poIndex}`]: po });
+fullRenderNeeded = true;
+} else {
+el.text(oldName);
+}
+}
+else if (el.data('col-index') !== undefined) {
+const colIndex = el.data('col-index');
+const materialName = po.materialsList[colIndex];
+let path = '';
+
+if (type === 'added-entry') {
+const entryIndex = el.data('entry-index');
+if ((po.rawMaterials.addedEntries[entryIndex][materialName] || '') != newValue) {
+po.rawMaterials.addedEntries[entryIndex][materialName] = newValue;
+path = `productionOrders/${poIndex}/rawMaterials/addedEntries/${entryIndex}/${sanitizeKey(materialName)}`; changed = true;
+}
+} else if (type === 'starting' || type === 'remaining') {
+if ((po.rawMaterials[type][materialName] || '') != newValue) {
+po.rawMaterials[type][materialName] = newValue;
+path = `productionOrders/${poIndex}/rawMaterials/${type}/${sanitizeKey(materialName)}`; changed = true;
+}
+}
+if(changed) {
+db.update({ [path]: newValue });
+fullRenderNeeded = true;
+}
+} else {
+const field = el.data('field'); const dayIdx = el.data('day-index'); const groupIdx = el.data('group-index'); const prodIdx = el.data('product-index');
+let path = ''; let data = newValue;
+
+switch(field) {
+case 'name': if(po.name != newValue){po.name = newValue; path = `productionOrders/${poIndex}/name`; changed=true; fullRenderNeeded = true;} break;
+case 'group_name': if(po.products[dayIdx].groups[groupIdx].groupName != newValue) { po.products[dayIdx].groups[groupIdx].groupName = newValue; path = `productionOrders/${poIndex}/products/${dayIdx}/groups/${groupIdx}/groupName`; changed=true; } break;
+case 'product_name': if(po.products[dayIdx].groups[groupIdx].products[prodIdx].name != newValue) { po.products[dayIdx].groups[groupIdx].products[prodIdx].name = newValue; path = `productionOrders/${poIndex}/products/${dayIdx}/groups/${groupIdx}/products/${prodIdx}/name`; changed = true; fullRenderNeeded = true; } break;
+case 'qty_box': case 'qty_piece': case 'kg': case 'spoiled_mix': {
+const product = po.products[dayIdx].groups[groupIdx].products[prodIdx];
+const fieldMap = { 'qty_box': 'qtyBox', 'qty_piece': 'qtyPiece', 'kg': 'kg', 'spoiled_mix': 'spoiledMix' };
+const fieldName = fieldMap[field];
+if (fieldName && (product[fieldName] || '') != newValue) {
+product[fieldName] = newValue;
+path = `productionOrders/${poIndex}/products/${dayIdx}/groups/${groupIdx}/products/${prodIdx}/${fieldName}`;
+changed = true;
+fullRenderNeeded = true;
+}
+break;
+}
+}
+if(changed) {
+db.update({ [path]: data });
+}
+}
+if (fullRenderNeeded) { renderApp(); } 
+})
+
+
+
+.on('change', 'input[data-field="date"], select[data-field="status"], input[data-field="day_date"], input[data-field="mixes_count"], input[data-field="added_entry_date"]', function() {
+    const po = state.productionOrders.find(p => p.id === state.activePOId); if (!po) return;
+    const poIndex = state.productionOrders.findIndex(p => p.id === po.id); if (poIndex < 0) return;
+
+    const el = $(this); const field = el.data('field'); const value = el.val();
+    const updates = {};
+
+    if (field === 'mixes_count') {
+        const dayIndex = el.data('day-index'); const groupIndex = el.data('group-index');
+        if ((po.products[dayIndex].groups[groupIndex].mixesCount || '') != value) {
+            po.products[dayIndex].groups[groupIndex].mixesCount = value;
+            updates[`productionOrders/${poIndex}/products/${dayIndex}/groups/${groupIndex}/mixesCount`] = value;
+        }
+    } else if (field === 'day_date') {
+        const dayIndex = el.data('day-index');
+        if (po.products[dayIndex].date !== value) {
+            po.products[dayIndex].date = value;
+            updates[`productionOrders/${poIndex}/products/${dayIndex}/date`] = value;
+            el.siblings('span').text(formatDateWithArabicDay(value));
+        }
+    } else if (field === 'date') {
+        if (po.date !== value) {
+            po.date = value;
+            updates[`productionOrders/${poIndex}/date`] = value;
+            el.next('span').text(formatDateWithArabicDay(value));
+        }
+    } else if (field === 'status') {
+        if (po.status !== value) {
+            po.status = value;
+            updates[`productionOrders/${poIndex}/status`] = value;
+            
+            if (value === 'قيد التنفيذ' && po.targetProducts) {
+                po.targetProducts.forEach((product, productIndex) => {
+                    if (product.targetType === 'time' && !product.startTime) {
+                        const startTime = firebase.database.ServerValue.TIMESTAMP;
+                        product.startTime = startTime;
+                        updates[`productionOrders/${poIndex}/targetProducts/${productIndex}/startTime`] = startTime;
+                    }
+                });
+            }
+        }
+    } 
+    else if (field === 'added_entry_date') {
+        const entryIndex = el.data('entry-index');
+        const entry = po.rawMaterials.addedEntries[entryIndex];
+        if (entry && entry.date !== value) {
+            entry.date = value; 
+            updates[`productionOrders/${poIndex}/rawMaterials/addedEntries/${entryIndex}/date`] = value;
+        }
+    }
+
+
+    if (Object.keys(updates).length > 0) {
+        db.update(updates);
+        renderApp(); 
+    }
+})
+
+
+
+.on('click', '[data-action]', function() {
+const po = state.productionOrders.find(p => p.id === state.activePOId);
+const poIndex = po ? state.productionOrders.findIndex(p => p.id === po.id) : -1;
+const action = $(this).data('action');
+let needsRender = true;
+let updates = {};
+
+if (action === 'edit-note') {
+if (!po) return;
+const dayIdx = $(this).data('day-index'); const groupIdx = $(this).data('group-index'); const prodIdx = $(this).data('product-index');
+const product = po.products[dayIdx].groups[groupIdx].products[prodIdx];
+$('#note-modal-title').text(`ملاحظة للمنتج: ${product.name}`);
+$('#note-textarea').val(product.note || '');
+$('#save-note-btn').data({ dayIdx, groupIdx, prodIdx });
+noteModal.show();
+return;
+}
+
+if (!po || poIndex < 0) return;
+
+switch(action) {
+case 'toggle-starting-lock':
+po.rawMaterials.startingLocked = !po.rawMaterials.startingLocked;
+updates[`productionOrders/${poIndex}/rawMaterials/startingLocked`] = po.rawMaterials.startingLocked;
+break;
+
+case 'copy-consumption-summary': {
+    const consumptionData = [];
+    const addedTotals = Object.fromEntries(po.materialsList.map(m => [m, 0]));
+    (po.rawMaterials.addedEntries || []).forEach(entry => { po.materialsList.forEach(m => { addedTotals[m] += parseLocaleFloat(entry[m]); }); });
+
+    po.materialsList.forEach(m => {
+        const consumption = parseLocaleFloat(po.rawMaterials.starting[m]) + addedTotals[m] - parseLocaleFloat(po.rawMaterials.remaining[m]);
+        if (consumption > 0) {
+            consumptionData.push(`${m}\t${formatNumber(consumption)}`);
+        }
+    });
+
+    if (consumptionData.length > 0) {
+        navigator.clipboard.writeText(consumptionData.join('\n')).then(() => {
+            const originalHtml = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-check"></i> تم';
+            setTimeout(() => { this.innerHTML = originalHtml; }, 2000);
+        }).catch(err => {
+            console.error('فشل النسخ: ', err);
+            alert('فشلت عملية النسخ.');
+        });
+    }
+    needsRender = false;
+    break;
+}
+
+case 'copy-row-data': {
+    const row = $(this).closest('tr');
+    const rowType = row.data('row-type');
+    const dataToCopy = [];
+
+    if (rowType === 'starting' || rowType === 'remaining') {
+        const dataObject = po.rawMaterials[rowType];
+        po.materialsList.forEach(material => {
+            dataToCopy.push(dataObject[material] || '0');
+        });
+    } else if (rowType === 'calculated') {
+        const addedTotals = Object.fromEntries(po.materialsList.map(m => [m, 0]));
+        (po.rawMaterials.addedEntries || []).forEach(entry => { po.materialsList.forEach(m => { addedTotals[m] += parseLocaleFloat(entry[m]); }); });
+        po.materialsList.forEach(m => {
+            const consumption = parseLocaleFloat(po.rawMaterials.starting[m]) + addedTotals[m] - parseLocaleFloat(po.rawMaterials.remaining[m]);
+            dataToCopy.push(formatNumber(consumption > 0 ? consumption : 0));
+        });
+    }
+
+    if (dataToCopy.length > 0) {
+        rowClipboardData = dataToCopy; 
+        const originalHtml = this.innerHTML;
+        this.innerHTML = '<i class="fas fa-check"></i>';
+        setTimeout(() => { this.innerHTML = originalHtml; }, 1500);
+    } else {
+        alert('لا توجد بيانات لنسخها.');
+    }
+    needsRender = false; 
+    break;
+}
+
+case 'paste-row-data': {
+    if (!rowClipboardData) {
+        alert('الحافظة فارغة. يرجى نسخ صف أولاً.');
+        needsRender = false;
+        break;
+    }
+
+    if (confirm('هل أنت متأكد من لصق القيم؟ سيتم الكتابة فوق البيانات الحالية.')) {
+        const row = $(this).closest('tr');
+        const rowType = row.data('row-type');
+
+        if (rowType !== 'starting' && rowType !== 'remaining') {
+             alert('لا يمكن اللصق في هذا الصف.');
+             needsRender = false;
+             break;
+        }
+
+        const dataToPaste = rowClipboardData;
+        if (dataToPaste.length !== po.materialsList.length) {
+            alert('خطأ: عدد القيم المنسوخة لا يطابق عدد الأعمدة.');
+            needsRender = false;
+            break;
+        }
+
+        po.materialsList.forEach((material, index) => {
+            const value = dataToPaste[index];
+            po.rawMaterials[rowType][material] = value;
+            const sanitizedMaterialName = sanitizeKey(material);
+            updates[`productionOrders/${poIndex}/rawMaterials/${rowType}/${sanitizedMaterialName}`] = value;
+        });
+    } else {
+        needsRender = false; 
+    }
+    break;
+}
+
+// =========================================================
+// START: NEW ADJUST MODAL LOGIC (UPDATED WITH PERSISTENCE)
+// =========================================================
+case 'open-adjust-modal': {
+    const rowType = $(this).data('row-type'); // 'starting', 'remaining', 'calculated'
+    
+    // تأكد من وجود كائن التعديلات
+    if (!po.rawMaterials.adjustments) po.rawMaterials.adjustments = {};
+
+    // إعداد الحالة الأولية
+    adjustModalState.materialNames = [...po.materialsList];
+    adjustModalState.rowType = rowType;
+    
+    // تحميل الصفوف المحفوظة (نسخة عميقة لتجنب التعديل المباشر قبل الحفظ)
+    const savedRows = po.rawMaterials.adjustments[rowType] ? po.rawMaterials.adjustments[rowType] : [];
+    adjustModalState.rows = JSON.parse(JSON.stringify(savedRows));
+
+    // الحصول على القيم الأصلية (Base Values)
+    adjustModalState.originalValues = [];
+
+    if (rowType === 'starting' || rowType === 'remaining') {
+        const dataObj = po.rawMaterials[rowType];
+        
+        adjustModalState.materialNames.forEach((m, colIndex) => {
+            // 1. نأخذ القيمة الحالية الظاهرة في الجدول (مثلاً 105)
+            let currentDisplayValue = parseLocaleFloat(dataObj[m]) || 0;
+            
+            // 2. نحسب مجموع التعديلات المحفوظة سابقاً لهذا العمود
+            let totalPlus = 0;
+            let totalMinus = 0;
+            
+            adjustModalState.rows.forEach(row => {
+                const val = parseLocaleFloat(row.values[colIndex]);
+                if (row.type === 'plus') totalPlus += val;
+                else if (row.type === 'minus') totalMinus += val;
+            });
+
+            // 3. نسترجع القيمة الأصلية قبل التعديلات (المعادلة العكسية)
+            // الأصل = الحالي - المضاف + المطروح
+            // مثال: 100 = 105 - 5 + 0
+            let originalBaseValue = currentDisplayValue - totalPlus + totalMinus;
+
+            // نقوم بتخزين القيمة الأصلية الصافية لاستخدامها في الحسابات داخل النافذة
+            adjustModalState.originalValues.push(originalBaseValue);
+        });
+        
+        document.getElementById('adjust-modal-title').textContent = rowType === 'starting' ? 'تعديل المخزون الابتدائي' : 'تعديل المخزون المتبقي';
+        document.getElementById('adjust-hint-text').textContent = '';
+        document.getElementById('adjust-save-btn').style.display = 'block';
+
+    } else if (rowType === 'calculated') {
+        // بالنسبة للاستهلاك المحسوب، القيمة الأصلية تُحسب دائماً من المعادلات ولا يتم تخزينها كرقم ثابت
+        const addedTotals = Object.fromEntries(po.materialsList.map(m => [m, 0]));
+        (po.rawMaterials.addedEntries || []).forEach(entry => { po.materialsList.forEach(m => { addedTotals[m] += parseLocaleFloat(entry[m]); }); });
+        
+        adjustModalState.materialNames.forEach(m => {
+            const consumption = parseLocaleFloat(po.rawMaterials.starting[m]) + addedTotals[m] - parseLocaleFloat(po.rawMaterials.remaining[m]);
+            adjustModalState.originalValues.push(consumption > 0 ? consumption : 0);
+        });
+
+        document.getElementById('adjust-modal-title').textContent = 'حاسبة الاستهلاك (Reliquat)';
+        document.getElementById('adjust-hint-text').textContent = '* يتم حفظ أسطر التعديل، لكن القيمة النهائية للاستهلاك تُحسب دائماً تلقائياً في الجدول الرئيسي.';
+        document.getElementById('adjust-save-btn').style.display = 'block';
+    }
+
+    renderAdjustModalTable();
+    adjustValuesModal.show();
+    needsRender = false;
+    break;
+}
+// =========================================================
+// END: NEW ADJUST MODAL LOGIC
+// =========================================================
+
+case 'add-stock-entry':
+    if (!po.rawMaterials.addedEntries) po.rawMaterials.addedEntries = [];
+    
+    const today = new Date().toISOString().split('T')[0];
+    po.rawMaterials.addedEntries.push({ date: today }); 
+    
+    po.rawMaterials.addedCollapsed = false;
+    updates[`productionOrders/${poIndex}/rawMaterials/addedEntries`] = po.rawMaterials.addedEntries;
+    updates[`productionOrders/${poIndex}/rawMaterials/addedCollapsed`] = false;
+    break;
+case 'delete-stock-entry':
+if (confirm('هل أنت متأكد؟')) {
+po.rawMaterials.addedEntries.splice($(this).data('entry-index'), 1);
+updates[`productionOrders/${poIndex}/rawMaterials/addedEntries`] = po.rawMaterials.addedEntries;
+} else needsRender = false;
+break;
+case 'add-group':
+const dayIndex = $(this).data('day-index'); const day = po.products[dayIndex]; const usedGroups = (day.groups || []).map(g => g.groupName);
+const availableGroups = PRODUCTION_GROUPS.filter(g => !usedGroups.includes(g)); const select = $('#new-group-select'); select.html('');
+if (availableGroups.length > 0) { availableGroups.forEach(g => select.append(`<option value="${g}">${g}</option>`)); $('#save-new-group-btn').prop('disabled', false); } else { select.html('<option>لا توجد مجموعات متاحة</option>'); $('#save-new-group-btn').prop('disabled', true); }
+$('#add-group-modal').data('day-index', dayIndex); addGroupModal.show(); needsRender = false;
+break;
+case 'delete-group':
+if (confirm('هل أنت متأكد؟')) {
+const dayIdx = $(this).data('day-index');
+po.products[dayIdx].groups.splice($(this).data('group-index'), 1);
+updates[`productionOrders/${poIndex}/products/${dayIdx}/groups`] = po.products[dayIdx].groups;
+} else needsRender = false;
+break;
+case 'add-product-to-group': {
+const dayIdx = $(this).data('day-index');
+const groupIdx = $(this).data('group-index');
+po.products[dayIdx].groups[groupIdx].products.push({ name: 'منتج جديد', qtyBox: '', qtyPiece: '', kg: '', spoiledMix: '', note: '', noteTimestamp: null });
+updates[`productionOrders/${poIndex}/products/${dayIdx}/groups/${groupIdx}/products`] = po.products[dayIdx].groups[groupIdx].products;
+break;
+}
+case 'delete-product':
+if (confirm('هل أنت متأكد؟')) {
+const dayIdx = $(this).data('day-index');
+const groupIdx = $(this).data('group-index');
+po.products[dayIdx].groups[groupIdx].products.splice($(this).data('product-index'), 1);
+updates[`productionOrders/${poIndex}/products/${dayIdx}/groups/${groupIdx}/products`] = po.products[dayIdx].groups[groupIdx].products;
+} else { needsRender = false; }
+break;
+case 'delete-day':
+if (confirm('هل أنت متأكد؟')) {
+po.products.splice($(this).data('day-index'), 1);
+updates[`productionOrders/${poIndex}/products`] = po.products;
+} else needsRender = false;
+break;
+default: needsRender = false; break;
+}
+
+if (Object.keys(updates).length > 0) {
+db.update(updates);
+}
+if (needsRender) { renderApp(); }
+})
+
+
+.on('click', '.custom-date-container', function() {
+    const hiddenInput = this.querySelector('.hidden-date-input');
+    if (hiddenInput) {
+        try {
+            hiddenInput.showPicker();
+        } catch (error) {
+            hiddenInput.click();
+        }
+    }
+})
+.on('click', '.toggle-added-entries', function() {
+const po = state.productionOrders.find(p => p.id === state.activePOId); if (!po) return;
+const poIndex = state.productionOrders.findIndex(p => p.id === po.id); if (poIndex < 0) return;
+
+po.rawMaterials.addedCollapsed = !po.rawMaterials.addedCollapsed;
+db.update({ [`productionOrders/${poIndex}/rawMaterials/addedCollapsed`]: po.rawMaterials.addedCollapsed });
+renderProductionOrderView();
+})
+
+
+.on('click', '#print-summary-btn', function(e) {
+    e.preventDefault();
+
+    const po = state.productionOrders.find(p => p.id === state.activePOId);
+    if (!po) {
+        alert('Error: Production Order not found.');
+        return;
+    }
+
+    // ==========================================
+    // 1. معالجة البيانات
+    // ==========================================
+
+    const addedTotals = Object.fromEntries(po.materialsList.map(m => [m, 0]));
+    (po.rawMaterials.addedEntries || []).forEach(entry => {
+        po.materialsList.forEach(m => {
+            addedTotals[m] += parseLocaleFloat(entry[m]);
+        });
+    });
+
+    const consumptionData = po.materialsList.map(m => {
+        const consumption = parseLocaleFloat(po.rawMaterials.starting[m]) +
+                            addedTotals[m] -
+                            parseLocaleFloat(po.rawMaterials.remaining[m]);
+        return {
+            name: m,
+            value: consumption > 0 ? formatNumber(consumption) : 0
+        };
+    }).filter(item => parseFloat(item.value) > 0);
+
+    let totalMixes = 0;
+    if (po.products && po.products.length > 0) {
+        po.products.forEach(dayEntry => {
+            if (dayEntry && dayEntry.groups) {
+                dayEntry.groups.forEach(group => {
+                    if (group) totalMixes += parseFloat(group.mixesCount) || 0;
+                });
+            }
+        });
+    }
+
+    const grandTotalSummary = {};
+    if (po.products && po.products.length > 0) {
+        po.products.forEach(dayEntry => {
+            if (dayEntry && dayEntry.groups) {
+                dayEntry.groups.forEach(group => {
+                    if (group && group.products) {
+                        group.products.forEach(p => {
+                            if (!p) return;
+                            const normalizedName = normalizeProductName(p.name);
+                            if (normalizedName) {
+                                if (normalizedName !== normalizeProductName('منتج جديد')) {
+                                    if (!grandTotalSummary[normalizedName]) {
+                                        grandTotalSummary[normalizedName] = { qtyBox: 0, qtyPiece: 0, displayName: p.name.trim(), type: 'product' };
+                                    }
+                                    grandTotalSummary[normalizedName].qtyBox += parseLocaleFloat(p.qtyBox);
+                                    grandTotalSummary[normalizedName].qtyPiece += parseLocaleFloat(p.qtyPiece);
+                                }
+                                const dechetsVal = parseLocaleFloat(p.kg);
+                                if (dechetsVal > 0) {
+                                    if (!grandTotalSummary['dechets']) grandTotalSummary['dechets'] = { kg: 0, displayName: 'Déchets', type: 'waste' };
+                                    grandTotalSummary['dechets'].kg += dechetsVal;
+                                }
+                                const fasdaVal = parseLocaleFloat(p.spoiledMix);
+                                if (fasdaVal > 0) {
+                                    if (!grandTotalSummary['fasda']) grandTotalSummary['fasda'] = { kg: 0, displayName: 'Fasda', type: 'waste' };
+                                    grandTotalSummary['fasda'].kg += fasdaVal;
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    // ==========================================
+    // 2. بناء HTML للصفوف
+    // ==========================================
+
+    const deleteBtnHtml = `<td class="action-col no-print"><button class="btn-delete" onclick="deleteRow(this)">×</button></td>`;
+
+    let materialsRows = consumptionData.map(item => 
+        `<tr>
+            <td class="text-left fw-bold" contenteditable="true">${item.name}</td>
+            <td contenteditable="true">${item.value}</td>
+            ${deleteBtnHtml}
+        </tr>`
+    ).join('');
+
+    let productsRows = '';
+    
+    Object.keys(grandTotalSummary).forEach(key => {
+        const item = grandTotalSummary[key];
+        if (item.type === 'product' && (item.qtyBox > 0 || item.qtyPiece > 0)) {
+            productsRows += `
+            <tr>
+                <td class="text-left fw-bold" contenteditable="true">${item.displayName}</td>
+                <td contenteditable="true">${formatNumber(item.qtyBox)}</td>
+                <td contenteditable="true">${formatNumber(item.qtyPiece)}</td>
+                <td class="bg-gray" contenteditable="true">-</td>
+                ${deleteBtnHtml}
+            </tr>`;
+        }
+    });
+
+    if (grandTotalSummary['dechets']) {
+        productsRows += `
+        <tr class="row-waste">
+            <td class="text-left fw-bold" contenteditable="true">Déchets</td>
+            <td class="bg-gray"></td>
+            <td class="bg-gray"></td>
+            <td class="fw-bold" contenteditable="true">${formatNumber(grandTotalSummary['dechets'].kg)}</td>
+            ${deleteBtnHtml}
+        </tr>`;
+    }
+    if (grandTotalSummary['fasda']) {
+        productsRows += `
+        <tr class="row-waste">
+            <td class="text-left fw-bold" contenteditable="true">Fasda</td>
+            <td class="bg-gray"></td>
+            <td class="bg-gray"></td>
+            <td class="fw-bold" contenteditable="true">${formatNumber(grandTotalSummary['fasda'].kg)}</td>
+            ${deleteBtnHtml}
+        </tr>`;
+    }
+
+    // ==========================================
+    // 3. التنسيقات (CSS) والهيكل (HTML)
+    // ==========================================
+
+    const printStyles = `
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+        
+        @page { size: A4; margin: 15mm; }
+        
+        body { 
+            font-family: 'Segoe UI', 'Cairo', sans-serif; 
+            color: #000; 
+            direction: ltr; 
+            margin: 0; 
+            padding: 0; 
+            background: white; 
+            -webkit-print-color-adjust: exact; 
+            print-color-adjust: exact;
+            padding-bottom: 60px; 
+        }
+
+        /* --- تنسيق الهيدر الجديد (3 أعمدة) --- */
+        .header-container { 
+            display: flex; 
+            justify-content: space-between; /* توزيع العناصر على الأطراف */
+            align-items: center; /* محاذاة عمودية في الوسط */
+            margin-bottom: 25px; 
+            border-bottom: 2px solid #3b5998; 
+            padding-bottom: 15px; 
+            gap: 10px;
+        }
+        
+        /* القسم الأيسر: المعلومات */
+        .header-info {
+            flex: 1; /* يأخذ مساحة مرنة */
+            text-align: left;
+        }
+        .header-info h1 { margin: 0 0 5px 0; font-size: 1.5rem; color: #3b5998; }
+        .header-info p { margin: 2px 0; color: #444; font-size: 0.9rem; }
+
+        /* القسم الأوسط: اللوجو */
+        .logo-center {
+            flex: 1; /* يأخذ مساحة مرنة */
+            text-align: center;
+            display: flex;
+            justify-content: center;
+        }
+        .print-logo {
+            max-height: 80px; /* ارتفاع أقصى للصورة */
+            width: auto;
+            object-fit: contain;
+        }
+
+        /* القسم الأيمن: الخلطات */
+        .mixes-box-container {
+             flex: 1; /* يأخذ مساحة مرنة */
+             display: flex;
+             justify-content: flex-end; /* دفع الصندوق لليمين */
+        }
+        .mixes-box { 
+            background-color: #f8f9fa; 
+            border: 2px solid #3b5998; 
+            border-radius: 8px; 
+            padding: 5px 20px; 
+            text-align: center; 
+            min-width: 120px; 
+        }
+        .mixes-box .label { display: block; font-size: 0.8rem; font-weight: bold; color: #666; }
+        .mixes-box .value { display: block; font-size: 1.4rem; font-weight: bold; color: #3b5998; }
+
+        .content-grid { display: grid; grid-template-columns: 35% 63%; gap: 2%; align-items: start; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 5px; }
+        table, th, td { border: 1px solid #000 !important; }
+        
+        thead th { background-color: #4472c4 !important; color: white !important; padding: 6px; text-align: center; font-weight: bold; }
+        thead tr:first-child th { background-color: #d9d9d9 !important; color: #000 !important; font-size: 0.95rem; padding: 8px; }
+        
+        td { padding: 5px; text-align: center; vertical-align: middle; }
+        td[contenteditable="true"]:hover { background-color: #eef; cursor: text; outline: 1px dashed #99f; }
+        td[contenteditable="true"]:focus { background-color: #fff; outline: 2px solid #3b5998; }
+
+        .text-left { text-align: left !important; padding-left: 8px; }
+        .fw-bold { font-weight: 700; }
+        .bg-gray { background-color: #f2f2f2 !important; }
+        .row-waste td { background-color: #fff0f0 !important; font-weight: bold; }
+
+        .btn-delete { background: #ff4d4d; color: white; border: none; border-radius: 3px; width: 20px; height: 20px; cursor: pointer; line-height: 1; font-size: 12px; }
+        .btn-add { width: 100%; padding: 5px; background-color: #28a745; color: white; border: none; cursor: pointer; font-size: 0.8rem; margin-top: 5px; border-radius: 4px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .action-col { width: 25px; border: none !important; background: white !important; }
+        
+        .footer-note { 
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            background-color: white;
+            border-top: 2px solid #000;
+            padding-top: 10px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #000;
+            z-index: 100;
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            td[contenteditable="true"] { border: 1px solid #000 !important; outline: none !important; }
+            .action-col, .btn-add { display: none !important; }
+        }
+    </style>
+    `;
+
+    const internalScript = `
+    <script>
+        function deleteRow(btn) {
+            if(confirm('Delete this row?')) {
+                btn.closest('tr').remove();
+            }
+        }
+
+        function addMaterialRow() {
+            const tbody = document.querySelector('#materials-table tbody');
+            const tr = document.createElement('tr');
+            tr.innerHTML = \`
+                <td class="text-left fw-bold" contenteditable="true">New Material</td>
+                <td contenteditable="true">0</td>
+                <td class="action-col no-print"><button class="btn-delete" onclick="deleteRow(this)">×</button></td>
+            \`;
+            tbody.appendChild(tr);
+        }
+
+        function addProductRow() {
+            const tbody = document.querySelector('#products-table tbody');
+            const tr = document.createElement('tr');
+            tr.innerHTML = \`
+                <td class="text-left fw-bold" contenteditable="true">New Product</td>
+                <td contenteditable="true">0</td>
+                <td contenteditable="true">0</td>
+                <td class="bg-gray" contenteditable="true">-</td>
+                <td class="action-col no-print"><button class="btn-delete" onclick="deleteRow(this)">×</button></td>
+            \`;
+            tbody.appendChild(tr);
+        }
+    <\/script>
+    `;
+
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>PO Summary - ${po.name}</title>
+        ${printStyles}
+    </head>
+    <body>
+        <div class="print-controls no-print" style="text-align: center; margin-bottom: 20px; padding: 10px; background: #eee; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid #ccc;">
+            <button onclick="window.print()" style="padding: 8px 20px; cursor: pointer; background: #3b5998; color: white; border: none; border-radius: 4px; font-size: 1rem;">🖨️ Print (A4)</button>
+            <span style="margin-left: 10px; font-size: 0.9rem; color: #555;">💡 You can edit data directly.</span>
+        </div>
+
+        <div class="header-container">
+            <div class="header-info">
+                <h1>${po.productionLine || 'Line'}</h1>
+                <p><strong>Order:</strong> ${po.name}</p>
+                <p><strong>Date:</strong> ${po.date} | <strong>Status:</strong> ${po.status}</p>
+            </div>
+            
+            <div class="logo-center">
+                <img src="https://i.imgur.com/j70b5GV.jpeg" alt="Logo" class="print-logo">
+            </div>
+
+            <div class="mixes-box-container">
+                <div class="mixes-box">
+                    <span class="label">Total Mixes</span>
+                    <span class="value" contenteditable="true">${formatNumber(totalMixes)}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-grid">
+            <div>
+                 <table id="materials-table">
+                    <thead>
+                        <tr>
+                            <th colspan="2">Matières consommées</th>
+                            <th class="action-col no-print"></th>
+                        </tr>
+                        <tr>
+                            <th class="text-left">Matières</th>
+                            <th>(Kg)</th>
+                            <th class="action-col no-print"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${materialsRows || ''}
+                    </tbody>
+                </table>
+                <button class="btn-add no-print" onclick="addMaterialRow()">+ Add Material</button>
+            </div>
+
+            <div>
+                <table id="products-table">
+                    <thead>
+                        <tr>
+                             <th colspan="4">Produit Fini</th>
+                             <th class="action-col no-print"></th>
+                        </tr>
+                        <tr>
+                            <th class="text-left">Référence</th>
+                            <th>SUM Crt</th>
+                            <th>SUM Pcs</th>
+                            <th>SUM (Kg)</th>
+                            <th class="action-col no-print"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${productsRows || ''}
+                    </tbody>
+                </table>
+                <button class="btn-add no-print" onclick="addProductRow()">+ Add Product</button>
+            </div>
+        </div>
+
+        <div class="footer-note">
+            Printed on: ${new Date().toLocaleString('en-GB')}
+        </div>
+        
+        ${internalScript}
+    </body>
+    </html>
+    `;
+
+    const popupWidth = 1000;
+    const popupHeight = 900;
+    const left = (window.screen.width / 2) - (popupWidth / 2);
+    const top = (window.screen.height / 2) - (popupHeight / 2);
+    
+    const printWindow = window.open('', '_blank', `width=${popupWidth},height=${popupHeight},top=${top},left=${left}`);
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+})
+
+
+.on('input', '[data-mix-field]', function() {
+const po = state.productionOrders.find(p => p.id === state.activePOId); if (!po) return;
+const poIndex = state.productionOrders.findIndex(p => p.id === po.id); if (poIndex < 0) return;
+
+const el = $(this);
+const field = el.data('mix-field');
+const newValue = el.text().trim();
+if (!po.rawMaterials.mixCalculator) { po.rawMaterials.mixCalculator = {}; }
+
+if ((po.rawMaterials.mixCalculator[field] || '') != newValue) {
+po.rawMaterials.mixCalculator[field] = newValue;
+db.update({ [`productionOrders/${poIndex}/rawMaterials/mixCalculator/${field}`]: newValue });
+}
+updateMixCalculator();
+});
+
+$(document).on('keydown', 'td[contenteditable="true"], th[contenteditable="true"]', function(e) {
+if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+e.preventDefault();
+const $currentCell = $(this);
+const $currentRow = $currentCell.closest('tr');
+const $table = $currentCell.closest('table');
+const $rowEditables = $currentRow.find('td[contenteditable="true"]:visible, th[contenteditable="true"]:visible');
+const logicalColIndex = $rowEditables.index($currentCell);
+const absoluteRowIndex = $table.find('tr').index($currentRow);
+$currentCell.blur();
+
+setTimeout(() => {
+const tableSelector = $table.attr('id') ? '#' + $table.attr('id') : '.' + $table.attr('class').split(' ').join('.');
+const $newTable = $(tableSelector);
+const allRows = $newTable.find('tr');
+let $target = $();
+for (let i = absoluteRowIndex + 1; i < allRows.length; i++) {
+const $row = $(allRows[i]);
+const $editables = $row.find('td[contenteditable="true"]:visible');
+if (logicalColIndex > -1 && logicalColIndex < $editables.length) {
+$target = $editables.eq(logicalColIndex);
+break;
+}
+}
+if ($target.length) {
+$target.focus();
+try {
+const sel = window.getSelection();
+const range = document.createRange();
+range.selectNodeContents($target[0]);
+sel.removeAllRanges();
+sel.addRange(range);
+} catch (err) {
+document.execCommand('selectAll', false, null);
+}
+}
+}, 50);
+}
+});
+
+document.getElementById('save-note-btn').addEventListener('click', function() {
+const po = state.productionOrders.find(p => p.id === state.activePOId);
+if (!po) return;
+const poIndex = state.productionOrders.findIndex(p => p.id === po.id); if (poIndex < 0) return;
+
+const { dayIdx, groupIdx, prodIdx } = $(this).data();
+const product = po.products[dayIdx].groups[groupIdx].products[prodIdx];
+const newNote = document.getElementById('note-textarea').value.trim();
+if (newNote !== (product.note || '').trim()) {
+product.note = newNote;
+product.noteTimestamp = newNote ? new Date().toISOString() : null;
+
+const updates = {
+[`productionOrders/${poIndex}/products/${dayIdx}/groups/${groupIdx}/products/${prodIdx}/note`]: product.note,
+[`productionOrders/${poIndex}/products/${dayIdx}/groups/${groupIdx}/products/${prodIdx}/noteTimestamp`]: product.noteTimestamp
+};
+db.update(updates);
+renderApp();
+}
+noteModal.hide();
+});
+
+$('#save-new-group-btn').on('click', function() {
+const po = state.productionOrders.find(p => p.id === state.activePOId); if (!po) return;
+const poIndex = state.productionOrders.findIndex(p => p.id === po.id); if (poIndex < 0) return;
+
+const dayIndex = $('#add-group-modal').data('day-index'); const newGroupName = $('#new-group-select').val();
+if (dayIndex !== undefined && newGroupName) {
+if (!po.products[dayIndex].groups) po.products[dayIndex].groups = [];
+po.products[dayIndex].groups.push({ groupName: newGroupName, mixesCount: '', products: [{ name: 'منتج جديد', qtyBox: '', qtyPiece: '', kg: '', spoiledMix: '', note: '', noteTimestamp: null }] });
+db.update({ [`productionOrders/${poIndex}/products/${dayIndex}/groups`]: po.products[dayIndex].groups });
+renderProductionOrderView();
+}
+addGroupModal.hide();
+});
+
+// =================================================================
+// START: UPDATED INVENTORY EVENT HANDLERS
+// =================================================================
+$('#inventory-wrapper').on('focusout', 'td[contenteditable="true"]', function() {
+    const idx = $(this).closest('tr').data('addition-index');
+    
+    if (idx === undefined) return;
+
+const mat = $(this).data('material-name');
+const val = $(this).text().trim().replace(/[,\٫]/g, '.');
+
+    if ((state.inventory.stockAdditions[idx].values[mat] || '') != val) {
+        const numericVal = Math.abs(parseFloat(val) || 0);
+        state.inventory.stockAdditions[idx].values[mat] = numericVal;
+        db.update({ [`inventory/stockAdditions/${idx}/values/${sanitizeKey(mat)}`]: numericVal });
+        renderInventoryView(); 
+    }
+}).on('click', 'button[data-action="delete-stock"]', function() {
+    if (confirm('هل أنت متأكد من حذف هذا السجل؟')) {
+        const idx = $(this).data('addition-index'); 
+        
+        if (idx === undefined) return; 
+
+        state.inventory.stockAdditions.splice(idx, 1);
+        db.update({ 'inventory/stockAdditions': state.inventory.stockAdditions });
+        renderInventoryView();
+    }
+});
+// =================================================================
+// END: UPDATED INVENTORY EVENT HANDLERS
+// =================================================================
+
+
+$('.action-buttons .button-container').on('click', '#add-new-day-btn', () => {
+const po = state.productionOrders.find(p=>p.id===state.activePOId);
+const poIndex = po ? state.productionOrders.findIndex(p => p.id === po.id) : -1;
+if(po && poIndex > -1) {
+if(!po.products) po.products = [];
+po.products.push({ date: new Date().toISOString().split('T')[0], groups: [] });
+db.update({ [`productionOrders/${poIndex}/products`]: po.products });
+renderProductionOrderView();
+}
+}).on('click', '#add-stock-btn', ()=>{
+if(!state.inventory.stockAdditions) state.inventory.stockAdditions = [];
+state.inventory.stockAdditions.unshift({timestamp: new Date().toISOString(), values: {}});
+db.update({ 'inventory/stockAdditions': state.inventory.stockAdditions });
+renderInventoryView();
+}).on('click', '#print-po-btn', () => {
+window.print();
+}).on('click', '#export-po-btn', () => {
+exportProductionOrderToExcel();
+});
+
+$('#global-search-input').on('keyup', function(){ if(dataTableInstance) dataTableInstance.search(this.value).draw(); });
+
+document.addEventListener('click', (e) => { const target = e.target.closest('a[data-action]'); if (target && elements.contextMenu.contains(target)) { const {action}=target.dataset; const {type,id}=state.contextTarget; if(action==='rename') renameItem(type,id); else if(action==='delete') deleteItem(type,id); else if(action==='edit') editProductionOrder(type, id);} elements.contextMenu.style.display = 'none'; });
+
+document.getElementById('notes-dropdown-menu').addEventListener('click', (e) => {
+const target = e.target.closest('.note-dropdown-item');
+if (target) {
+e.preventDefault();
+const poId = target.dataset.poId;
+if (poId) {
+state.activeView = 'productionOrder';
+state.activePOId = poId;
+renderApp();
+const dropdown = bootstrap.Dropdown.getInstance(document.getElementById('notes-icon-button'));
+if(dropdown) dropdown.hide();
+}
+}
+});
+
+const showContextMenu = (e)=>{ e.preventDefault(); e.stopPropagation(); const t=e.currentTarget; state.contextTarget={type:t.dataset.type,id:t.dataset.id}; const c="dropdown-item dropdown-item-sm"; let h=`<li><a class="${c}" href="#" data-action="edit">تعديل</a></li><li><a class="${c}" href="#" data-action="rename">إعادة تسمية</a></li><li><hr class="dropdown-divider my-1"></li><li><a class="${c} text-danger" href="#" data-action="delete">حذف</a></li>`; elements.contextMenu.innerHTML=h; elements.contextMenu.style.display='block'; elements.contextMenu.style.top=`${e.clientY}px`; elements.contextMenu.style.left=`${e.clientX}px`;};
+
+
+const editProductionOrder = (type, id) => {
+if (type !== 'po') return;
+const po = state.productionOrders.find(p => p.id === id);
+if (!po) return;
+
+$('#new-po-modal .modal-title').text('تعديل أمر الإنتاج');
+
+const nameParts = po.name.split('/');
+const productName = nameParts[0] || '';
+const productionNumber = nameParts.length > 1 ? nameParts.slice(1).join('/') : '';
+document.getElementById('po-product-name').value = productName;
+document.getElementById('po-number').value = productionNumber;
+if (typeof updateResult === 'function') {
+    updateResult();
+}
+
+$('#new-po-date').val(po.date);
+$('#new-po-date-day').text(formatDateWithArabicDay(po.date).split('،')[0]);
+$('#new-po-line').val(po.productionLine);
+
+const container = document.getElementById('target-products-container');
+container.innerHTML = ''; 
+
+if (po.targetProducts && po.targetProducts.length > 0) {
+    po.targetProducts.forEach(p => addTargetProductRow(p)); 
+} else {
+    addTargetProductRow(); 
+}
+
+$('#save-new-po-btn').attr('data-edit-po-id', id);
+newPOModal.show();
+};
+
+
+
+
+const renameItem = (t,id)=>{
+const po=state.productionOrders.find(i=>i.id===id);
+const poIndex = po ? state.productionOrders.findIndex(p => p.id === po.id) : -1;
+if(!po || poIndex < 0) return;
+
+const n=prompt(`أدخل الاسم الجديد لـ "${po.name}":`,po.name);
+if(n&&n.trim()!==po.name){
+po.name=n.trim();
+db.update({ [`productionOrders/${poIndex}/name`]: po.name });
+renderApp();
+}
+};
+const deleteItem = (t,id)=>{
+const p=state.productionOrders.find(p=>p.id===id);
+if(!confirm(`حذف أمر الإنتاج "${p.name}"؟`))return;
+state.productionOrders=state.productionOrders.filter(p=>p.id!==id);
+if(state.activePOId===id){
+state.activePOId=null;
+state.activeView='welcome';
+}
+db.update({ 'productionOrders': state.productionOrders });
+renderApp();
+};
+
+const exportProductionOrderToExcel = () => {
+const po = state.productionOrders.find(p => p.id === state.activePOId);
+if (!po) return;
+
+const grandTotalSummary = {};
+if (po.products && po.products.length > 0) {
+po.products.forEach(dayEntry => {
+if (dayEntry && dayEntry.groups && dayEntry.groups.length > 0) {
+dayEntry.groups.forEach(group => {
+if (!group || !group.products) return;
+group.products.forEach(p => {
+if (!p) return;
+const originalName = p.name ? p.name.trim() : '';
+const normalizedName = normalizeProductName(originalName);
+if (normalizedName && normalizedName !== normalizeProductName('منتج جديد')) {
+if (!grandTotalSummary[normalizedName]) { grandTotalSummary[normalizedName] = { qtyBox: 0, qtyPiece: 0, displayName: originalName }; }
+grandTotalSummary[normalizedName].qtyBox += parseLocaleFloat(p.qtyBox);
+grandTotalSummary[normalizedName].qtyPiece += parseLocaleFloat(p.qtyPiece);
+
+}
+const dechetsValue = parseLocaleFloat(p.kg);
+if (dechetsValue > 0) {
+if (!grandTotalSummary['Déchets']) { grandTotalSummary['Déchets'] = { kg: 0, displayName: 'Déchets' }; }
+grandTotalSummary['Déchets'].kg += dechetsValue;
+}
+const spoiledMixValue = parseLocaleFloat(p.spoiledMix);
+if (spoiledMixValue > 0) {
+if (!grandTotalSummary['Fasda']) { grandTotalSummary['Fasda'] = { kg: 0, displayName: 'Fasda' }; }
+grandTotalSummary['Fasda'].kg += spoiledMixValue;
+}
+});
+});
+}
+});
+}
+const productionSummaryData = Object.keys(grandTotalSummary).map(nameKey => {
+const totals = grandTotalSummary[nameKey];
+return {
+'المنتج': totals.displayName,
+'مجموع العلب': totals.qtyBox !== undefined ? formatNumber(totals.qtyBox) : '',
+'مجموع الحبات': totals.qtyPiece !== undefined ? formatNumber(totals.qtyPiece) : '',
+'الوزن (kg)': totals.kg !== undefined ? formatNumber(totals.kg) : ''
+};
+});
+
+const addedTotalsForConsumption = Object.fromEntries(po.materialsList.map(m => [m, 0]));
+(po.rawMaterials.addedEntries || []).forEach(entry => {
+po.materialsList.forEach(m => {
+addedTotalsForConsumption[m] += parseFloat(entry[m]) || 0;
+});
+});
+const consumptionSummaryData = po.materialsList.map(m => {
+const consumption = parseLocaleFloat(po.rawMaterials.starting[m]) +
+addedTotalsForConsumption[m] -
+parseLocaleFloat(po.rawMaterials.remaining[m]);
+
+return {
+'المادة': m,
+'الاستهلاك المحسوب (kg)': formatNumber(consumption > 0 ? consumption : 0)
+};
+}).filter(item => parseFloat(item['الاستهلاك المحسوب (kg)']) > 0);
+
+let totalMixes = 0;
+if (po.products && po.products.length > 0) {
+po.products.forEach(dayEntry => {
+if (dayEntry && dayEntry.groups && dayEntry.groups.length > 0) {
+dayEntry.groups.forEach(group => {
+if (group) totalMixes += parseFloat(group.mixesCount) || 0;
+});
+}
+});
+}
+const mixesSummaryData = [{
+'البيان': 'المجموع الكلي للخلطات',
+'القيمة': formatNumber(totalMixes)
+}];
+
+
+const summaryData = [
+{ 'البيان': 'اسم أمر الإنتاج', 'القيمة': po.name },
+{ 'البيان': 'التاريخ', 'القيمة': po.date },
+{ 'البيان': 'خط الإنتاج', 'القيمة': po.productionLine },
+{ 'البيان': 'الحالة', 'القيمة': po.status },
+{ },
+{ 'البيان': 'المنتجات المستهدفة', 'الكمية (علبة)': 'الكمية (حبة)'}
+];
+(po.targetProducts || []).forEach(p => {
+summaryData.push({ 'البيان': p.name, 'الكمية (علبة)': p.qtyBox, 'الكمية (حبة)': p.qtyPiece });
+});
+const summary_ws = XLSX.utils.json_to_sheet(summaryData, {skipHeader: true});
+
+const addedTotals = Object.fromEntries(po.materialsList.map(m => [m, 0]));
+(po.rawMaterials.addedEntries || []).forEach(entry => { po.materialsList.forEach(m => { addedTotals[m] += parseLocaleFloat(entry[m]); }); });
+const consumption = {};
+po.materialsList.forEach(m => {
+consumption[m] = (parseFloat(po.rawMaterials.starting[m]) || 0) + addedTotals[m] - parseLocaleFloat(po.rawMaterials.remaining[m]);
+
+});
+const startingRow = { ' ': 'المخزون الابتدائي', ...po.rawMaterials.starting };
+const addedRow = { ' ': 'إجمالي المخزون المضاف', ...addedTotals };
+const remainingRow = { ' ': 'المخزون المتبقي', ...po.rawMaterials.remaining };
+const consumptionRow = { ' ': 'الاستهلاك المحسوب', ...consumption };
+const materials_ws = XLSX.utils.json_to_sheet([startingRow, addedRow, remainingRow, consumptionRow]);
+
+const productionData = [];
+(po.products || []).forEach(day => {
+if (day && day.groups) {
+day.groups.forEach(group => {
+if (group && group.products) {
+group.products.forEach(product => {
+if (product) {
+productionData.push({
+'التاريخ': day.date, 'المجموعة': group.groupName, 'عدد الخلطات': group.mixesCount, 'المنتج': product.name,
+'العدد بالعلبة': product.qtyBox, 'العدد بالحبة': product.qtyPiece, 'Déchets (kg)': product.kg, 'Fasda (kg)': product.spoiledMix, 'ملاحظة': product.note
+});
+} }); } }); } });
+const production_ws = XLSX.utils.json_to_sheet(productionData);
+
+const production_summary_ws = XLSX.utils.json_to_sheet(productionSummaryData);
+const consumption_summary_ws = XLSX.utils.json_to_sheet(consumptionSummaryData);
+const mixes_summary_ws = XLSX.utils.json_to_sheet(mixesSummaryData);
+
+
+const wb = XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb, summary_ws, "ملخص أمر الإنتاج");
+XLSX.utils.book_append_sheet(wb, production_summary_ws, "ملخص الإنتاج الكلي");
+XLSX.utils.book_append_sheet(wb, consumption_summary_ws, "ملخص الاستهلاك");
+XLSX.utils.book_append_sheet(wb, mixes_summary_ws, "ملخص الخلطات");
+XLSX.utils.book_append_sheet(wb, materials_ws, "تفاصيل استهلاك المواد");
+XLSX.utils.book_append_sheet(wb, production_ws, "تفاصيل الإنتاج اليومي");
+
+XLSX.writeFile(wb, `Production_Order_${po.name.replace(/[\\/?*\[\]]/g, "_")}.xlsx`);
+};
+
+// --- START: ADJUST MODAL RENDER AND LOGIC ---
+const renderAdjustModalTable = () => {
+    const tableHead = document.querySelector('#adjust-table thead');
+    const tableBody = document.querySelector('#adjust-table tbody');
+    
+    // Header
+    let headHtml = '<tr><th style="width: 150px;">البيان</th>';
+    adjustModalState.materialNames.forEach(name => {
+        headHtml += `<th>${name}</th>`;
+    });
+    headHtml += '<th></th></tr>'; // Action column (delete row)
+    tableHead.innerHTML = headHtml;
+
+    // Body
+    let bodyHtml = '';
+
+    // 1. Original Values Row
+    bodyHtml += '<tr class="table-light"><td class="fw-bold">القيمة الحالية</td>';
+    adjustModalState.originalValues.forEach(val => {
+        bodyHtml += `<td>${formatNumber(val)}</td>`;
+    });
+    bodyHtml += '<td></td></tr>';
+
+    // 2. Added Rows
+    adjustModalState.rows.forEach((row, rowIndex) => {
+        const rowClass = row.type === 'plus' ? 'adjust-row-plus' : 'adjust-row-minus';
+        const label = row.type === 'plus' ? '<i class="fas fa-plus-circle text-success"></i> إضافة' : '<i class="fas fa-minus-circle text-danger"></i> طرح';
+        
+        bodyHtml += `<tr class="${rowClass}">`;
+        bodyHtml += `<td class="fw-bold">${label}</td>`;
+        adjustModalState.materialNames.forEach((name, colIndex) => {
+            const val = row.values[colIndex] !== undefined ? row.values[colIndex] : '';
+            bodyHtml += `<td contenteditable="true" data-adjust-row="${rowIndex}" data-adjust-col="${colIndex}">${val}</td>`;
+        });
+        bodyHtml += `<td><button class="btn btn-sm btn-outline-danger py-0 px-1" onclick="removeAdjustRow(${rowIndex})"><i class="fas fa-times"></i></button></td>`;
+        bodyHtml += '</tr>';
+    });
+
+    // 3. Result Row
+    bodyHtml += '<tr class="adjust-row-result"><td class="fw-bold">المجموع النهائي</td>';
+    const finalValues = [...adjustModalState.originalValues];
+    
+    // Calculate totals
+    adjustModalState.rows.forEach(row => {
+        row.values.forEach((val, colIndex) => {
+            const num = parseLocaleFloat(val);
+            if (row.type === 'plus') {
+                finalValues[colIndex] += num;
+            } else {
+                finalValues[colIndex] -= num;
+            }
+        });
+    });
+
+    finalValues.forEach(val => {
+        bodyHtml += `<td>${formatNumber(val > 0 ? val : 0)}</td>`; // Prevent negatives in result if logical
+    });
+    bodyHtml += '<td></td></tr>';
+
+    tableBody.innerHTML = bodyHtml;
+};
+
+// Functions exposed for inline onclick handlers or internal logic
+window.removeAdjustRow = (index) => {
+    if(confirm("هل أنت متأكد من حذف هذا السطر؟")) {
+        adjustModalState.rows.splice(index, 1);
+        renderAdjustModalTable();
+    }
+};
+
+// Event Listeners for Adjust Modal
+$('#adjust-add-plus').on('click', () => {
+    adjustModalState.rows.push({ type: 'plus', values: new Array(adjustModalState.materialNames.length).fill('') });
+    renderAdjustModalTable();
+});
+
+$('#adjust-add-minus').on('click', () => {
+    adjustModalState.rows.push({ type: 'minus', values: new Array(adjustModalState.materialNames.length).fill('') });
+    renderAdjustModalTable();
+});
+
+// Update calculation on input
+$('#adjust-table').on('focusout', 'td[contenteditable="true"]', function() {
+    const rowIndex = $(this).data('adjust-row');
+    const colIndex = $(this).data('adjust-col');
+    const val = $(this).text();
+    
+    if (rowIndex !== undefined && colIndex !== undefined) {
+        adjustModalState.rows[rowIndex].values[colIndex] = val;
+        renderAdjustModalTable(); // Re-render to update totals
+        // Refocus logic omitted for simplicity in modal context, usually not needed as flow is distinct
+    }
+});
+
+$('#adjust-save-btn').on('click', () => {
+    const po = state.productionOrders.find(p => p.id === state.activePOId);
+    if (!po) return;
+    const poIndex = state.productionOrders.findIndex(p => p.id === po.id);
+
+    // 1. حساب القيم النهائية (Totals)
+    const finalValues = [...adjustModalState.originalValues];
+    adjustModalState.rows.forEach(row => {
+        row.values.forEach((val, colIndex) => {
+            const num = parseLocaleFloat(val);
+            if (row.type === 'plus') {
+                finalValues[colIndex] += num;
+            } else {
+                finalValues[colIndex] -= num;
+            }
+        });
+    });
+
+    const updates = {};
+    
+    // 2. حفظ أسطر التعديلات (Adjustments Rows) في قاعدة البيانات
+    // هذا هو الجزء الذي يعتمد عليه تلوين الزر (وجود بيانات هنا)
+    updates[`productionOrders/${poIndex}/rawMaterials/adjustments/${adjustModalState.rowType}`] = adjustModalState.rows;
+
+    // 3. تحديث الحالة المحلية (State) فوراً للتعديلات
+    if (!po.rawMaterials.adjustments) po.rawMaterials.adjustments = {};
+    po.rawMaterials.adjustments[adjustModalState.rowType] = adjustModalState.rows;
+    
+    // 4. تطبيق القيم المحسوبة على المخزون (Starting / Remaining)
+    if (adjustModalState.rowType === 'starting' || adjustModalState.rowType === 'remaining') {
+        adjustModalState.materialNames.forEach((name, index) => {
+            const newVal = formatNumber(finalValues[index] > 0 ? finalValues[index] : 0);
+            
+            // تحديث الكائن المحلي
+            po.rawMaterials[adjustModalState.rowType][name] = newVal;
+            
+            // تجهيز التحديث لقاعدة البيانات
+            updates[`productionOrders/${poIndex}/rawMaterials/${adjustModalState.rowType}/${sanitizeKey(name)}`] = newVal;
+        });
+    }
+    
+    // 5. إرسال التحديثات لقاعدة البيانات
+    db.update(updates);
+    
+    // 6. إغلاق النافذة
+    adjustValuesModal.hide();
+
+    // 7. (هام جداً) إعادة رسم الواجهة فوراً لتحديث الألوان والأرقام
+    // هذا الاستدعاء هو الذي سيجعل الزر يتحول للأحمر لحظياً
+    renderProductionOrderView();
+});
+// --- END: ADJUST MODAL LOGIC ---
+
+
+async function initializeApp() {
+try {
+await idbHelper.init();
+
+const cachedState = await idbHelper.get();
+if (cachedState) {
+console.log("Loaded state from IndexedDB cache.");
+Object.assign(state, cachedState);
+
+isDataReady = true;
+console.log("Writes enabled immediately due to cached data.");
+
+renderApp(); 
+} else {
+console.log("No state found in IndexedDB, must wait for Firebase to enable writes.");
+renderApp();
+}
+
+await db.connectAndSync();
+
+} catch(error) {
+console.error("Initialization failed:", error);
+alert("فشل تحميل التطبيق بشكل صحيح. قد تكون البيانات المعروضة قديمة.");
+if (!isDataReady) {
+renderApp();
+}
+}
+}
+
+
+
+    const exportBtn = document.getElementById('export-btn');
+    const importBtn = document.getElementById('import-btn');
+
+    exportBtn.addEventListener('click', () => {
+        backupHandler.exportData(dbRef);
+    });
+
+    importBtn.addEventListener('click', () => {
+        backupHandler.importData(dbRef, '#import-file-input');
+    });
+    // ===============================================
+
+
+
+// ... الكود الموجود لديك ينتهي هنا
+
+// =================================================================
+// START: NEW CODE FOR COPY & CALCULATOR BUTTONS
+// =================================================================
+$('#production-order-wrapper')
+    
+    // --- 1. Handler for the "Copy" button ---
+    .on('click', '#copy-summary-btn', function() {
+        const table = document.querySelector('#grand-total-summary-wrapper table');
+        if (!table) return;
+
+        let textToCopy = '';
+        table.querySelectorAll('thead tr th').forEach(th => {
+            textToCopy += th.innerText + '\t'; 
+        });
+        textToCopy = textToCopy.trim() + '\n'; 
+
+        table.querySelectorAll('tbody tr').forEach(row => {
+            row.querySelectorAll('td').forEach(cell => {
+                textToCopy += cell.innerText + '\t';
+            });
+            textToCopy = textToCopy.trim() + '\n';
+        });
+
+        navigator.clipboard.writeText(textToCopy.trim()).then(() => {
+            const originalHtml = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-check me-1"></i> تم النسخ!';
+            setTimeout(() => { this.innerHTML = originalHtml; }, 2000);
+        }).catch(err => {
+            console.error('فشل النسخ إلى الحافظة: ', err);
+            alert('لم تنجح عملية النسخ.');
+        });
+    })
+
+    // --- 2. Handler for the "Calculator" button ---
+    .on('click', '#open-calculator-btn', function() {
+        const tableBody = document.querySelector('#grand-total-summary-wrapper table tbody');
+        if (!tableBody) return;
+
+        const dataRows = [];
+        tableBody.querySelectorAll('tr').forEach(row => {
+            const cells = row.querySelectorAll('td');
+            const productName = cells[0]?.innerText.trim() || '';
+            const boxQty = cells[1]?.innerText.trim() || '0';
+            const pieceQty = cells[2]?.innerText.trim() || '0';
+            
+            if (productName && productName !== 'Déchets' && productName !== 'Fasda') {
+                 dataRows.push([productName, boxQty, pieceQty].join('\t'));
+            }
+        });
+        
+        if (dataRows.length === 0) {
+            alert('لا توجد بيانات منتجات لفتحها في الحاسبة.');
+            return;
+        }
+
+        const dataString = dataRows.join('\n');
+        
+        const baseUrl = 'box-pcs.html';
+        
+        
+        
+        
+        const hashData = dataString.replace(/\t/g, '%09').replace(/\n/g, '%0A');
+
+        const finalUrl = `${baseUrl}#${hashData}`;
+
+        window.open(finalUrl, '_blank');
+    });
+// =================================================================
+// END: NEW CODE
+// =================================================================
+
+initializeApp();
+
+});
+</script>
+</body>
+</html>
