@@ -9,10 +9,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.tailwindcss.com"></script>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script src="backup.js"></script>
@@ -396,7 +397,10 @@ style="font-size: 0.6em;"></span>
 </main>
 <aside id="sidebar" class="no-print">
     <div id="db-header-btn" class="sidebar-header d-flex align-items-center justify-content-between p-3" style="cursor: pointer;" title="العودة إلى لوحة التحكم">
-        <h6 class="mb-0 fw-bold"><i class="fas fa-database text-primary me-2"></i>قاعدة البيانات</h6>
+	
+        <h6 class="mb-0 fw-bold"><i class="fas fa-database text-primary me-2"></i>قاعدة البيانات</h6><button id="go-back-btn" class="btn btn-sm btn-outline-secondary me-2" title="رجوع">
+            <i class="bi bi-arrow-left"></i>
+        </button>
     </div>
     
 <div class="px-2 pt-2 pb-1">
@@ -583,7 +587,25 @@ let adjustModalState = {
 const adjustValuesModal = new bootstrap.Modal(document.getElementById('adjust-values-modal'));
 
 let dataTableInstance = null;
-
+const backBtn = document.getElementById('go-back-btn');
+if (backBtn) {
+    backBtn.addEventListener('click', () => {
+        // التحقق مما إذا كان هناك صفحات سابقة في سجل المتصفح
+        if (window.history.length > 1) {
+            window.history.back();
+        } else {
+            // تحسين إضافي: إذا لم يكن هناك سجل متصفح (لأنك في تطبيق صفحة واحدة SPA)
+            // نقوم بإعادة المستخدم للشاشة الرئيسية "Welcome Screen" كإجراء بديل
+            if (state.activeView !== 'welcome') {
+                state.activeView = 'welcome';
+                state.activePOId = null;
+                renderApp();
+            } else {
+                console.log("No history and already on home screen.");
+            }
+        }
+    });
+}
 const parseLocaleFloat = (numStr) => {
     if (typeof numStr !== 'string') {
         return parseFloat(numStr) || 0;
