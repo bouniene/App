@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shareable Compact Calculator</title>
+    <style>
+        :root {
+            --bg-color: #f7f8fc;
+            --main-color: #ffffff;
+            --border-color: #e9ecef;
+            --header-bg: #f8f9fa;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --accent-primary: #0052cc;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 15px;
+            font-size: 14px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: var(--main-color);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .main-layout {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .input-column { flex: 1; }
+        .results-column { flex: 1.5; }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.8em;
+        }
+
+        textarea {
+            width: 100%;
+            height: 400px;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            table-layout: auto;
+        }
+        
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 8px 10px;
+            text-align: center;
+            vertical-align: middle;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        th:first-child, td:first-child {
+             width: 40%;
+             white-space: normal;
+        }
+        
+        th {
+            background-color: var(--header-bg);
+            font-weight: bold;
+            font-size: 0.8em;
+            cursor: default;
+        }
+                
+        tfoot td {
+            font-weight: bold;
+            background-color: var(--header-bg);
+        }
+
+        .final-total-cell { display: none; }
+        table.show-final .final-total-cell { display: table-cell; }
+
+        #toggle-column {
+            cursor: pointer;
+            display: inline-block;
+            margin-left: 5px;
+            font-weight: bold;
+            color: var(--accent-primary);
+        }
+
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .product-tag {
+            color: #42526e;
+            background-color: #dfe1e6;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+        }
+
+        .cell-copied {
+            background-color: #d4edda !important;
+            transition: background-color 0.1s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Shareable Calculator</h1>
+    
+    <div class="main-layout">
+        <div class="input-column">
+            <label for="inputData">Input Data</label>
+            <textarea id="inputData" placeholder="Example:&#10;207-1 30 9&#10;100 10"></textarea>
+        </div>
+        
+        <div class="results-column">
+            <label>Results</label>
+            <table id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>Boxes</th>
+                        <th>Extras</th>
+                        <th>Box Total <span id="toggle-column">›</span></th>
+                        <th class="final-total-cell">Final Total</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3">Grand Total</td>
+                        <td id="grandTotalBox">0</td>
+                        <td id="grandTotalFinal" class="final-total-cell">0</td>
+                    </tr>
+                </tfoot>
+            </table>
+            
+            <label>Pieces/Box Reference</label>
+            <div id="tagsContainer" class="tags-container"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const productData = {
+        '200': 40, '201': 65, '202': 30, '203': 72, '204': 104, '206': 120, '207': 50, '208': 29, '209': 66,
+        '100': 24, '101': 12, '103': 37, '104': 18, '105': 24, '106': 20, '109': 15, '116': 26, '117': 17, '102': 14,
+        '300': 14, '301': 21, '351': 84, '353': 108, '315': 22,
+        '400': 13, '401': 56, '402': 20,
+        '700': 77, '701': 44, '702': 25, '703': 66, '704': 21, '705': 22, '706': 15, '707': 0, '708': 36,
+        '215': 33, '216': 65, '217': 125
+    };
+
+    const inputArea = document.getElementById('inputData');
+    const resultsTable = document.getElementById('resultsTable');
+    const resultsBody = document.getElementById('resultsBody');
+    const grandTotalBoxCell = document.getElementById('grandTotalBox');
+    const grandTotalFinalCell = document.getElementById('grandTotalFinal');
+    const tagsContainer = document.getElementById('tagsContainer');
+    const toggleButton = document.getElementById('toggle-column');
+    const grandTotalLabel = document.querySelector('tfoot td:first-child');
+
+    function calculateTotal() {
+        const lines = inputArea.value.trim().split('\n');
+        resultsBody.innerHTML = '';
+        tagsContainer.innerHTML = '';
+        let grandTotalBox = 0, grandTotalFinal = 0;
+        const uniqueModels = new Map();
+
+        lines.forEach(line => {
+            if (line.trim() === '' || /^[0-9]+[a-zA-Z]+$/.test(line.trim())) return;
+            const parts = line.trim().split(/\s+/);
+            if (parts.length < 2) return;
+            let modelName, boxCount, extraPieces;
+            
+            if (parts.length >= 3 && !isNaN(parseInt(parts[parts.length - 1])) && !isNaN(parseInt(parts[parts.length - 2]))) {
+                extraPieces = parseInt(parts.pop(), 10); boxCount = parseInt(parts.pop(), 10); modelName = parts.join(' ');
+            } else {
+                extraPieces = 0; boxCount = parseInt(parts.pop(), 10); modelName = parts.join(' ');
+            }
+            if (isNaN(boxCount)) return;
+
+            const modelCode = modelName.split('-')[0].trim();
+            const piecesPerBox = productData[modelCode] || 0;
+            if (modelCode && productData.hasOwnProperty(modelCode)) { uniqueModels.set(modelCode, piecesPerBox); }
+            
+            const totalBoxPieces = boxCount * piecesPerBox;
+            const finalTotal = totalBoxPieces + extraPieces;
+            grandTotalBox += totalBoxPieces; grandTotalFinal += finalTotal;
+            
+            const row = resultsBody.insertRow();
+            row.innerHTML = `<td>${modelName}</td> <td>${boxCount}</td> <td>${extraPieces}</td> <td>${totalBoxPieces}</td> <td class="final-total-cell">${finalTotal}</td>`;
+        });
+        
+        grandTotalBoxCell.textContent = grandTotalBox;
+        grandTotalFinalCell.textContent = grandTotalFinal;
+
+        const sortedModels = new Map([...uniqueModels.entries()].sort());
+        sortedModels.forEach((pieces, code) => {
+            const tag = document.createElement('span');
+            tag.className = 'product-tag';
+            tag.textContent = `${code} (${pieces})`;
+            tagsContainer.appendChild(tag);
+        });
+    }
+
+    function copyCellContent(event) {
+        if (event.target.tagName === 'TD') {
+            navigator.clipboard.writeText(event.target.textContent.trim()).then(() => {
+                event.target.classList.add('cell-copied');
+                setTimeout(() => event.target.classList.remove('cell-copied'), 250);
+            });
+        }
+    }
+
+    function toggleFinalColumn() {
+        resultsTable.classList.toggle('show-final');
+        const isShown = resultsTable.classList.contains('show-final');
+        toggleButton.textContent = isShown ? '‹' : '›';
+        grandTotalLabel.colSpan = isShown ? 3 : 4;
+    }
+
+    // --- UPDATED: URL Functionality (No Base64) ---
+
+    function updateUrlFromText() {
+        const textToEncode = inputArea.value;
+        if (textToEncode.trim()) {
+            // Encode for URL safety
+            const encodedData = encodeURIComponent(textToEncode);
+            history.replaceState(null, '', '#' + encodedData);
+        } else {
+            history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+    }
+
+    function loadTextFromUrl() {
+        try {
+            if (window.location.hash) {
+                const encodedData = window.location.hash.substring(1);
+                // Decode from URL safe format
+                const decodedData = decodeURIComponent(encodedData);
+                inputArea.value = decodedData;
+                calculateTotal();
+            }
+        } catch (e) {
+            console.error("Could not load data from URL hash:", e);
+            history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+    }
+
+    // --- Attach Event Listeners ---
+    inputArea.addEventListener('input', () => {
+        calculateTotal();
+        updateUrlFromText();
+    });
+    resultsTable.addEventListener('click', copyCellContent);
+    toggleButton.addEventListener('click', toggleFinalColumn);
+    window.addEventListener('load', loadTextFromUrl);
+
+</script>
+
+</body>
+</html>
