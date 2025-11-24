@@ -342,6 +342,15 @@ display: none;
 <nav id="top-nav" class="d-flex align-items-center justify-content-between px-3 no-print">
 <div class="d-flex align-items-center">
 <h5 id="current-view-name" class="fs-6 fw-bold mb-0 text-nowrap"></h5>
+
+<div class="btn-group ms-3 direction-ltr" role="group">
+    <button id="undo-btn" class="btn btn-sm btn-outline-secondary" title="تراجع (Ctrl+Z)" disabled>
+        <i class="fas fa-undo"></i>
+    </button>
+    <button id="redo-btn" class="btn btn-sm btn-outline-secondary" title="إعادة (Ctrl+Y)" disabled>
+        <i class="fas fa-redo"></i>
+    </button>
+</div>
 <div class="dropdown ms-3">
 <div class="d-flex align-items-center gap-2">
 <button id="notes-icon-button"
@@ -571,6 +580,102 @@ sidebarCollapsed: { 'قيد التنفيذ': false, 'قيد الانتظار': f
 activeView: 'welcome', activePOId: null, contextTarget: null
 };
 
+const historyManager = {
+    past: [],   // لتخزين الحالات السابقة
+    future: [], // لتخزين الحالات التي تم التراجع عنها (للإعادة)
+    maxDepth: 30, // أقصى عدد لخطوات الرجوع لتوفير الذاكرة
+
+    // دالة لحفظ الحالة الحالية قبل التعديل
+    pushState: function() {
+        // نأخذ نسخة عميقة (Deep Copy) من الـ state الحالي
+        const stateCopy = JSON.parse(JSON.stringify(state));
+        this.past.push(stateCopy);
+        
+        // إذا تجاوزنا الحد المسموح، نحذف أقدم نسخة
+        if (this.past.length > this.maxDepth) {
+            this.past.shift();
+        }
+        
+        // عند عمل تعديل جديد، نمسح المستقبل لأن المسار تغير
+        this.future = []; 
+        this.updateButtons();
+    },
+
+    // دالة التراجع
+    undo: function() {
+        if (this.past.length === 0) return;
+
+        // نحفظ الحالة الحالية في "المستقبل" قبل العودة للماضي
+        const current = JSON.parse(JSON.stringify(state));
+        this.future.push(current);
+
+        // نستعيد آخر حالة من الماضي
+        const previous = this.past.pop();
+        
+        // تطبيق الحالة القديمة
+        Object.assign(state, previous);
+        
+        // تحديث الواجهة وقاعدة البيانات
+        this.applyChanges();
+    },
+
+    // دالة الإعادة
+    redo: function() {
+        if (this.future.length === 0) return;
+
+        // نحفظ الحالة الحالية في "الماضي"
+        const current = JSON.parse(JSON.stringify(state));
+        this.past.push(current);
+
+        // نستعيد الحالة من المستقبل
+        const next = this.future.pop();
+        
+        // تطبيق الحالة الجديدة
+        Object.assign(state, next);
+        
+        // تحديث الواجهة وقاعدة البيانات
+        this.applyChanges();
+    },
+
+    // دالة مساعدة لتحديث الواجهة وقاعدة البيانات بعد التراجع/الإعادة
+    applyChanges: function() {
+        renderApp(); // إعادة رسم الشاشة
+        this.updateButtons();
+        
+        // تحديث قاعدة البيانات بالكامل لضمان التزامن
+        // نرسل البيانات كاملة لضمان أن التراجع يشمل كل شيء
+        const updates = {};
+        updates['productionOrders'] = state.productionOrders;
+        updates['inventory'] = state.inventory;
+        // يمكنك إضافة المزيد هنا إذا كان هناك بيانات أخرى تتغير
+        
+        db.update(updates);
+    },
+
+    // تحديث حالة تفعيل/تعطيل الأزرار
+    updateButtons: function() {
+        const undoBtn = document.getElementById('undo-btn');
+        const redoBtn = document.getElementById('redo-btn');
+        if(undoBtn) undoBtn.disabled = this.past.length === 0;
+        if(redoBtn) redoBtn.disabled = this.future.length === 0;
+    }
+};
+
+// ربط الأزرار بالوظائف واختصارات لوحة المفاتيح
+document.getElementById('undo-btn').addEventListener('click', () => historyManager.undo());
+document.getElementById('redo-btn').addEventListener('click', () => historyManager.redo());
+
+// إضافة اختصارات الكيبورد (Ctrl+Z و Ctrl+Y)
+document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault();
+        historyManager.undo();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+        e.preventDefault();
+        historyManager.redo();
+    }
+});
 // --- Flags to manage connection and data synchronization state ---
 let isConnected = false;
 let isDataReady = false;
@@ -2340,6 +2445,7 @@ if (type === 'material-header') {
 const colIndex = el.data('col-index');
 const oldName = po.materialsList[colIndex];
 if (oldName && newValue && oldName !== newValue) {
+historyManager.pushState();
 po.materialsList[colIndex] = newValue;
 const dataObjects = [po.rawMaterials.starting, po.rawMaterials.remaining];
 (po.rawMaterials.addedEntries || []).forEach(entry => dataObjects.push(entry));
@@ -2363,11 +2469,13 @@ let path = '';
 if (type === 'added-entry') {
 const entryIndex = el.data('entry-index');
 if ((po.rawMaterials.addedEntries[entryIndex][materialName] || '') != newValue) {
+historyManager.pushState();
 po.rawMaterials.addedEntries[entryIndex][materialName] = newValue;
 path = `productionOrders/${poIndex}/rawMaterials/addedEntries/${entryIndex}/${sanitizeKey(materialName)}`; changed = true;
 }
 } else if (type === 'starting' || type === 'remaining') {
 if ((po.rawMaterials[type][materialName] || '') != newValue) {
+historyManager.pushState();
 po.rawMaterials[type][materialName] = newValue;
 path = `productionOrders/${poIndex}/rawMaterials/${type}/${sanitizeKey(materialName)}`; changed = true;
 }
@@ -2381,14 +2489,21 @@ const field = el.data('field'); const dayIdx = el.data('day-index'); const group
 let path = ''; let data = newValue;
 
 switch(field) {
-case 'name': if(po.name != newValue){po.name = newValue; path = `productionOrders/${poIndex}/name`; changed=true; fullRenderNeeded = true;} break;
-case 'group_name': if(po.products[dayIdx].groups[groupIdx].groupName != newValue) { po.products[dayIdx].groups[groupIdx].groupName = newValue; path = `productionOrders/${poIndex}/products/${dayIdx}/groups/${groupIdx}/groupName`; changed=true; } break;
-case 'product_name': if(po.products[dayIdx].groups[groupIdx].products[prodIdx].name != newValue) { po.products[dayIdx].groups[groupIdx].products[prodIdx].name = newValue; path = `productionOrders/${poIndex}/products/${dayIdx}/groups/${groupIdx}/products/${prodIdx}/name`; changed = true; fullRenderNeeded = true; } break;
+case 'name': if(po.name != newValue){
+historyManager.pushState();
+po.name = newValue; path = `productionOrders/${poIndex}/name`; changed=true; fullRenderNeeded = true;} break;
+case 'group_name': if(po.products[dayIdx].groups[groupIdx].groupName != newValue) {
+historyManager.pushState();
+ po.products[dayIdx].groups[groupIdx].groupName = newValue; path = `productionOrders/${poIndex}/products/${dayIdx}/groups/${groupIdx}/groupName`; changed=true; } break;
+case 'product_name': if(po.products[dayIdx].groups[groupIdx].products[prodIdx].name != newValue) {
+historyManager.pushState();
+ po.products[dayIdx].groups[groupIdx].products[prodIdx].name = newValue; path = `productionOrders/${poIndex}/products/${dayIdx}/groups/${groupIdx}/products/${prodIdx}/name`; changed = true; fullRenderNeeded = true; } break;
 case 'qty_box': case 'qty_piece': case 'kg': case 'spoiled_mix': {
 const product = po.products[dayIdx].groups[groupIdx].products[prodIdx];
 const fieldMap = { 'qty_box': 'qtyBox', 'qty_piece': 'qtyPiece', 'kg': 'kg', 'spoiled_mix': 'spoiledMix' };
 const fieldName = fieldMap[field];
 if (fieldName && (product[fieldName] || '') != newValue) {
+historyManager.pushState();
 product[fieldName] = newValue;
 path = `productionOrders/${poIndex}/products/${dayIdx}/groups/${groupIdx}/products/${prodIdx}/${fieldName}`;
 changed = true;
@@ -2416,24 +2531,28 @@ if (fullRenderNeeded) { renderApp(); }
     if (field === 'mixes_count') {
         const dayIndex = el.data('day-index'); const groupIndex = el.data('group-index');
         if ((po.products[dayIndex].groups[groupIndex].mixesCount || '') != value) {
+		historyManager.pushState(); // <--- حفظ
             po.products[dayIndex].groups[groupIndex].mixesCount = value;
             updates[`productionOrders/${poIndex}/products/${dayIndex}/groups/${groupIndex}/mixesCount`] = value;
         }
     } else if (field === 'day_date') {
         const dayIndex = el.data('day-index');
         if (po.products[dayIndex].date !== value) {
+		historyManager.pushState();
             po.products[dayIndex].date = value;
             updates[`productionOrders/${poIndex}/products/${dayIndex}/date`] = value;
             el.siblings('span').text(formatDateWithArabicDay(value));
         }
     } else if (field === 'date') {
         if (po.date !== value) {
+		historyManager.pushState();
             po.date = value;
             updates[`productionOrders/${poIndex}/date`] = value;
             el.next('span').text(formatDateWithArabicDay(value));
         }
     } else if (field === 'status') {
         if (po.status !== value) {
+		historyManager.pushState();
             po.status = value;
             updates[`productionOrders/${poIndex}/status`] = value;
             
@@ -2452,6 +2571,7 @@ if (fullRenderNeeded) { renderApp(); }
         const entryIndex = el.data('entry-index');
         const entry = po.rawMaterials.addedEntries[entryIndex];
         if (entry && entry.date !== value) {
+		historyManager.pushState();
             entry.date = value; 
             updates[`productionOrders/${poIndex}/rawMaterials/addedEntries/${entryIndex}/date`] = value;
         }
@@ -2557,6 +2677,7 @@ case 'paste-row-data': {
     }
 
     if (confirm('هل أنت متأكد من لصق القيم؟ سيتم الكتابة فوق البيانات الحالية.')) {
+	historyManager.pushState();
         const row = $(this).closest('tr');
         const rowType = row.data('row-type');
 
@@ -2565,7 +2686,7 @@ case 'paste-row-data': {
              needsRender = false;
              break;
         }
-
+historyManager.pushState();
         const dataToPaste = rowClipboardData;
         if (dataToPaste.length !== po.materialsList.length) {
             alert('خطأ: عدد القيم المنسوخة لا يطابق عدد الأعمدة.');
@@ -2660,6 +2781,7 @@ case 'open-adjust-modal': {
 // =========================================================
 
 case 'add-stock-entry':
+historyManager.pushState(); // <--- حفظ قبل الإضافة
     if (!po.rawMaterials.addedEntries) po.rawMaterials.addedEntries = [];
     
     const today = new Date().toISOString().split('T')[0];
@@ -2671,6 +2793,8 @@ case 'add-stock-entry':
     break;
 case 'delete-stock-entry':
 if (confirm('هل أنت متأكد؟')) {
+historyManager.pushState();
+historyManager.pushState(); // <--- حفظ قبل الحذف
 po.rawMaterials.addedEntries.splice($(this).data('entry-index'), 1);
 updates[`productionOrders/${poIndex}/rawMaterials/addedEntries`] = po.rawMaterials.addedEntries;
 } else needsRender = false;
@@ -2689,6 +2813,7 @@ updates[`productionOrders/${poIndex}/products/${dayIdx}/groups`] = po.products[d
 } else needsRender = false;
 break;
 case 'add-product-to-group': {
+historyManager.pushState();
 const dayIdx = $(this).data('day-index');
 const groupIdx = $(this).data('group-index');
 po.products[dayIdx].groups[groupIdx].products.push({ name: 'منتج جديد', qtyBox: '', qtyPiece: '', kg: '', spoiledMix: '', note: '', noteTimestamp: null });
@@ -2697,6 +2822,7 @@ break;
 }
 case 'delete-product':
 if (confirm('هل أنت متأكد؟')) {
+historyManager.pushState();
 const dayIdx = $(this).data('day-index');
 const groupIdx = $(this).data('group-index');
 po.products[dayIdx].groups[groupIdx].products.splice($(this).data('product-index'), 1);
@@ -2705,6 +2831,7 @@ updates[`productionOrders/${poIndex}/products/${dayIdx}/groups/${groupIdx}/produ
 break;
 case 'delete-day':
 if (confirm('هل أنت متأكد؟')) {
+historyManager.pushState();
 po.products.splice($(this).data('day-index'), 1);
 updates[`productionOrders/${poIndex}/products`] = po.products;
 } else needsRender = false;
@@ -3177,6 +3304,7 @@ const { dayIdx, groupIdx, prodIdx } = $(this).data();
 const product = po.products[dayIdx].groups[groupIdx].products[prodIdx];
 const newNote = document.getElementById('note-textarea').value.trim();
 if (newNote !== (product.note || '').trim()) {
+historyManager.pushState();
 product.note = newNote;
 product.noteTimestamp = newNote ? new Date().toISOString() : null;
 
@@ -3196,6 +3324,7 @@ const poIndex = state.productionOrders.findIndex(p => p.id === po.id); if (poInd
 
 const dayIndex = $('#add-group-modal').data('day-index'); const newGroupName = $('#new-group-select').val();
 if (dayIndex !== undefined && newGroupName) {
+historyManager.pushState();
 if (!po.products[dayIndex].groups) po.products[dayIndex].groups = [];
 po.products[dayIndex].groups.push({ groupName: newGroupName, mixesCount: '', products: [{ name: 'منتج جديد', qtyBox: '', qtyPiece: '', kg: '', spoiledMix: '', note: '', noteTimestamp: null }] });
 db.update({ [`productionOrders/${poIndex}/products/${dayIndex}/groups`]: po.products[dayIndex].groups });
@@ -3216,6 +3345,7 @@ const mat = $(this).data('material-name');
 const val = $(this).text().trim().replace(/[,\٫]/g, '.');
 
     if ((state.inventory.stockAdditions[idx].values[mat] || '') != val) {
+	historyManager.pushState();
         const numericVal = Math.abs(parseFloat(val) || 0);
         state.inventory.stockAdditions[idx].values[mat] = numericVal;
         db.update({ [`inventory/stockAdditions/${idx}/values/${sanitizeKey(mat)}`]: numericVal });
@@ -3223,6 +3353,7 @@ const val = $(this).text().trim().replace(/[,\٫]/g, '.');
     }
 }).on('click', 'button[data-action="delete-stock"]', function() {
     if (confirm('هل أنت متأكد من حذف هذا السجل؟')) {
+	historyManager.pushState();
         const idx = $(this).data('addition-index'); 
         
         if (idx === undefined) return; 
@@ -3241,12 +3372,14 @@ $('.action-buttons .button-container').on('click', '#add-new-day-btn', () => {
 const po = state.productionOrders.find(p=>p.id===state.activePOId);
 const poIndex = po ? state.productionOrders.findIndex(p => p.id === po.id) : -1;
 if(po && poIndex > -1) {
+historyManager.pushState();
 if(!po.products) po.products = [];
 po.products.push({ date: new Date().toISOString().split('T')[0], groups: [] });
 db.update({ [`productionOrders/${poIndex}/products`]: po.products });
 renderProductionOrderView();
 }
 }).on('click', '#add-stock-btn', ()=>{
+historyManager.pushState();
 if(!state.inventory.stockAdditions) state.inventory.stockAdditions = [];
 state.inventory.stockAdditions.unshift({timestamp: new Date().toISOString(), values: {}});
 db.update({ 'inventory/stockAdditions': state.inventory.stockAdditions });
@@ -3322,6 +3455,7 @@ if(!po || poIndex < 0) return;
 
 const n=prompt(`أدخل الاسم الجديد لـ "${po.name}":`,po.name);
 if(n&&n.trim()!==po.name){
+historyManager.pushState();
 po.name=n.trim();
 db.update({ [`productionOrders/${poIndex}/name`]: po.name });
 renderApp();
@@ -3330,6 +3464,7 @@ renderApp();
 const deleteItem = (t,id)=>{
 const p=state.productionOrders.find(p=>p.id===id);
 if(!confirm(`حذف أمر الإنتاج "${p.name}"؟`))return;
+historyManager.pushState();
 state.productionOrders=state.productionOrders.filter(p=>p.id!==id);
 if(state.activePOId===id){
 state.activePOId=null;
@@ -3584,7 +3719,7 @@ $('#adjust-save-btn').on('click', () => {
             }
         });
     });
-
+historyManager.pushState();
     const updates = {};
     
     // 2. حفظ أسطر التعديلات (Adjustments Rows) في قاعدة البيانات
