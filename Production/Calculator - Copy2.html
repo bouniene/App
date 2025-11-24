@@ -267,7 +267,6 @@ text-align: right !important;
 /* Adjust Values Modal Styles */
 .adjust-row-plus td { background-color: #e8f5e9 !important; }
 .adjust-row-minus td { background-color: #ffebee !important; }
-.adjust-row-divide td { background-color: #fff3e0 !important; }
 .adjust-row-result td { background-color: #e3f2fd !important; font-weight: bold; border-top: 2px solid #6c757d !important; }
 </style>
 
@@ -537,7 +536,7 @@ numberInput.addEventListener("input", updateResult);
                  <div class="btn-group">
                     <button type="button" class="btn btn-success btn-sm" id="adjust-add-plus"><i class="fas fa-plus me-1"></i> سطر جمع</button>
                     <button type="button" class="btn btn-danger btn-sm" id="adjust-add-minus"><i class="fas fa-minus me-1"></i> سطر طرح</button>
-					<button type="button" class="btn btn-warning btn-sm text-dark" id="adjust-add-divide"><i class="fas fa-divide me-1"></i> سطر قسمة</button>
+					
                  </div>
                  <span class="text-muted small" id="adjust-hint-text"></span>
             </div>
@@ -3811,28 +3810,13 @@ const renderAdjustModalTable = () => {
 
     // 2. أسطر الإضافات
     adjustModalState.rows.forEach((row, rowIndex) => {
-let rowClass = '';
-    let label = '';
-
-    if (row.type === 'plus') {
-        rowClass = 'adjust-row-plus';
-        label = '<i class="fas fa-plus-circle text-success"></i> إضافة';
-    } else if (row.type === 'minus') {
-        rowClass = 'adjust-row-minus';
-        label = '<i class="fas fa-minus-circle text-danger"></i> طرح';
-    } else if (row.type === 'divide') {
-        // هنا نعالج نوع القسمة
-        rowClass = 'adjust-row-divide';
-        label = '<i class="fas fa-divide text-warning"></i> قسمة';
-    }
-    
-    // التعامل مع السطر التلقائي (Auto Mix) كما هو في كودك الأصلي
-    let isLocked = false;
-    if (row.isAutoMixRow) {
-        // نلاحظ هنا قمت بدمج شرط الـ label ليتناسب مع القسمة أيضاً إن وجد مستقبلاً، لكن حالياً Auto mix للجمع فقط
-        label = `<i class="fas fa-magic text-info"></i> Auto Mix (${row.type === 'divide' ? '/' : (row.type === 'plus' ? '+' : '-')})`;
-        isLocked = true;
-    }
+        const rowClass = row.type === 'plus' ? 'adjust-row-plus' : 'adjust-row-minus';
+        let label = row.type === 'plus' ? '<i class="fas fa-plus-circle text-success"></i> إضافة' : '<i class="fas fa-minus-circle text-danger"></i> طرح';
+        let isLocked = false;
+        if (row.isAutoMixRow) {
+            label = `<i class="fas fa-magic text-info"></i> Auto Mix (${row.type === 'plus' ? '+' : '-'})`;
+            isLocked = true;
+        }
         bodyHtml += `<tr class="${rowClass}">`;
         bodyHtml += `<td class="fw-bold">${label}</td>`;
         adjustModalState.materialNames.forEach((name, colIndex) => {
@@ -3846,30 +3830,16 @@ let rowClass = '';
         bodyHtml += '</tr>';
     });
 
-// 3. سطر المجموع النهائي
+    // 3. سطر المجموع النهائي
     bodyHtml += '<tr class="adjust-row-result"><td class="fw-bold">المجموع النهائي للحفظ</td>';
     const finalValues = [...adjustModalState.originalValues];
-    
     adjustModalState.rows.forEach(row => {
         row.values.forEach((val, colIndex) => {
             const num = parseLocaleFloat(val);
-            
-            // --- هنا كان الخطأ: الكود القديم كان يعالج أي شيء ليس جمعاً على أنه طرح ---
-            // --- هذا هو التعديل الجديد ---
-            if (row.type === 'plus') {
-                finalValues[colIndex] += num;
-            } else if (row.type === 'minus') {
-                finalValues[colIndex] -= num;
-            } else if (row.type === 'divide') {
-                // شرط عدم القسمة على صفر
-                if (num !== 0) {
-                    finalValues[colIndex] /= num;
-                }
-            }
-            // -----------------------------
+            if (row.type === 'plus') finalValues[colIndex] += num;
+            else finalValues[colIndex] -= num;
         });
     });
-    
     finalValues.forEach(val => { bodyHtml += `<td>${formatNumber(val > 0 ? val : 0)}</td>`; });
     bodyHtml += '<td></td></tr>';
     tableBody.innerHTML = bodyHtml;
@@ -3893,12 +3863,7 @@ $('#adjust-add-minus').on('click', () => {
     adjustModalState.rows.push({ type: 'minus', values: new Array(adjustModalState.materialNames.length).fill('') });
     renderAdjustModalTable();
 });
-$('#adjust-add-divide').on('click', () => {
-    // نقوم بإضافة سطر جديد نوعه 'divide'
-    adjustModalState.rows.push({ type: 'divide', values: new Array(adjustModalState.materialNames.length).fill('') });
-    // إعادة رسم الجدول ليظهر السطر الجديد
-    renderAdjustModalTable();
-});
+
 // Update calculation on input
 $('#adjust-table').on('focusout', 'td[contenteditable="true"]', function() {
     const rowIndex = $(this).data('adjust-row');
@@ -3922,15 +3887,10 @@ $('#adjust-save-btn').on('click', () => {
     adjustModalState.rows.forEach(row => {
         row.values.forEach((val, colIndex) => {
             const num = parseLocaleFloat(val);
-if (row.type === 'plus') {
+            if (row.type === 'plus') {
                 finalValues[colIndex] += num;
-            } else if (row.type === 'minus') {
+            } else {
                 finalValues[colIndex] -= num;
-            } else if (row.type === 'divide') {
-                // التأكد من عدم القسمة على صفر لتجنب الأخطاء (Infinity)
-                if (num !== 0) {
-                    finalValues[colIndex] /= num;
-                }
             }
         });
     });
