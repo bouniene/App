@@ -267,6 +267,7 @@ text-align: right !important;
 /* Adjust Values Modal Styles */
 .adjust-row-plus td { background-color: #e8f5e9 !important; }
 .adjust-row-minus td { background-color: #ffebee !important; }
+.adjust-row-divide td { background-color: #fff3e0 !important; }
 .adjust-row-result td { background-color: #e3f2fd !important; font-weight: bold; border-top: 2px solid #6c757d !important; }
 </style>
 
@@ -536,6 +537,7 @@ numberInput.addEventListener("input", updateResult);
                  <div class="btn-group">
                     <button type="button" class="btn btn-success btn-sm" id="adjust-add-plus"><i class="fas fa-plus me-1"></i> سطر جمع</button>
                     <button type="button" class="btn btn-danger btn-sm" id="adjust-add-minus"><i class="fas fa-minus me-1"></i> سطر طرح</button>
+					<button type="button" class="btn btn-warning btn-sm text-dark" id="adjust-add-divide"><i class="fas fa-divide me-1"></i> سطر قسمة</button>
                  </div>
                  <span class="text-muted small" id="adjust-hint-text"></span>
             </div>
@@ -1575,23 +1577,35 @@ addedRowsHtml += `<tr class="added-stock-entry" data-entry-index="${entryIndex}"
 const remainingCells = po.materialsList.map((m, idx) => `<td contenteditable="true" data-type="remaining" data-col-index="${idx}">${po.rawMaterials.remaining[m] || 0}</td>`).join('');
 const consumptionCells = po.materialsList.map(m => { const consumption = parseLocaleFloat(po.rawMaterials.starting[m]) + addedTotals[m] - parseLocaleFloat(po.rawMaterials.remaining[m]); return `<td>${formatNumber(consumption > 0 ? consumption : 0)}</td>`; }).join('');
 
+// --- التعديل هنا: إضافة جدول DOP أسفل الجدول القديم ---
 const mixCalculatorHtml = `
 <table class="table table-bordered table-compact text-center" style="width: 100px;">
-<thead><tr><th>HIPS</th><th>MS</th></tr></thead>
-<tbody>
-<tr>
-<td contenteditable="true" data-mix-field="hipsRatio">${po.rawMaterials.mixCalculator?.hipsRatio || '25'}</td>
-<td contenteditable="true" data-mix-field="msRatio">${po.rawMaterials.mixCalculator?.msRatio || '1.5'}</td>
-</tr>
-<tr><th colspan="2" style="background-color: #8B0000; color: white;">المتبقي</th></tr>
-<tr>
-<td colspan="2" contenteditable="true" data-mix-field="note">${po.rawMaterials.mixCalculator?.note || ''}</td>
-</tr>
-<tr>
-<td id="mix-result-hips">0</td>
-<td id="mix-result-ms">0</td>
-</tr>
-</tbody>
+    <thead><tr><th>HIPS</th><th>MS</th></tr></thead>
+    <tbody>
+        <tr>
+            <td contenteditable="true" data-mix-field="hipsRatio">${po.rawMaterials.mixCalculator?.hipsRatio || '25'}</td>
+            <td contenteditable="true" data-mix-field="msRatio">${po.rawMaterials.mixCalculator?.msRatio || '1.5'}</td>
+        </tr>
+        <tr><th colspan="2" style="background-color: #8B0000; color: white;">المتبقي</th></tr>
+        <tr>
+            <td colspan="2" contenteditable="true" data-mix-field="note">${po.rawMaterials.mixCalculator?.note || ''}</td>
+        </tr>
+        <tr>
+            <td id="mix-result-hips">0</td>
+            <td id="mix-result-ms">0</td>
+        </tr>
+    </tbody>
+</table>
+
+<table class="table table-bordered table-compact text-center mt-2" style="width: 100px;">
+    <thead>
+        <tr><th style="background-color: #6c757d; color: white;">DOP</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td contenteditable="true" data-mix-field="dop">${po.rawMaterials.mixCalculator?.dop || '0'}</td>
+        </tr>
+    </tbody>
 </table>`;
 
 
@@ -1787,15 +1801,26 @@ const generateConsumptionSummaryHtml = (po) => {
         });
     });
 
+    // 1. حساب استهلاك المواد الأساسية (القديم)
     const consumptionData = po.materialsList.map(m => {
         const consumption = parseLocaleFloat(po.rawMaterials.starting[m]) +
-                              addedTotals[m] -
-                              parseLocaleFloat(po.rawMaterials.remaining[m]);
+                            addedTotals[m] -
+                            parseLocaleFloat(po.rawMaterials.remaining[m]);
         return {
             name: m,
             value: formatNumber(consumption > 0 ? consumption : 0)
         };
     }).filter(item => parseLocaleFloat(item.value) > 0);
+
+    // --- التعديل الجديد: إضافة DOP إذا كانت قيمته أكبر من 0 ---
+    const dopValue = parseLocaleFloat(po.rawMaterials.mixCalculator?.dop);
+    if (dopValue > 0) {
+        consumptionData.push({
+            name: 'DOP',
+            value: formatNumber(dopValue)
+        });
+    }
+    // -------------------------------------------------------
 
     if (consumptionData.length === 0) return '';
 
@@ -2273,7 +2298,25 @@ renderApp();
 });
 });
 };
+// دالة مساعدة لحساب قيم المخلوط المتبقية (HIPS & MS) بناءً على البيانات الحالية
+const calculateMixResidue = (po) => {
+    // جلب القيم من الكائن mixCalculator
+    const calcData = po.rawMaterials.mixCalculator || {};
+    const noteVal = parseLocaleFloat(calcData.note) || 0; // القيمة الإجمالية المتبقية
+    const hipsRatio = parseLocaleFloat(calcData.hipsRatio) || 25;
+    const msRatio = parseLocaleFloat(calcData.msRatio) || 1.5;
 
+    let msVal = 0;
+    if ((hipsRatio + msRatio) > 0) {
+        msVal = (noteVal * msRatio) / (hipsRatio + msRatio);
+    }
+    const hipsVal = noteVal - msVal;
+
+    return {
+        hips: parseFloat(hipsVal.toFixed(2)),
+        ms: parseFloat(msVal.toFixed(2))
+    };
+};
 const renderApp = () => {
 if (timeTargetInterval) {
 clearInterval(timeTargetInterval);
@@ -2477,7 +2520,27 @@ path = `productionOrders/${poIndex}/rawMaterials/addedEntries/${entryIndex}/${sa
 if ((po.rawMaterials[type][materialName] || '') != newValue) {
 historyManager.pushState();
 po.rawMaterials[type][materialName] = newValue;
-path = `productionOrders/${poIndex}/rawMaterials/${type}/${sanitizeKey(materialName)}`; changed = true;
+path = `productionOrders/${poIndex}/rawMaterials/${type}/${sanitizeKey(materialName)}`; 
+
+if (po.rawMaterials.adjustments && po.rawMaterials.adjustments[type]) {
+                let adjustmentsChanged = false;
+                po.rawMaterials.adjustments[type].forEach(row => {
+                    // إذا كان هناك قيمة محفوظة لهذه المادة في أسطر الجمع/الطرح، قم بحذفها (تصفيرها)
+                    // لأن المستخدم قام بإدخال قيمة يدوية جديدة "تجب" ما قبلها
+                    if (row.values[colIndex] && row.values[colIndex] !== '') {
+                        row.values[colIndex] = ''; 
+                        adjustmentsChanged = true;
+                    }
+                });
+
+                if (adjustmentsChanged) {
+                    // تحديث مصفوفة التعديلات في قاعدة البيانات أيضاً
+                    db.update({ [`productionOrders/${poIndex}/rawMaterials/adjustments/${type}`]: po.rawMaterials.adjustments[type] });
+                }
+            }
+
+
+changed = true;
 }
 }
 if(changed) {
@@ -2710,65 +2773,88 @@ historyManager.pushState();
 // START: NEW ADJUST MODAL LOGIC (UPDATED WITH PERSISTENCE)
 // =========================================================
 case 'open-adjust-modal': {
-    const rowType = $(this).data('row-type'); // 'starting', 'remaining', 'calculated'
+    const rowType = $(this).data('row-type'); 
     
-    // تأكد من وجود كائن التعديلات
     if (!po.rawMaterials.adjustments) po.rawMaterials.adjustments = {};
 
-    // إعداد الحالة الأولية
     adjustModalState.materialNames = [...po.materialsList];
     adjustModalState.rowType = rowType;
     
-    // تحميل الصفوف المحفوظة (نسخة عميقة لتجنب التعديل المباشر قبل الحفظ)
-    const savedRows = po.rawMaterials.adjustments[rowType] ? po.rawMaterials.adjustments[rowType] : [];
-    adjustModalState.rows = JSON.parse(JSON.stringify(savedRows));
-
-    // الحصول على القيم الأصلية (Base Values)
+    const savedRows = po.rawMaterials.adjustments[rowType] ? JSON.parse(JSON.stringify(po.rawMaterials.adjustments[rowType])) : [];
+    
     adjustModalState.originalValues = [];
 
     if (rowType === 'starting' || rowType === 'remaining') {
         const dataObj = po.rawMaterials[rowType];
         
         adjustModalState.materialNames.forEach((m, colIndex) => {
-            // 1. نأخذ القيمة الحالية الظاهرة في الجدول (مثلاً 105)
             let currentDisplayValue = parseLocaleFloat(dataObj[m]) || 0;
-            
-            // 2. نحسب مجموع التعديلات المحفوظة سابقاً لهذا العمود
             let totalPlus = 0;
             let totalMinus = 0;
-            
-            adjustModalState.rows.forEach(row => {
+            savedRows.forEach(row => {
                 const val = parseLocaleFloat(row.values[colIndex]);
                 if (row.type === 'plus') totalPlus += val;
                 else if (row.type === 'minus') totalMinus += val;
             });
-
-            // 3. نسترجع القيمة الأصلية قبل التعديلات (المعادلة العكسية)
-            // الأصل = الحالي - المضاف + المطروح
-            // مثال: 100 = 105 - 5 + 0
             let originalBaseValue = currentDisplayValue - totalPlus + totalMinus;
-
-            // نقوم بتخزين القيمة الأصلية الصافية لاستخدامها في الحسابات داخل النافذة
+            originalBaseValue = parseFloat(originalBaseValue.toFixed(2));
             adjustModalState.originalValues.push(originalBaseValue);
         });
         
         document.getElementById('adjust-modal-title').textContent = rowType === 'starting' ? 'تعديل المخزون الابتدائي' : 'تعديل المخزون المتبقي';
-        document.getElementById('adjust-hint-text').textContent = '';
         document.getElementById('adjust-save-btn').style.display = 'block';
 
     } else if (rowType === 'calculated') {
-        // بالنسبة للاستهلاك المحسوب، القيمة الأصلية تُحسب دائماً من المعادلات ولا يتم تخزينها كرقم ثابت
+        // ... (نفس الكود السابق للحساب) ...
         const addedTotals = Object.fromEntries(po.materialsList.map(m => [m, 0]));
         (po.rawMaterials.addedEntries || []).forEach(entry => { po.materialsList.forEach(m => { addedTotals[m] += parseLocaleFloat(entry[m]); }); });
-        
         adjustModalState.materialNames.forEach(m => {
             const consumption = parseLocaleFloat(po.rawMaterials.starting[m]) + addedTotals[m] - parseLocaleFloat(po.rawMaterials.remaining[m]);
             adjustModalState.originalValues.push(consumption > 0 ? consumption : 0);
         });
-
-        document.getElementById('adjust-modal-title').textContent = 'حاسبة الاستهلاك (Reliquat)';
-        document.getElementById('adjust-hint-text').textContent = '* يتم حفظ أسطر التعديل، لكن القيمة النهائية للاستهلاك تُحسب دائماً تلقائياً في الجدول الرئيسي.';
+        document.getElementById('adjust-modal-title').textContent = 'حاسبة الاستهلاك';
         document.getElementById('adjust-save-btn').style.display = 'block';
+    }
+
+    adjustModalState.rows = savedRows;
+
+    adjustModalState.showMixMapping = false;
+    if (rowType === 'remaining') {
+        adjustModalState.showMixMapping = true;
+
+        if (!po.rawMaterials.mixCalculator) po.rawMaterials.mixCalculator = {};
+        if (!po.rawMaterials.mixCalculator.mapping) {
+            po.rawMaterials.mixCalculator.mapping = { hipsTarget: 'HIPS 330', msTarget: 'MS 1008' };
+        }
+        
+        // تعيين القيمة الافتراضية للتشغيل التلقائي (true) إذا لم تكن موجودة
+        if (po.rawMaterials.mixCalculator.autoMixEnabled === undefined) {
+            po.rawMaterials.mixCalculator.autoMixEnabled = true;
+        }
+
+        const isEnabled = po.rawMaterials.mixCalculator.autoMixEnabled;
+        
+        // البحث عن السطر التلقائي الحالي وحذفه مؤقتاً لإعادة حسابه أو إزالته
+        // (لضمان أننا لا نكرر الأسطر)
+        adjustModalState.rows = adjustModalState.rows.filter(r => !r.isAutoMixRow);
+
+        if (isEnabled) {
+            const residues = calculateMixResidue(po);
+            const newValues = new Array(adjustModalState.materialNames.length).fill('');
+            const hipsColIndex = adjustModalState.materialNames.indexOf(po.rawMaterials.mixCalculator.mapping.hipsTarget);
+            const msColIndex = adjustModalState.materialNames.indexOf(po.rawMaterials.mixCalculator.mapping.msTarget);
+
+            if (hipsColIndex > -1 && residues.hips > 0) newValues[hipsColIndex] = residues.hips;
+            if (msColIndex > -1 && residues.ms > 0) newValues[msColIndex] = residues.ms;
+
+            if (residues.hips > 0 || residues.ms > 0) {
+                adjustModalState.rows.unshift({
+                    type: 'plus',
+                    values: newValues,
+                    isAutoMixRow: true
+                });
+            }
+        }
     }
 
     renderAdjustModalTable();
@@ -2895,6 +2981,14 @@ renderProductionOrderView();
             value: consumption > 0 ? formatNumber(consumption) : 0
         };
     }).filter(item => parseFloat(item.value) > 0);
+	
+	const dopValuePrint = parseLocaleFloat(po.rawMaterials.mixCalculator?.dop);
+if (dopValuePrint > 0) {
+    consumptionData.push({
+        name: 'DOP',
+        value: formatNumber(dopValuePrint)
+    });
+}
 
     let totalMixes = 0;
     if (po.products && po.products.length > 0) {
@@ -3239,20 +3333,34 @@ renderProductionOrderView();
 })
 
 
+// --- ابحث عن هذا الجزء واستبدله بالكود الجديد أدناه ---
 .on('input', '[data-mix-field]', function() {
-const po = state.productionOrders.find(p => p.id === state.activePOId); if (!po) return;
-const poIndex = state.productionOrders.findIndex(p => p.id === po.id); if (poIndex < 0) return;
+    const po = state.productionOrders.find(p => p.id === state.activePOId); 
+    if (!po) return;
+    const poIndex = state.productionOrders.findIndex(p => p.id === po.id); 
+    if (poIndex < 0) return;
 
-const el = $(this);
-const field = el.data('mix-field');
-const newValue = el.text().trim();
-if (!po.rawMaterials.mixCalculator) { po.rawMaterials.mixCalculator = {}; }
+    const el = $(this);
+    const field = el.data('mix-field');
+    // نقوم بتنظيف النص وتحويل الفاصلة إلى نقطة لضمان أنه رقم صحيح
+    const newValue = el.text().trim().replace(/[,\٫]/g, '.'); 
 
-if ((po.rawMaterials.mixCalculator[field] || '') != newValue) {
-po.rawMaterials.mixCalculator[field] = newValue;
-db.update({ [`productionOrders/${poIndex}/rawMaterials/mixCalculator/${field}`]: newValue });
-}
-updateMixCalculator();
+    if (!po.rawMaterials.mixCalculator) { po.rawMaterials.mixCalculator = {}; }
+
+    // تحديث البيانات في الذاكرة وفي قاعدة البيانات
+    if ((po.rawMaterials.mixCalculator[field] || '') != newValue) {
+        po.rawMaterials.mixCalculator[field] = newValue;
+        db.update({ [`productionOrders/${poIndex}/rawMaterials/mixCalculator/${field}`]: newValue });
+    }
+
+    // 1. تحديث حسابات HIPS/MS (الدالة القديمة)
+    updateMixCalculator();
+
+    // 2. تحديث جدول ملخص الاستهلاك فوراً (هذا هو السطر الناقص لإظهار DOP)
+    const consumptionSummaryContainer = document.getElementById('print-consumption-summary');
+    if (consumptionSummaryContainer) {
+        consumptionSummaryContainer.innerHTML = generateConsumptionSummaryHtml(po);
+    }
 });
 
 $(document).on('keydown', 'td[contenteditable="true"], th[contenteditable="true"]', function(e) {
@@ -3526,15 +3634,24 @@ addedTotalsForConsumption[m] += parseFloat(entry[m]) || 0;
 });
 });
 const consumptionSummaryData = po.materialsList.map(m => {
-const consumption = parseLocaleFloat(po.rawMaterials.starting[m]) +
-addedTotalsForConsumption[m] -
-parseLocaleFloat(po.rawMaterials.remaining[m]);
+    const consumption = parseLocaleFloat(po.rawMaterials.starting[m]) +
+    addedTotalsForConsumption[m] -
+    parseLocaleFloat(po.rawMaterials.remaining[m]);
 
-return {
-'المادة': m,
-'الاستهلاك المحسوب (kg)': formatNumber(consumption > 0 ? consumption : 0)
-};
+    return {
+    'المادة': m,
+    'الاستهلاك المحسوب (kg)': formatNumber(consumption > 0 ? consumption : 0)
+    };
 }).filter(item => parseFloat(item['الاستهلاك المحسوب (kg)']) > 0);
+
+// --- إضافة DOP للإكسل ---
+const dopValueExport = parseLocaleFloat(po.rawMaterials.mixCalculator?.dop);
+if (dopValueExport > 0) {
+    consumptionSummaryData.push({
+        'المادة': 'DOP',
+        'الاستهلاك المحسوب (kg)': formatNumber(dopValueExport)
+    });
+}
 
 let totalMixes = 0;
 if (po.products && po.products.length > 0) {
@@ -3610,63 +3727,151 @@ XLSX.writeFile(wb, `Production_Order_${po.name.replace(/[\\/?*\[\]]/g, "_")}.xls
 
 // --- START: ADJUST MODAL RENDER AND LOGIC ---
 const renderAdjustModalTable = () => {
+    const po = state.productionOrders.find(p => p.id === state.activePOId);
+    const modalBody = document.querySelector('#adjust-values-modal .modal-body');
+    
+    // 1. التعامل مع واجهة إعدادات الربط (Mapping UI) ومربع التحديد
+    let mappingHtml = '';
+    if (adjustModalState.showMixMapping && po) {
+        const currentMapping = po.rawMaterials.mixCalculator.mapping || { hipsTarget: '', msTarget: '' };
+        
+        // التحقق من حالة التفعيل (الافتراضي true إذا لم تكن موجودة)
+        const isAutoMixEnabled = (po.rawMaterials.mixCalculator.autoMixEnabled !== false); 
+
+        const options = adjustModalState.materialNames.map(m => `<option value="${m}">${m}</option>`).join('');
+
+        mappingHtml = `
+        <div class="card mb-3 bg-light border-primary">
+            <div class="card-body p-2">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="card-title text-primary small fw-bold mb-0"><i class="fas fa-link me-1"></i> ربط المتبقي من الخلطات (Auto-Link)</h6>
+                    
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="toggle-auto-mix" ${isAutoMixEnabled ? 'checked' : ''} style="cursor: pointer;">
+                        <label class="form-check-label small fw-bold" for="toggle-auto-mix">تفعيل الإضافة التلقائية</label>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-3 align-items-center justify-content-center" style="opacity: ${isAutoMixEnabled ? '1' : '0.5'}; pointer-events: ${isAutoMixEnabled ? 'auto' : 'none'}; transition: opacity 0.3s;">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-secondary">HIPS Residue</span>
+                        <i class="fas fa-arrow-left text-muted"></i>
+                        <select class="form-select form-select-sm" id="adjust-mapping-hips" style="width: 150px;">
+                            <option value="">-- بدون ربط --</option>
+                            ${options}
+                        </select>
+                    </div>
+                    <div class="vr"></div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-secondary">MS Residue</span>
+                        <i class="fas fa-arrow-left text-muted"></i>
+                        <select class="form-select form-select-sm" id="adjust-mapping-ms" style="width: 150px;">
+                            <option value="">-- بدون ربط --</option>
+                            ${options}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    // ... (باقي كود الدالة كما هو تماماً من الرد السابق الخاص بـ renderAdjustModalTable) ...
+    // ... حقن الـ mappingContainer ...
+    let mappingContainer = document.getElementById('adjust-mapping-container');
+    if (!mappingContainer) {
+        mappingContainer = document.createElement('div');
+        mappingContainer.id = 'adjust-mapping-container';
+        const tableResponsive = modalBody.querySelector('.table-responsive');
+        modalBody.insertBefore(mappingContainer, tableResponsive);
+    }
+    mappingContainer.innerHTML = mappingHtml;
+
+    if (adjustModalState.showMixMapping && po) {
+        const mapping = po.rawMaterials.mixCalculator.mapping;
+        $('#adjust-mapping-hips').val(mapping.hipsTarget);
+        $('#adjust-mapping-ms').val(mapping.msTarget);
+    }
+
+    // ... (باقي كود رسم الجدول والهيدر والصفوف - انسخه من الرد السابق) ...
     const tableHead = document.querySelector('#adjust-table thead');
     const tableBody = document.querySelector('#adjust-table tbody');
     
     // Header
     let headHtml = '<tr><th style="width: 150px;">البيان</th>';
-    adjustModalState.materialNames.forEach(name => {
-        headHtml += `<th>${name}</th>`;
-    });
-    headHtml += '<th></th></tr>'; // Action column (delete row)
+    adjustModalState.materialNames.forEach(name => { headHtml += `<th>${name}</th>`; });
+    headHtml += '<th></th></tr>';
     tableHead.innerHTML = headHtml;
 
     // Body
     let bodyHtml = '';
-
-    // 1. Original Values Row
-    bodyHtml += '<tr class="table-light"><td class="fw-bold">القيمة الحالية</td>';
-    adjustModalState.originalValues.forEach(val => {
-        bodyHtml += `<td>${formatNumber(val)}</td>`;
-    });
+    // 1. سطر القيمة الأصلية
+    bodyHtml += '<tr class="table-light"><td class="fw-bold text-primary">(الصافي)</td>';
+    adjustModalState.originalValues.forEach(val => { bodyHtml += `<td>${formatNumber(val)}</td>`; });
     bodyHtml += '<td></td></tr>';
 
-    // 2. Added Rows
+    // 2. أسطر الإضافات
     adjustModalState.rows.forEach((row, rowIndex) => {
-        const rowClass = row.type === 'plus' ? 'adjust-row-plus' : 'adjust-row-minus';
-        const label = row.type === 'plus' ? '<i class="fas fa-plus-circle text-success"></i> إضافة' : '<i class="fas fa-minus-circle text-danger"></i> طرح';
-        
+let rowClass = '';
+    let label = '';
+
+    if (row.type === 'plus') {
+        rowClass = 'adjust-row-plus';
+        label = '<i class="fas fa-plus-circle text-success"></i> إضافة';
+    } else if (row.type === 'minus') {
+        rowClass = 'adjust-row-minus';
+        label = '<i class="fas fa-minus-circle text-danger"></i> طرح';
+    } else if (row.type === 'divide') {
+        // هنا نعالج نوع القسمة
+        rowClass = 'adjust-row-divide';
+        label = '<i class="fas fa-divide text-warning"></i> قسمة';
+    }
+    
+    // التعامل مع السطر التلقائي (Auto Mix) كما هو في كودك الأصلي
+    let isLocked = false;
+    if (row.isAutoMixRow) {
+        // نلاحظ هنا قمت بدمج شرط الـ label ليتناسب مع القسمة أيضاً إن وجد مستقبلاً، لكن حالياً Auto mix للجمع فقط
+        label = `<i class="fas fa-magic text-info"></i> Auto Mix (${row.type === 'divide' ? '/' : (row.type === 'plus' ? '+' : '-')})`;
+        isLocked = true;
+    }
         bodyHtml += `<tr class="${rowClass}">`;
         bodyHtml += `<td class="fw-bold">${label}</td>`;
         adjustModalState.materialNames.forEach((name, colIndex) => {
             const val = row.values[colIndex] !== undefined ? row.values[colIndex] : '';
-            bodyHtml += `<td contenteditable="true" data-adjust-row="${rowIndex}" data-adjust-col="${colIndex}">${val}</td>`;
+            const editableAttr = isLocked ? '' : 'contenteditable="true"';
+            const cellStyle = isLocked && val !== '' ? 'background-color: #e3f2fd; font-weight: bold; color: #0d6efd;' : '';
+            bodyHtml += `<td ${editableAttr} style="${cellStyle}" data-adjust-row="${rowIndex}" data-adjust-col="${colIndex}">${val !== '' ? formatNumber(val) : ''}</td>`;
         });
-        bodyHtml += `<td><button class="btn btn-sm btn-outline-danger py-0 px-1" onclick="removeAdjustRow(${rowIndex})"><i class="fas fa-times"></i></button></td>`;
+        if (isLocked) bodyHtml += `<td><i class="fas fa-lock text-muted"></i></td>`;
+        else bodyHtml += `<td><button class="btn btn-sm btn-outline-danger py-0 px-1" onclick="removeAdjustRow(${rowIndex})"><i class="fas fa-times"></i></button></td>`;
         bodyHtml += '</tr>';
     });
 
-    // 3. Result Row
-    bodyHtml += '<tr class="adjust-row-result"><td class="fw-bold">المجموع النهائي</td>';
+// 3. سطر المجموع النهائي
+    bodyHtml += '<tr class="adjust-row-result"><td class="fw-bold">المجموع النهائي للحفظ</td>';
     const finalValues = [...adjustModalState.originalValues];
     
-    // Calculate totals
     adjustModalState.rows.forEach(row => {
         row.values.forEach((val, colIndex) => {
             const num = parseLocaleFloat(val);
+            
+            // --- هنا كان الخطأ: الكود القديم كان يعالج أي شيء ليس جمعاً على أنه طرح ---
+            // --- هذا هو التعديل الجديد ---
             if (row.type === 'plus') {
                 finalValues[colIndex] += num;
-            } else {
+            } else if (row.type === 'minus') {
                 finalValues[colIndex] -= num;
+            } else if (row.type === 'divide') {
+                // شرط عدم القسمة على صفر
+                if (num !== 0) {
+                    finalValues[colIndex] /= num;
+                }
             }
+            // -----------------------------
         });
     });
-
-    finalValues.forEach(val => {
-        bodyHtml += `<td>${formatNumber(val > 0 ? val : 0)}</td>`; // Prevent negatives in result if logical
-    });
+    
+    finalValues.forEach(val => { bodyHtml += `<td>${formatNumber(val > 0 ? val : 0)}</td>`; });
     bodyHtml += '<td></td></tr>';
-
     tableBody.innerHTML = bodyHtml;
 };
 
@@ -3688,7 +3893,12 @@ $('#adjust-add-minus').on('click', () => {
     adjustModalState.rows.push({ type: 'minus', values: new Array(adjustModalState.materialNames.length).fill('') });
     renderAdjustModalTable();
 });
-
+$('#adjust-add-divide').on('click', () => {
+    // نقوم بإضافة سطر جديد نوعه 'divide'
+    adjustModalState.rows.push({ type: 'divide', values: new Array(adjustModalState.materialNames.length).fill('') });
+    // إعادة رسم الجدول ليظهر السطر الجديد
+    renderAdjustModalTable();
+});
 // Update calculation on input
 $('#adjust-table').on('focusout', 'td[contenteditable="true"]', function() {
     const rowIndex = $(this).data('adjust-row');
@@ -3712,10 +3922,15 @@ $('#adjust-save-btn').on('click', () => {
     adjustModalState.rows.forEach(row => {
         row.values.forEach((val, colIndex) => {
             const num = parseLocaleFloat(val);
-            if (row.type === 'plus') {
+if (row.type === 'plus') {
                 finalValues[colIndex] += num;
-            } else {
+            } else if (row.type === 'minus') {
                 finalValues[colIndex] -= num;
+            } else if (row.type === 'divide') {
+                // التأكد من عدم القسمة على صفر لتجنب الأخطاء (Infinity)
+                if (num !== 0) {
+                    finalValues[colIndex] /= num;
+                }
             }
         });
     });
@@ -3799,10 +4014,87 @@ renderApp();
     });
     // ===============================================
 
+// حدث تغيير القوائم المنسدلة للربط (Mapping Change)
+$(document).on('change', '#adjust-mapping-hips, #adjust-mapping-ms', function() {
+    const po = state.productionOrders.find(p => p.id === state.activePOId);
+    if (!po) return;
+    const poIndex = state.productionOrders.findIndex(p => p.id === po.id);
 
+    // ... (تحديث الـ mapping كما هو سابقاً) ...
+    if (!po.rawMaterials.mixCalculator.mapping) po.rawMaterials.mixCalculator.mapping = {};
+    po.rawMaterials.mixCalculator.mapping.hipsTarget = $('#adjust-mapping-hips').val();
+    po.rawMaterials.mixCalculator.mapping.msTarget = $('#adjust-mapping-ms').val();
+    db.update({ [`productionOrders/${poIndex}/rawMaterials/mixCalculator/mapping`]: po.rawMaterials.mixCalculator.mapping });
+
+    // --- التعديل هنا: التحقق من التفعيل قبل التحديث ---
+    const isEnabled = po.rawMaterials.mixCalculator.autoMixEnabled !== false;
+
+    // حذف القديم
+    adjustModalState.rows = adjustModalState.rows.filter(r => !r.isAutoMixRow);
+
+    if (isEnabled) {
+        const residues = calculateMixResidue(po);
+        const newValues = new Array(adjustModalState.materialNames.length).fill('');
+        const hipsColIndex = adjustModalState.materialNames.indexOf(po.rawMaterials.mixCalculator.mapping.hipsTarget);
+        const msColIndex = adjustModalState.materialNames.indexOf(po.rawMaterials.mixCalculator.mapping.msTarget);
+
+        if (hipsColIndex > -1 && residues.hips > 0) newValues[hipsColIndex] = residues.hips;
+        if (msColIndex > -1 && residues.ms > 0) newValues[msColIndex] = residues.ms;
+
+        if (residues.hips > 0 || residues.ms > 0) {
+            adjustModalState.rows.unshift({
+                type: 'plus',
+                values: newValues,
+                isAutoMixRow: true
+            });
+        }
+    }
+
+    renderAdjustModalTable();
+});
 
 // ... الكود الموجود لديك ينتهي هنا
+// حدث تغيير مربع تفعيل/إلغاء Auto Mix
+$(document).on('change', '#toggle-auto-mix', function() {
+    const po = state.productionOrders.find(p => p.id === state.activePOId);
+    if (!po) return;
+    const poIndex = state.productionOrders.findIndex(p => p.id === po.id);
+    
+    const isChecked = $(this).is(':checked');
 
+    // 1. تحديث الحالة في الذاكرة وقاعدة البيانات
+    if (!po.rawMaterials.mixCalculator) po.rawMaterials.mixCalculator = {};
+    po.rawMaterials.mixCalculator.autoMixEnabled = isChecked;
+    db.update({ [`productionOrders/${poIndex}/rawMaterials/mixCalculator/autoMixEnabled`]: isChecked });
+
+    // 2. تحديث المصفوفة المحلية (إضافة أو إزالة السطر)
+    // أولاً: نحذف أي سطر تلقائي موجود
+    adjustModalState.rows = adjustModalState.rows.filter(r => !r.isAutoMixRow);
+
+    // ثانياً: إذا تم التفعيل، نعيد حساب وإضافة السطر
+    if (isChecked) {
+        const residues = calculateMixResidue(po);
+        const mapping = po.rawMaterials.mixCalculator.mapping || { hipsTarget: '', msTarget: '' };
+        
+        const newValues = new Array(adjustModalState.materialNames.length).fill('');
+        const hipsColIndex = adjustModalState.materialNames.indexOf(mapping.hipsTarget);
+        const msColIndex = adjustModalState.materialNames.indexOf(mapping.msTarget);
+
+        if (hipsColIndex > -1 && residues.hips > 0) newValues[hipsColIndex] = residues.hips;
+        if (msColIndex > -1 && residues.ms > 0) newValues[msColIndex] = residues.ms;
+
+        if (residues.hips > 0 || residues.ms > 0) {
+            adjustModalState.rows.unshift({
+                type: 'plus',
+                values: newValues,
+                isAutoMixRow: true
+            });
+        }
+    }
+
+    // 3. إعادة رسم الجدول لتحديث الواجهة
+    renderAdjustModalTable();
+});
 // =================================================================
 // START: NEW CODE FOR COPY & CALCULATOR BUTTONS
 // =================================================================
