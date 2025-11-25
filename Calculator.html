@@ -3821,11 +3821,24 @@ let rowClass = '';
     } else if (row.type === 'minus') {
         rowClass = 'adjust-row-minus';
         label = '<i class="fas fa-minus-circle text-danger"></i> طرح';
-    } else if (row.type === 'divide') {
-        // هنا نعالج نوع القسمة
-        rowClass = 'adjust-row-divide';
-        label = '<i class="fas fa-divide text-warning"></i> قسمة';
-    }
+} else if (row.type === 'divide') {
+    rowClass = 'adjust-row-divide';
+    // نسترجع القيمة المحفوظة في حقل التعميم إن وجدت
+    const globalVal = row.globalDivisor || ''; 
+    
+    // نضيف حقل إدخال صغير بجانب الأيقونة
+    label = `
+    <div class="d-flex align-items-center justify-content-between">
+        <span style="font-size: 0.8rem;"><i class="fas fa-divide text-warning"></i> قسمة</span>
+        <input type="number" 
+               class="form-control form-control-sm global-divide-input p-0 text-center ms-1 no-print" 
+               style="width: 50px; height: 22px; font-size: 0.75rem; background: #fff3cd; border: 1px solid #ffecb5;"
+               placeholder="الكل"
+               value="${globalVal}"
+               data-row-index="${rowIndex}"
+               onclick="event.stopPropagation()">
+    </div>`;
+}
     
     // التعامل مع السطر التلقائي (Auto Mix) كما هو في كودك الأصلي
     let isLocked = false;
@@ -3912,7 +3925,32 @@ $('#adjust-table').on('focusout', 'td[contenteditable="true"]', function() {
         // Refocus logic omitted for simplicity in modal context, usually not needed as flow is distinct
     }
 });
+// =================================================================
+// START: GLOBAL DIVIDE INPUT LOGIC
+// =================================================================
+$(document).on('change', '.global-divide-input', function() {
+    const rowIndex = $(this).data('row-index');
+    let val = $(this).val();
 
+    // التأكد من أن القيمة رقمية وصالحة
+    if (val && !isNaN(val)) {
+        // تحديث الحالة (State) لهذا السطر
+        if (adjustModalState.rows[rowIndex]) {
+            // حفظ القيمة في خاصية جديدة لكي تبقى ظاهرة داخل المربع الصغير عند إعادة الرسم
+            adjustModalState.rows[rowIndex].globalDivisor = val;
+
+            // تعميم القيمة على جميع خلايا المواد في هذا السطر
+            // نقوم بإنشاء مصفوفة جديدة بنفس الطول تحتوي كلها على نفس القيمة
+            adjustModalState.rows[rowIndex].values = adjustModalState.rows[rowIndex].values.map(() => val);
+
+            // إعادة رسم الجدول لتحديث الأرقام في الخلايا وحساب المجموع النهائي
+            renderAdjustModalTable();
+        }
+    }
+});
+// =================================================================
+// END: GLOBAL DIVIDE INPUT LOGIC
+// =================================================================
 $('#adjust-save-btn').on('click', () => {
     const po = state.productionOrders.find(p => p.id === state.activePOId);
     if (!po) return;
