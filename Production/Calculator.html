@@ -3147,14 +3147,15 @@ if (dopValuePrint > 0) {
              display: flex;
              justify-content: flex-end; /* دفع الصندوق لليمين */
         }
-        .mixes-box { 
-            background-color: #f8f9fa; 
-            border: 2px solid #3b5998; 
-            border-radius: 8px; 
-            padding: 5px 20px; 
-            text-align: center; 
-            min-width: 120px; 
-        }
+.mixes-box { 
+    visibility: hidden; /* <--- هذا السطر يخفي المحتوى لكن يبقي مكانه محجوزاً */
+    background-color: #f8f9fa; 
+    border: none;       /* <--- تم تغيير هذا لإخفاء الإطار */
+    border-radius: 8px; 
+    padding: 5px 20px; 
+    text-align: center; 
+    min-width: 120px; 
+}
         .mixes-box .label { display: block; font-size: 0.8rem; font-weight: bold; color: #666; }
         .mixes-box .value { display: block; font-size: 1.4rem; font-weight: bold; color: #3b5998; }
 
