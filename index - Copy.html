@@ -12,100 +12,70 @@
     <style>
         /* === NEW: CSS Variables for Theming === */
         :root {
-            --theme-color: #3b82f6; /* لون أزرق مطابق للصورة */
-            --theme-color-hover: #2563eb; 
-            --bg-dot-color: #cbd5e1; /* لون النقاط في الخلفية */
+            --theme-color: #2563eb; /* default theme color */
+            --theme-color-hover: #3b82f6; /* default hover color */
         }
 
-        /* === GLOBAL STYLES === */
-        body { 
-            font-family: 'Inter', 'Cairo', sans-serif; 
-            background-color: #0f172a; /* لون الخلفية للوحة التحكم (الوضع المظلم للمحرر) */
-            color: #e2e8f0; 
-            margin: 0;
-            overflow: hidden; /* لمنع السكرول المزدوج */
-        }
-
-        /* === SCROLLBAR === */
+        /* === IMPROVED STYLES === */
+        body { font-family: 'Inter', 'Cairo', sans-serif; background-color: #0f172a; color: #e2e8f0; }
         .config-panel { scrollbar-width: thin; scrollbar-color: #475569 #1e293b; }
         .config-panel::-webkit-scrollbar { width: 8px; }
         .config-panel::-webkit-scrollbar-track { background: #1e293b; }
         .config-panel::-webkit-scrollbar-thumb { background-color: #475569; border-radius: 10px; border: 3px solid #1e293b; }
-
-        /* === FORM ELEMENTS (Editor Side) === */
         input, select { background-color: #0f172a; border-color: #475569; color: #e2e8f0; }
-        input[type="color"] { padding: 2px; height: 40px; border-radius: 6px; cursor: pointer; }
-        input:focus, select:focus { outline: none; border-color: var(--theme-color-hover); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3); }
+        input[type="color"] { padding: 2px; height: 40px; } /* Style for color picker */
+        input:focus, select:focus { outline: none; border-color: var(--theme-color-hover); box-shadow: 0 0 0 1px var(--theme-color-hover); }
         input:disabled { background-color: #1e293b; color: #64748b; cursor: not-allowed; }
         
-        /* === EDITOR BUTTONS === */
-        .btn-primary { background-color: var(--theme-color); transition: all 0.2s; }
-        .btn-primary:hover { background-color: var(--theme-color-hover); transform: translateY(-1px); }
+        /* === THEMED ELEMENTS === */
+        .btn-primary { background-color: var(--theme-color); transition: background-color 0.2s; }
+        .btn-primary:hover { background-color: var(--theme-color-hover); }
         .breadcrumb-link:hover { color: var(--theme-color-hover); text-decoration: none; }
         
-        .btn-add { border: 1px dashed #475569; color: #94a3b8; transition: all 0.2s; }
+        .btn-add { border: 1px dashed #475569; color: #94a3b8; }
         .btn-add:hover { background-color: #334155; color: #e2e8f0; border-color: #64748b; }
-        
         .app-item { background-color: #1e293b; border: 1px solid #334155; border-radius: 0.5rem; transition: box-shadow 0.2s ease-in-out; }
-        .app-item:hover { box-shadow: 0 0 15px rgba(59, 130, 246, 0.1); border-color: #475569; }
-        .accordion-header { padding: 0.75rem; cursor: move; }
+        .app-item:hover { box-shadow: 0 0 15px rgba(59, 130, 246, 0.1); }
+        .accordion-header { padding: 0.60rem 0.75rem; }
         .accordion-header:hover { background-color: rgba(51, 65, 85, 0.5); }
+        .accordion-header { cursor: move; }
         .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out, padding 0.3s ease-out; padding: 0 0.75rem; }
         .accordion-content.open { padding: 0.75rem; padding-top: 0.65rem; border-top: 1px solid #334155; }
         .accordion-toggle-icon { transition: transform 0.3s ease-out; }
         .rotate-180 { transform: rotate(180deg); }
-        
-        /* MODIFIED: Removed animation for direct update */
         .config-panel-view { display: none; }
         .config-panel-view.active { display: block; }
+        .breadcrumb-link { cursor: pointer; color: #94a3b8; }
         
-        .breadcrumb-link { cursor: pointer; color: #94a3b8; transition: color 0.2s; }
-        
-        /* ========================================= */
-        /* === PREVIEW AREA STYLES (THE DASHBOARD) === */
-        /* ========================================= */
-
-        #preview-body { 
-            font-family: 'Cairo', sans-serif; 
-            margin: 0; 
-            /* خلفية مطابقة للصورة: لون فاتح مع نقاط */
-            background-color: #f3f6f9; 
-            background-image: radial-gradient(var(--bg-dot-color) 1.5px, transparent 1.5px);
-            background-size: 24px 24px;
-            color: #333; 
-            display: flex; 
-            flex-direction: column; 
-            min-height: 100%; 
-        }
-
-        /* MODIFIED: Removed animation for direct update */
+        #preview-body { font-family: 'Cairo', sans-serif; margin: 0; background-color: #f0f2f5; color: #333; display: flex; flex-direction: column; min-height: 100%; }
         .dashboard-page { display: none; flex-direction: column; flex-grow: 1; }
         .dashboard-page.active { display: flex; }
         
-        /* === HEADER STYLES === */
+        /* === THEMED ELEMENTS === */
         .dashboard-header { 
             background-color: var(--theme-color); 
             color: white; 
             padding: 15px 30px; 
-            /* ظل ملون خفيف أسفل الهيدر */
-            box-shadow: 0 4px 20px -5px rgba(37, 99, 235, 0.3);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
             display: flex; 
             align-items: center; 
             justify-content: center; 
             position: relative; 
-            min-height: 70px;
-            z-index: 10;
+            min-height: 60px; /* MODIFIED: Reduced height for mobile */
+        }
+        @media (min-width: 640px) {
+            .dashboard-header { min-height: 70px; } /* Restore height for desktop */
         }
         
         .dashboard-header h1 { 
             margin: 0; 
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            letter-spacing: 0.5px;
+            /* MODIFIED: Font size and weight are now handled by Tailwind classes in JS */
         }
         
+        /* === MODIFIED: Back button and Logo use same space === */
         .back-btn { 
             position: absolute; 
-            left: 20px; 
+            left: 15px; /* MODIFIED: Reduced for mobile */
             top: 50%; 
             transform: translateY(-50%); 
             color: white; 
@@ -113,170 +83,128 @@
             font-size: 24px; 
             display: flex; 
             align-items: center; 
-            padding: 8px;
-            border-radius: 50%;
-            transition: background-color 0.2s;
         }
-        .back-btn:hover { background-color: rgba(255,255,255,0.2); }
+        @media (min-width: 640px) {
+            .back-btn { left: 20px; } /* Restore for desktop */
+        }
         
         #preview-logo-container { 
             position: absolute; 
-            left: 20px; 
+            left: 15px; /* MODIFIED: Reduced for mobile */
             top: 50%; 
             transform: translateY(-50%); 
             height: 40px; 
             display: flex; 
             align-items: center; 
         }
+        @media (min-width: 640px) {
+            #preview-logo-container { left: 20px; } /* Restore for desktop */
+        }
         
-        #header-logo-main { max-height: 45px; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
+        #header-logo-main { max-height: 40px; width: auto; }
         
         .app-grid-container { 
             flex-grow: 1; 
             display: flex; 
             justify-content: center; 
             align-items: flex-start; 
-            padding: 40px 20px; 
+            padding: 20px 15px; /* MODIFIED: Reduced padding for mobile */
+        }
+        @media (min-width: 640px) {
+            .app-grid-container { padding: 40px 20px; } /* Restore for desktop */
         }
         
-        .app-grid { 
-            display: grid; 
-            /* تصغير عرض العمود الأدنى */
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
-            gap: 15px; 
-            max-width: 1200px; 
+        .app-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; max-width: 1000px; width: 100%; }
+        .app-card { position: relative; background-color: #ffffff; border-radius: 8px; padding: 15px; text-align: center; text-decoration: none; color: inherit; box-shadow: 0 4px 8px rgba(0,0,0,0.08); transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 140px; cursor: pointer; }
+        .app-card:hover { transform: translateY(-5px); box-shadow: 0 8px 16px rgba(0,0,0,0.12); }
+        
+        /* === THEMED ELEMENT === */
+        .app-icon { font-size: 36px; color: var(--theme-color); margin-bottom: 10px; word-break: break-all; }
+        
+        .app-title { font-size: 1em; font-weight: 600; margin-bottom: 5px; color: #333; }
+        .app-description { font-size: 0.75em; color: #666; line-height: 1.3; flex-grow: 1; }
+        .dashboard-footer { background-color: #303030; color: #f0f0f0; text-align: center; padding: 15px; font-size: 0.9em; }
+        .add-new-card { border: 2px dashed #b0b0b0; background-color: #f9f9f9; color: #777; }
+        .add-new-card .app-icon { color: #777; }
+        
+        /* === MODIFIED: Responsive Edit Mode Logic === */
+        #config-panel { 
+            transition: width 0.4s ease, padding 0.4s ease, opacity 0.4s ease, max-height 0.4s ease; 
+            opacity: 1;
+        }
+        #preview-container { 
+            transition: width 0.4s ease; 
+        }
+        
+        /* When NOT in edit mode, collapse the panel completely */
+        body:not(.edit-mode) #config-panel { 
+            width: 0; 
+            padding-left: 0; 
+            padding-right: 0; 
+            opacity: 0; 
+            pointer-events: none; 
+            max-height: 0; /* Collapse height in flex-col */
+            overflow: hidden; /* Hide content while collapsed */
+        }
+        body:not(.edit-mode) #preview-container { 
             width: 100%; 
         }
 
-        /* === APP CARD STYLES (REDESIGNED & RESIZED) === */
-        .app-card { 
-            position: relative; 
-            background-color: #ffffff; 
-            /* زوايا دائرية أكثر نعومة مثل الصورة */
-            border-radius: 12px; 
-            padding: 15px 10px; /* تقليل الحواف الداخلية */
-            text-align: center; 
-            text-decoration: none; 
-            color: inherit; 
-            /* ظل خفيف جداً ونظيف */
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            border: 1px solid rgba(255,255,255,0.5); /* حدود شبه شفافة */
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            min-height: 120px; /* تقليل الارتفاع الأدنى */
-            cursor: pointer; 
-            /* انتقالات ناعمة للحركة */
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        /* When IN edit mode, restore properties. Width is handled by Tailwind classes. */
+        body.edit-mode #config-panel {
+            padding: 1rem;
+            opacity: 1;
+            pointer-events: auto;
+            max-height: 100vh; /* Restore height */
+            overflow-y: auto; /* Restore scrolling */
+            /* Width is handled by 'w-full md:w-1/3' in HTML */
         }
+        /* No rule for 'body.edit-mode #preview-container' needed, 'w-full md:w-2/3' handles it */
+        /* === END MODIFIED: Responsive Edit Mode Logic === */
 
-        /* === HOVER EFFECT (THE MAGIC) === */
-        .app-card:hover { 
-            /* رفع البطاقة للأعلى */
-            transform: translateY(-6px); 
-            /* زيادة الظل ليعطي عمق */
-            box-shadow: 0 15px 20px -5px rgba(0, 0, 0, 0.1), 0 8px 8px -5px rgba(0, 0, 0, 0.04);
-            /* تلوين الحدود بلون الثيم */
-            border-color: var(--theme-color);
-        }
         
-        .app-icon { 
-            font-size: 32px; /* تصغير الأيقونة */
-            color: var(--theme-color); 
-            margin-bottom: 8px; 
-            transition: transform 0.3s ease;
-        }
-
-        /* تكبير الأيقونة عند المرور */
-        .app-card:hover .app-icon {
-            transform: scale(1.1);
-        }
-        
-        .app-title { 
-            font-size: 0.9em; /* تصغير الخط */
-            font-weight: 700; 
-            margin-bottom: 4px; 
-            color: #1e293b; 
-        }
-        .app-description { 
-            font-size: 0.7em; /* تصغير الوصف */
-            color: #64748b; 
-            line-height: 1.3; 
-            flex-grow: 1; 
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        
-        .dashboard-footer { 
-            /* فوتر بسيط وشفاف */
-            background-color: transparent; 
-            color: #94a3b8; 
-            text-align: center; 
-            padding: 20px; 
-            font-size: 0.85em; 
-            border-top: 1px solid rgba(0,0,0,0.05);
-        }
-
-        .add-new-card { 
-            border: 2px dashed #cbd5e1; 
-            background-color: rgba(255,255,255,0.5); 
-            box-shadow: none;
-        }
-        .add-new-card:hover {
-            border-color: var(--theme-color);
-            background-color: white;
-        }
-        .add-new-card .app-icon { color: #94a3b8; }
-        
-        /* === RESPONSIVE LOGIC (Maintained) === */
-        #config-panel { transition: width 0.4s ease, padding 0.4s ease, opacity 0.4s ease, max-height 0.4s ease; opacity: 1; }
-        #preview-container { transition: width 0.4s ease; }
-        
-        body:not(.edit-mode) #config-panel { width: 0; padding: 0; opacity: 0; pointer-events: none; max-height: 0; overflow: hidden; }
-        body:not(.edit-mode) #preview-container { width: 100%; }
-        body.edit-mode #config-panel { padding: 1rem; opacity: 1; pointer-events: auto; max-height: 100vh; overflow-y: auto; }
-
-        /* === EDIT BUTTONS === */
+        /* === MODIFIED: Edit button moved === */
         .edit-mode-toggle { 
             position: absolute; 
-            right: 20px; 
+            right: 15px; /* MODIFIED: Reduced for mobile */
             top: 50%; 
             transform: translateY(-50%); 
-            background-color: rgba(255, 255, 255, 0.2); 
-            border: 1px solid rgba(255, 255, 255, 0.3); 
-            border-radius: 50%; 
+            background-color: rgba(255, 255, 255, 0.15); 
+            border: 1px solid rgba(255, 255, 255, 0.2); 
+            border-radius: 9999px; 
             color: white; 
             cursor: pointer; 
-            width: 42px; 
-            height: 42px; 
+            width: 40px; 
+            height: 40px; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            transition: all 0.2s; 
-            backdrop-filter: blur(4px);
+            transition: background-color 0.2s; 
         }
-        .edit-mode-toggle:hover { background-color: rgba(255, 255, 255, 0.4); transform: translateY(-50%) scale(1.05); }
+        @media (min-width: 640px) {
+            .edit-mode-toggle { right: 20px; } /* Restore for desktop */
+        }
         
-        .edit-app-btn { position: absolute; top: 5px; right: 5px; background-color: #f1f5f9; color: #475569; border-radius: 50%; width: 28px; height: 28px; display: none; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; border: 1px solid #e2e8f0; z-index: 5; }
-        .edit-app-btn:hover { background-color: var(--theme-color); color: white; border-color: var(--theme-color); }
+        .edit-mode-toggle:hover { background-color: rgba(255, 255, 255, 0.3); }
+        .edit-app-btn { position: absolute; top: 5px; right: 5px; background-color: rgba(0, 0, 0, 0.6); color: white; border-radius: 50%; width: 28px; height: 28px; display: none; align-items: center; justify-content: center; cursor: pointer; transition: background-color 0.2s; border: 1px solid rgba(255, 255, 255, 0.2); }
+        .edit-app-btn:hover { background-color: rgba(0, 0, 0, 0.8); }
         .edit-app-btn .material-icons { font-size: 16px; }
         body.edit-mode .edit-app-btn { display: flex; }
-        
-        .folder-indicator { position: absolute; top: 5px; left: 5px; background-color: #fffbeb; color: #b45309; border-radius: 50%; width: 28px; height: 28px; display: none; align-items: center; justify-content: center; border: 1px solid #fcd34d; z-index: 5; }
+        .folder-indicator { position: absolute; top: 5px; left: 5px; background-color: rgba(255, 193, 7, 0.8); color: black; border-radius: 50%; width: 28px; height: 28px; display: none; align-items: center; justify-content: center; border: 1px solid rgba(0, 0, 0, 0.2); }
         .folder-indicator .material-icons { font-size: 16px; }
         body.edit-mode .folder-indicator { display: flex; }
 
-        /* === ICON PICKER === */
+        /* ### NEW: ICON PICKER STYLES ### */
         .icon-picker-trigger-btn { position: absolute; right: 0; top: 0; bottom: 0; padding: 0 0.5rem; color: #94a3b8; }
         .icon-picker-trigger-btn:hover { color: #e2e8f0; }
         .icon-picker-modal-grid { max-height: 60vh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #475569 #1e293b; }
-        .icon-picker-item { transition: all 0.2s; border-radius: 8px; }
-        .icon-picker-item:hover { background-color: var(--theme-color-hover); color: white; transform: scale(1.05); }
+        .icon-picker-modal-grid::-webkit-scrollbar { width: 8px; }
+        .icon-picker-modal-grid::-webkit-scrollbar-track { background: #1e293b; }
+        .icon-picker-modal-grid::-webkit-scrollbar-thumb { background-color: #475569; border-radius: 10px; border: 3px solid #1e293b; }
+        .icon-picker-item { transition: background-color 0.2s, color 0.2s; }
+        .icon-picker-item:hover { background-color: var(--theme-color-hover); color: white; }
 
-        /* === SYNC & PRESENCE === */
+        /* ### NEW: SYNC & PRESENCE STYLES ### */
         #sync-status.text-green-500 { color: #22c55e; }
         #sync-status.text-red-500 { color: #ef4444; }
         #sync-status.text-gray-500 { color: #6b7280; }
@@ -285,28 +213,28 @@
 </head>
 <body> <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
         <div class="bg-slate-800 rounded-lg shadow-xl p-6 w-full max-w-md">
-            <h3 class="text-xl font-semibold mb-4 text-white">General Settings</h3>
+            <h3 class="text-xl font-semibold mb-4">General Settings</h3>
             <div class="space-y-4">
                 <div><label for="dashboard-title" class="block text-sm font-medium text-gray-300">Dashboard Header Title</label><input type="text" id="dashboard-title" value="لوحة تطبيقات المصنع" class="mt-1 block w-full rounded-md shadow-sm p-2"></div>
                 <div><label for="page-title" class="block text-sm font-medium text-gray-300">Page Title (&lt;title&gt;)</label><input type="text" id="page-title" value="لوحة تحكم المصنع" class="mt-1 block w-full rounded-md shadow-sm p-2"></div>
                 <div><label for="footer-text" class="block text-sm font-medium text-gray-300">Footer Text</label><input type="text" id="footer-text" value="© 2025 اسم المصنع الخاص بك. جميع الحقوق محفوظة." class="mt-1 block w-full rounded-md shadow-sm p-2"></div>
                 
-                <div><label for="theme-color" class="block text-sm font-medium text-gray-300">Theme Color</label><input type="color" id="theme-color" value="#3b82f6" class="mt-1 block w-full rounded-md shadow-sm"></div>
+                <div><label for="theme-color" class="block text-sm font-medium text-gray-300">Theme Color</label><input type="color" id="theme-color" value="#2563eb" class="mt-1 block w-full rounded-md shadow-sm"></div>
                 
                 <div><label for="logo-url" class="block text-sm font-medium text-gray-300">Logo URL (Optional)</label><input type="text" id="logo-url" value="" placeholder="https://example.com/logo.png" class="mt-1 block w-full rounded-md shadow-sm p-2"></div>
             </div>
-             <button id="close-settings-btn" class="mt-6 w-full btn-primary text-white py-2 px-4 rounded-lg shadow-lg">Close</button>
+             <button id="close-settings-btn" class="mt-6 w-full btn-primary text-white py-2 px-4 rounded-lg">Close</button>
         </div>
     </div>
 
-    <div id="edit-app-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden backdrop-blur-sm">
-        <div class="bg-slate-800 rounded-lg shadow-2xl p-6 w-full max-w-lg border border-slate-700">
-            <h3 class="text-xl font-semibold mb-5 text-white">تعديل التطبيق</h3>
+    <div id="edit-app-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
+        <div class="bg-slate-800 rounded-lg shadow-xl p-6 w-full max-w-lg">
+            <h3 class="text-xl font-semibold mb-5">تعديل التطبيق</h3>
             <div class="space-y-4" id="edit-app-form">
                 <input type="hidden" id="edit-app-id">
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-1">نوع التطبيق</label>
-                    <div class="flex space-x-4 mt-1 bg-slate-900 p-2 rounded-md"><label class="flex items-center text-sm cursor-pointer text-slate-300 hover:text-white"><input type="radio" name="edit-app-type" value="link"> <span class="ml-2">رابط</span></label><label class="flex items-center text-sm cursor-pointer text-slate-300 hover:text-white"><input type="radio" name="edit-app-type" value="folder"> <span class="ml-2">مجلد</span></label></div>
+                    <div class="flex space-x-4 mt-1 bg-slate-900 p-2 rounded-md"><label class="flex items-center text-sm"><input type="radio" name="edit-app-type" value="link"> <span class="ml-2">رابط</span></label><label class="flex items-center text-sm"><input type="radio" name="edit-app-type" value="folder"> <span class="ml-2">مجلد</span></label></div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div><label for="edit-app-title" class="block text-sm font-medium text-slate-300">العنوان</label><input type="text" id="edit-app-title" class="mt-1 block w-full rounded-md shadow-sm p-2"></div>
@@ -322,56 +250,56 @@
                 <div><label for="edit-app-url" class="block text-sm font-medium text-slate-300">URL (href)</label><input type="text" id="edit-app-url" class="mt-1 block w-full rounded-md shadow-sm p-2"></div>
             </div>
             <div class="mt-6 flex justify-end space-x-3">
-                 <button id="close-edit-modal-btn" type="button" class="py-2 px-4 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors">إلغاء</button>
-                 <button id="save-edit-modal-btn" type="button" class="py-2 px-4 rounded-lg btn-primary text-white shadow-lg">حفظ التغييرات</button>
+                 <button id="close-edit-modal-btn" type="button" class="py-2 px-4 rounded-lg bg-slate-600 hover:bg-slate-500 text-white">إلغاء</button>
+                 <button id="save-edit-modal-btn" type="button" class="py-2 px-4 rounded-lg btn-primary text-white">حفظ التغييرات</button>
             </div>
         </div>
     </div>
     
-    <div id="icon-picker-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden backdrop-blur-sm">
-      <div class="bg-slate-800 rounded-lg shadow-2xl p-5 w-full max-w-4xl flex flex-col border border-slate-700 h-[80vh]">
+    <div id="icon-picker-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
+      <div class="bg-slate-800 rounded-lg shadow-xl p-5 w-full max-w-4xl flex flex-col">
         <div class="flex justify-between items-center mb-4">
-          <h3 class="text-xl font-semibold text-white">اختر أيقونة</h3>
-          <button id="close-icon-picker-btn" class="text-slate-400 hover:text-white text-3xl font-bold transition-colors">&times;</button>
+          <h3 class="text-xl font-semibold">اختر أيقونة</h3>
+          <button id="close-icon-picker-btn" class="text-slate-400 hover:text-white text-3xl font-bold">&times;</button>
         </div>
-        <input type="text" id="icon-picker-search" placeholder="ابحث عن أيقونة (مثال: inventory, user)..." class="w-full p-3 mb-4 rounded-md shadow-sm bg-slate-900 border-slate-700 text-white focus:border-blue-500">
-        <div id="icon-picker-grid" class="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2 text-center icon-picker-modal-grid p-2">
+        <input type="text" id="icon-picker-search" placeholder="ابحث عن أيقونة..." class="w-full p-2 mb-4 rounded-md shadow-sm">
+        <div id="icon-picker-grid" class="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2 text-center icon-picker-modal-grid">
             </div>
       </div>
     </div>
 
 
     <div class="flex flex-col md:flex-row h-screen">
-        <div id="config-panel" class="w-full md:w-1/3 p-4 bg-slate-800 shadow-2xl z-20 flex-col overflow-y-auto config-panel border-r border-slate-700">
+        <div id="config-panel" class="w-full md:w-1/3 p-4 bg-slate-800 shadow-lg flex-col overflow-y-auto config-panel">
             
-            <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-700">
-                <h2 class="text-xl font-bold text-white tracking-wide">Dashboard Generator</h2>
+            <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-700">
+                <h2 class="text-xl font-bold text-white">Dashboard Generator</h2>
                 <div class="flex items-center space-x-2">
                     <span id="sync-status" class="material-icons text-gray-500" title="جاري الاتصال...">sync_problem</span>
-                    <button id="open-settings-btn" class="text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-700 transition-colors">
+                    <button id="open-settings-btn" class="text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-700">
                         <span class="material-icons">settings</span>
                     </button>
                 </div>
             </div>
 
-            <div id="config-navigation" class="mb-4 text-sm text-gray-400 font-medium px-1"><span class="breadcrumb-link hover:text-blue-400" data-level="-1">التطبيقات الرئيسية</span></div>
-            <div id="config-views-container" class="flex-grow space-y-2">
+            <div id="config-navigation" class="mb-4 text-sm text-gray-400"><span class="breadcrumb-link" data-level="-1">التطبيقات الرئيسية</span></div>
+            <div id="config-views-container" class="flex-grow">
                 </div>
             
-            <div class="mt-4 pt-2"><button id="add-app-btn" class="w-full flex items-center justify-center text-sm py-3 px-4 rounded-lg btn-add transition-all font-semibold"><span class="material-icons mr-2 text-base">add_circle</span>Add New App</button></div>
+            <div class="mt-4"><button id="add-app-btn" class="w-full flex items-center justify-center text-sm py-2 px-4 rounded-lg btn-add transition-colors"><span class="material-icons mr-2 text-base">add</span>Add New App</button></div>
             
-            <div class="mt-auto pt-6">
-                <div class="flex items-center justify-between gap-2">
-                    <button id="generate-btn" class="flex-grow btn-primary text-white font-bold py-3 px-4 rounded-lg text-sm shadow-lg hover:shadow-blue-500/30 transform hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center"><span class="material-icons mr-2 text-sm">download</span> Download HTML</button>
-                    <div id="presence-ui" class="flex items-center space-x-1 bg-slate-900 py-2 px-3 rounded-lg border border-slate-700" title="المستخدمون المتصلون">
-                        <span class="material-icons text-gray-500 text-[10px]">circle</span>
-                        <span id="presence-count" class="font-medium text-white text-xs">0</span>
+            <div class="mt-auto pt-4">
+                <div class="flex items-center justify-between">
+                    <button id="generate-btn" class="btn-primary text-white font-bold py-2 px-4 rounded-lg text-base shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300">Generate &amp; Download HTML</button>
+                    <div id="presence-ui" class="flex items-center space-x-2" title="المستخدمون المتصلون">
+                        <span class="material-icons text-gray-500">circle</span>
+                        <span id="presence-count" class="font-medium text-white">0</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="preview-container" class="w-full md:w-2/3 bg-gray-50 overflow-hidden relative shadow-inner">
+        <div id="preview-container" class="w-full md:w-2/3 bg-gray-700 overflow-hidden">
             <div id="preview-body" class="h-full w-full">
                 </div>
         </div>
@@ -651,6 +579,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     ];
 
+    const materialIcons = ["account_balance", "account_balance_wallet", "account_circle", "add", "add_box", "add_circle_outline", "add_shopping_cart", "agriculture", "air", "alarm", "all_inbox", "analytics", "anchor", "apartment", "api", "apps", "archive", "arrow_back", "arrow_forward", "art_track", "article", "assessment", "assignment", "assignment_ind", "attach_file", "attach_money", "attractions", "autorenew", "badge", "bakery_dining", "bar_chart", "barcode", "battery_full", "bedtime", "biotech", "block", "bluetooth", "bolt", "book", "bookmark", "bookmarks", "brush", "bug_report", "build", "business", "business_center", "calculate", "calendar_today", "camera_alt", "campaign", "card_giftcard", "carpenter", "castle", "chat", "check_circle", "checkroom", "church", "class", "clear_all", "cleaning_services", "close", "cloud", "code", "comment", "compare_arrows", "compost", "computer", "connecting_airports", "construction", "contact_page", "content_copy", "content_cut", "content_paste", "conveyor_belt", "corporate_fare", "cottage", "credit_card", "currency_exchange", "dark_mode", "dashboard", "database", "delete", "delete_forever", "desktop_windows", "developer_mode", "directions_car", "disabled_by_default", "dns", "domain", "done", "download", "drag_handle", "dry_cleaning", "dynamic_feed", "eco", "edit", "edit_off", "electrical_services", "email", "emergency", "emoji_events", "energy_savings_leaf", "engineering", "enhanced_encryption", "equalizer", "error", "event", "expand_more", "explore", "extension", "face", "fact_check", "factory", "family_restroom", "fastfood", "favorite", "feed", "festival", "filter_drama", "filter_list", "fingerprint", "fitness_center", "flag", "flight", "flight_land", "flight_takeoff", "flutter_dash", "folder", "forest", "forklift", "format_align_center", "format_align_left", "format_align_right", "format_bold", "format_italic", "format_list_bulleted", "format_list_numbered", "format_paint", "format_underlined", "forum", "fullscreen", "functions", "gas_meter", "gavel", "gesture", "grade", "grass", "grid_view", "group", "handshake", "handyman", "hardware", "healing", "headset", "help", "history", "home", "hotel", "house", "how_to_reg", "how_to_vote", "https", "hvac", "image", "info", "inventory", "inventory_2", "key", "keyboard", "label", "landscape", "language", "layers", "leaderboard", "lightbulb", "link", "local_bar", "local_cafe", "local_fire_department", "local_hospital", "local_pizza", "local_shipping", "local_taxi", "location_off", "location_on", "lock", "lock_open", "login", "logout", "loyalty", "luggage", "manage_accounts", "map", "masks", "mediation", "medical_services", "medication", "meeting_room", "memory", "menu", "mic", "military_tech", "monitoring", "more_vert", "mosque", "mouse", "move_to_inbox", "movie", "museum", "music_note", "my_location", "navigation", "newspaper", "nfc", "no_encryption", "no_transfer", "notifications", "oil_barrel", "open_in_full", "open_with", "outbox", "package", "pages", "paid", "palette", "pallet", "pan_tool", "park", "password", "payment", "percent", "person", "pest_control", "pets", "phone", "photo_camera", "photo_library", "piano", "pie_chart", "place", "playlist_add", "plumbing", "point_of_sale", "policy", "poll", "power", "precision_manufacturing", "price_change", "price_check", "print", "printer", "privacy_tip", "propane_tank", "psychology", "public", "publish", "push_pin", "qr_code_scanner", "query_stats", "question_answer", "queue_music", "radio", "ramen_dining", "receipt", "receipt_long", "recycling", "refresh", "remove", "remove_shopping_cart", "reorder", "reply", "report", "request_quote", "restaurant", "restore_page", "robot", "room", "roofing", "rotate_right", "router", "rule", "sailing", "save", "savings", "scanner", "schedule", "school", "science", "search", "security", "select_all", "sell", "send", "sensors", "sensors_off", "set_meal", "settings", "settings_backup_restore", "settings_industrial", "settings_power", "share", "shield", "shopping_bag", "shopping_basket", "shopping_cart", "show_chart", "signal_cellular_alt", "smartphone", "solar_power", "sort", "speaker", "speed", "sports_basketball", "sports_esports", "sports_motorsports", "sports_score", "sports_soccer", "sports_tennis", "stadium", "star", "storage", "store", "storefront", "subject", "subway", "supervisor_account", "support", "support_agent", "swap_horiz", "swap_vert", "sync", "synagogue", "table_chart", "tablet_mac", "temple_hindu", "terminal", "text_format", "theater_comedy", "thermostat", "thumb_up", "timeline", "toc", "tour", "train", "trending_down", "trending_up", "trip_origin", "troubleshoot", "tv", "unarchive", "update", "upload_file", "usb", "vaccines", "verified_user", "video_call", "videocam", "videogame_asset", "view_list", "view_module", "view_stream", "visibility", "visibility_off", "volume_down", "volume_mute", "volume_up", "vpn_key", "warehouse", "warning", "watch", "watch_later", "water", "water_drop", "wb_sunny", "webhook", "wheelchair_pickup", "wifi", "wind_power", "work", "workspaces", "zoom_in", "zoom_out"];
+
     // ### NEW: Helper function to fix null children from RTDB ###
     const fixNullChildren = (apps) => {
         if (!apps) return;
@@ -675,7 +605,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ### NEW: Helper function to apply theme color ###
     function applyThemeColor(color) {
-        if (!color) color = '#3b82f6';
+        if (!color) color = '#2563eb';
         // Set the main theme color
         document.documentElement.style.setProperty('--theme-color', color);
         
@@ -696,7 +626,7 @@ document.addEventListener('DOMContentLoaded', () => {
             hoverColor = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
         } catch (e) {
             console.warn("Could not generate hover color", e);
-            hoverColor = '#2563eb'; // Fallback
+            hoverColor = '#3b82f6'; // Fallback
         }
         document.documentElement.style.setProperty('--theme-color-hover', hoverColor);
     }
@@ -707,7 +637,7 @@ document.addEventListener('DOMContentLoaded', () => {
             dashboardTitle: 'لوحة تطبيقات المصنع',
             pageTitle: 'لوحة تحكم المصنع',
             footerText: '© 2025 اسم المصنع الخاص بك. جميع الحقوق محفوظة.',
-            themeColor: '#3b82f6',
+            themeColor: '#2563eb',
             logoUrl: ''
         };
         
@@ -752,10 +682,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const updateAppUI=(appElement,app)=>{const a=appElement.querySelector('[data-field="url"]'),t=appElement.querySelector(".manage-sub-apps-btn");"folder"===app.type?(a.disabled=!0,a.value="#",t.disabled=!1,app.url="#"):(a.disabled=!1,t.disabled=!0)};
     
-    const renderConfigView=(appArray,parentApp=null)=>{const viewId=parentApp?`view-${parentApp.id}`:"view-root";let viewContainer=document.getElementById(viewId);viewContainer||(viewContainer=document.createElement("div"),viewContainer.id=viewId,viewContainer.className="config-panel-view space-y-1",configViewsContainer.appendChild(viewContainer)),viewContainer.innerHTML="",appArray.forEach(app=>{const hasChildren=app.children&&app.children.length>0,appElement=document.createElement("div");appElement.className="app-item",appElement.dataset.id=app.id;const childCountText="folder"===app.type&&hasChildren?`(${app.children.length})`:"";appElement.innerHTML=`<div class="accordion-header flex justify-between items-center p-2 rounded-t-lg"><span class="font-medium text-sm app-accordion-title flex-grow text-white">${app.title||"New App"} <span class="text-xs text-slate-500 ml-1">${childCountText}</span></span><div class="flex items-center space-x-1"><button class="manage-sub-apps-btn text-slate-400 hover:text-white p-1 disabled:text-slate-600 disabled:cursor-not-allowed" title="Manage Sub-Apps"><span class="material-icons text-base align-middle">folder_open</span></button><button class="remove-app-btn text-slate-500 hover:text-red-400 p-1" title="Remove App"><span class="material-icons text-base align-middle">delete_outline</span></button><span class="material-icons accordion-toggle-icon text-slate-400">expand_more</span></div></div><div class="accordion-content bg-slate-900/50"><div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-3"><div class="sm:col-span-2"><label class="block text-xs font-medium text-slate-400 mb-1">Application Type</label><div class="flex space-x-4 mt-1 bg-slate-800 p-1.5 rounded-md border border-slate-700"><label class="flex items-center text-sm cursor-pointer text-slate-300 hover:text-white"><input type="radio" name="app-type-${app.id}" value="link" class="app-type-radio" ${"link"===app.type?"checked":""}> <span class="ml-2">Link</span></label><label class="flex items-center text-sm cursor-pointer text-slate-300 hover:text-white"><input type="radio" name="app-type-${app.id}" value="folder" class="app-type-radio" ${"folder"===app.type?"checked":""}> <span class="ml-2">Folder</span></label></div></div><div><label class="block text-xs font-medium text-slate-400 mb-1">Icon Name</label><div class="relative"><input type="text" data-field="icon" class="app-input block w-full rounded-md p-1.5 text-sm pr-8 bg-slate-800 border-slate-700 text-white focus:border-blue-500" value="${app.icon||"apps"}" readonly><button type="button" class="icon-picker-trigger-btn" title="Select Icon"><span class="material-icons text-sm">edit</span></button></div><p class="text-xs text-slate-500 mt-1">* Click the edit button to select an icon.</p></div><div><label class="block text-xs font-medium text-slate-400 mb-1">URL (href)</label><input type="text" data-field="url" class="app-input block w-full rounded-md p-1.5 text-sm bg-slate-800 border-slate-700 text-white focus:border-blue-500" value="${app.url||"#"}"></div><div class="sm:col-span-2"><label class="block text-xs font-medium text-slate-400 mb-1">Title</label><input type="text" data-field="title" class="app-input block w-full rounded-md p-1.5 text-sm bg-slate-800 border-slate-700 text-white focus:border-blue-500" value="${app.title||""}"></div><div class="sm:col-span-2"><label class="block text-xs font-medium text-slate-400 mb-1">Description</label><input type="text" data-field="desc" class="app-input block w-full rounded-md p-1.5 text-sm bg-slate-800 border-slate-700 text-white focus:border-blue-500" value="${app.desc||""}"></div></div></div>`,viewContainer.appendChild(appElement),updateAppUI(appElement,app)}),Sortable.create(viewContainer,{animation:150,handle:".accordion-header",onEnd:evt=>{const[movedItem]=appArray.splice(evt.oldIndex,1);appArray.splice(evt.newIndex,0,movedItem),debouncedUpdatePreview()}})};
+    const renderConfigView=(appArray,parentApp=null)=>{const viewId=parentApp?`view-${parentApp.id}`:"view-root";let viewContainer=document.getElementById(viewId);viewContainer||(viewContainer=document.createElement("div"),viewContainer.id=viewId,viewContainer.className="config-panel-view space-y-1",configViewsContainer.appendChild(viewContainer)),viewContainer.innerHTML="",appArray.forEach(app=>{const hasChildren=app.children&&app.children.length>0,appElement=document.createElement("div");appElement.className="app-item",appElement.dataset.id=app.id;const childCountText="folder"===app.type&&hasChildren?`(${app.children.length})`:"";appElement.innerHTML=`<div class="accordion-header flex justify-between items-center p-2 rounded-t-lg"><span class="font-medium text-sm app-accordion-title flex-grow">${app.title||"New App"} <span class="text-xs text-slate-500 ml-1">${childCountText}</span></span><div class="flex items-center space-x-1"><button class="manage-sub-apps-btn text-slate-400 hover:text-white p-1 disabled:text-slate-600 disabled:cursor-not-allowed" title="Manage Sub-Apps"><span class="material-icons text-base align-middle">folder_open</span></button><button class="remove-app-btn text-slate-500 hover:text-red-400 p-1" title="Remove App"><span class="material-icons text-base align-middle">delete_outline</span></button><span class="material-icons accordion-toggle-icon">expand_more</span></div></div><div class="accordion-content"><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><div class="sm:col-span-2"><label class="block text-xs font-medium text-slate-400 mb-1">Application Type</label><div class="flex space-x-4 mt-1 bg-slate-900 p-1.5 rounded-md"><label class="flex items-center text-sm"><input type="radio" name="app-type-${app.id}" value="link" class="app-type-radio" ${"link"===app.type?"checked":""}> <span class="ml-2">Link</span></label><label class="flex items-center text-sm"><input type="radio" name="app-type-${app.id}" value="folder" class="app-type-radio" ${"folder"===app.type?"checked":""}> <span class="ml-2">Folder</span></label></div></div><div><label class="block text-xs font-medium text-slate-400 mb-1">Icon Name</label><div class="relative"><input type="text" data-field="icon" class="app-input block w-full rounded-md p-1.5 text-sm pr-8" value="${app.icon||"apps"}" readonly><button type="button" class="icon-picker-trigger-btn" title="Select Icon"><span class="material-icons text-sm">edit</span></button></div><p class="text-xs text-slate-500 mt-1">* Click the edit button to select an icon.</p></div><div><label class="block text-xs font-medium text-slate-400 mb-1">URL (href)</label><input type="text" data-field="url" class="app-input block w-full rounded-md p-1.5 text-sm" value="${app.url||"#"}"></div><div class="sm:col-span-2"><label class="block text-xs font-medium text-slate-400 mb-1">Title</label><input type="text" data-field="title" class="app-input block w-full rounded-md p-1.5 text-sm" value="${app.title||""}"></div><div class="sm:col-span-2"><label class="block text-xs font-medium text-slate-400 mb-1">Description</label><input type="text" data-field="desc" class="app-input block w-full rounded-md p-1.5 text-sm" value="${app.desc||""}"></div></div></div>`,viewContainer.appendChild(appElement),updateAppUI(appElement,app)}),Sortable.create(viewContainer,{animation:150,handle:".accordion-header",onEnd:evt=>{const[movedItem]=appArray.splice(evt.oldIndex,1);appArray.splice(evt.newIndex,0,movedItem),debouncedUpdatePreview()}})};
 
     const navigateToView=(parentApp=null)=>{parentApp?navigationStack.push(parentApp):navigationStack=[];const a=parentApp?parentApp.children:appData,t=parentApp?`view-${parentApp.id}`:"view-root";document.querySelectorAll(".config-panel-view").forEach(e=>e.classList.remove("active")),renderConfigView(a,parentApp);const view=document.getElementById(t);if(view)view.classList.add("active");renderNavigation()};
-    const renderNavigation=()=>{let e=`<span class="breadcrumb-link hover:text-blue-400" data-level="-1">التطبيقات الرئيسية</span>`;navigationStack.forEach((a,t)=>{e+=` <span class="text-slate-500 mx-1">/</span> <span class="breadcrumb-link hover:text-blue-400" data-level="${t}">${a.title}</span>`}),configNavigation.innerHTML=e};
+    const renderNavigation=()=>{let e=`<span class="breadcrumb-link" data-level="-1">التطبيقات الرئيسية</span>`;navigationStack.forEach((a,t)=>{e+=` <span class="text-slate-500 mx-1">/</span> <span class="breadcrumb-link" data-level="${t}">${a.title}</span>`}),configNavigation.innerHTML=e};
     
     // ### MODIFIED: addApp calls debouncedUpdatePreview (which now syncs) ###
     const addApp=(parentApp=null)=>{const e={id:Date.now(),type:"link",icon:"apps",title:"New App",desc:"",url:"#",children:[]},a=parentApp?parentApp.children:appData;a.push(e);const n=(e,a=appData,t=[])=>{if(!e)return[];for(const d of a)if(d.id==e)return[...t,d];else if(d.children){const c=n(e,d.children,[...t,d]);if(c)return c}return null},l=n(parentApp?.id);null!==l&&(navigationStack=l,(()=>{const e=parentApp?parentApp.children:appData,a=parentApp?`view-${parentApp.id}`:"view-root";document.querySelectorAll(".config-panel-view").forEach(e=>e.classList.remove("active")),renderConfigView(e,parentApp);const view=document.getElementById(a);if(view)view.classList.add("active");renderNavigation()})()),debouncedUpdatePreview(),setTimeout(()=>{document.querySelector(`.config-panel-view.active [data-id='${e.id}'] .accordion-header`)?.click()},50)};
@@ -794,9 +724,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const filteredIcons = materialIcons.filter(icon => icon.includes(filter.toLowerCase()));
         filteredIcons.forEach(icon => {
             const btn = document.createElement('button');
-            btn.className = 'p-2 rounded-md flex flex-col items-center justify-center icon-picker-item text-slate-300 hover:text-white';
+            btn.className = 'p-2 rounded-md flex flex-col items-center justify-center icon-picker-item';
             btn.dataset.iconName = icon;
-            btn.innerHTML = `<span class="material-icons text-3xl">${icon}</span><span class="text-xs mt-1 truncate w-full">${icon}</span>`;
+            btn.innerHTML = `<span class="material-icons text-3xl">${icon}</span><span class="text-xs mt-1 truncate">${icon}</span>`;
             iconPickerGrid.appendChild(btn);
         });
     };
