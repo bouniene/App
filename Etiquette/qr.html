@@ -1,0 +1,1889 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مولد QR Code احترافي وعشوائي - متعدد الأسطر</title>
+  <!-- مكتبة BWIP-JS لتوليد الباركود -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bwip-js/3.0.4/bwip-js-min.js"></script>
+  <!-- مكتبة أيقونات للإعدادات -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Roboto:wght@400;500;700&family=Tajawal:wght@400;700&family=Amiri&display=swap" rel="stylesheet">
+  <style>
+    /* --- إعدادات الطباعة --- */
+    @page { size: A4; margin: 0; }
+    @media print {
+      html, body { margin: 0; padding: 0; width: 210mm; height: 297mm; background: #fff; -webkit-print-color-adjust: exact; }
+      body * { visibility: hidden; }
+      #qrContainer, #qrContainer * { visibility: visible; }
+      #qrContainer { position: absolute; top: 0; left: 0; width: 100%; }
+      .container { box-shadow: none; border: none; margin: 0; page-break-after: always; }
+      .container:last-child { page-break-after: auto; }
+      .controls, .controls-right, .top-bar, .modal-overlay { display: none !important; }
+      /* إخفاء حدود الشبكة عند الطباعة دائماً */
+      .qr-item { border: none !important; }
+
+      /* --- احترام العناصر المخفية أثناء الطباعة --- */
+      .qr-item.hide-elm-text .qr-text { display: none !important; }
+      .qr-item.hide-elm-num .qr-number { display: none !important; }
+      .qr-item.hide-elm-qr .qr-content-wrapper { display: none !important; }
+      
+      .qr-content-wrapper.hide-qr .qr-canvas, 
+      .qr-content-wrapper.hide-qr .qr-logo {
+        visibility: hidden !important;
+        display: none !important;
+      }
+    }
+    
+    /* التصميم العام */
+    body {
+      font-family: 'Cairo', 'Roboto', sans-serif;
+      margin: 0;
+      padding: 0;
+      padding-top: 60px;
+      display: flex;
+      flex-direction: column;
+      height: auto;
+      background: #f0f2f5;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 15px;
+      color: #333;
+    }
+
+    /* الشريط العلوي المصغر */
+    .top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 50px;
+      background: #ffffff;
+      padding: 0 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      z-index: 1001;
+      box-sizing: border-box;
+      border-bottom: 2px solid #007bff;
+    }
+    .top-bar-left { display: flex; align-items: center; gap: 8px; }
+    .top-bar-right { display: flex; align-items: center; gap: 10px; }
+
+    .top-bar select, .top-bar input[type="text"] {
+      padding: 4px 8px; height: 30px; border: 1px solid #e1e4e8; border-radius: 4px; font-family: 'Cairo', sans-serif; font-size: 13px; outline: none;
+    }
+    .top-bar button {
+      padding: 4px 12px; height: 30px; border: none; border-radius: 4px; cursor: pointer;
+      font-family: 'Cairo', sans-serif; font-size: 12px; font-weight: 600; color: white; display: flex; align-items: center; gap: 5px;
+      transition: 0.2s;
+    }
+    .top-bar button:hover { opacity: 0.9; transform: translateY(-1px); }
+    
+    .btn-create { background: #17a2b8; }
+    .btn-delete { background: #dc3545; }
+    .btn-rename { background: #ffc107; color: #333 !important; } /* زر إعادة التسمية */
+    .btn-settings { background: #6c757d; font-size: 14px !important; }
+    .btn-download { background: #28a745; }
+    
+    /* أزرار التراجع والإعادة */
+    .btn-history { background: #fff; color: #007bff !important; border: 1px solid #007bff !important; font-size: 14px !important; padding: 4px 10px !important; }
+    .btn-history:hover { background: #007bff; color: #fff !important; }
+    .btn-history:disabled { border-color: #ccc !important; color: #ccc !important; background: #fff !important; cursor: not-allowed; }
+
+    /* لوحة التحكم الجانبية اليسرى (الإعدادات العامة) */
+    .controls {
+      position: fixed;
+      top: 55%;
+      left: 10px;
+      transform: translateY(-50%);
+      width: 200px;
+      background: #ffffff;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      border-radius: 8px;
+      z-index: 1000;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+      box-sizing: border-box;
+      max-height: 90vh;
+      overflow-y: auto;
+      font-size: 11px;
+    }
+    
+    /* لوحة التحكم الجانبية اليمنى (التحريك) */
+    .controls-right {
+      position: fixed;
+      top: 55%;
+      right: 10px;
+      transform: translateY(-50%);
+      width: 190px;
+      background: #ffffff;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      border-radius: 8px;
+      z-index: 1000;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+      box-sizing: border-box;
+      max-height: 90vh;
+      overflow-y: auto;
+      font-size: 11px;
+    }
+
+    .controls h3, .controls-right h3 {
+      font-size: 14px; margin: 0 0 10px 0; border-bottom: 1px solid #eee; padding-bottom: 5px; text-align: center;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    
+    /* تنسيق رأس لوحة التحريك مع زر التبديل */
+    .move-header {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 12px; font-weight: bold; color: #007bff; margin-bottom: 5px;
+    }
+
+    /* زر التبديل (Switch) */
+    .toggle-switch {
+      position: relative; display: inline-block; width: 30px; height: 16px;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc; transition: .4s; border-radius: 16px;
+    }
+    .slider:before {
+      position: absolute; content: ""; height: 12px; width: 12px; left: 2px; bottom: 2px;
+      background-color: white; transition: .4s; border-radius: 50%;
+    }
+    input:checked + .slider { background-color: #28a745; }
+    input:checked + .slider:before { transform: translateX(14px); }
+
+    .control-group { margin-bottom: 8px; }
+    .controls label { display: block; margin-bottom: 2px; font-weight: 600; font-size: 11px; color: #555; }
+    .controls input:not([type="checkbox"]), .controls select {
+      width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; box-sizing: border-box;
+    }
+    .controls input[type="color"] { height: 25px; padding: 1px; }
+    .range-group { display: flex; gap: 5px; background-color: #f8f9fa; padding: 5px; border-radius: 4px; margin-bottom: 8px; }
+    .controls button.action-btn {
+      width: 100%; padding: 8px; margin-top: 5px; border: none; border-radius: 4px; cursor: pointer; font-weight: 700; font-size: 12px; color: white;
+    }
+    .btn-generate { background: #007bff; }
+    .btn-print { background: #28a745; }
+
+    /* لوحات أزرار التحريك (D-Pads) */
+    .move-panel {
+      background: #f8f9fa; padding: 8px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #eee;
+    }
+    .d-pad {
+      display: grid; grid-template-columns: 25px 25px 25px; grid-template-rows: 25px 25px 25px; gap: 2px; justify-content: center;
+    }
+    .pad-btn {
+      background: #e9ecef; border: 1px solid #ced4da; border-radius: 3px; cursor: pointer;
+      font-size: 10px; color: #495057; display: flex; justify-content: center; align-items: center; transition: 0.1s;
+      user-select: none;
+    }
+    .pad-btn:active { background: #dee2e6; transform: scale(0.95); }
+    
+    .pad-up { grid-column: 2; grid-row: 1; }
+    .pad-left { grid-column: 1; grid-row: 2; }
+    .pad-right { grid-column: 3; grid-row: 2; }
+    .pad-down { grid-column: 2; grid-row: 3; }
+    .pad-center { grid-column: 2; grid-row: 2; background: #dc3545; color: white; font-size: 8px; font-weight: bold; border-color: #dc3545; }
+    
+    .pos-display {
+      text-align: center; font-size: 9px; color: #666; margin-top: 3px; font-family: monospace;
+    }
+
+    /* النافذة المنبثقة (Settings Modal & List Editor) */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); z-index: 2000;
+      display: none; justify-content: center; align-items: center;
+    }
+    /* تحديث: رفع مستوى ظهور محرر القوائم ليكون فوق الإعدادات */
+    #listEditorModal { z-index: 3000; }
+
+    .modal-content {
+      background: white; width: 450px; padding: 20px; border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      position: relative;
+      max-height: 90vh; overflow-y: auto;
+    }
+    /* مودال القائمة المخصصة أكبر */
+    .modal-content.large { width: 800px; height: 80vh; display: flex; flex-direction: column; }
+
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+    .modal-header h3 { margin: 0; color: #333; font-size: 16px; }
+    .close-modal { cursor: pointer; font-size: 20px; color: #aaa; }
+    .modal-body { flex: 1; overflow-y: auto; }
+    .modal-body label { font-size: 12px; font-weight: bold; color: #555; margin-top: 10px; display: block; }
+    .modal-body input, .modal-body textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 5px; box-sizing: border-box; font-family: monospace; }
+    .modal-help { font-size: 11px; color: #777; margin-top: 5px; background: #f9f9f9; padding: 10px; border-radius: 4px; line-height: 1.8; }
+    .tag-link { color: #007bff; font-weight: bold; cursor: pointer; text-decoration: none; border-bottom: 1px dashed #007bff; margin-right: 5px; }
+    .tag-link:hover { background-color: #e3f2fd; }
+    .modal-footer { margin-top: 20px; text-align: left; }
+    .btn-save-modal { background: #007bff; color: white; border: none; padding: 8px 20px; border-radius: 4px; cursor: pointer; }
+    .btn-reset-modal { background: #ffc107; color: #333; border: none; padding: 8px 20px; border-radius: 4px; cursor: pointer; margin-right: 10px; font-weight: bold; }
+    .btn-icon { background: #28a745; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: inline-flex; justify-content: center; align-items: center; font-size: 12px; margin-right: 5px; }
+
+    /* تنسيق أسطر النمط المتعددة */
+    .pattern-row {
+        display: flex; gap: 5px; margin-bottom: 5px; align-items: center;
+    }
+    .pattern-row input { flex: 1; }
+    .btn-remove-pattern {
+        background: #dc3545; color: white; border: none; border-radius: 4px; width: 30px; height: 30px; cursor: pointer; font-weight: bold;
+    }
+    .btn-add-pattern {
+        background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-top: 5px;
+    }
+
+    /* --- تنسيق جدول الإكسل التفاعلي --- */
+    .excel-table-container {
+        border: 1px solid #ccc; height: 400px; overflow: auto; position: relative; background: #fff;
+    }
+    .excel-table {
+        border-collapse: collapse; width: 100%; font-size: 12px; font-family: monospace; table-layout: fixed;
+    }
+    .excel-table th, .excel-table td {
+        border: 1px solid #ddd; padding: 0; min-width: 80px; height: 25px; position: relative;
+    }
+    .excel-table th {
+        background: #f8f9fa; position: sticky; top: 0; z-index: 10; text-align: center; color: #666; font-weight: bold;
+    }
+    /* الرقم الجانبي للسطر */
+    .excel-table td.row-header {
+        background: #f8f9fa; color: #666; text-align: center; width: 40px; position: sticky; right: 0; z-index: 5;
+    }
+    .excel-table td[contenteditable="true"] {
+        padding: 4px; outline: none; background: #fff;
+    }
+    .excel-table td[contenteditable="true"]:focus {
+        border: 2px solid #007bff; z-index: 2;
+    }
+
+    /* الورقة والـ QR */
+    .container {
+      width: 210mm; height: 297mm; display: grid;
+      /* سيتم تعيين هذه القيم عبر الجافا سكريبت الآن */
+      /* grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(13, 1fr); */
+      gap: 5px; background: white; padding: 1cm; box-sizing: border-box;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 20px;
+    }
+    /* الشبكة (تظهر عند التفعيل) */
+    .container.show-grid .qr-item {
+        border: 1px dashed #ccc; /* حدود خفيفة */
+        border-radius: 4px;
+    }
+
+    .qr-item { 
+      display: flex; align-items: center; justify-content: center; 
+      width: 100%; height: 100%; position: relative; 
+      /* متغيرات الموقع الافتراضية */
+      --text-pos-x: 0px; --text-pos-y: 0px;
+      --num-pos-x: 0px; --num-pos-y: 0px;
+      --qr-pos-x: 0px; --qr-pos-y: 0px; 
+      --rotation: -90deg;
+      --offset-dist: 10px;
+      /* متغيرات النصوص الجديدة */
+      --text-color: #333;
+      --text-weight: normal;
+      --text-decor: none;
+      --text-font: 'Roboto', sans-serif;
+    }
+    .qr-content-wrapper { 
+      display: flex; align-items: center; justify-content: center; 
+      position: relative; flex-direction: column; 
+      transform: translate(var(--qr-pos-x), var(--qr-pos-y));
+    }
+    canvas.qr-canvas { image-rendering: pixelated; }
+
+    /* التنسيق الافتراضي للنصوص */
+    .qr-number {
+      position: absolute; 
+      left: 50%; top: 50%; 
+      transform: 
+        translate(calc(-50% + var(--num-pos-x)), calc(-50% + var(--num-pos-y))) 
+        rotate(var(--rotation)) 
+        translateY(calc(var(--qr-size) / 2 + var(--offset-dist)));
+      font-family: var(--text-font); /* استخدام متغير الخط */
+      font-size: 9px;
+      font-weight: bold; /* الرقم العشوائي يفضل دائما غامق، لكن يمكن تعديله */
+      /* تحديث: لدعم تعدد الأسطر وتثبيت الظهور */
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap; 
+      line-height: 1.2;
+      z-index: 1; letter-spacing: 0.5px;
+      cursor: text;
+      color: var(--text-color); /* تطبيق لون النص */
+      height: auto; /* ضمان السماح بالارتفاع */
+    }
+    .qr-number::before {
+      content: ""; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 110%; height: 120%; background-color: var(--highlight-color, transparent); z-index: -1; border-radius: 4px;
+    }
+    
+    /* تنسيق خاص للأسطر داخل الرقم */
+    .qr-line-item {
+        display: block;
+        width: 100%;
+        text-align: center;
+    }
+
+    /* عند التركيز على النص للتحرير */
+    .qr-number:focus, .qr-text:focus {
+        outline: 1px dashed #007bff;
+        background: rgba(255,255,255,0.8);
+        z-index: 10;
+    }
+    
+    .qr-text {
+      position: absolute; 
+      left: 50%; top: 50%;
+      transform: 
+        translate(calc(-50% + var(--text-pos-x)), calc(-50% + var(--text-pos-y))) 
+        rotate(var(--rotation)) 
+        translateY(calc( (var(--qr-size) / 2 + var(--offset-dist)) * -1 ));
+      font-family: var(--text-font);
+      font-size: 10px;
+      font-weight: var(--text-weight); /* تطبيق الوزن */
+      text-decoration: var(--text-decor); /* تطبيق التسطير */
+      white-space: pre;
+      cursor: text;
+      color: var(--text-color);
+    }
+    
+    .qr-logo {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-90deg);
+      border-radius: 50%; object-fit: cover; background: #fff; padding: 2px; z-index: 2;
+    }
+
+    /* --- فئات التحكم في الظهور (Visibility) --- */
+    .qr-item.hide-elm-text .qr-text { display: none !important; }
+    .qr-item.hide-elm-num .qr-number { display: none !important; }
+    .qr-item.hide-elm-qr .qr-content-wrapper { display: none !important; }
+
+    /* --- وضع إخفاء QR (Global Mode) --- */
+    .qr-content-wrapper.hide-qr .qr-canvas, 
+    .qr-content-wrapper.hide-qr .qr-logo {
+      visibility: hidden; 
+    }
+    
+    .qr-item.hide-mode {
+       --offset-dist: 12px; 
+       --qr-size: 0px; 
+    }
+
+    /* تغيير التدوير بناءً على الوضع الأفقي */
+    .qr-item.horizontal-mode {
+      --rotation: 0deg;
+    }
+
+    /* نمط مجموعة تنسيق النصوص */
+    #textStyleGroup {
+      background: #fff3cd; padding: 8px; border-radius: 4px; margin-bottom: 8px; border: 1px solid #ffeeba;
+    }
+    .style-btn-row { display: flex; gap: 5px; margin-top: 5px; }
+    .style-btn-row label { flex: 1; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #ddd; border-radius: 3px; padding: 4px; cursor: pointer; font-size: 12px; }
+    .style-btn-row input:checked + span { font-weight: bold; color: #007bff; }
+
+  </style>
+</head>
+<body>
+
+  <!-- سكربت لتخزين البروفايلات المحفوظة عند التنزيل -->
+  <script id="local-profiles" type="application/json">{}</script>
+
+  <!-- نافذة محرر القوائم (List Editor Modal) -->
+  <div class="modal-overlay" id="listEditorModal">
+    <div class="modal-content large">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-table"></i> محرر القوائم المخصصة (Excel Mode)</h3>
+        <span class="close-modal" onclick="closeListEditor()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div style="background:#e9f7ef; padding:10px; border-radius:4px; margin-bottom:10px; font-size:12px;">
+            <strong>تعليمات:</strong><br>
+            - هذا الجدول يعمل مثل Excel. انقر على أي خلية للتحرير.<br>
+            - يمكنك لصق (Paste) بيانات متعددة الأعمدة/الأسطر مباشرة في الجدول.<br>
+            - الصفوف الفارغة سيتم تجاهلها تلقائياً.<br>
+            - بعد الحفظ، استخدم <code>{List:A}</code> للعمود الأول، <code>{List:B}</code> للثاني، أو <code>{List:List}</code> لدمج كامل السطر.
+        </div>
+        
+        <!-- حاوية الجدول القابل للتحرير -->
+        <div class="excel-table-container">
+            <table class="excel-table" id="excelGrid">
+                <!-- سيتم توليده بواسطة JS -->
+            </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-save-modal" onclick="saveListData()">حفظ القوائم وإغلاق</button>
+        <button style="background:#dc3545; border:none; color:white; padding:8px 15px; border-radius:4px; cursor:pointer; margin-right:5px;" onclick="clearListData()">مسح الكل</button>
+        <button style="background:#6c757d; border:none; color:white; padding:8px 15px; border-radius:4px; cursor:pointer; margin-right:5px;" onclick="addMoreRows()">+ إضافة أسطر</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- نافذة الإعدادات المتقدمة (Modal) -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-cogs"></i> إعدادات التوليد المتقدمة (Regex/Pattern)</h3>
+        <span class="close-modal" onclick="closeSettings()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <label>الرابط / البادئة (Prefix):</label>
+        <input type="text" id="baseUrl" placeholder="مثال: https://mysite.com/?id=">
+        
+        <label>نمط تكوين الكود (Pattern):</label>
+        <!-- حاوية الأنماط المتعددة -->
+        <div id="patterns-container-ui">
+            <!-- سيتم توليد الحقول هنا ديناميكياً -->
+        </div>
+        <button class="btn-add-pattern" onclick="addPatternLine()"><i class="fa-solid fa-plus"></i> إضافة سطر جديد</button>
+
+        <!-- حقل مخفي لتخزين القيمة المجمعة للحفاظ على التوافق -->
+        <input type="hidden" id="codePattern" value="{Y}-{L}{L}{N}{N}{N}{N}{N}{N}" dir="ltr">
+        
+        <div class="modal-help">
+          <strong>دليل الرموز (Placeholders):</strong><br>
+          <span class="tag-link" onclick="addTag('{Y}')">{Y}</span> : حرف السنة (2025=G)<br>
+          <span class="tag-link" onclick="addTag('{N}')">{N}</span> : رقم عشوائي<br>
+          <span class="tag-link" onclick="addTag('{L}')">{L}</span> : حرف عشوائي<br>
+          <span class="tag-link" onclick="addTag('{C}')">{C}</span> : رمز عشوائي<br>
+          <span class="tag-link" onclick="addTag('{SEQ}')">{SEQ}</span> : عداد تسلسلي (1, 2...)<br>
+          <span class="tag-link" onclick="addTag('{(0)+1}')">{(0)+1}</span> : معادلة زيادة<br>
+          <span class="tag-link" onclick="addTag('{(1)*2}')">{(1)*2}</span> : معادلة ضرب<br>
+          
+          <div style="margin-top:8px; padding-top:8px; border-top:1px dashed #ddd;">
+              <strong>القوائم المخصصة (Lists):</strong><br>
+              <button class="btn-icon" onclick="openListEditor()" title="فتح محرر القوائم">+</button> 
+              اضغط لإدارة البيانات.<br>
+              <span class="tag-link" onclick="addTag('{List:A}')">{List:A}</span> العمود الأول<br>
+              <span class="tag-link" onclick="addTag('{List:B}')">{List:B}</span> العمود الثاني<br>
+              <span class="tag-link" onclick="addTag('{List:List}')">{List:List}</span> كامل السطر
+          </div>
+        </div>
+
+        <label>حرف سنة الأساس (2025):</label>
+        <input type="text" id="baseYearChar" value="G" maxlength="1" style="width: 50px; text-align: center;">
+      </div>
+      <div class="modal-footer">
+        <button class="btn-reset-modal" onclick="resetAdvancedSettings()">استعادة الافتراضي</button>
+        <button class="btn-save-modal" onclick="closeSettings(); generateQRBatch();">حفظ وتطبيق</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- الشريط العلوي المصغر -->
+  <div class="top-bar">
+    <div class="top-bar-right">
+      <div style="font-weight:bold; color:#007bff; font-size: 14px;">QR Manager</div>
+      <button class="btn-settings" onclick="openSettings()" title="إعدادات التوليد المتقدمة">
+        <i class="fa-solid fa-gear"></i>
+      </button>
+
+      <!-- قائمة تقسيم القصاصات الجديدة -->
+      <select id="gridLayoutSelector" onchange="generateQRBatch()" style="margin-right: 5px; width: auto; font-family: 'Cairo', sans-serif;">
+          <option value="5-13" selected>65 (5*13)</option>
+          <option value="4-14">56 (4*14)</option>
+          <option value="4-11">44 (4*11)</option>
+          <option value="4-10">40 (4*10)</option>
+          <option value="3-9">27 (3*9)</option>
+          <option value="3-8">24 (3*8)</option>
+          <option value="3-7">21 (3*7)</option>
+          <option value="3-6">18 (3*6)</option>
+          <option value="2-8">16 (2*8)</option>
+          <option value="2-7">14 (2*7)</option>
+          <option value="3-4">12 (3*4)</option>
+          <option value="2-5">10 (2*5)</option>
+          <option value="2-4">8 (2*4)</option>
+          <option value="2-2">4 (2*2)</option>
+          <option value="1-2">2 (1*2)</option>
+          <option value="1-1">1 (1*1)</option>
+      </select>
+      
+      <div style="border-right:1px solid #ddd; padding-right:10px; margin-right:5px;">
+ <label style="font-size:11px; cursor:pointer; display:flex; align-items:center; gap:3px;">
+    <input type="checkbox" id="showGrid" onchange="toggleGrid()" checked> إظهار الشبكة
+</label>
+
+      </div>
+
+      <!-- أزرار التراجع والإعادة -->
+      <button class="btn-history" onclick="undoAction()" title="تراجع (Undo)">
+        <i class="fa-solid fa-rotate-left"></i>
+      </button>
+      <button class="btn-history" onclick="redoAction()" title="إعادة (Redo)">
+        <i class="fa-solid fa-rotate-right"></i>
+      </button>
+    </div>
+    
+    <div class="top-bar-left">
+      <button class="btn-download" onclick="downloadProfileHTML()"><i class="fa-solid fa-download"></i> تنزيل HTML</button>
+      <select id="profileSelector"></select>
+      <input type="text" id="newProfileName" placeholder="بروفايل جديد...">
+      <button class="btn-create" onclick="createProfile()"><i class="fa-solid fa-save"></i> حفظ</button>
+      <!-- زر تغيير الاسم -->
+      <button class="btn-rename" onclick="renameProfile()" title="تغيير اسم البروفايل"><i class="fa-solid fa-pen-to-square"></i></button>
+      <button class="btn-delete" onclick="deleteProfile()"><i class="fa-solid fa-trash"></i></button>
+    </div>
+  </div>
+
+  <!-- لوحة التحكم الجانبية اليمنى (التحريك والظهور) -->
+  <div class="controls-right">
+    <h3>تخصيص العناصر</h3>
+    
+    <!-- تحكم QR -->
+    <div class="move-panel">
+      <div class="move-header">
+        QR Code
+        <label class="toggle-switch">
+          <input type="checkbox" id="visibleQR" checked onchange="generateQRBatch()">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="d-pad">
+        <button class="pad-btn pad-up" onmousedown="startMove('qr', 'up')" onmouseup="stopMove()" onmouseleave="stopMove()"><i class="fa-solid fa-chevron-up"></i></button>
+        <button class="pad-btn pad-left" onmousedown="startMove('qr', 'left')" onmouseup="stopMove()" onmouseleave="stopMove()"><i class="fa-solid fa-chevron-left"></i></button>
+        <button class="pad-btn pad-center" onclick="resetMove('qr')" title="إعادة للصفر">R</button>
+        <button class="pad-btn pad-right" onmousedown="startMove('qr', 'right')" onmouseup="stopMove()" onmouseleave="stopMove()"><i class="fa-solid fa-chevron-right"></i></button>
+        <button class="pad-btn pad-down" onmousedown="startMove('qr', 'down')" onmouseup="stopMove()" onmouseleave="stopMove()"><i class="fa-solid fa-chevron-down"></i></button>
+      </div>
+      <div class="pos-display">X:<span id="dispQrX">0</span> Y:<span id="dispQrY">0</span></div>
+    </div>
+
+    <!-- تحكم النص -->
+    <div class="move-panel">
+      <div class="move-header">
+        النص الإضافي
+        <label class="toggle-switch">
+          <input type="checkbox" id="visibleText" checked onchange="generateQRBatch()">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="d-pad">
+        <button class="pad-btn pad-up" onmousedown="startMove('text', 'up')" onmouseup="stopMove()" onmouseleave="stopMove()"><i class="fa-solid fa-chevron-up"></i></button>
+        <button class="pad-btn pad-left" onmousedown="startMove('text', 'left')" onmouseup="stopMove()" onmouseleave="stopMove()"><i class="fa-solid fa-chevron-left"></i></button>
+        <button class="pad-btn pad-center" onclick="resetMove('text')" title="إعادة للصفر">R</button>
+        <button class="pad-btn pad-right" onmousedown="startMove('text', 'right')" onmouseup="stopMove()" onmouseleave="stopMove()"><i class="fa-solid fa-chevron-right"></i></button>
+        <button class="pad-btn pad-down" onmousedown="startMove('text', 'down')" onmouseup="stopMove()" onmouseleave="stopMove()"><i class="fa-solid fa-chevron-down"></i></button>
+      </div>
+      <div class="pos-display">X:<span id="dispTextX">0</span> Y:<span id="dispTextY">0</span></div>
+    </div>
+
+    <!-- تحكم الرقم -->
+    <div class="move-panel">
+      <div class="move-header">
+        الرقم (الكود المولد)
+        <label class="toggle-switch">
+          <input type="checkbox" id="visibleNum" checked onchange="generateQRBatch()">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="d-pad">
+        <button class="pad-btn pad-up" onmousedown="startMove('num', 'up')" onmouseup="stopMove()" onmouseleave="stopMove()"><i class="fa-solid fa-chevron-up"></i></button>
+        <button class="pad-btn pad-left" onmousedown="startMove('num', 'left')" onmouseup="stopMove()" onmouseleave="stopMove()"><i class="fa-solid fa-chevron-left"></i></button>
+        <button class="pad-btn pad-center" onclick="resetMove('num')" title="إعادة للصفر">R</button>
+        <button class="pad-btn pad-right" onmousedown="startMove('num', 'right')" onmouseup="stopMove()" onmouseleave="stopMove()"><i class="fa-solid fa-chevron-right"></i></button>
+        <button class="pad-btn pad-down" onmousedown="startMove('num', 'down')" onmouseup="stopMove()" onmouseleave="stopMove()"><i class="fa-solid fa-chevron-down"></i></button>
+      </div>
+      <div class="pos-display">X:<span id="dispNumX">0</span> Y:<span id="dispNumY">0</span></div>
+    </div>
+
+    <!-- تحديد النطاق في الصفحة -->
+    <div class="move-panel" style="text-align:center;">
+        <div class="move-header" style="justify-content:center;">عرض القصاصات (في الصفحة)</div>
+        <div style="display:flex; gap:5px; align-items:center; justify-content:center;">
+            <input type="number" id="cutFrom" value="1" min="1" max="65" style="width:40px; text-align:center; border:1px solid #ddd; border-radius:3px;" onchange="generateQRBatch()">
+            <span>إلى</span>
+            <input type="number" id="cutTo" value="65" min="1" max="65" style="width:40px; text-align:center; border:1px solid #ddd; border-radius:3px;" onchange="generateQRBatch()">
+        </div>
+    </div>
+
+    <!-- حقول مخفية لتخزين القيم -->
+    <input type="hidden" id="textPosX" value="0">
+    <input type="hidden" id="textPosY" value="0">
+    <input type="hidden" id="numPosX" value="0">
+    <input type="hidden" id="numPosY" value="0">
+    <input type="hidden" id="qrPosX" value="0">
+    <input type="hidden" id="qrPosY" value="0">
+    
+    <!-- حقل مخفي لتخزين بيانات القوائم (JSON) -->
+    <input type="hidden" id="customListData" value="[]">
+
+  </div>
+
+  <!-- لوحة التحكم الجانبية اليسرى -->
+  <div class="controls">
+    <h3>
+      تحكم سريع
+      <label style="font-size:10px; cursor:pointer; display:flex; align-items:center; gap:3px;">
+         <input type="checkbox" id="hideQR" onchange="toggleQROptions(); generateQRBatch();"> إخفاء QR
+      </label>
+    </h3>
+    
+    <div class="range-group">
+      <div style="flex:1">
+        <label>من:</label>
+        <input type="number" id="start" value="1" min="1">
+      </div>
+      <div style="flex:1">
+        <label>إلى:</label>
+        <input type="number" id="end" value="1" min="1">
+      </div>
+    </div>
+
+    <!-- مجموعة إعدادات QR التي ستختفي -->
+    <div id="qrSettingsGroup">
+      <div class="control-group">
+        <label>النوع:</label>
+        <select id="codeType">
+          <option value="qrcode">QR Code</option>
+          <option value="datamatrix">Data Matrix</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label>الشكل:</label>
+        <select id="qrShape">
+          <option value="0">مربع</option>
+          <option value="15">زوايا (15%)</option>
+          <option value="50">دائري</option>
+        </select>
+      </div>
+
+      <div style="display:flex; gap:5px;">
+        <div class="control-group" style="flex:1">
+          <label>حجم (px):</label>
+          <input type="number" id="size" value="57">
+        </div>
+      </div>
+
+      <div style="display:flex; gap:5px;">
+        <div class="control-group" style="flex:1">
+          <label>X:</label>
+          <input type="number" id="offsetX" value="-27">
+        </div>
+        <div class="control-group" style="flex:1">
+          <label>Y:</label>
+          <input type="number" id="offsetY" value="0">
+        </div>
+      </div>
+
+      <div style="display:flex; gap:5px;">
+          <div class="control-group" style="flex:1">
+              <label>الرمز:</label>
+              <input type="color" id="fgColor" value="#000000">
+          </div>
+          <div class="control-group" style="flex:1">
+              <label>الخلفية:</label>
+              <input type="color" id="bgColor" value="#ffffff">
+          </div>
+      </div>
+      
+      <div class="control-group">
+        <label>الشعار:</label>
+        <input type="file" id="logoUpload" accept="image/*" style="font-size: 10px;">
+      </div>
+    </div>
+
+    <!-- خيارات إضافية عند إخفاء QR -->
+    <div id="textOptionsGroup" style="display:none;">
+        <div style="background:#e3f2fd; padding:5px; border-radius:4px; margin-bottom:8px;">
+            <label style="cursor:pointer;">
+                <input type="checkbox" id="horizontalText" onchange="generateQRBatch()"> نصوص أفقية
+            </label>
+        </div>
+        
+        <!-- مجموعة تنسيق النصوص الجديدة -->
+        <div id="textStyleGroup">
+            <div style="text-align:center; font-weight:bold; font-size:11px; color:#856404; margin-bottom:5px;">تنسيق النصوص</div>
+            <div class="control-group">
+                <label>لون النص:</label>
+                <input type="color" id="txtColor" value="#333333" onchange="generateQRBatch()" style="height:25px; width:100%;">
+            </div>
+            <div class="control-group">
+                <label>نوع الخط:</label>
+                <select id="txtFont" onchange="generateQRBatch()">
+                    <option value="'Roboto', sans-serif">Roboto (افتراضي)</option>
+                    <option value="'Cairo', sans-serif">Cairo</option>
+                    <option value="'Tajawal', sans-serif">Tajawal</option>
+                    <option value="'Amiri', serif">Amiri</option>
+                    <option value="Arial, sans-serif">Arial</option>
+                    <option value="'Courier New', monospace">Courier New</option>
+                </select>
+            </div>
+            <div class="style-btn-row">
+                <label><input type="checkbox" id="txtBold" onchange="generateQRBatch()"> <span>B</span></label>
+                <label><input type="checkbox" id="txtUnderline" onchange="generateQRBatch()"> <span style="text-decoration:underline;">U</span></label>
+            </div>
+        </div>
+    </div>
+
+    <!-- تم نقل عرض الحروف ليظهر دائماً هنا -->
+    <div class="control-group">
+      <label>عرض الحروف:</label>
+      <input type="number" id="charCount" value="10">
+    </div>
+
+    <div class="control-group">
+      <label>نص إضافي:</label>
+      <input type="text" id="customText" value="Deco4">
+    </div>
+
+    <div style="display:flex; gap:5px;">
+      <div class="control-group" style="flex:1">
+        <label>حجم النص:</label>
+        <input type="number" id="textSize" value="10" min="6" max="24">
+      </div>
+      <div class="control-group" style="flex:1">
+        <label>حجم الرقم:</label>
+        <input type="number" id="qrNumberSize" value="9" min="6" max="24">
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>التظليل:</label>
+      <!-- تم تعديل القائمة لإضافة خيار اللون المخصص -->
+      <select id="highlightColor" onchange="handleHighlightChange()">
+        <option value="custom_picker">🎨 لون مخصص...</option>
+        <option value="transparent" selected>بدون</option>
+        <option value="#d9ead3">valpaint</option>
+        <option value="#ffcccc">أحمر</option>
+        <option value="#ccffcc">أخضر</option>
+        <option value="#cce5ff">أزرق</option>
+        <option value="#fff5cc">أصفر</option>
+        <option value="#f2ccff">أرجواني</option>
+        <option value="#e0e0e0">رمادي</option>
+      </select>
+      <!-- إدخال لون مخفي -->
+      <input type="color" id="customHighlightInput" style="display:none; position:absolute; left:0; bottom:0; width:0; height:0; opacity:0;" onchange="applyCustomHighlight()">
+      <!-- حقل لتخزين قيمة اللون المخصص -->
+      <input type="hidden" id="customHighlightStore" value="#ffffff">
+    </div>
+    
+    <button class="action-btn btn-generate" onclick="generateQRBatch()">تحديث</button>
+    <button class="action-btn btn-print" onclick="printPage()">طباعة</button>
+  </div>
+  
+  <!-- منطقة العرض -->
+  <div id="qrContainer"></div>
+  
+  <script type="module">
+    // --- تكوين Firebase ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyCaBkl26zD1jR7-P9MWv7d4uD0T0QXUrnQ",
+        authDomain: "appd-326a4.firebaseapp.com",
+        databaseURL: "https://appd-326a4-default-rtdb.firebaseio.com",
+        projectId: "appd-326a4",
+        storageBucket: "appd-326a4.firebasestorage.app",
+        messagingSenderId: "1001287247517",
+        appId: "1:1001287247517:web:4c6e2a3b1cbada09821674",
+        measurementId: "G-Y9FGL8S1N2"
+    };
+
+    let db = null; // سيتم تعيينه إذا نجح الاتصال
+    let isOffline = true; // الحالة الافتراضية
+
+    // --- الإعدادات الافتراضية للوضع الافتراضي/غير المتصل ---
+    const DEFAULT_SETTINGS = {
+        baseUrl: '',
+        codePattern: '{Y}-{L}{L}{N}{N}{N}{N}{N}{N}',
+        baseYearChar: 'G',
+        start: '1', end: '1', size: '57',
+        offsetX: '-27', offsetY: '0',
+        customText: 'Deco4', charCount: '10',
+        highlightColor: 'transparent', codeType: 'qrcode', qrShape: '0',
+        fgColor: '#000000', bgColor: '#ffffff',
+        textSize: '10', qrNumberSize: '9',
+        hideQR: false, horizontalText: false,
+        textPosX: '0', textPosY: '0', numPosX: '0', numPosY: '0', qrPosX: '0', qrPosY: '0',
+        visibleQR: true, visibleText: true, visibleNum: true,
+        cutFrom: '1', cutTo: '65',
+        customHighlightStore: '#ffffff', txtColor: '#333333', txtFont: "'Roboto', sans-serif",
+        txtBold: false, txtUnderline: false,
+        customListData: '[]',
+        gridLayoutSelector: '5-13' // القيمة الافتراضية للتقسيم
+    };
+
+    // --- محاولة تحميل Firebase بشكل ديناميكي (لدعم العمل بدون إنترنت) ---
+    async function initFirebase() {
+        try {
+            const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+            const { getDatabase, ref, set, onValue, remove, get } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js");
+            
+            const app = initializeApp(firebaseConfig);
+            db = getDatabase(app);
+            isOffline = false;
+
+            // تصدير وظائف Firebase للاستخدام العام
+            window.firebaseRef = ref;
+            window.firebaseSet = set;
+            window.firebaseOnValue = onValue;
+            window.firebaseRemove = remove;
+            window.firebaseGet = get;
+
+            console.log("Firebase loaded successfully. Mode: Online");
+            loadProfiles(); // إعادة تحميل البروفايلات مع البيانات السحابية
+
+        } catch (e) {
+            console.log("Firebase failed to load (Offline Mode active).", e);
+            isOffline = true;
+            loadProfiles(); // تحميل البروفايلات المحلية فقط
+        }
+    }
+    
+    // بدء التهيئة
+    initFirebase();
+
+    let logoURL = "";
+    let moveInterval = null;
+    let currentLocalProfiles = {};
+    let currentProfile = null;
+    const DB_ROOT = 'profiles_v2'; 
+
+    // --- متغيرات المحفوظات (Undo/Redo) ---
+    let historyStack = [];
+    let historyStep = -1;
+    let isRestoringState = false;
+
+    const profileSelector = document.getElementById('profileSelector');
+    const newProfileInput = document.getElementById('newProfileName');
+    
+    const controlInputIds = [
+        'baseUrl', 'start', 'end', 'size', 
+        'offsetX', 'offsetY', 'customText', 'charCount', 
+        'highlightColor', 'codeType', 'qrShape', 'fgColor', 'bgColor',
+        'codePattern', 'baseYearChar', 'textSize', 'qrNumberSize',
+        'hideQR', 'horizontalText',
+        'textPosX', 'textPosY', 'numPosX', 'numPosY', 'qrPosX', 'qrPosY',
+        'visibleQR', 'visibleText', 'visibleNum',
+        'cutFrom', 'cutTo',
+        'customHighlightStore', 'txtColor', 'txtFont', 'txtBold', 'txtUnderline',
+        'customListData', 'gridLayoutSelector'
+    ];
+
+    // --- وظيفة استعادة الإعدادات الافتراضية (للنافذة المنبثقة) ---
+    function resetAdvancedSettings() {
+        if(!confirm("هل أنت متأكد من استعادة الإعدادات الافتراضية لهذه النافذة؟")) return;
+        
+        document.getElementById('baseUrl').value = DEFAULT_SETTINGS.baseUrl;
+        document.getElementById('codePattern').value = DEFAULT_SETTINGS.codePattern;
+        document.getElementById('baseYearChar').value = DEFAULT_SETTINGS.baseYearChar;
+        
+        renderPatternInputs(); // تحديث واجهة الأنماط
+        generateQRBatch(); // تحديث المعاينة
+    }
+    window.resetAdvancedSettings = resetAdvancedSettings;
+
+    // --- منطق القوائم المخصصة (Lists) مع الجدول التفاعلي ---
+    function openListEditor() {
+        document.getElementById('listEditorModal').style.display = 'flex';
+        renderEditableTable();
+    }
+    window.openListEditor = openListEditor;
+
+    function closeListEditor() {
+        document.getElementById('listEditorModal').style.display = 'none';
+    }
+    window.closeListEditor = closeListEditor;
+
+    function renderEditableTable() {
+        const table = document.getElementById('excelGrid');
+        // محاولة تحميل البيانات
+        let data = [];
+        try {
+            const json = document.getElementById('customListData').value;
+            data = JSON.parse(json);
+        } catch(e) {}
+
+        if (!data || data.length < 10) {
+            // إنشاء بيانات فارغة إذا لم توجد (10 صفوف و 5 أعمدة كبداية)
+            if(!data) data = [];
+            const rowsToAdd = 10 - data.length;
+            for(let i=0; i<rowsToAdd; i++) {
+                data.push(['', '', '', '', '']);
+            }
+        }
+
+        let html = '<thead><tr><th style="width:40px;">#</th>';
+        const maxCols = Math.max(5, ...data.map(r => r.length));
+        for(let i=0; i<maxCols; i++) html += `<th>${String.fromCharCode(65+i)}</th>`;
+        html += '</tr></thead><tbody>';
+
+        data.forEach((row, idx) => {
+            html += `<tr><td class="row-header">${idx+1}</td>`;
+            for(let j=0; j<maxCols; j++) {
+                html += `<td contenteditable="true">${row[j] || ''}</td>`;
+            }
+            html += '</tr>';
+        });
+        html += '</tbody>';
+        table.innerHTML = html;
+
+        // إضافة مستمع لعملية اللصق (Paste)
+        table.addEventListener('paste', handleTablePaste);
+    }
+
+    function handleTablePaste(e) {
+        e.preventDefault();
+        // الحصول على البيانات النصية من الحافظة
+        const clipboardData = e.clipboardData || window.clipboardData;
+        const pastedData = clipboardData.getData('Text');
+        
+        // تحليل البيانات (Tabs للأعمدة، Newlines للصفوف)
+        const rows = pastedData.split(/\r\n|\n|\r/).filter(r => r.trim() !== '');
+        
+        // الحصول على الخلية المحددة حالياً
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+        let targetCell = selection.getRangeAt(0).startContainer;
+        
+        // التأكد من أننا داخل خلية td
+        while(targetCell && targetCell.nodeName !== 'TD') {
+            targetCell = targetCell.parentNode;
+        }
+        
+        if (!targetCell || targetCell.classList.contains('row-header')) return; // عدم اللصق في رأس السطر
+
+        const table = targetCell.closest('table');
+        const startRowIndex = targetCell.parentElement.rowIndex - 1; // -1 لأن الرأس هو 0
+        const startColIndex = targetCell.cellIndex - 1; // -1 لأن رقم السطر هو 0
+
+        // تحديث الجدول بالبيانات الجديدة
+        rows.forEach((rowData, rIdx) => {
+            const cols = rowData.split('\t');
+            const currentRowIndex = startRowIndex + rIdx;
+            
+            // إذا كان السطر غير موجود، نضيفه
+            let tr = table.tBodies[0].rows[currentRowIndex];
+            if (!tr) {
+                // هنا نحتاج لإعادة بناء الجدول أو إضافة سطر جديد، للتبسيط سنكتفي بالصفوف الموجودة أو نتجاوز
+                // الأفضل هو أن يقوم المستخدم بإضافة أسطر كافية أولاً، أو نقوم نحن بإضافتها.
+                // سأقوم بإضافة صف بسيط
+                const newRow = table.tBodies[0].insertRow();
+                newRow.innerHTML = `<td class="row-header">${currentRowIndex+1}</td>`;
+                // إضافة خلايا فارغة حتى نصل للعمود المطلوب
+                for(let k=0; k<startColIndex + cols.length; k++) newRow.insertCell().contentEditable = "true";
+                tr = newRow;
+            }
+
+            cols.forEach((cellData, cIdx) => {
+                const currentColIndex = startColIndex + cIdx;
+                // التأكد من وجود الخلية
+                while (tr.cells.length <= currentColIndex + 1) {
+                    const td = tr.insertCell();
+                    td.contentEditable = "true";
+                }
+                // +1 لتجاوز عمود الترقيم
+                tr.cells[currentColIndex + 1].innerText = cellData.trim();
+            });
+        });
+    }
+
+    function addMoreRows() {
+        const table = document.getElementById('excelGrid');
+        const tbody = table.tBodies[0];
+        const colCount = table.rows[0].cells.length - 1;
+        const startIdx = tbody.rows.length;
+        
+        for(let i=0; i<10; i++) {
+            const row = tbody.insertRow();
+            row.innerHTML = `<td class="row-header">${startIdx + i + 1}</td>`;
+            for(let j=0; j<colCount; j++) {
+                const td = row.insertCell();
+                td.contentEditable = "true";
+            }
+        }
+    }
+    window.addMoreRows = addMoreRows;
+
+    function saveListData() {
+        const table = document.getElementById('excelGrid');
+        const data = [];
+        
+        // قراءة البيانات من الجدول
+        if (table && table.tBodies[0]) {
+            Array.from(table.tBodies[0].rows).forEach(tr => {
+                const rowData = [];
+                let hasData = false;
+                // البدء من 1 لتجاوز عمود الترقيم
+                for(let i=1; i<tr.cells.length; i++) {
+                    const text = tr.cells[i].innerText.trim();
+                    rowData.push(text);
+                    if(text) hasData = true;
+                }
+                if (hasData) data.push(rowData); // تجاهل الأسطر الفارغة تماماً
+            });
+        }
+        
+        // حفظ البيانات في الحقل المخفي
+        document.getElementById('customListData').value = JSON.stringify(data);
+        
+        // حفظ البروفايل وتحديث التوليد
+        closeListEditor();
+        generateQRBatch();
+    }
+    window.saveListData = saveListData;
+
+    function clearListData() {
+        if(confirm("هل أنت متأكد من مسح جميع البيانات في الجدول؟")) {
+            document.getElementById('customListData').value = '[]';
+            renderEditableTable(); // إعادة رسم جدول فارغ
+        }
+    }
+    window.clearListData = clearListData;
+
+    // --- منطق اللون المخصص ---
+    function handleHighlightChange() {
+        const select = document.getElementById('highlightColor');
+        if (select.value === 'custom_picker') {
+            document.getElementById('customHighlightInput').click();
+        } else {
+            generateQRBatch();
+        }
+    }
+    window.handleHighlightChange = handleHighlightChange;
+
+    function applyCustomHighlight() {
+        const color = document.getElementById('customHighlightInput').value;
+        document.getElementById('customHighlightStore').value = color;
+        generateQRBatch();
+    }
+    window.applyCustomHighlight = applyCustomHighlight;
+
+    // --- منطق الشبكة ---
+    function toggleGrid() {
+        const show = document.getElementById('showGrid').checked;
+        const containers = document.querySelectorAll('.container');
+        containers.forEach(c => {
+            if(show) c.classList.add('show-grid');
+            else c.classList.remove('show-grid');
+        });
+    }
+    window.toggleGrid = toggleGrid;
+
+    // --- منطق التنزيل كـ HTML ---
+    function downloadProfileHTML() {
+        if (!currentProfile) {
+            alert("يرجى اختيار أو حفظ بروفايل أولاً.");
+            return;
+        }
+
+        const dataToSave = {};
+        controlInputIds.forEach(id => {
+            const element = document.getElementById(id);
+            if(element) {
+                if (element.type === 'checkbox') {
+                    dataToSave[id] = element.checked;
+                } else {
+                    dataToSave[id] = element.value;
+                }
+            }
+        });
+
+        const profilesToExport = { ...currentLocalProfiles }; 
+        profilesToExport[currentProfile] = dataToSave; 
+
+        const profilesJson = JSON.stringify(profilesToExport);
+        let htmlContent = document.documentElement.outerHTML;
+
+        htmlContent = htmlContent.replace(
+            /<script id="local-profiles" type="application\/json">.*?<\/script>/s, 
+            `<script id="local-profiles" type="application/json">${profilesJson}<\/script>`
+        );
+
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `QR_Generator_${currentProfile}.html`;
+        link.click();
+    }
+    window.downloadProfileHTML = downloadProfileHTML;
+
+    // --- منطق التحريك المستمر (Continuous Move) ---
+    function startMove(target, direction) {
+        stopMove(); 
+        moveOneStep(target, direction); 
+        moveInterval = setInterval(() => {
+            moveOneStep(target, direction);
+        }, 50);
+    }
+    window.startMove = startMove;
+
+    function stopMove() {
+        if (moveInterval) {
+            clearInterval(moveInterval);
+            moveInterval = null;
+            // عند التوقف عن التحريك، نحفظ الحالة في التاريخ
+            window.generateQRBatch(); 
+        }
+    }
+    window.stopMove = stopMove;
+
+    function moveOneStep(target, direction) {
+        let xInputId, yInputId;
+        
+        if (target === 'text') { xInputId = 'textPosX'; yInputId = 'textPosY'; }
+        else if (target === 'num') { xInputId = 'numPosX'; yInputId = 'numPosY'; }
+        else if (target === 'qr') { xInputId = 'qrPosX'; yInputId = 'qrPosY'; }
+        
+        const xInput = document.getElementById(xInputId);
+        const yInput = document.getElementById(yInputId);
+        
+        let x = parseInt(xInput.value) || 0;
+        let y = parseInt(yInput.value) || 0;
+        
+        const step = 1;
+        
+        if (direction === 'up') y -= step;
+        if (direction === 'down') y += step;
+        if (direction === 'left') x -= step;
+        if (direction === 'right') x += step;
+        
+        xInput.value = x;
+        yInput.value = y;
+        
+        updateDispValues(target);
+        applyPositionsLive();
+    }
+    
+    function resetMove(target) {
+        let xInputId, yInputId;
+        if (target === 'text') { xInputId = 'textPosX'; yInputId = 'textPosY'; }
+        else if (target === 'num') { xInputId = 'numPosX'; yInputId = 'numPosY'; }
+        else if (target === 'qr') { xInputId = 'qrPosX'; yInputId = 'qrPosY'; }
+        
+        document.getElementById(xInputId).value = 0;
+        document.getElementById(yInputId).value = 0;
+        
+        updateDispValues(target);
+        applyPositionsLive();
+        // حفظ عند إعادة التعيين
+        window.generateQRBatch();
+    }
+    window.resetMove = resetMove;
+
+    function updateDispValues(target) {
+        if (target === 'text') {
+            document.getElementById('dispTextX').textContent = document.getElementById('textPosX').value;
+            document.getElementById('dispTextY').textContent = document.getElementById('textPosY').value;
+        } else if (target === 'num') {
+            document.getElementById('dispNumX').textContent = document.getElementById('numPosX').value;
+            document.getElementById('dispNumY').textContent = document.getElementById('numPosY').value;
+        } else if (target === 'qr') {
+            document.getElementById('dispQrX').textContent = document.getElementById('qrPosX').value;
+            document.getElementById('dispQrY').textContent = document.getElementById('qrPosY').value;
+        }
+    }
+
+    function applyPositionsLive() {
+        const tx = document.getElementById('textPosX').value + 'px';
+        const ty = document.getElementById('textPosY').value + 'px';
+        const nx = document.getElementById('numPosX').value + 'px';
+        const ny = document.getElementById('numPosY').value + 'px';
+        const qx = document.getElementById('qrPosX').value + 'px';
+        const qy = document.getElementById('qrPosY').value + 'px';
+        
+        const items = document.querySelectorAll('.qr-item');
+        items.forEach(item => {
+            item.style.setProperty('--text-pos-x', tx);
+            item.style.setProperty('--text-pos-y', ty);
+            item.style.setProperty('--num-pos-x', nx);
+            item.style.setProperty('--num-pos-y', ny);
+            item.style.setProperty('--qr-pos-x', qx);
+            item.style.setProperty('--qr-pos-y', qy);
+        });
+    }
+
+    // --- وظائف التراجع والإعادة (Undo/Redo) ---
+    function pushHistory(data) {
+        if (historyStep < historyStack.length - 1) {
+            historyStack = historyStack.slice(0, historyStep + 1);
+        }
+        historyStack.push(JSON.parse(JSON.stringify(data)));
+        historyStep++;
+        if (historyStack.length > 50) {
+            historyStack.shift();
+            historyStep--;
+        }
+    }
+
+    function undoAction() {
+        if (historyStep > 0) {
+            historyStep--;
+            const previousData = historyStack[historyStep];
+            restoreState(previousData);
+        }
+    }
+    window.undoAction = undoAction;
+
+    function redoAction() {
+        if (historyStep < historyStack.length - 1) {
+            historyStep++;
+            const nextData = historyStack[historyStep];
+            restoreState(nextData);
+        }
+    }
+    window.redoAction = redoAction;
+
+    function restoreState(data) {
+        isRestoringState = true; 
+        controlInputIds.forEach(id => {
+            const element = document.getElementById(id);
+            if (element && data[id] !== undefined) {
+                if (element.type === 'checkbox') {
+                    element.checked = data[id];
+                } else {
+                    element.value = data[id];
+                }
+            }
+        });
+        updateDispValues('text');
+        updateDispValues('num');
+        updateDispValues('qr');
+        toggleQROptions();
+        window.generateQRBatch();
+        isRestoringState = false;
+    }
+
+    // --- تحديث: منطق إضافة وحذف أسطر النمط ---
+    function renderPatternInputs() {
+        const container = document.getElementById('patterns-container-ui');
+        const hiddenInput = document.getElementById('codePattern');
+        let patterns = hiddenInput.value.split('\n');
+        
+        if (patterns.length === 0 || (patterns.length === 1 && patterns[0] === '')) {
+             patterns = ['{Y}-{L}{L}{N}{N}{N}{N}{N}{N}'];
+        }
+
+        container.innerHTML = '';
+        patterns.forEach((pat, index) => {
+            const row = document.createElement('div');
+            row.className = 'pattern-row';
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = pat;
+            input.dir = "ltr";
+            input.placeholder = "نمط الكود...";
+            input.onchange = updatePatternStore;
+            input.onkeyup = updatePatternStore;
+            
+            // إضافة زر الحذف فقط إذا كان هناك أكثر من سطر
+            if (patterns.length > 1) {
+                const btnDel = document.createElement('button');
+                btnDel.className = 'btn-remove-pattern';
+                btnDel.innerHTML = '&times;';
+                btnDel.title = 'حذف هذا السطر';
+                btnDel.onclick = function() { removePatternLine(index); };
+                row.appendChild(btnDel);
+            }
+            
+            row.appendChild(input);
+            container.appendChild(row);
+        });
+    }
+
+    function updatePatternStore() {
+        const container = document.getElementById('patterns-container-ui');
+        const inputs = container.querySelectorAll('input');
+        const values = Array.from(inputs).map(inp => inp.value);
+        document.getElementById('codePattern').value = values.join('\n');
+    }
+    window.updatePatternStore = updatePatternStore;
+
+    function addPatternLine() {
+        updatePatternStore(); // حفظ الحالي
+        const currentVal = document.getElementById('codePattern').value;
+        document.getElementById('codePattern').value = currentVal + '\n';
+        renderPatternInputs();
+    }
+    window.addPatternLine = addPatternLine;
+
+    function removePatternLine(index) {
+        updatePatternStore(); // حفظ الحالي
+        let patterns = document.getElementById('codePattern').value.split('\n');
+        patterns.splice(index, 1);
+        document.getElementById('codePattern').value = patterns.join('\n');
+        renderPatternInputs();
+    }
+    window.removePatternLine = removePatternLine;
+
+    function openSettings() {
+        // تحديث واجهة الأنماط عند الفتح
+        renderPatternInputs();
+        document.getElementById('settingsModal').style.display = 'flex';
+    }
+    window.openSettings = openSettings;
+
+    function closeSettings() {
+        document.getElementById('settingsModal').style.display = 'none';
+    }
+    window.closeSettings = closeSettings;
+
+    function addTag(tag) {
+        // إضافة التاج إلى آخر حقل إدخال تم التركيز عليه أو الحقل الأخير
+        const container = document.getElementById('patterns-container-ui');
+        const inputs = container.querySelectorAll('input');
+        const lastInput = inputs[inputs.length - 1]; // افتراضياً نضيف للأخير
+        
+        lastInput.value += tag;
+        lastInput.focus();
+        updatePatternStore();
+    }
+    window.addTag = addTag;
+
+    function toggleQROptions() {
+        const isHidden = document.getElementById('hideQR').checked;
+        const qrGroup = document.getElementById('qrSettingsGroup');
+        const textGroup = document.getElementById('textOptionsGroup');
+        
+        if (isHidden) {
+            qrGroup.style.display = 'none';
+            textGroup.style.display = 'block';
+        } else {
+            qrGroup.style.display = 'block';
+            textGroup.style.display = 'none';
+        }
+    }
+    window.toggleQROptions = toggleQROptions;
+
+    // --- دالة إعادة التسمية ---
+    function renameProfile() {
+        if (isOffline) {
+            alert("لا يمكن تعديل البروفايلات في الوضع غير المتصل.");
+            return;
+        }
+        if (!currentProfile || currentProfile === 'default_profile') {
+            alert("لا يمكن إعادة تسمية هذا البروفايل.");
+            return;
+        }
+        const newName = prompt("أدخل الاسم الجديد للبروفايل:", currentProfile);
+        if (!newName || newName === currentProfile) return;
+
+        const refOld = window.firebaseRef(db, `${DB_ROOT}/${currentProfile}`);
+        const refNew = window.firebaseRef(db, `${DB_ROOT}/${newName}`);
+
+        window.firebaseGet(refOld).then(snapshot => {
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                window.firebaseSet(refNew, data).then(() => {
+                    window.firebaseRemove(refOld).then(() => {
+                        if (currentLocalProfiles[currentProfile]) {
+                            currentLocalProfiles[newName] = currentLocalProfiles[currentProfile];
+                            delete currentLocalProfiles[currentProfile];
+                        }
+                        currentProfile = newName;
+                        alert("تم تغيير اسم البروفايل بنجاح.");
+                        loadProfiles(); 
+                    });
+                });
+            }
+        });
+    }
+    window.renameProfile = renameProfile;
+
+    document.getElementById("logoUpload").addEventListener("change", function(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          logoURL = e.target.result;
+          generateQRBatch();
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    function getYearCode() {
+        const baseCharInput = document.getElementById('baseYearChar').value || 'G';
+        const baseCharCode = baseCharInput.charCodeAt(0); 
+        const baseYear = 2025;
+        const currentYear = new Date().getFullYear();
+        const charCode = baseCharCode + (currentYear - baseYear);
+        return String.fromCharCode(charCode);
+    }
+
+    function getRandomDigit() {
+        return Math.floor(Math.random() * 10).toString();
+    }
+    function getRandomLetter() {
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        return letters.charAt(Math.floor(Math.random() * letters.length));
+    }
+    function getRandomChar() {
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        return chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+
+    function generateFromPattern(pattern, absIndex) {
+        const yearChar = getYearCode();
+        let result = pattern;
+        result = result.replace(/{Y}/g, yearChar);
+        result = result.replace(/{SEQ}/g, absIndex + 1);
+        result = result.replace(/\{\((\d+)\)([\+\*])(\d+)\}/g, (match, startStr, op, stepStr) => {
+            const start = parseInt(startStr, 10);
+            const step = parseInt(stepStr, 10);
+            const n = absIndex;
+            if (op === '+') return start + (n * step);
+            else if (op === '*') return start * Math.pow(step, n);
+            return match;
+        });
+        
+        // --- معالجة القوائم المخصصة {List:X} ---
+        const listDataJson = document.getElementById('customListData').value;
+        let listData = [];
+        try { listData = JSON.parse(listDataJson); } catch(e) {}
+
+        // معالجة {List:List} لدمج كامل السطر
+        result = result.replace(/\{List:List\}/g, () => {
+            if (listData.length === 0 || absIndex >= listData.length) return "";
+            return listData[absIndex].join(' ');
+        });
+
+        // معالجة الأعمدة {List:A}
+        result = result.replace(/\{List:([A-Z])\}/g, (match, colChar) => {
+            if (listData.length === 0) return "";
+            // تحويل الحرف (A=0, B=1...) إلى رقم عمود
+            const colIndex = colChar.charCodeAt(0) - 65;
+            if (colIndex < 0) return "";
+            
+            if (absIndex < listData.length) {
+                return listData[absIndex][colIndex] || "";
+            }
+            return ""; 
+        });
+
+        result = result.replace(/{N}/g, () => getRandomDigit());
+        result = result.replace(/{L}/g, () => getRandomLetter());
+        result = result.replace(/{C}/g, () => getRandomChar());
+        return result;
+    }
+
+    function generateQRBatch() {
+      const mainHolder = document.getElementById("qrContainer");
+      mainHolder.innerHTML = "";
+
+      const baseUrl = document.getElementById("baseUrl").value; 
+      // تحديث: جلب القيمة الخام (التي قد تحتوي على أسطر جديدة)
+      const rawCodePattern = document.getElementById("codePattern").value; 
+      // تقسيم الأنماط إلى مصفوفة
+      const patternLines = rawCodePattern.split('\n').filter(line => line !== ''); 
+
+      const hideQR = document.getElementById("hideQR").checked;
+      const horizontalText = document.getElementById("horizontalText").checked;
+
+      const startPage = parseInt(document.getElementById("start").value) || 1;
+      const endPage = parseInt(document.getElementById("end").value) || 1;
+      
+      const size = parseInt(document.getElementById("size").value);
+      const offsetX = parseInt(document.getElementById("offsetX").value);
+      const offsetY = parseInt(document.getElementById("offsetY").value);
+      const charCount = parseInt(document.getElementById("charCount").value);
+      const codeType = document.getElementById("codeType").value;
+      const qrShape = document.getElementById("qrShape").value;
+      const fgColor = document.getElementById("fgColor").value;
+      const bgColor = document.getElementById("bgColor").value;
+      const customText = document.getElementById("customText").value;
+      
+      let highlightColor = document.getElementById("highlightColor").value;
+      if (highlightColor === 'custom_picker') {
+          highlightColor = document.getElementById('customHighlightStore').value;
+      }
+
+      const txtColor = document.getElementById("txtColor").value;
+      const txtFont = document.getElementById("txtFont").value;
+      const txtBold = document.getElementById("txtBold").checked;
+      const txtUnderline = document.getElementById("txtUnderline").checked;
+
+      const textSize = parseInt(document.getElementById("textSize").value) || 10;
+      const qrNumberSize = parseInt(document.getElementById("qrNumberSize").value) || 9;
+
+      const showQR = document.getElementById("visibleQR").checked;
+      const showText = document.getElementById("visibleText").checked;
+      const showNum = document.getElementById("visibleNum").checked;
+
+      const cutFrom = parseInt(document.getElementById("cutFrom").value) || 1;
+      const cutTo = parseInt(document.getElementById("cutTo").value) || 65;
+
+      const textPosX = document.getElementById("textPosX").value || 0;
+      const textPosY = document.getElementById("textPosY").value || 0;
+      const numPosX = document.getElementById("numPosX").value || 0;
+      const numPosY = document.getElementById("numPosY").value || 0;
+      const qrPosX = document.getElementById("qrPosX").value || 0;
+      const qrPosY = document.getElementById("qrPosY").value || 0;
+
+      // --- قراءة خيار تقسيم الصفحة ---
+      const layoutVal = document.getElementById('gridLayoutSelector').value || "5-13";
+      const [colsStr, rowsStr] = layoutVal.split('-');
+      const columns = parseInt(colsStr);
+      const rows = parseInt(rowsStr);
+      const countPerPage = columns * rows;
+
+      if (!isRestoringState) {
+          updateDispValues('text');
+          updateDispValues('num');
+          updateDispValues('qr');
+      }
+
+      toggleQROptions();
+      toggleGrid();
+
+      for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
+        const pageContainer = document.createElement("div");
+        pageContainer.classList.add("container");
+        if(document.getElementById('showGrid').checked) pageContainer.classList.add('show-grid');
+        
+        // تطبيق التقسيم الديناميكي
+        pageContainer.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+        pageContainer.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+        
+        for (let i = 0; i < countPerPage; i++) {
+            const absIndex = ((pageNum - 1) * countPerPage) + i;
+            const cutIndexInPage = i + 1;
+
+            // تحديث: توليد الأجزاء لكل سطر نمط
+            const generatedParts = patternLines.map(pat => generateFromPattern(pat, absIndex));
+            
+            // القيمة الكاملة للـ QR (نجمع الأسطر بمسافة أو بدون لتوليد الكود نفسه)
+            // هنا سنجمعهم بمسافة ليكون الكود المقروء بالماسح يحتوي على كل البيانات
+            const uniquePartForQR = generatedParts.join(' ');
+            const fullValue = baseUrl + uniquePartForQR;
+
+            const qrDiv = document.createElement("div");
+            qrDiv.classList.add("qr-item");
+            
+            if (cutIndexInPage < cutFrom || cutIndexInPage > cutTo) {
+                qrDiv.style.visibility = 'hidden';
+            }
+
+            if (!showQR) qrDiv.classList.add("hide-elm-qr");
+            if (!showText) qrDiv.classList.add("hide-elm-text");
+            if (!showNum) qrDiv.classList.add("hide-elm-num");
+
+            if (hideQR) {
+                qrDiv.classList.add("hide-mode");
+                if (horizontalText) qrDiv.classList.add("horizontal-mode");
+            } else {
+                qrDiv.style.left = `${offsetX}px`;
+                qrDiv.style.top = `${offsetY}px`;
+            }
+
+            qrDiv.style.setProperty('--text-pos-x', textPosX + 'px');
+            qrDiv.style.setProperty('--text-pos-y', textPosY + 'px');
+            qrDiv.style.setProperty('--num-pos-x', numPosX + 'px');
+            qrDiv.style.setProperty('--num-pos-y', numPosY + 'px');
+            qrDiv.style.setProperty('--qr-pos-x', qrPosX + 'px');
+            qrDiv.style.setProperty('--qr-pos-y', qrPosY + 'px');
+
+            qrDiv.style.setProperty('--text-color', txtColor);
+            qrDiv.style.setProperty('--text-font', txtFont);
+            qrDiv.style.setProperty('--text-weight', txtBold ? 'bold' : 'normal');
+            qrDiv.style.setProperty('--text-decor', txtUnderline ? 'underline' : 'none');
+
+            const wrapper = document.createElement("div");
+            wrapper.classList.add("qr-content-wrapper");
+            
+            if (hideQR) {
+                wrapper.classList.add("hide-qr");
+            } else {
+                wrapper.style.setProperty('--qr-size', size + 'px');
+            }
+
+            const canvas = document.createElement("canvas");
+            canvas.classList.add("qr-canvas");
+            canvas.style.borderRadius = `${qrShape}%`;
+            canvas.style.background = bgColor;
+
+            wrapper.appendChild(canvas);
+
+            try {
+                bwipjs.toCanvas(canvas, {
+                    bcid: codeType,
+                    text: fullValue,
+                    scale: 2,
+                    width: size / 2,
+                    height: size / 2,
+                    includetext: false,
+                    barcolor: fgColor.slice(1),
+                    backgroundcolor: bgColor.slice(1),
+                    padding: 0
+                });
+                canvas.style.width = `${size}px`;
+                canvas.style.height = `${size}px`;
+            } catch (e) { console.error(e); }
+
+            if (logoURL) {
+                const logoImg = document.createElement("img");
+                logoImg.src = logoURL;
+                logoImg.classList.add("qr-logo");
+                logoImg.style.width = `${size * 0.3}px`;
+                logoImg.style.height = `${size * 0.3}px`;
+                wrapper.appendChild(logoImg);
+            }
+
+            const numberLabel = document.createElement("div");
+            numberLabel.classList.add("qr-number");
+            numberLabel.contentEditable = true; 
+            numberLabel.style.setProperty('--highlight-color', highlightColor);
+            
+            // تحديث: عرض كل سطر نمط في div منفصل داخل الحاوية مع تنسيق آمن
+            numberLabel.innerHTML = ''; // تفريغ المحتوى
+            generatedParts.forEach(part => {
+                const lineDiv = document.createElement("div");
+                lineDiv.classList.add("qr-line-item"); // إضافة كلاس التنسيق
+                lineDiv.style.display = "block"; // ضمان الظهور ككتلة
+                lineDiv.style.width = "100%";
+                lineDiv.style.textAlign = "center";
+                
+                // منطق قص الحروف الآمن
+                let textToShow = part;
+                if (charCount && !isNaN(charCount) && charCount > 0) {
+                     textToShow = part.slice(-Math.abs(charCount));
+                }
+                lineDiv.textContent = textToShow;
+                
+                numberLabel.appendChild(lineDiv);
+            });
+
+            numberLabel.style.fontSize = `${qrNumberSize}px`; 
+            wrapper.appendChild(numberLabel);
+
+            if (customText) {
+                const textLabel = document.createElement("div");
+                textLabel.classList.add("qr-text");
+                textLabel.contentEditable = true;
+                textLabel.classList.add("qr-text");
+                textLabel.innerText = customText;
+                textLabel.style.fontSize = `${textSize}px`;
+                wrapper.appendChild(textLabel);
+            }
+
+            qrDiv.appendChild(wrapper);
+            pageContainer.appendChild(qrDiv);
+        }
+        mainHolder.appendChild(pageContainer);
+      }
+      
+      if (!isRestoringState) {
+          saveProfileData();
+      }
+    }
+    window.generateQRBatch = generateQRBatch;
+
+    function printPage() {
+        window.print();
+    }
+    window.printPage = printPage;
+
+    // --- تعديل: منطق تحميل البروفايلات (مدمج مع الوضع غير المتصل) ---
+    function loadProfiles() {
+        try {
+            const localData = JSON.parse(document.getElementById('local-profiles').innerHTML);
+            currentLocalProfiles = localData;
+        } catch (e) {
+            console.log("No local profiles found");
+        }
+
+        // بناء القائمة الأولية
+        const buildDropdown = (firebaseProfiles = {}) => {
+            const allProfiles = { ...firebaseProfiles, ...currentLocalProfiles };
+            const lastSelectedProfile = currentProfile;
+            profileSelector.innerHTML = '';
+            
+            // الخيار 1: الوضع الافتراضي (دائماً موجود)
+            const defaultOption = document.createElement('option');
+            defaultOption.value = "default_profile";
+            defaultOption.textContent = "الافتراضي (Default)";
+            defaultOption.style.fontWeight = "bold";
+            profileSelector.appendChild(defaultOption);
+
+            // إضافة باقي البروفايلات
+            Object.keys(allProfiles).forEach(profileName => {
+                const option = document.createElement('option');
+                option.value = profileName;
+                option.textContent = profileName + (currentLocalProfiles[profileName] ? " (محلي)" : "");
+                profileSelector.appendChild(option);
+            });
+
+            // تحديد البروفايل السابق أو الافتراضي
+            if (lastSelectedProfile && (allProfiles[lastSelectedProfile] || lastSelectedProfile === 'default_profile')) {
+                profileSelector.value = lastSelectedProfile;
+                if(lastSelectedProfile === 'default_profile') {
+                    loadProfileData('default_profile', DEFAULT_SETTINGS);
+                } else {
+                    loadProfileData(lastSelectedProfile, allProfiles[lastSelectedProfile]);
+                }
+            } else {
+                // التشغيل لأول مرة: اختيار الافتراضي
+                profileSelector.value = "default_profile";
+                loadProfileData('default_profile', DEFAULT_SETTINGS);
+            }
+        };
+
+        // إذا كنا غير متصلين، نعرض المحلي فقط
+        if (isOffline || !db) {
+            buildDropdown({});
+            return;
+        }
+
+        // إذا كنا متصلين، نجلب البيانات
+        const profilesRef = window.firebaseRef(db, DB_ROOT);
+        window.firebaseOnValue(profilesRef, (snapshot) => {
+            const firebaseProfiles = snapshot.val() || {};
+            buildDropdown(firebaseProfiles);
+        });
+    }
+
+    function loadProfileData(profileName, directData = null) {
+        if (!profileName) return;
+        currentProfile = profileName;
+        historyStack = [];
+        historyStep = -1;
+        
+        // التعامل مع الوضع الافتراضي
+        if (profileName === 'default_profile') {
+             directData = DEFAULT_SETTINGS;
+        }
+
+        const populateFields = (data) => {
+            isRestoringState = true; 
+            controlInputIds.forEach(id => {
+                const element = document.getElementById(id);
+                if (element && data[id] !== undefined) {
+                    if (element.type === 'checkbox') {
+                        element.checked = data[id];
+                    } else {
+                        element.value = data[id];
+                    }
+                }
+            });
+            pushHistory(data);
+            window.generateQRBatch();
+            isRestoringState = false;
+        };
+
+        if (directData) {
+            populateFields(directData);
+            return;
+        }
+
+        if (currentLocalProfiles[profileName]) {
+            populateFields(currentLocalProfiles[profileName]);
+            return;
+        }
+
+        if (db && !isOffline) {
+            const profileRef = window.firebaseRef(db, `${DB_ROOT}/` + profileName);
+            window.firebaseGet(profileRef).then((snapshot) => {
+                if (snapshot.exists()) {
+                    populateFields(snapshot.val());
+                }
+            });
+        }
+    }
+
+    function saveProfileData() {
+        // لا نحفظ التغييرات على البروفايل الافتراضي في قاعدة البيانات
+        if (currentProfile === 'default_profile') return;
+
+        const dataToSave = {};
+        controlInputIds.forEach(id => {
+            const element = document.getElementById(id);
+            if(element) {
+                if (element.type === 'checkbox') {
+                    dataToSave[id] = element.checked;
+                } else {
+                    dataToSave[id] = element.value;
+                }
+            }
+        });
+
+        const lastState = historyStack[historyStep];
+        if (!lastState || JSON.stringify(lastState) !== JSON.stringify(dataToSave)) {
+             pushHistory(dataToSave);
+        }
+
+        if (currentProfile) {
+            // الحفظ المحلي دائماً
+            if (currentLocalProfiles[currentProfile]) {
+                currentLocalProfiles[currentProfile] = dataToSave;
+            }
+            
+            // الحفظ السحابي إذا توفر الاتصال
+            if (db && !isOffline) {
+                const profileRef = window.firebaseRef(db, `${DB_ROOT}/` + currentProfile);
+                window.firebaseSet(profileRef, dataToSave);
+            }
+        }
+    }
+
+    window.createProfile = function() {
+        if (isOffline) {
+            // في الوضع غير المتصل، الحفظ يكون محلياً فقط (تنبيه المستخدم)
+            if(!confirm("أنت في وضع عدم الاتصال. سيتم حفظ البروفايل محلياً فقط ولن تتم مزامنته حتى تعود للاتصال. متابعة؟")) return;
+        }
+
+        const profileName = newProfileInput.value.trim();
+        if (!profileName) {
+            alert("الرجاء إدخال اسم للبروفايل.");
+            return;
+        }
+        
+        currentProfile = profileName;
+        // إضافة البروفايل الجديد للقائمة المحلية مؤقتاً
+        currentLocalProfiles[profileName] = {}; 
+        historyStack = [];
+        historyStep = -1;
+        
+        saveProfileData();
+        newProfileInput.value = '';
+        alert(`تم إنشاء وحفظ البروفايل "${profileName}"`);
+        loadProfiles(); // تحديث القائمة
+    }
+
+    window.deleteProfile = function() {
+        if (isOffline) {
+             alert("لا يمكن حذف البروفايلات السحابية في وضع عدم الاتصال.");
+             return;
+        }
+
+        const profileName = profileSelector.value;
+        if (!profileName || profileSelector.selectedOptions[0].disabled || profileName === 'default_profile') {
+            alert("الرجاء اختيار بروفايل صالح لحذفه.");
+            return;
+        }
+        if (confirm(`هل أنت متأكد من حذف البروفايل "${profileName}"؟`)) {
+            if (currentLocalProfiles[profileName]) {
+                delete currentLocalProfiles[profileName];
+                loadProfiles(); 
+            }
+            
+            if (db) {
+                const profileRef = window.firebaseRef(db, `${DB_ROOT}/` + profileName);
+                window.firebaseRemove(profileRef).then(() => {
+                    currentProfile = 'default_profile'; // العودة للافتراضي
+                    alert("تم حذف البروفايل.");
+                    loadProfiles(); 
+                });
+            }
+        }
+    }
+
+    profileSelector.addEventListener('change', () => {
+        const profileName = profileSelector.value;
+        loadProfileData(profileName);
+    });
+
+    // لا حاجة لـ window.onload لأننا استدعينا initFirebase يدوياً
+  </script>
+</body>
+</html>
