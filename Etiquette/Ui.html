@@ -2,11 +2,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>étiquette</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" xintegrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&amp;display=swap" rel="stylesheet">
+  <!-- مكتبة QR Code القديمة -->
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- مكتبة html2canvas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- إضافة مكتبة bwip-js لدعم Data Matrix -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bwip-js/3.0.4/bwip-js-min.js"></script>
   <style>
     /* أنماط الشريط الجانبي الأيسر (الآن للإعدادات .controls) */
     .controls { /* كان على اليمين، الآن على اليسار */
@@ -18,7 +22,7 @@
       width: 260px; /* عرض الشريط (كان عرض .controls الأصلي) */
       background: #f8f9fa;
       padding: 20px;
-	  background-color: #212529;
+      background-color: #212529;
       box-shadow: 2px 0 5px rgba(0,0,0,0.1); /* ظل على اليمين (لأنه الآن على اليسار) */
       z-index: 990;
       overflow-y: auto;
@@ -63,7 +67,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
       text-align: center;
       transition: transform 0.2s, box-shadow 0.2s;
       font-size: 14px;
-	  text-align: center !important;
+      text-align: center !important;
       position: relative;
     }
     .sidebar-button:hover {
@@ -134,7 +138,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
       width: 100%;
       box-sizing: border-box;
       min-width: auto;
-	  direction: ltr;
+      direction: ltr;
     }
       .controls input[type="file"] {
         padding: 3px;
@@ -267,7 +271,8 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         flex-direction: column;
         align-items: center;
     }
-    .qr-code-container img {
+    .qr-code-container img,
+    .qr-code-container canvas { /* Ensure both img and canvas fit */
         width: 55px !important;
         height: 55px !important;
         padding: 2px;
@@ -360,7 +365,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
       font-size: 1.1em;
       margin-bottom: 4px;
       word-wrap: break-word;
-	  direction: ltr;
+      direction: ltr;
     }
     .label-box .text-area .pcs { margin-bottom: 4px; }
     .label-box .text-area .dim { margin-bottom: 4px; }
@@ -451,11 +456,11 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         background-color: #6c757d;
         color: white;
     }
-	
+    
 /* --- تنسيق الجسم لضمان عدم تغطية المحتوى --- */
     body {
       /* padding-top: ارتفاع الشريط العلوي (50px) + مسافة جمالية (20px) = 70px
-         الهوامش الجانبية تبقى كما هي في كودك الأصلي لضمان مكان القوائم 
+          الهوامش الجانبية تبقى كما هي في كودك الأصلي لضمان مكان القوائم 
       */
       padding: 70px 180px 20px 280px !important; 
       transition: padding 0.3s ease-in-out;
@@ -467,11 +472,11 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         top: 0;
         height: 50px;
         background-color: #212529; /* لون خلفية الشريط */
-        
+         
         /* هنا السحر: نحدد بدايته ونهايته بناءً على عرض القوائم الجانبية */
         left: 260px;  /* يبدأ بعد القائمة اليسرى تماماً */
         right: 160px; /* ينتهي قبل القائمة اليمنى تماماً */
-        
+         
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -521,12 +526,12 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
             width: 100%;
             z-index: 900;
         }
-        
+         
         body {
             /* تعديل الهوامش في الموبايل */
             padding: 60px 15px 20px 15px !important;
         }
-        
+         
         /* إنزال أزرار فتح القوائم في الموبايل لتكون تحت الشريط */
         .mobile-toggle-btn {
             top: 60px !important; 
@@ -537,13 +542,13 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         .top-navbar { display: none !important; }
         body { padding: 0 !important; }
     }
-    
+     
     /* تنسيق الجدول (نفس السابق) */
     .codes-table-container { max-height: 65vh; overflow-y: auto; }
     .codes-table th { position: sticky; top: 0; background: #f8f9fa; z-index: 2; }
-    .code-cell { font-family: 'Courier New', monospace; font-weight: bold; color: #d63384; direction: ltr; }	
-	
-	
+    .code-cell { font-family: 'Courier New', monospace; font-weight: bold; color: #d63384; direction: ltr; }    
+    
+    
     @media print {
       body {
         padding: 0 !important;
@@ -794,7 +799,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         <span class="material-icons">menu</span>
         <span style="margin-right: 8px; font-weight: bold;">قائمة الرموز</span>
     </div>
-    
+     
     <div class="nav-links">
         <a href="Deco4.html" class="nav-sq" id="link-Deco4">Deco4</a>
         <a href="2EMEC.html" class="nav-sq" id="link-2EMEC">2EMEC</a>
@@ -811,7 +816,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
   <div class="controls">
     <div class="control-group">
 <div class="d-flex align-items-center mb-3" style="border-bottom: 1px solid #333; padding-bottom: 10px; gap: 10px;">
-    
+     
     <button id="go-back-btn" class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center" 
             style="width: 32px; height: 32px; padding: 0; border-color: #495057;" 
             title="رجوع">
@@ -822,7 +827,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         <span class="material-icons">print</span>
         Etiquette
     </h2>
-    
+     
 </div>
         <button class="action-btn print-btn" onclick="showPrintDialog()">طباعة الملصقات</button>
         <button id="batchPrintBtn" class="action-btn" style="background-color: #ffc107; color: black;">طباعة مجمعة</button>
@@ -856,7 +861,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         <option value="CIMAISE 201-1"></option>
         <option value="CIMAISE 200-1"></option>
         <option value="PLINTHE 106-1"></option>
-		<option value="PLINTHE 107-1"></option>
+        <option value="PLINTHE 107-1"></option>
         <option value="PLINTHE 105-1"></option>
         <option value="PLINTHE 104-1"></option>
         <option value="PLINTHE 103-1"></option>
@@ -866,11 +871,11 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         <option value="Wall panel 401-1"></option>
         <option value="Wall panel 400-1"></option>
         <option value="CORNIERE 351-1"></option>
-		<option value="CORNIERE 353-1"></option>
+        <option value="CORNIERE 353-1"></option>
         <option value="CORNICHE 301-1"></option>
         <option value="CORNICHE 300-1"></option>
-		    <option value="CADRE 708-1"></option>
-		    <option value="CADRE 707-1"></option>
+            <option value="CADRE 708-1"></option>
+            <option value="CADRE 707-1"></option>
         <option value="CADRE 706-1"></option>
         <option value="CADRE 705-1"></option>
         <option value="CADRE 704-1"></option>
@@ -887,9 +892,17 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
     <div class="control-group">
         <label>خيارات العرض</label>
         <div class="display-options">
-            <label> <input type="checkbox" id="toggleQrCode" checked=""> <span>إظهار QR Code</span> </label>
+            <label> <input type="checkbox" id="toggleQrCode" checked=""> <span>إظهار الكود</span> </label>
             <label> <input type="checkbox" id="toggleSameCodeInRow" checked=""> <span>رمز موحد لكل سطر</span> </label>
-		    <label> <input type="checkbox" id="toggleShapes"> <span>إظهار الأشكال الملونة</span> </label>
+            <label> <input type="checkbox" id="toggleShapes"> <span>إظهار الأشكال الملونة</span> </label>
+            
+            <label style="flex-direction: column; align-items: flex-start; gap: 2px;">
+                <span>نوع الكود الخاص بالمسح:</span>
+                <select id="codeTypeSelector" style="width: 100%; padding: 4px; border-radius: 3px; font-size: 13px;">
+                    <option value="datamatrix" selected>Data Matrix (افتراضي)</option>
+                    <option value="qrcode">QR Code</option>
+                </select>
+            </label>
         </div>
     </div>
     <div class="control-group">
@@ -914,14 +927,14 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
     <button class="sidebar-button PLINTHE" data-ref="PLINTHE 104-1">PLINTHE 104-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button PLINTHE" data-ref="PLINTHE 105-1">PLINTHE 105-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button PLINTHE" data-ref="PLINTHE 106-1">PLINTHE 106-1<span class="material-icons edit-icon">edit</span></button>
-	<button class="sidebar-button PLINTHE" data-ref="PLINTHE 107-1">PLINTHE 107-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 116-1">PLINTHE 116-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 109-1">PLINTHE 109-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 117-1">PLINTHE 117-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 102-1">PLINTHE 102-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button PLINTHE" data-ref="PLINTHE 107-1">PLINTHE 107-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 116-1">PLINTHE 116-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 109-1">PLINTHE 109-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 117-1">PLINTHE 117-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 102-1">PLINTHE 102-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button Wall-panel" data-ref="Wall panel 400-1">Wall panel 400-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button Wall-panel" data-ref="Wall panel 401-1">Wall panel 401-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button Wall-panel" data-ref="Wall panel 402-1">Wall panel 402-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button CORNICHE" data-ref="CORNICHE 300-1">CORNICHE 300-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button CORNICHE" data-ref="CORNICHE 301-1">CORNICHE 301-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button CORNICHE is-new" data-ref="CORNICHE 315-1">CORNICHE 315-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button CORNIERE" data-ref="CORNIERE 351-1">CORNIERE 351-1<span class="material-icons edit-icon">edit</span></button>
-	<button class="sidebar-button CORNIERE is-new" data-ref="CORNIERE 353-1">CORNIERE 353-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CORNIERE is-new" data-ref="CORNIERE 353-1">CORNIERE 353-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button CADRE" data-ref="CADRE 700-1">CADRE 700-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button CADRE" data-ref="CADRE 701-1">CADRE 701-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button CADRE" data-ref="CADRE 702-1">CADRE 702-1<span class="material-icons edit-icon">edit</span></button>
@@ -929,8 +942,8 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
     <button class="sidebar-button CADRE" data-ref="CADRE 704-1">CADRE 704-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button CADRE" data-ref="CADRE 705-1">CADRE 705-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button CADRE" data-ref="CADRE 706-1">CADRE 706-1<span class="material-icons edit-icon">edit</span></button>
-	<button class="sidebar-button CADRE" data-ref="CADRE 708-1">CADRE 708-1<span class="material-icons edit-icon">edit</span></button>
-	<button class="sidebar-button CADRE" data-ref="CADRE 707-1">CADRE 707-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CADRE" data-ref="CADRE 708-1">CADRE 708-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CADRE" data-ref="CADRE 707-1">CADRE 707-1<span class="material-icons edit-icon">edit</span></button>
   </div>
   <div id="editor-page">
     <div class="a4-viewport" style="height: auto;">
@@ -1006,7 +1019,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
               <div class="dim" contenteditable="true">Dimensions: 30 x 30 mm</div>
             </div>
           </div><div class="label-box hide-shapes">
-            <div class="qr-code-container" title="353-1-29,741jzca806"><canvas width="55" height="55" style="display: none;"></canvas><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADcAAAA3CAYAAACo29JGAAADC0lEQVR4AeSZQW7kMAwEB/OQ5Lz//8vuOS/JooCU06Al2XAcJJYHaDTZbMom5ds8/768vB/F+8dv1P9hWT2jpavJo3P31J6PiX/LcH/e3h57cWQfnm3vv9fXB1CHrVWmthfZuwyX4izxaji22cKegd1uej1LTY9sPVlv5fTUuHrJV8MhzoJTh3Ob3gpcF6VHHU+Fta/yqcN99WXO7j9luNHmrfVe3JuEe56j+inDHX34d/ethnPTlUcvwtZBy4Oe8Fy95rA+a5Xx9FC95KvhEGfBPYbzk9jDWzebZ/gZ1R49VW/levdw9s99c272CLsle92sOaynMjVgD9zz4DuCuW+OjSXq9rJW4+p1u6nbY81cVk/OfmK9xEJtxD9zc77hN/MynJvrPc96cvW2tqjfmrm96i3WI6fHc2Q95vAynMWZeBkut0I8GpI6qB62VYEP6CUG5sm111rVya2NeBluZLpq7V7DceWATwd4a8SCOrBWWR9sDT+oOZrAD/QQ74Vn2Avf4+ZakzN9C3WbLY+a59qj3mK9rRqa9WR04PnJ97i5nJiYbYDcUo2pJ+gD6bOuZo5vC3t6PE+2B5775pgwUTcw2q7eytlTa/ks4lonRwfECbSKrNd47pur05q7fTelDre0kU7N84iBuWfB6MAaMaAG1JOpA+oga/e8ObZxdTzzGonrQGiAKxfkwNweNKAOkwNiQAxqT2qtWquur8dzf5Zs8xP9v45zO/rV2CowT9ZLHZjL6TW2Vtk6XGucDVKf++aY9ijYIHBbxKB1HjqoNXth6gm9qdV45Jn75twEm9sLe2S31+rXY62XqyfXnqz5TDW96vA9bs4NMHEL1kdsX3rqRrPWiz2ncvo9N7Ua3+vm6vRXzk+5ufqJ5Ofkcnoe68nVa57sM+yrOfopw3HQb8Spw+VmjevQ6rIbh9VqTyvvedXhU4drvcRPaqvhmLiF0Uuy9R7ss97L1WG9vgcaUE9G72E1XM94RX0ZLrexFW8N6sZhzyIG5ltnUNcro21BL7wMt9V0xfrUw/0HAAD//4gGCwoAAAAGSURBVAMAgFVnlZuVq6UAAAAASUVORK5CYII=" style="display: block;"><div class="qr-unique-id">jzca806</div></div>
+            <div class="qr-code-container" title="353-1-29,741jzca806"><canvas width="55" height="55" style="display: none;"></canvas><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADcAAAA3CAYAAACo29JGAAAC0lEQVR4AeSZQW7kMAwEB/OQ5Lz//8vuOS/JooCU06Al2XAcJJYHaDTZbMom5ds8/768vB/F+8dv1P9hWT2jpavJo3P31J6PiX/LcH/e3h57cWQfnm3vv9fXB1CHrVWmthfZuwyX4izxaji22cKegd1uej1LTY9sPVlv5fTUuHrJV8MhzoJTh3Ob3gpcF6VHHU+Fta/yqcN99WXO7j9luNHmrfVe3JuEe56j+inDHX34d/ethnPTlUcvwtZBy4Oe8Fy95rA+a5Xx9FC95KvhEGfBPYbzk9jDWzebZ/gZ1R49VW/levdw9s99c272CLsle92sOaynMjVgD9zz4DuCuW+OjSXq9rJW4+p1u6nbY81cVk/OfmK9xEJtxD9zc77hN/MynJvrPc96cvW2tqjfmrm96i3WI6fHc2Q95vAynMWZeBkut0I8GpI6qB62VYEP6CUG5sm111rVya2NeBluZLpq7V7DceWATwd4a8SCOrBWWR9sDT+oOZrAD/QQ74Vn2Avf4+ZakzN9C3WbLY+a59qj3mK9rRqa9WR04PnJ97i5nJiYbYDcUo2pJ+gD6bOuZo5vC3t6PE+2B5775pgwUTcw2q7eytlTa/ks4lonRwfECbSKrNd47pur05q7fTelDre0kU7N84iBuWfB6MAaMaAG1JOpA+oga/e8ObZxdTzzGonrQGiAKxfkwNweNKAOkwNiQAxqT2qtWquur8dzf5Zs8xP9v45zO/rV2CowT9ZLHZjL6TW2Vtk6XGucDVKf++aY9ijYIHBbxKB1HjqoNXth6gm9qdV45Jn75twEm9sLe2S31+rXY62XqyfXnqz5TDW96vA9bs4NMHEL1kdsX3rqRrPWiz2ncvo9N7Ua3+vm6vRXzk+5ufqJ5Ofkcnoe68nVa57sM+yrOfopw3HQb8Spw+VmjevQ6rIbh9VqTyvvedXhU4drvcRPaqvhmLiF0Uuy9R7ss97L1WG9vgcaUE9G72E1XM94RX0ZLrexFW8N6sZhzyIG5ltnUNcro21BL7wMt9V0xfrUw/0HAAD//4gGCwoAAAAGSURBVAMAgFVnlZuVq6UAAAAASUVORK5CYII=" style="display: block;"><div class="qr-unique-id">jzca806</div></div>
             <div class="corner-shape" style="background-color: rgb(231, 54, 231); width: 39px; height: 39px; transform: rotate(0deg); clip-path: polygon(0px 0px, 30% 0px, 30% 70%, 0px 100%);"></div>
             <div class="bubble-container"><div class="bubble" style="background-color: rgb(231, 54, 231);"></div></div>
             <img class="bg-shape" src="https://i.imgur.com/lgEGZSH.png" alt="">
@@ -1017,7 +1030,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
               <div class="dim" contenteditable="true">Dimensions: 30 x 30 mm</div>
             </div>
           </div><div class="label-box hide-shapes">
-            <div class="qr-code-container" title="353-1-29,741jzca806"><canvas width="55" height="55" style="display: none;"></canvas><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADcAAAA3CAYAAACo29JGAAADC0lEQVR4AeSZQW7kMAwEB/OQ5Lz//8vuOS/JooCU06Al2XAcJJYHaDTZbMom5ds8/768vB/F+8dv1P9hWT2jpavJo3P31J6PiX/LcH/e3h57cWQfnm3vv9fXB1CHrVWmthfZuwyX4izxaji22cKegd1uej1LTY9sPVlv5fTUuHrJV8MhzoJTh3Ob3gpcF6VHHU+Fta/yqcN99WXO7j9luNHmrfVe3JuEe56j+inDHX34d/ethnPTlUcvwtZBy4Oe8Fy95rA+a5Xx9FC95KvhEGfBPYbzk9jDWzebZ/gZ1R49VW/levdw9s99c272CLsle92sOaynMjVgD9zz4DuCuW+OjSXq9rJW4+p1u6nbY81cVk/OfmK9xEJtxD9zc77hN/MynJvrPc96cvW2tqjfmrm96i3WI6fHc2Q95vAynMWZeBkut0I8GpI6qB62VYEP6CUG5sm111rVya2NeBluZLpq7V7DceWATwd4a8SCOrBWWR9sDT+oOZrAD/QQ74Vn2Avf4+ZakzN9C3WbLY+a59qj3mK9rRqa9WR04PnJ97i5nJiYbYDcUo2pJ+gD6bOuZo5vC3t6PE+2B5775pgwUTcw2q7eytlTa/ks4lonRwfECbSKrNd47pur05q7fTelDre0kU7N84iBuWfB6MAaMaAG1JOpA+oga/e8ObZxdTzzGonrQGiAKxfkwNweNKAOkwNiQAxqT2qtWquur8dzf5Zs8xP9v45zO/rV2CowT9ZLHZjL6TW2Vtk6XGucDVKf++aY9ijYIHBbxKB1HjqoNXth6gm9qdV45Jn75twEm9sLe2S31+rXY62XqyfXnqz5TDW96vA9bs4NMHEL1kdsX3rqRrPWiz2ncvo9N7Ua3+vm6vRXzk+5ufqJ5Ofkcnoe68nVa57sM+yrOfopw3HQb8Spw+VmjevQ6rIbh9VqTyvvedXhU4drvcRPaqvhmLiF0Uuy9R7ss97L1WG9vgcaUE9G72E1XM94RX0ZLrexFW8N6sZhzyIG5ltnUNcro21BL7wMt9V0xfrUw/0HAAD//4gGCwoAAAAGSURBVAMAgFVnlZuVq6UAAAAASUVORK5CYII=" style="display: block;"><div class="qr-unique-id">jzca806</div></div>
+            <div class="qr-code-container" title="353-1-29,741jzca806"><canvas width="55" height="55" style="display: none;"></canvas><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADcAAAA3CAYAAACo29JGAAAC0lEQVR4AeSZQW7kMAwEB/OQ5Lz//8vuOS/JooCU06Al2XAcJJYHaDTZbMom5ds8/768vB/F+8dv1P9hWT2jpavJo3P31J6PiX/LcH/e3h57cWQfnm3vv9fXB1CHrVWmthfZuwyX4izxaji22cKegd1uej1LTY9sPVlv5fTUuHrJV8MhzoJTh3Ob3gpcF6VHHU+Fta/yqcN99WXO7j9luNHmrfVe3JuEe56j+inDHX34d/ethnPTlUcvwtZBy4Oe8Fy95rA+a5Xx9FC95KvhEGfBPYbzk9jDWzebZ/gZ1R49VW/levdw9s99c272CLsle92sOaynMjVgD9zz4DuCuW+OjSXq9rJW4+p1u6nbY81cVk/OfmK9xEJtxD9zc77hN/MynJvrPc96cvW2tqjfmrm96i3WI6fHc2Q95vAynMWZeBkut0I8GpI6qB62VYEP6CUG5sm111rVya2NeBluZLpq7V7DceWATwd4a8SCOrBWWR9sDT+oOZrAD/QQ74Vn2Avf4+ZakzN9C3WbLY+a59qj3mK9rRqa9WR04PnJ97i5nJiYbYDcUo2pJ+gD6bOuZo5vC3t6PE+2B5775pgwUTcw2q7eytlTa/ks4lonRwfECbSKrNd47pur05q7fTelDre0kU7N84iBuWfB6MAaMaAG1JOpA+oga/e8ObZxdTzzGonrQGiAKxfkwNweNKAOkwNiQAxqT2qtWquur8dzf5Zs8xP9v45zO/rV2CowT9ZLHZjL6TW2Vtk6XGucDVKf++aY9ijYIHBbxKB1HjqoNXth6gm9qdV45Jn75twEm9sLe2S31+rXY62XqyfXnqz5TDW96vA9bs4NMHEL1kdsX3rqRrPWiz2ncvo9N7Ua3+vm6vRXzk+5ufqJ5Ofkcnoe68nVa57sM+yrOfopw3HQb8Spw+VmjevQ6rIbh9VqTyvvedXhU4drvcRPaqvhmLiF0Uuy9R7ss97L1WG9vgcaUE9G72E1XM94RX0ZLrexFW8N6sZhzyIG5ltnUNcro21BL7wMt9V0xfrUw/0HAAD//4gGCwoAAAAGSURBVAMAgFVnlZuVq6UAAAAASUVORK5CYII=" style="display: block;"><div class="qr-unique-id">jzca806</div></div>
             <div class="corner-shape" style="background-color: rgb(231, 54, 231); width: 39px; height: 39px; transform: rotate(0deg); clip-path: polygon(0px 0px, 30% 0px, 30% 70%, 0px 100%);"></div>
             <div class="bubble-container"><div class="bubble" style="background-color: rgb(231, 54, 231);"></div></div>
             <img class="bg-shape" src="https://i.imgur.com/lgEGZSH.png" alt="">
@@ -1187,7 +1200,56 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
     function getCornerRotation(d){const a=d.toUpperCase().trim();return a.startsWith("PLINTHE")?0:a.startsWith("CADRE")?0:a.startsWith("WALL PANEL")?15:a.startsWith("CIMAISE")?-10:a.startsWith("CORNIERE")?0:0}
     function getCornerShapeClipPath(d){const a=d.toUpperCase().trim();return a.startsWith("CIMAISE")?"polygon(0 0, 100% 0, 100% 40%, 40% 40%, 40% 100%, 0 100%)":a.startsWith("PLINTHE")?"polygon(0 0, 100% 0, 100% 100%, 30% 100%, 0 70%)":a.startsWith("CADRE")?"polygon(0 0, 100% 0, 100% 100%, 0 100%)":a.startsWith("WALL PANEL")?"polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)":a.startsWith("CORNIERE")?"polygon(0 0, 30% 0, 30% 70%, 0 100%)":"polygon(0 0, 100% 0, 0 100%)"}
     function getLastSuffixNumber(d){const a=d.trim().match(/-(\d+)$/);return a?parseInt(a[1],10):null}
-    function updateLabelQR(d,a,length){const e=d.querySelector(".qr-code-container");if(!e)return;e.innerHTML="";const t=d.querySelector(".ref").textContent||"Référence : N/A",n=t.trim(),s=calculateWeeksAndDayOfWeek("2024-05-11"),r=formatRefForQR(n),i=`${r}-${length} Ui,${s}${a}`;new QRCode(e,{text:i,width:55,height:55,colorDark:"#000000",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.L});const o=document.createElement("div");o.className="qr-unique-id",o.textContent=a,e.appendChild(o)}
+    
+    function updateLabelQR(d, a, length) {
+        const e = d.querySelector(".qr-code-container");
+        if (!e) return;
+        e.innerHTML = "";
+        
+        const t = d.querySelector(".ref").textContent || "Référence : N/A",
+              n = t.trim(),
+              s = calculateWeeksAndDayOfWeek("2024-05-11"),
+              r = formatRefForQR(n),
+              i = `${r}-${length} Ui,${s}${a}`;
+
+        const codeType = document.getElementById('codeTypeSelector').value;
+
+        if (codeType === 'qrcode') {
+            new QRCode(e, {
+                text: i,
+                width: 55,
+                height: 55,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.L
+            });
+        } else {
+            // Data Matrix Logic using BWIP-JS
+            let canvas = document.createElement('canvas');
+            try {
+                bwipjs.toCanvas(canvas, {
+                    bcid: 'datamatrix',
+                    text: i,
+                    scale: 3,
+                    height: 55,
+                    width: 55,
+                    includetext: false,
+                    backgroundcolor: 'ffffff',
+                    barcolor: '000000' // Black Color
+                });
+                // Force styling to fit container
+                canvas.style.width = '55px';
+                canvas.style.height = '55px';
+                e.appendChild(canvas);
+            } catch (err) {
+                console.error("BWIP-JS Error:", err);
+            }
+        }
+
+        const o = document.createElement("div");
+        o.className = "qr-unique-id", o.textContent = a, e.appendChild(o);
+    }
+
     function updateLabels(){const d=refInput.value.trim();if(refData.hasOwnProperty(d)){pcsInput.value=refData[d].pcs,widthInput.value=refData[d].width,thicknessInput.value=refData[d].thickness};const a=pcsInput.value.trim(),e=lengthInput.value.trim(),t=widthInput.value.trim(),n=thicknessInput.value.trim(),s=document.getElementById("toggleQrCode").checked,r=document.getElementById("toggleShapes").checked,i=document.getElementById("toggleSameCodeInRow").checked,{color:o,size:l}=getStyleAttributesFromRef(d),c=getCornerRotation(d),g=getCornerShapeClipPath(d),h=getLastSuffixNumber(d),m=h>0?h:0,p=Math.max(20,l*(h>=2?.8:1));let u="";document.querySelectorAll("#editor-page .label-box").forEach((f,b)=>{const y=f.querySelector(".ref");y.dataset.manual||(y.textContent="Référence : "+(d||"N/A"));const v=f.querySelector(".pcs");v.dataset.manual||(v.textContent="PCS/Carton: "+(a||"N/A"));const w=f.querySelector(".dim");w.dataset.manual||(w.textContent=`Dimensions: ${t||"N/A"} x ${n||"N/A"} mm`),f.classList.toggle("hide-qr",!s),f.classList.toggle("hide-shapes",!r);const L=f.querySelector(".corner-shape");L&&(L.style.backgroundColor=o,L.style.width=`${p}px`,L.style.height=`${p}px`,L.style.transform=`rotate(${c}deg)`,L.style.clipPath=g);const C=f.querySelector(".bubble-container");if(C){C.innerHTML="";for(let I=0;I<m;I++){const k=document.createElement("div");k.classList.add("bubble"),k.style.backgroundColor=o,C.appendChild(k)}}let q;i?b%2==0?(u=generateShortUniqueId(),q=u):q=u:q=generateShortUniqueId(),updateLabelQR(f,q,e)})}
     function generateAndPrintPages(d){const a=document.getElementById("print-output");a.innerHTML="";const e=document.getElementById("a4"),t=document.getElementById("toggleSameCodeInRow").checked,n=lengthInput.value.trim();for(let s=0;s<d;s++){const r=e.cloneNode(!0);r.removeAttribute("id");const i=r.querySelector(".header-text");i&&i.removeAttribute("contenteditable");let o="";const l=r.querySelectorAll(".label-box");l.forEach((c,g)=>{const h=document.querySelectorAll("#editor-page .label-box")[g];h&&(c.innerHTML=h.innerHTML,c.className=h.className);let m;t?g%2==0?(o=generateShortUniqueId(),m=o):m=o:m=generateShortUniqueId(),updateLabelQR(c,m,n)}),a.appendChild(r)}window.print()}
     function showPrintDialog(){document.getElementById("printModal").classList.add("visible")}
@@ -1336,7 +1398,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         window.print();
         hideBatchPrintModal();
     }
-	
+    
     document.addEventListener('DOMContentLoaded', () => {
         const grid = document.querySelector('#editor-page .labels-grid');
         const template = grid.querySelector('.label-box');
@@ -1368,9 +1430,9 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         refInput.addEventListener('input', () => {
             document.querySelectorAll('.label-box [data-manual]').forEach(el => el.removeAttribute('data-manual'));
             updateLabels();
-			    updateURLHash();
+            updateURLHash();
         });
-		document.querySelector('.header-text').addEventListener('input', updateURLHash);
+        document.querySelector('.header-text').addEventListener('input', updateURLHash);
         pcsInput.addEventListener('input', updateLabels);
         lengthInput.addEventListener('input', updateLabels);
         widthInput.addEventListener('input', updateLabels);
@@ -1378,6 +1440,9 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         document.getElementById('toggleQrCode').addEventListener('change', updateLabels);
         document.getElementById('toggleShapes').addEventListener('change', updateLabels);
         document.getElementById('toggleSameCodeInRow').addEventListener('change', updateLabels);
+        // Event Listener for the new Code Type Selector
+        document.getElementById('codeTypeSelector').addEventListener('change', updateLabels);
+
         document.getElementById('confirmPrintBtn').addEventListener('click', () => {
             const pageCount = parseInt(document.getElementById('pageCountInput').value, 10);
             if (pageCount > 0) {

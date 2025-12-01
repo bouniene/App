@@ -2,11 +2,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>étiquette</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" xintegrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&amp;display=swap" rel="stylesheet">
+  <!-- مكتبة QR Code القديمة -->
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- مكتبة Data Matrix الجديدة -->
+  <script src="https://cdn.jsdelivr.net/npm/bwip-js@3.0.4/dist/bwip-js-min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     /* أنماط الشريط الجانبي الأيسر (الآن للإعدادات .controls) */
     .controls { /* كان على اليمين، الآن على اليسار */
@@ -18,7 +21,7 @@
       width: 260px; /* عرض الشريط (كان عرض .controls الأصلي) */
       background: #f8f9fa;
       padding: 20px;
-	  background-color: #212529;
+      background-color: #212529;
       box-shadow: 2px 0 5px rgba(0,0,0,0.1); /* ظل على اليمين (لأنه الآن على اليسار) */
       z-index: 990;
       overflow-y: auto;
@@ -63,7 +66,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
       text-align: center;
       transition: transform 0.2s, box-shadow 0.2s;
       font-size: 14px;
-	  text-align: center !important;
+      text-align: center !important;
       position: relative;
     }
     .sidebar-button:hover {
@@ -134,7 +137,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
       width: 100%;
       box-sizing: border-box;
       min-width: auto;
-	  direction: ltr;
+      direction: ltr;
     }
       .controls input[type="file"] {
         padding: 3px;
@@ -267,7 +270,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         flex-direction: column;
         align-items: center;
     }
-    .qr-code-container img {
+    .qr-code-container img, .qr-code-container canvas {
         width: 55px !important;
         height: 55px !important;
         padding: 2px;
@@ -360,7 +363,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
       font-size: 1.1em;
       margin-bottom: 4px;
       word-wrap: break-word;
-	  direction: ltr;
+      direction: ltr;
     }
     .label-box .text-area .pcs { margin-bottom: 4px; }
     .label-box .text-area .dim { margin-bottom: 4px; }
@@ -451,12 +454,12 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         background-color: #6c757d;
         color: white;
     }
-	
-	
-	/* --- تنسيق الجسم لضمان عدم تغطية المحتوى --- */
+    
+    
+    /* --- تنسيق الجسم لضمان عدم تغطية المحتوى --- */
     body {
       /* padding-top: ارتفاع الشريط العلوي (50px) + مسافة جمالية (20px) = 70px
-         الهوامش الجانبية تبقى كما هي في كودك الأصلي لضمان مكان القوائم 
+          الهوامش الجانبية تبقى كما هي في كودك الأصلي لضمان مكان القوائم 
       */
       padding: 70px 180px 20px 280px !important; 
       transition: padding 0.3s ease-in-out;
@@ -543,12 +546,12 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
     .codes-table-container { max-height: 65vh; overflow-y: auto; }
     .codes-table th { position: sticky; top: 0; background: #f8f9fa; z-index: 2; }
     .code-cell { font-family: 'Courier New', monospace; font-weight: bold; color: #d63384; direction: ltr; }
-	
-	
-	
-	
-	
-	
+    
+    
+    
+    
+    
+    
     @media print {
       body {
         padding: 0 !important;
@@ -802,7 +805,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
     
     <div class="nav-links">
         <a href="2EMEC.html" class="nav-sq" id="link-2EMEC">2EMEC</a>
-		<a href="valpaint.html" class="nav-sq" id="link-valpaint">valpaint</a>
+        <a href="valpaint.html" class="nav-sq" id="link-valpaint">valpaint</a>
         <a href="Ui.html" class="nav-sq" id="link-Ui">Ui</a>
     </div>
   </div>
@@ -861,7 +864,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         <option value="CIMAISE 201-1"></option>
         <option value="CIMAISE 200-1"></option>
         <option value="PLINTHE 106-1"></option>
-		<option value="PLINTHE 107-1"></option>
+        <option value="PLINTHE 107-1"></option>
         <option value="PLINTHE 105-1"></option>
         <option value="PLINTHE 104-1"></option>
         <option value="PLINTHE 103-1"></option>
@@ -871,11 +874,11 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         <option value="Wall panel 401-1"></option>
         <option value="Wall panel 400-1"></option>
         <option value="CORNIERE 351-1"></option>
-		<option value="CORNIERE 353-1"></option>
+        <option value="CORNIERE 353-1"></option>
         <option value="CORNICHE 301-1"></option>
         <option value="CORNICHE 300-1"></option>
-		    <option value="CADRE 708-1"></option>
-		    <option value="CADRE 707-1"></option>
+            <option value="CADRE 708-1"></option>
+            <option value="CADRE 707-1"></option>
         <option value="CADRE 706-1"></option>
         <option value="CADRE 705-1"></option>
         <option value="CADRE 704-1"></option>
@@ -890,11 +893,18 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
     <div class="control-group"> <label for="widthInput">العرض (مم):</label> <input type="text" id="widthInput" value="100" placeholder="مثال: 64"> </div>
     <div class="control-group"> <label for="thicknessInput">السمك (مم):</label> <input type="text" id="thicknessInput" value="12" placeholder="مثال: 39"> </div>
     <div class="control-group">
+        <label for="codeTypeSelect">نوع الكود:</label>
+        <select id="codeTypeSelect">
+            <option value="datamatrix" selected>Data Matrix</option>
+            <option value="qrcode">QR Code</option>
+        </select>
+    </div>
+    <div class="control-group">
         <label>خيارات العرض</label>
         <div class="display-options">
-            <label> <input type="checkbox" id="toggleQrCode" checked=""> <span>إظهار QR Code</span> </label>
+            <label> <input type="checkbox" id="toggleQrCode" checked=""> <span>إظهار الكود</span> </label>
             <label> <input type="checkbox" id="toggleSameCodeInRow" checked=""> <span>رمز موحد لكل سطر</span> </label>
-		    <label> <input type="checkbox" id="toggleShapes"> <span>إظهار الأشكال الملونة</span> </label>
+            <label> <input type="checkbox" id="toggleShapes"> <span>إظهار الأشكال الملونة</span> </label>
         </div>
     </div>
     <div class="control-group">
@@ -919,14 +929,14 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
     <button class="sidebar-button PLINTHE" data-ref="PLINTHE 104-1">PLINTHE 104-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button PLINTHE" data-ref="PLINTHE 105-1">PLINTHE 105-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button PLINTHE" data-ref="PLINTHE 106-1">PLINTHE 106-1<span class="material-icons edit-icon">edit</span></button>
-	<button class="sidebar-button PLINTHE" data-ref="PLINTHE 107-1">PLINTHE 107-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 116-1">PLINTHE 116-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 109-1">PLINTHE 109-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 117-1">PLINTHE 117-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 102-1">PLINTHE 102-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button PLINTHE" data-ref="PLINTHE 107-1">PLINTHE 107-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 116-1">PLINTHE 116-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 109-1">PLINTHE 109-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 117-1">PLINTHE 117-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 102-1">PLINTHE 102-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button Wall-panel" data-ref="Wall panel 400-1">Wall panel 400-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button Wall-panel" data-ref="Wall panel 401-1">Wall panel 401-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button Wall-panel" data-ref="Wall panel 402-1">Wall panel 402-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button CORNICHE" data-ref="CORNICHE 300-1">CORNICHE 300-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button CORNICHE" data-ref="CORNICHE 301-1">CORNICHE 301-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button CORNICHE is-new" data-ref="CORNICHE 315-1">CORNICHE 315-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button CORNIERE" data-ref="CORNIERE 351-1">CORNIERE 351-1<span class="material-icons edit-icon">edit</span></button>
-	<button class="sidebar-button CORNIERE is-new" data-ref="CORNIERE 353-1">CORNIERE 353-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CORNIERE is-new" data-ref="CORNIERE 353-1">CORNIERE 353-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button CADRE" data-ref="CADRE 700-1">CADRE 700-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button CADRE" data-ref="CADRE 701-1">CADRE 701-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button CADRE" data-ref="CADRE 702-1">CADRE 702-1<span class="material-icons edit-icon">edit</span></button>
@@ -934,8 +944,8 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
     <button class="sidebar-button CADRE" data-ref="CADRE 704-1">CADRE 704-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button CADRE" data-ref="CADRE 705-1">CADRE 705-1<span class="material-icons edit-icon">edit</span></button>
     <button class="sidebar-button CADRE" data-ref="CADRE 706-1">CADRE 706-1<span class="material-icons edit-icon">edit</span></button>
-	<button class="sidebar-button CADRE" data-ref="CADRE 708-1">CADRE 708-1<span class="material-icons edit-icon">edit</span></button>
-	<button class="sidebar-button CADRE" data-ref="CADRE 707-1">CADRE 707-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CADRE" data-ref="CADRE 708-1">CADRE 708-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CADRE" data-ref="CADRE 707-1">CADRE 707-1<span class="material-icons edit-icon">edit</span></button>
   </div>
   <div id="editor-page">
     <div class="a4-viewport" style="height: auto;">
@@ -945,7 +955,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
           <img id="headerLogo" class="header-logo" src="" alt="Header Logo" style="display: none;">
         </div>
         <div class="labels-grid"><div class="label-box hide-shapes">
-            <div class="qr-code-container" title="353-1-29,741d82t043"><canvas width="55" height="55" style="display: none;"></canvas><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADcAAAA3CAYAAACo29JGAAAC8klEQVR4AeyZQW7dMAxEP/5BknXvf5d2nZOkeECeO6BlWXUNt9ZvgMGInCFtUk42eX5/e/s8is+vn179l2X1jFbenNzrO6I9HxP/LMN9+/h4jOLIPuxda83DVTNGG4U18DIcwWxYDffj/f3Rwsjgbje99jJXPerJeiunp56rl3g1HMlZcOpwbtPbgeui9NQ8MX7A+QycOtwZL3Rmj1OGY9uJfEHzmbvqfMpwV73s7z5nNZybrtxr3Ps9UpPtW2PyvWeg4dkCesVquGq4c/waw/mZjPDebWYPP6O9GnTrOCfMj3DWzX1zbvYIuyVr3awxrGeLrYHxA72c/wRz3xwbS7g1ObV61iO7ZWPYGjVjNGAerho6aOXN9fjv3BxvfAGebCzhM92IcXo8V49xcvUa2ze9NWcsp9c+sh5jeO6by21wdgOV0SrYDtDLucIaPTU2n2wPc8bJaj2e++Z6k99dW/6g1EHyE+CcOjEwVz81Y1gPflBjckJNpn4UrR5zf5Zuxm2NsDVyr8aNjnh7fdDslUwe2D957ptj6h7cRG7Lc61refXUGr3JeswZ28N8sppsDTz3zTFhwg24HTXzcNWqRx3Gn9Arp4YftDR85pPJb2Hum9uauubZqHBzeswbt7h6apw1VfN55pOta3n+35zbuRs/84rz7CDmvHbYnJ4e66UOGPdq1PTK5kd57s+Sbf7C9r+Oc1v6M7d11uv2jeVWnVrl9Fat1X/um3PiI+wm3aJxsn3NGcvWwnpkPcYt7nnmvjm3weZGYY3s9lr1etRqbC2sJtca8zB+wBnoJSde4+aYHjh1ZbQjqButPdRhtfpsY3UYP+C8hde6ua0t3DF/ys3xeQA/n2SXgg6M9RjD6AlyIHOea32NqTtlOBr9i7h8ODcv51Ja2089z616dPPw5cPxAldhNRwTt9B7obrxrLeueoyTrTNnXHuow2otXg3XMt01twzHFkaxN2yrj7egttcDXa9Mbg964WW4vaI76lMP9xMAAP//wdjmTQAAAAZJREFUAwC7TkPUXP8INAAAAABJRU5ErkJggg==" style="display: block;"><div class="qr-unique-id">d82t043</div></div>
+            <div class="qr-code-container" title="353-1-29,741d82t043"><div class="qr-unique-id">d82t043</div></div>
             <div class="corner-shape" style="background-color: rgb(231, 54, 231); width: 39px; height: 39px; transform: rotate(0deg); clip-path: polygon(0px 0px, 30% 0px, 30% 70%, 0px 100%);"></div>
             <div class="bubble-container"><div class="bubble" style="background-color: rgb(231, 54, 231);"></div></div>
             <img class="bg-shape" src="https://i.imgur.com/lgEGZSH.png" alt="">
@@ -956,7 +966,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
               <div class="dim" contenteditable="true">Dimensions: 30 x 30 mm</div>
             </div>
           </div><div class="label-box hide-shapes">
-            <div class="qr-code-container" title="353-1-29,741d82t043"><canvas width="55" height="55" style="display: none;"></canvas><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADcAAAA3CAYAAACo29JGAAAC8klEQVR4AeyZQW7dMAxEP/5BknXvf5d2nZOkeECeO6BlWXUNt9ZvgMGInCFtUk42eX5/e/s8is+vn179l2X1jFbenNzrO6I9HxP/LMN9+/h4jOLIPuxda83DVTNGG4U18DIcwWxYDffj/f3Rwsjgbje99jJXPerJeiunp56rl3g1HMlZcOpwbtPbgeui9NQ8MX7A+QycOtwZL3Rmj1OGY9uJfEHzmbvqfMpwV73s7z5nNZybrtxr3Ps9UpPtW2PyvWeg4dkCesVquGq4c/waw/mZjPDebWYPP6O9GnTrOCfMj3DWzX1zbvYIuyVr3awxrGeLrYHxA72c/wRz3xwbS7g1ObV61iO7ZWPYGjVjNGAerho6aOXN9fjv3BxvfAGebCzhM92IcXo8V49xcvUa2ze9NWcsp9c+sh5jeO6by21wdgOV0SrYDtDLucIaPTU2n2wPc8bJaj2e++Z6k99dW/6g1EHyE+CcOjEwVz81Y1gPflBjckJNpn4UrR5zf5Zuxm2NsDVyr8aNjnh7fdDslUwe2D957ptj6h7cRG7Lc61refXUGr3JeswZ28N8sppsDTz3zTFhwg24HTXzcNWqRx3Gn9Arp4YftDR85pPJb2Hum9uauubZqHBzeswbt7h6apw1VfN55pOta3n+35zbuRs/84rz7CDmvHbYnJ4e66UOGPdq1PTK5kd57s+Sbf7C9r+Oc1v6M7d11uv2jeVWnVrl9Fat1X/um3PiI+wm3aJxsn3NGcvWwnpkPcYt7nnmvjm3weZGYY3s9lr1etRqbC2sJtca8zB+wBnoJSde4+aYHjh1ZbQjqButPdRhtfpsY3UYP+C8hde6ua0t3DF/ys3xeQA/n2SXgg6M9RjD6AlyIHOea32NqTtlOBr9i7h8ODcv51Ja2089z616dPPw5cPxAldhNRwTt9B7obrxrLeueoyTrTNnXHuow2otXg3XMt01twzHFkaxN2yrj7egttcDXa9Mbg964WW4vaI76lMP9xMAAP//wdjmTQAAAAZJREFUAwC7TkPUXP8INAAAAABJRU5ErkJggg==" style="display: block;"><div class="qr-unique-id">d82t043</div></div>
+            <div class="qr-code-container" title="353-1-29,741d82t043"><div class="qr-unique-id">d82t043</div></div>
             <div class="corner-shape" style="background-color: rgb(231, 54, 231); width: 39px; height: 39px; transform: rotate(0deg); clip-path: polygon(0px 0px, 30% 0px, 30% 70%, 0px 100%);"></div>
             <div class="bubble-container"><div class="bubble" style="background-color: rgb(231, 54, 231);"></div></div>
             <img class="bg-shape" src="https://i.imgur.com/lgEGZSH.png" alt="">
@@ -967,7 +977,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
               <div class="dim" contenteditable="true">Dimensions: 30 x 30 mm</div>
             </div>
           </div><div class="label-box hide-shapes">
-            <div class="qr-code-container" title="353-1-29,7411mvc264"><canvas width="55" height="55" style="display: none;"></canvas><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADcAAAA3CAYAAACo29JGAAAC80lEQVR4AeSVUW7bQAxEDR8k+e7979J++yQpHponDKjVam0LTrUOMBhyOKRNrotef398fD2Kr++/Xv+3ZfUZLV1N7s0dqV0vE/8ty/263S6jeOQedbYzUlernJ69OHuX5VKcJV4t9+fz89LCyMJeNb3OSm0r3vNab3Fr5mq5lums2qHLeVFfEK6H0aNuDuMH1p7lQ5d79ssc3X/Iclw7kV9SPbVXxYcs96ove+/nrJbz0pV7g/n3Aloe9ET15Ofoqx7z9NZYT/JquSyePX6P5fxJjPDei+YMfz72mOtR77HeEc45c7+cl3yEvZK9XtYc1lOZGqh65tSfwdwv57XlvByxeoupJ7xyavZZM5fTqyc14pZXrcc/83J84xdgWa5ezYv4HawnV495sn41c+eqt1iPnB7nyHrM4WU5izPxlQ3B3lJ5NWP6gL3EFXr11Fw92Rlq5snWejz3y/U2P3tt9+X8KeSiLS3r/vRg9dpj3mJ76B+Fc+yFd5fDdFZsLuclvFwu2NKynnFvTvqI9+Y6K5k+YG/y5nI0nB3X3JR4ZCEvp5e+hHVYDzEwT79xreEHVdcPW5Pxi7lfzi1lL8BVQNWpoyfQEr2a8+TsU5OzRqyejL6FuV+ubu3V1c3zWjXWK2ddzTlbuTpcvc5TT8YPWp73ejmuMAtW/xX4vHXB/CnUuPbUOrkeYlDnk6MDYkCcQLsHc/8sveg/vi2HMR9hr9vzjnj88K051uHqac2f++Xc+BHmgsArOgNNVM1c1tfiZz1zv5wX8/ojbI/she01h/VY28rVk2tP1pgN1PSiifd4OS/g1pWt99ie9NSLZm0rdk7l9Ds3tRq/18vV7c+cH/Jy/kRa7HGsmdefHLkeWa95Mn6ghxiYw4csx6D/EYcux+Uq6tJ5feKs25vaVkwvqHU0cehy9YN+Ol8t59aVe1905OLVY14/h7zW/Gz1ZGstXi3XMp1VW5bLa+zF9yzrLF4EmI/M0Cvf27MsN9J4Ns/Uy/0FAAD//2zkvJcAAAAGSURBVAMAxdFYlYm9msoAAAAASUVORK5CYII=" style="display: block;"><div class="qr-unique-id">1mvc264</div></div>
+            <div class="qr-code-container" title="353-1-29,7411mvc264"><div class="qr-unique-id">1mvc264</div></div>
             <div class="corner-shape" style="background-color: rgb(231, 54, 231); width: 39px; height: 39px; transform: rotate(0deg); clip-path: polygon(0px 0px, 30% 0px, 30% 70%, 0px 100%);"></div>
             <div class="bubble-container"><div class="bubble" style="background-color: rgb(231, 54, 231);"></div></div>
             <img class="bg-shape" src="https://i.imgur.com/lgEGZSH.png" alt="">
@@ -978,7 +988,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
               <div class="dim" contenteditable="true">Dimensions: 30 x 30 mm</div>
             </div>
           </div><div class="label-box hide-shapes">
-            <div class="qr-code-container" title="353-1-29,7411mvc264"><canvas width="55" height="55" style="display: none;"></canvas><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADcAAAA3CAYAAACo29JGAAAC80lEQVR4AeSVUW7bQAxEDR8k+e7979J++yQpHponDKjVam0LTrUOMBhyOKRNrotef398fD2Kr++/Xv+3ZfUZLV1N7s0dqV0vE/8ty/263S6jeOQedbYzUlernJ69OHuX5VKcJV4t9+fz89LCyMJeNb3OSm0r3vNab3Fr5mq5lums2qHLeVFfEK6H0aNuDuMH1p7lQ5d79ssc3X/Iclw7kV9SPbVXxYcs96ove+/nrJbz0pV7g/n3Aloe9ET15Ofoqx7z9NZYT/JquSyePX6P5fxJjPDei+YMfz72mOtR77HeEc45c7+cl3yEvZK9XtYc1lOZGqh65tSfwdwv57XlvByxeoupJ7xyavZZM5fTqyc14pZXrcc/83J84xdgWa5ezYv4HawnV495sn41c+eqt1iPnB7nyHrM4WU5izPxlQ3B3lJ5NWP6gL3EFXr11Fw92Rlq5snWejz3y/U2P3tt9+X8KeSiLS3r/vRg9dpj3mJ76B+Fc+yFd5fDdFZsLuclvFwu2NKynnFvTvqI9+Y6K5k+YG/y5nI0nB3X3JR4ZCEvp5e+hHVYDzEwT79xreEHVdcPW5Pxi7lfzi1lL8BVQNWpoyfQEr2a8+TsU5OzRqyejL6FuV+ubu3V1c3zWjXWK2ddzTlbuTpcvc5TT8YPWp73ejmuMAtW/xX4vHXB/CnUuPbUOrkeYlDnk6MDYkCcQLsHc/8sveg/vi2HMR9hr9vzjnj88K051uHqac2f++Xc+BHmgsArOgNNVM1c1tfiZz1zv5wX8/ojbI/she01h/VY28rVk2tP1pgN1PSiifd4OS/g1pWt99ie9NSLZm0rdk7l9Ds3tRq/18vV7c+cH/Jy/kRa7HGsmdefHLkeWa95Mn6ghxiYw4csx6D/EYcux+Uq6tJ5feKs25vaVkwvqHU0cehy9YN+Ol8t59aVe1905OLVY14/h7zW/Gz1ZGstXi3XMp1VW5bLa+zF9yzrLF4EmI/M0Cvf27MsN9J4Ns/Uy/0FAAD//2zkvJcAAAAGSURBVAMAxdFYlYm9msoAAAAASUVORK5CYII=" style="display: block;"><div class="qr-unique-id">1mvc264</div></div>
+            <div class="qr-code-container" title="353-1-29,7411mvc264"><div class="qr-unique-id">1mvc264</div></div>
             <div class="corner-shape" style="background-color: rgb(231, 54, 231); width: 39px; height: 39px; transform: rotate(0deg); clip-path: polygon(0px 0px, 30% 0px, 30% 70%, 0px 100%);"></div>
             <div class="bubble-container"><div class="bubble" style="background-color: rgb(231, 54, 231);"></div></div>
             <img class="bg-shape" src="https://i.imgur.com/lgEGZSH.png" alt="">
@@ -989,7 +999,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
               <div class="dim" contenteditable="true">Dimensions: 30 x 30 mm</div>
             </div>
           </div><div class="label-box hide-shapes">
-            <div class="qr-code-container" title="353-1-29,741uiq2531"><canvas width="55" height="55" style="display: none;"></canvas><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADcAAAA3CAYAAACo29JGAAAC+UlEQVR4AeSTUW7cMAxEgxyk+e7979J+5yRpHppnDLiU7GyNpNYGHQw5HEpLyn3+9ePH2714+/ib9X9Ybu7odDV5du6R2vPTwn/bcD9fX5+O4p591LN/v7w8gdTJQT0/PXtx9m7DpbhKfDMcm+twZGC3ml7PSi1j63DXP/LiT6TP+GY4CyvwqcO5SV8Arkuqnlo/Mz91uDN/2BlnnTIcL5TIH6ae2lfFpwz3VT/2s/fcDOemK88O9v9R57Em6zHPe6yNOL017npuhutMV9UeYzg/kyO895J5hp+PPTVXh+0jTqgf4exb++Xc5D3slux1s+awnnuY/n/B2i/ntuW6YfWOq9ctp26fNfP07MVdj9qMv+fl9qY5qb47nBvP+9RmW7NWveaepw+2Rgz0yGhCr6zHHN4dzqYr8jYckwKHcEPmydbwA2vEFXr11Fw92TPUzJOtzXgbbma6am3t4XxqPxdZvXs1a3qrRx22Zs8oR8cPiAHxUdTz6V/75Zgw0W2AujrsNtEBGiCuQAe1Rx81oTZifcl6PT957ZdzUrfhJma857UOew4xMPfe5FrDD6re9ejBL9Z+Oad0ctntmCdbs9e84+wjtkdGE2qyuqyebK3jtV+umxjN7RBXzGrVa+6rjnJ0PTIa8D71ZOqg8zzmy7GNq+M5n5jYgYgT6rA6ccJPI1mvmnn2jWK98sg30tf+LN3oX37dlmAub4X3oNPe5fafXrdv3rEHdDU06zB5ojt/7Zdz4nuYDQI3ODsDH6getBH0juroM8/aL8f0wO0fYfwJt9f16rM2ytWTa0/WvFNNrzr8GC/nBpi4g/UjnP11o5/tz7Oy13NTq/FjvVyd/sr5KS/nJ+InZA67HGJgrjeZekJvasb26ak5+inDcdD/iFOHc6uzQfV03G1/dJb9ta4Onzpcvei785vhmLjD7Ie6cbnz1lrN6fFea+bUgHoy+gg3w42MV9S34XIbe/FnBvUsX8HcM8xhNRktoT7j9G/DzRquWlt6uD8AAAD//78FfMsAAAAGSURBVAMAm/w6lcUxPs0AAAAASUVORK5CYII=" style="display: block;"><div class="qr-unique-id">uiq2531</div></div>
+            <div class="qr-code-container" title="353-1-29,741uiq2531"><div class="qr-unique-id">uiq2531</div></div>
             <div class="corner-shape" style="background-color: rgb(231, 54, 231); width: 39px; height: 39px; transform: rotate(0deg); clip-path: polygon(0px 0px, 30% 0px, 30% 70%, 0px 100%);"></div>
             <div class="bubble-container"><div class="bubble" style="background-color: rgb(231, 54, 231);"></div></div>
             <img class="bg-shape" src="https://i.imgur.com/lgEGZSH.png" alt="">
@@ -1000,7 +1010,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
               <div class="dim" contenteditable="true">Dimensions: 30 x 30 mm</div>
             </div>
           </div><div class="label-box hide-shapes">
-            <div class="qr-code-container" title="353-1-29,741uiq2531"><canvas width="55" height="55" style="display: none;"></canvas><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADcAAAA3CAYAAACo29JGAAAC+UlEQVR4AeSTUW7cMAxEgxyk+e7979J+5yRpHppnDLiU7GyNpNYGHQw5HEpLyn3+9ePH2714+/ib9X9Ybu7odDV5du6R2vPTwn/bcD9fX5+O4p591LN/v7w8gdTJQT0/PXtx9m7DpbhKfDMcm+twZGC3ml7PSi1j63DXP/LiT6TP+GY4CyvwqcO5SV8Arkuqnlo/Mz91uDN/2BlnnTIcL5TIH6ae2lfFpwz3VT/2s/fcDOemK88O9v9R57Em6zHPe6yNOL017npuhutMV9UeYzg/kyO895J5hp+PPTVXh+0jTqgf4exb++Xc5D3slux1s+awnnuY/n/B2i/ntuW6YfWOq9ctp26fNfP07MVdj9qMv+fl9qY5qb47nBvP+9RmW7NWveaepw+2Rgz0yGhCr6zHHN4dzqYr8jYckwKHcEPmydbwA2vEFXr11Fw92TPUzJOtzXgbbma6am3t4XxqPxdZvXs1a3qrRx22Zs8oR8cPiAHxUdTz6V/75Zgw0W2AujrsNtEBGiCuQAe1Rx81oTZifcl6PT957ZdzUrfhJma857UOew4xMPfe5FrDD6re9ejBL9Z+Oad0ctntmCdbs9e84+wjtkdGE2qyuqyebK3jtV+umxjN7RBXzGrVa+6rjnJ0PTIa8D71ZOqg8zzmy7GNq+M5n5jYgYgT6rA6ccJPI1mvmnn2jWK98sg30tf+LN3oX37dlmAub4X3oNPe5fafXrdv3rEHdDU06zB5ojt/7Zdz4nuYDQI3ODsDH6getBH0juroM8/aL8f0wO0fYfwJt9f16rM2ytWTa0/WvFNNrzr8GC/nBpi4g/UjnP11o5/tz7Oy13NTq/FjvVyd/sr5KS/nJ+InZA67HGJgrjeZekJvasb26ak5+inDcdD/iFOHc6uzQfV03G1/dJb9ta4Onzpcvei785vhmLjD7Ie6cbnz1lrN6fFea+bUgHoy+gg3w42MV9S34XIbe/FnBvUsX8HcM8xhNRktoT7j9G/DzRquWlt6uD8AAAD//78FfMsAAAAGSURBVAMAm/w6lcUxPs0AAAAASUVORK5CYII=" style="display: block;"><div class="qr-unique-id">uiq2531</div></div>
+            <div class="qr-code-container" title="353-1-29,741uiq2531"><div class="qr-unique-id">uiq2531</div></div>
             <div class="corner-shape" style="background-color: rgb(231, 54, 231); width: 39px; height: 39px; transform: rotate(0deg); clip-path: polygon(0px 0px, 30% 0px, 30% 70%, 0px 100%);"></div>
             <div class="bubble-container"><div class="bubble" style="background-color: rgb(231, 54, 231);"></div></div>
             <img class="bg-shape" src="https://i.imgur.com/lgEGZSH.png" alt="">
@@ -1011,7 +1021,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
               <div class="dim" contenteditable="true">Dimensions: 30 x 30 mm</div>
             </div>
           </div><div class="label-box hide-shapes">
-            <div class="qr-code-container" title="353-1-29,741jzca806"><canvas width="55" height="55" style="display: none;"></canvas><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADcAAAA3CAYAAACo29JGAAADC0lEQVR4AeSZQW7kMAwEB/OQ5Lz//8vuOS/JooCU06Al2XAcJJYHaDTZbMom5ds8/768vB/F+8dv1P9hWT2jpavJo3P31J6PiX/LcH/e3h57cWQfnm3vv9fXB1CHrVWmthfZuwyX4izxaji22cKegd1uej1LTY9sPVlv5fTUuHrJV8MhzoJTh3Ob3gpcF6VHHU+Fta/yqcN99WXO7j9luNHmrfVe3JuEe56j+inDHX34d/ethnPTlUcvwtZBy4Oe8Fy95rA+a5Xx9FC95KvhEGfBPYbzk9jDWzebZ/gZ1R49VW/levdw9s99c272CLsle92sOaynMjVgD9zz4DuCuW+OjSXq9rJW4+p1u6nbY81cVk/OfmK9xEJtxD9zc77hN/MynJvrPc96cvW2tqjfmrm96i3WI6fHc2Q95vAynMWZeBkut0I8GpI6qB62VYEP6CUG5sm111rVya2NeBluZLpq7V7DceWATwd4a8SCOrBWWR9sDT+oOZrAD/QQ74Vn2Avf4+ZakzN9C3WbLY+a59qj3mK9rRqa9WR04PnJ97i5nJiYbYDcUo2pJ+gD6bOuZo5vC3t6PE+2B5775pgwUTcw2q7eytlTa/ks4lonRwfECbSKrNd47pur05q7fTelDre0kU7N84iBuWfB6MAaMaAG1JOpA+oga/e8ObZxdTzzGonrQGiAKxfkwNweNKAOkwNiQAxqT2qtWquur8dzf5Zs8xP9v45zO/rV2CowT9ZLHZjL6TW2Vtk6XGucDVKf++aY9ijYIHBbxKB1HjqoNXth6gm9qdV45Jn75twEm9sLe2S31+rXY62XqyfXnqz5TDW96vA9bs4NMHEL1kdsX3rqRrPWiz2ncvo9N7Ua3+vm6vRXzk+5ufqJ5Ofkcnoe68nVa57sM+yrOfopw3HQb8Spw+VmjevQ6rIbh9VqTyvvedXhU4drvcRPaqvhmLiF0Uuy9R7ss97L1WG9vgcaUE9G72E1XM94RX0ZLrexFW8N6sZhzyIG5ltnUNcro21BL7wMt9V0xfrUw/0HAAD//4gGCwoAAAAGSURBVAMAgFVnlZuVq6UAAAAASUVORK5CYII=" style="display: block;"><div class="qr-unique-id">jzca806</div></div>
+            <div class="qr-code-container" title="353-1-29,741jzca806"><div class="qr-unique-id">jzca806</div></div>
             <div class="corner-shape" style="background-color: rgb(231, 54, 231); width: 39px; height: 39px; transform: rotate(0deg); clip-path: polygon(0px 0px, 30% 0px, 30% 70%, 0px 100%);"></div>
             <div class="bubble-container"><div class="bubble" style="background-color: rgb(231, 54, 231);"></div></div>
             <img class="bg-shape" src="https://i.imgur.com/lgEGZSH.png" alt="">
@@ -1022,7 +1032,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
               <div class="dim" contenteditable="true">Dimensions: 30 x 30 mm</div>
             </div>
           </div><div class="label-box hide-shapes">
-            <div class="qr-code-container" title="353-1-29,741jzca806"><canvas width="55" height="55" style="display: none;"></canvas><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADcAAAA3CAYAAACo29JGAAADC0lEQVR4AeSZQW7kMAwEB/OQ5Lz//8vuOS/JooCU06Al2XAcJJYHaDTZbMom5ds8/768vB/F+8dv1P9hWT2jpavJo3P31J6PiX/LcH/e3h57cWQfnm3vv9fXB1CHrVWmthfZuwyX4izxaji22cKegd1uej1LTY9sPVlv5fTUuHrJV8MhzoJTh3Ob3gpcF6VHHU+Fta/yqcN99WXO7j9luNHmrfVe3JuEe56j+inDHX34d/ethnPTlUcvwtZBy4Oe8Fy95rA+a5Xx9FC95KvhEGfBPYbzk9jDWzebZ/gZ1R49VW/levdw9s99c272CLsle92sOaynMjVgD9zz4DuCuW+OjSXq9rJW4+p1u6nbY81cVk/OfmK9xEJtxD9zc77hN/MynJvrPc96cvW2tqjfmrm96i3WI6fHc2Q95vAynMWZeBkut0I8GpI6qB62VYEP6CUG5sm111rVya2NeBluZLpq7V7DceWATwd4a8SCOrBWWR9sDT+oOZrAD/QQ74Vn2Avf4+ZakzN9C3WbLY+a59qj3mK9rRqa9WR04PnJ97i5nJiYbYDcUo2pJ+gD6bOuZo5vC3t6PE+2B5775pgwUTcw2q7eytlTa/ks4lonRwfECbSKrNd47pur05q7fTelDre0kU7N84iBuWfB6MAaMaAG1JOpA+oga/e8ObZxdTzzGonrQGiAKxfkwNweNKAOkwNiQAxqT2qtWquur8dzf5Zs8xP9v45zO/rV2CowT9ZLHZjL6TW2Vtk6XGucDVKf++aY9ijYIHBbxKB1HjqoNXth6gm9qdV45Jn75twEm9sLe2S31+rXY62XqyfXnqz5TDW96vA9bs4NMHEL1kdsX3rqRrPWiz2ncvo9N7Ua3+vm6vRXzk+5ufqJ5Ofkcnoe68nVa57sM+yrOfopw3HQb8Spw+VmjevQ6rIbh9VqTyvvedXhU4drvcRPaqvhmLiF0Uuy9R7ss97L1WG9vgcaUE9G72E1XM94RX0ZLrexFW8N6sZhzyIG5ltnUNcro21BL7wMt9V0xfrUw/0HAAD//4gGCwoAAAAGSURBVAMAgFVnlZuVq6UAAAAASUVORK5CYII=" style="display: block;"><div class="qr-unique-id">jzca806</div></div>
+            <div class="qr-code-container" title="353-1-29,741jzca806"><div class="qr-unique-id">jzca806</div></div>
             <div class="corner-shape" style="background-color: rgb(231, 54, 231); width: 39px; height: 39px; transform: rotate(0deg); clip-path: polygon(0px 0px, 30% 0px, 30% 70%, 0px 100%);"></div>
             <div class="bubble-container"><div class="bubble" style="background-color: rgb(231, 54, 231);"></div></div>
             <img class="bg-shape" src="https://i.imgur.com/lgEGZSH.png" alt="">
@@ -1186,7 +1196,54 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
     function getCornerRotation(d){const a=d.toUpperCase().trim();return a.startsWith("PLINTHE")?0:a.startsWith("CADRE")?0:a.startsWith("WALL PANEL")?15:a.startsWith("CIMAISE")?-10:a.startsWith("CORNIERE")?0:0}
     function getCornerShapeClipPath(d){const a=d.toUpperCase().trim();return a.startsWith("CIMAISE")?"polygon(0 0, 100% 0, 100% 40%, 40% 40%, 40% 100%, 0 100%)":a.startsWith("PLINTHE")?"polygon(0 0, 100% 0, 100% 100%, 30% 100%, 0 70%)":a.startsWith("CADRE")?"polygon(0 0, 100% 0, 100% 100%, 0 100%)":a.startsWith("WALL PANEL")?"polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)":a.startsWith("CORNIERE")?"polygon(0 0, 30% 0, 30% 70%, 0 100%)":"polygon(0 0, 100% 0, 0 100%)"}
     function getLastSuffixNumber(d){const a=d.trim().match(/-(\d+)$/);return a?parseInt(a[1],10):null}
-    function updateLabelQR(d,a,length){const e=d.querySelector(".qr-code-container");if(!e)return;e.innerHTML="";const t=d.querySelector(".ref").textContent||"Référence : N/A",n=t.trim(),s=calculateWeeksAndDayOfWeek("2024-05-11"),r=formatRefForQR(n),i=`${r}-${length},${s}${a}`;new QRCode(e,{text:i,width:55,height:55,colorDark:"#d61e1e",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.L});const o=document.createElement("div");o.className="qr-unique-id",o.textContent=a,e.appendChild(o)}
+    function updateLabelQR(d,a,length){
+        const e = d.querySelector(".qr-code-container");
+        if(!e) return;
+        e.innerHTML = "";
+        
+        const t = d.querySelector(".ref").textContent || "Référence : N/A";
+        const n = t.trim();
+        const s = calculateWeeksAndDayOfWeek("2024-05-11");
+        const r = formatRefForQR(n);
+        const i = `${r}-${length},${s}${a}`;
+        
+        const codeType = document.getElementById('codeTypeSelect').value;
+
+        if (codeType === 'qrcode') {
+            new QRCode(e, {
+                text: i,
+                width: 55,
+                height: 55,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.L
+            });
+        } else {
+            // Data Matrix using bwip-js
+            let canvas = document.createElement('canvas');
+            try {
+                bwipjs.toCanvas(canvas, {
+                    bcid:        'datamatrix', 
+                    text:        i,
+                    scale:       3,
+                    height:      10,
+                    includetext: false,
+                    textxalign:  'center',
+                    barcolor:    '000000',
+                });
+                let img = document.createElement('img');
+                img.src = canvas.toDataURL('image/png');
+                e.appendChild(img);
+            } catch (err) {
+                console.error('Error generating Data Matrix:', err);
+            }
+        }
+        
+        const o = document.createElement("div");
+        o.className = "qr-unique-id";
+        o.textContent = a;
+        e.appendChild(o);
+    }
     function updateLabels(){const d=refInput.value.trim();if(refData.hasOwnProperty(d)){pcsInput.value=refData[d].pcs,widthInput.value=refData[d].width,thicknessInput.value=refData[d].thickness};const a=pcsInput.value.trim(),e=lengthInput.value.trim(),t=widthInput.value.trim(),n=thicknessInput.value.trim(),s=document.getElementById("toggleQrCode").checked,r=document.getElementById("toggleShapes").checked,i=document.getElementById("toggleSameCodeInRow").checked,{color:o,size:l}=getStyleAttributesFromRef(d),c=getCornerRotation(d),g=getCornerShapeClipPath(d),h=getLastSuffixNumber(d),m=h>0?h:0,p=Math.max(20,l*(h>=2?.8:1));let u="";document.querySelectorAll("#editor-page .label-box").forEach((f,b)=>{const y=f.querySelector(".ref");y.dataset.manual||(y.textContent="Référence : "+(d||"N/A"));const v=f.querySelector(".pcs");v.dataset.manual||(v.textContent="PCS/Carton: "+(a||"N/A"));const w=f.querySelector(".dim");w.dataset.manual||(w.textContent=`Dimensions: ${t||"N/A"} x ${n||"N/A"} mm`),f.classList.toggle("hide-qr",!s),f.classList.toggle("hide-shapes",!r);const L=f.querySelector(".corner-shape");L&&(L.style.backgroundColor=o,L.style.width=`${p}px`,L.style.height=`${p}px`,L.style.transform=`rotate(${c}deg)`,L.style.clipPath=g);const C=f.querySelector(".bubble-container");if(C){C.innerHTML="";for(let I=0;I<m;I++){const k=document.createElement("div");k.classList.add("bubble"),k.style.backgroundColor=o,C.appendChild(k)}}let q;i?b%2==0?(u=generateShortUniqueId(),q=u):q=u:q=generateShortUniqueId(),updateLabelQR(f,q,e)})}
     function generateAndPrintPages(d){const a=document.getElementById("print-output");a.innerHTML="";const e=document.getElementById("a4"),t=document.getElementById("toggleSameCodeInRow").checked,n=lengthInput.value.trim();for(let s=0;s<d;s++){const r=e.cloneNode(!0);r.removeAttribute("id");const i=r.querySelector(".header-text");i&&i.removeAttribute("contenteditable");let o="";const l=r.querySelectorAll(".label-box");l.forEach((c,g)=>{const h=document.querySelectorAll("#editor-page .label-box")[g];h&&(c.innerHTML=h.innerHTML,c.className=h.className);let m;t?g%2==0?(o=generateShortUniqueId(),m=o):m=o:m=generateShortUniqueId(),updateLabelQR(c,m,n)}),a.appendChild(r)}window.print()}
     function showPrintDialog(){document.getElementById("printModal").classList.add("visible")}
@@ -1366,9 +1423,9 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         refInput.addEventListener('input', () => {
             document.querySelectorAll('.label-box [data-manual]').forEach(el => el.removeAttribute('data-manual'));
             updateLabels();
-			    updateURLHash();
+            updateURLHash();
         });
-		document.querySelector('.header-text').addEventListener('input', updateURLHash);
+        document.querySelector('.header-text').addEventListener('input', updateURLHash);
         pcsInput.addEventListener('input', updateLabels);
         lengthInput.addEventListener('input', updateLabels);
         widthInput.addEventListener('input', updateLabels);
@@ -1376,6 +1433,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         document.getElementById('toggleQrCode').addEventListener('change', updateLabels);
         document.getElementById('toggleShapes').addEventListener('change', updateLabels);
         document.getElementById('toggleSameCodeInRow').addEventListener('change', updateLabels);
+        document.getElementById('codeTypeSelect').addEventListener('change', updateLabels);
         document.getElementById('confirmPrintBtn').addEventListener('click', () => {
             const pageCount = parseInt(document.getElementById('pageCountInput').value, 10);
             if (pageCount > 0) {
@@ -1599,9 +1657,9 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
             });
             button.appendChild(editIcon);
         }
-		
-		
-		// --- منطق زر الرجوع ---
+        
+        
+        // --- منطق زر الرجوع ---
     const backBtn = document.getElementById('go-back-btn');
     if (backBtn) {
         backBtn.addEventListener('click', () => {
