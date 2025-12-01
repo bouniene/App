@@ -1245,7 +1245,33 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         e.appendChild(o);
     }
     function updateLabels(){const d=refInput.value.trim();if(refData.hasOwnProperty(d)){pcsInput.value=refData[d].pcs,widthInput.value=refData[d].width,thicknessInput.value=refData[d].thickness};const a=pcsInput.value.trim(),e=lengthInput.value.trim(),t=widthInput.value.trim(),n=thicknessInput.value.trim(),s=document.getElementById("toggleQrCode").checked,r=document.getElementById("toggleShapes").checked,i=document.getElementById("toggleSameCodeInRow").checked,{color:o,size:l}=getStyleAttributesFromRef(d),c=getCornerRotation(d),g=getCornerShapeClipPath(d),h=getLastSuffixNumber(d),m=h>0?h:0,p=Math.max(20,l*(h>=2?.8:1));let u="";document.querySelectorAll("#editor-page .label-box").forEach((f,b)=>{const y=f.querySelector(".ref");y.dataset.manual||(y.textContent="Référence : "+(d||"N/A"));const v=f.querySelector(".pcs");v.dataset.manual||(v.textContent="PCS/Carton: "+(a||"N/A"));const w=f.querySelector(".dim");w.dataset.manual||(w.textContent=`Dimensions: ${t||"N/A"} x ${n||"N/A"} mm`),f.classList.toggle("hide-qr",!s),f.classList.toggle("hide-shapes",!r);const L=f.querySelector(".corner-shape");L&&(L.style.backgroundColor=o,L.style.width=`${p}px`,L.style.height=`${p}px`,L.style.transform=`rotate(${c}deg)`,L.style.clipPath=g);const C=f.querySelector(".bubble-container");if(C){C.innerHTML="";for(let I=0;I<m;I++){const k=document.createElement("div");k.classList.add("bubble"),k.style.backgroundColor=o,C.appendChild(k)}}let q;i?b%2==0?(u=generateShortUniqueId(),q=u):q=u:q=generateShortUniqueId(),updateLabelQR(f,q,e)})}
-    function generateAndPrintPages(d){const a=document.getElementById("print-output");a.innerHTML="";const e=document.getElementById("a4"),t=document.getElementById("toggleSameCodeInRow").checked,n=lengthInput.value.trim();for(let s=0;s<d;s++){const r=e.cloneNode(!0);r.removeAttribute("id");const i=r.querySelector(".header-text");i&&i.removeAttribute("contenteditable");let o="";const l=r.querySelectorAll(".label-box");l.forEach((c,g)=>{const h=document.querySelectorAll("#editor-page .label-box")[g];h&&(c.innerHTML=h.innerHTML,c.className=h.className);let m;t?g%2==0?(o=generateShortUniqueId(),m=o):m=o:m=generateShortUniqueId(),updateLabelQR(c,m,n)}),a.appendChild(r)}window.print()}
+    function generateAndPrintPages(d) {
+    const a = document.getElementById("print-output");
+    a.innerHTML = "";
+    const e = document.getElementById("a4"),
+          t = document.getElementById("toggleSameCodeInRow").checked,
+          n = lengthInput.value.trim();
+
+    for (let s = 0; s < d; s++) {
+        const r = e.cloneNode(!0);
+        r.removeAttribute("id");
+        const i = r.querySelector(".header-text");
+        i && i.removeAttribute("contenteditable");
+        let o = "";
+        const l = r.querySelectorAll(".label-box");
+        l.forEach((c, g) => {
+            const h = document.querySelectorAll("#editor-page .label-box")[g];
+            h && (c.innerHTML = h.innerHTML, c.className = h.className);
+            let m;
+            t ? g % 2 == 0 ? (o = generateShortUniqueId(), m = o) : m = o : m = generateShortUniqueId(), updateLabelQR(c, m, n)
+        }), a.appendChild(r)
+    }
+
+    // === التعديل هنا: تأخير الطباعة لمدة 500 ميلي ثانية ===
+    setTimeout(() => {
+        window.print();
+    }, 500);
+}
     function showPrintDialog(){document.getElementById("printModal").classList.add("visible")}
     function hidePrintDialog(){document.getElementById("printModal").classList.remove("visible")}
     function showBatchPrintModal() {
@@ -1328,70 +1354,81 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
         renderBatchTable();
     }
     async function generateAndPrintBatch() {
-        if (printBatch.length === 0) {
-            alert('الرجاء إضافة عنصر واحد على الأقل للطباعة.');
-            return;
-        }
-        const printOutput = document.getElementById('print-output');
-        printOutput.innerHTML = '';
-        const templatePage = document.getElementById('a4');
-        const lengthValue = document.getElementById('lengthInput').value.trim();
-        const showQr = document.getElementById('toggleQrCode').checked;
-        const showShapes = document.getElementById('toggleShapes').checked;
-        for (const item of printBatch) {
-            if (item.type === 'model') {
-                const { color, size } = getStyleAttributesFromRef(item.originalRef);
-                const rotation = getCornerRotation(item.originalRef);
-                const clipPath = getCornerShapeClipPath(item.originalRef);
-                const suffix = getLastSuffixNumber(item.originalRef);
-                const bubbleCount = suffix > 0 ? suffix : 0;
-                const shapeSize = Math.max(20, size * (suffix >= 2 ? 0.8 : 1));
-                for (let i = 0; i < item.pages; i++) {
-                    const pageClone = templatePage.cloneNode(true);
-                    pageClone.removeAttribute('id');
-                    pageClone.querySelector('.header-text').textContent = item.displayText.header;
-                    let rowCode = "";
-                    pageClone.querySelectorAll('.label-box').forEach((label, index) => {
-                        label.querySelector('.ref').textContent = item.displayText.ref;
-                        label.querySelector('.pcs').textContent = item.displayText.pcs;
-                        label.querySelector('.dim').textContent = item.displayText.dim;
-                        label.classList.toggle('hide-qr', !showQr);
-                        label.classList.toggle('hide-shapes', !showShapes);
-                        const cornerShape = label.querySelector('.corner-shape');
-                        if(cornerShape) {
-                            cornerShape.style.backgroundColor = color;
-                            cornerShape.style.width = `${shapeSize}px`;
-                            cornerShape.style.height = `${shapeSize}px`;
-                            cornerShape.style.transform = `rotate(${rotation}deg)`;
-                            cornerShape.style.clipPath = clipPath;
+    if (printBatch.length === 0) {
+        alert('الرجاء إضافة عنصر واحد على الأقل للطباعة.');
+        return;
+    }
+    const printOutput = document.getElementById('print-output');
+    printOutput.innerHTML = '';
+    const templatePage = document.getElementById('a4');
+    const lengthValue = document.getElementById('lengthInput').value.trim();
+    const showQr = document.getElementById('toggleQrCode').checked;
+    const showShapes = document.getElementById('toggleShapes').checked;
+
+    for (const item of printBatch) {
+        if (item.type === 'model') {
+            const { color, size } = getStyleAttributesFromRef(item.originalRef);
+            const rotation = getCornerRotation(item.originalRef);
+            const clipPath = getCornerShapeClipPath(item.originalRef);
+            const suffix = getLastSuffixNumber(item.originalRef);
+            const bubbleCount = suffix > 0 ? suffix : 0;
+            const shapeSize = Math.max(20, size * (suffix >= 2 ? 0.8 : 1));
+
+            for (let i = 0; i < item.pages; i++) {
+                const pageClone = templatePage.cloneNode(true);
+                pageClone.removeAttribute('id');
+                pageClone.querySelector('.header-text').textContent = item.displayText.header;
+                let rowCode = "";
+                pageClone.querySelectorAll('.label-box').forEach((label, index) => {
+                    label.querySelector('.ref').textContent = item.displayText.ref;
+                    label.querySelector('.pcs').textContent = item.displayText.pcs;
+                    label.querySelector('.dim').textContent = item.displayText.dim;
+                    label.classList.toggle('hide-qr', !showQr);
+                    label.classList.toggle('hide-shapes', !showShapes);
+                    const cornerShape = label.querySelector('.corner-shape');
+                    if (cornerShape) {
+                        cornerShape.style.backgroundColor = color;
+                        cornerShape.style.width = `${shapeSize}px`;
+                        cornerShape.style.height = `${shapeSize}px`;
+                        cornerShape.style.transform = `rotate(${rotation}deg)`;
+                        cornerShape.style.clipPath = clipPath;
+                    }
+                    const bubbleContainer = label.querySelector('.bubble-container');
+                    if (bubbleContainer) {
+                        bubbleContainer.innerHTML = '';
+                        for (let j = 0; j < bubbleCount; j++) {
+                            const bubble = document.createElement('div');
+                            bubble.className = 'bubble';
+                            bubble.style.backgroundColor = color;
+                            bubbleContainer.appendChild(bubble);
                         }
-                        const bubbleContainer = label.querySelector('.bubble-container');
-                        if(bubbleContainer) {
-                            bubbleContainer.innerHTML = '';
-                            for(let j = 0; j < bubbleCount; j++) {
-                                const bubble = document.createElement('div'); bubble.className = 'bubble'; bubble.style.backgroundColor = color; bubbleContainer.appendChild(bubble);
-                            }
-                        }
-                        if (index % 2 === 0) { rowCode = generateShortUniqueId(); }
-                        updateLabelQR(label, rowCode, lengthValue);
-                    });
-                    printOutput.appendChild(pageClone);
-                }
-            } else if (item.type === 'blank') {
-                const blankPage = document.createElement('div');
-                blankPage.className = 'a4-container blank-page-content';
-                if (item.blankPageText) {
-                    const p = document.createElement('p');
-                    p.style.whiteSpace = 'pre-wrap';
-                    p.textContent = item.blankPageText;
-                    blankPage.appendChild(p);
-                }
-                printOutput.appendChild(blankPage);
+                    }
+                    if (index % 2 === 0) {
+                        rowCode = generateShortUniqueId();
+                    }
+                    updateLabelQR(label, rowCode, lengthValue);
+                });
+                printOutput.appendChild(pageClone);
             }
+        } else if (item.type === 'blank') {
+            const blankPage = document.createElement('div');
+            blankPage.className = 'a4-container blank-page-content';
+            if (item.blankPageText) {
+                const p = document.createElement('p');
+                p.style.whiteSpace = 'pre-wrap';
+                p.textContent = item.blankPageText;
+                blankPage.appendChild(p);
+            }
+            printOutput.appendChild(blankPage);
         }
+    }
+
+    // === التعديل هنا: تأخير الطباعة وتفريغ القائمة ===
+    setTimeout(() => {
         window.print();
         hideBatchPrintModal();
-    }
+    }, 500);
+}
     document.addEventListener('DOMContentLoaded', () => {
         const grid = document.querySelector('#editor-page .labels-grid');
         const template = grid.querySelector('.label-box');
