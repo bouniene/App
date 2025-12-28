@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Production & Packaging Calculator</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #714B67;
+            --secondary-color: #00A09D;
+            --border-color: #DEDEDE;
+            --text-color: #4c4c4c;
+            --hover-bg: #F5F5F5;
+            --box-color-bg: #ffebee;
+            --box-color-text: #c62828;
+            --sub-row-bg: #f9f9f9;
+        }
+        .container.foil-mode {
+            --primary-color: #4A5568;
+            --box-color-bg: #e3f2fd;
+            --box-color-text: #1565c0;
+            --sub-row-bg: #f8f9fa;
+        }
+        body { font-family: 'Roboto', sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; color: var(--text-color); font-size: 12px; }
+        .container { max-width: 1300px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06); overflow: hidden; border: 1px solid var(--border-color); transition: border-color 0.3s ease; }
+        .header { background-color: var(--primary-color); color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; transition: background-color 0.3s ease; }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .header-text h1 { margin: 0; font-size: 18px; font-weight: 700; }
+        .mode-selector { display: flex; background-color: rgba(0, 0, 0, 0.15); border-radius: 6px; padding: 3px; }
+        .mode-btn { background: transparent; border: none; color: rgba(255,255,255,0.8); padding: 4px 12px; cursor: pointer; font-size: 13px; border-radius: 4px; transition: background-color .2s, color .2s; font-weight: 500; }
+        .mode-btn.active { background-color: #fff; color: var(--primary-color); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        #export-btn, #open-calculator-btn { background-color: rgba(255,255,255,0.9); color: var(--primary-color); border: 1px solid var(--primary-color); border-radius: 4px; padding: 5px 12px; font-weight: 500; font-size: 12px; cursor: pointer; transition: background-color .2s, color .2s, border-color .3s; display: flex; align-items: center; justify-content: center; }
+        .search-container { padding: 8px 20px; background-color: #FAFAFA; border-bottom: 1px solid var(--border-color); }
+        #search-input { width: 100%; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 13px; box-sizing: border-box; }
+        #search-input:focus { outline: none; border-color: var(--primary-color); }
+        
+        /* --- CHANGED: New styles for product group cards --- */
+        #groups-container { padding: 10px 15px; }
+        .product-group-card {
+            margin-bottom: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+            overflow: hidden;
+            border: 1px solid var(--group-color, var(--border-color));
+            transition: border-color 0.3s;
+        }
+        .product-group-card h2 {
+            font-size: 16px;
+            font-weight: 700;
+            margin: 0;
+            padding: 10px 15px;
+            background-color: var(--group-color, #f5f5f5);
+            color: color-mix(in srgb, var(--text-color) 80%, black);
+            transition: background-color 0.3s;
+        }
+        .product-group-card .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+        }
+        .product-group-card table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+        /* --- Styles for tables inside cards --- */
+        .product-group-card th, .product-group-card td { 
+            border-bottom: 1px solid var(--border-color); 
+            vertical-align: middle; 
+            text-align: center; 
+            padding: 0 6px; 
+            font-size: 12px; 
+        }
+        .product-group-card th { 
+            font-weight: 700; 
+            background-color: #F8F9FA; 
+            padding: 8px 6px; 
+            border-bottom-width: 2px;
+        }
+        .product-group-card tbody tr:last-child th,
+        .product-group-card tbody tr:last-child td {
+            border-bottom: none; /* Remove border from last row in card */
+        }
+        .product-group-card .sub-row {
+            /* Mix group color with sub-row background */
+            background-color: color-mix(in srgb, var(--group-color, var(--sub-row-bg)) 25%, var(--sub-row-bg) 75%);
+        }
+        .product-group-card tbody tr:hover { 
+            /* Mix group color with hover background */
+            background-color: color-mix(in srgb, var(--group-color, var(--hover-bg)) 30%, var(--hover-bg) 70%);
+        }
+        /* --- End of new styles --- */
+
+        .input-with-icon { display: flex; align-items: center; justify-content: center; gap: 4px; }
+        .avg-calc-trigger { cursor: pointer; font-size: 14px; opacity: 0.5; transition: opacity 0.2s; }
+        .avg-calc-trigger:hover { opacity: 1; }
+        td.product-name-cell { font-weight: 500; color: #333; min-width: 220px; text-align: left; display: flex; align-items: center; gap: 8px; }
+        .input-field { padding: 4px; border: 1px solid #D5D5D5; border-radius: 3px; text-align: center; transition: border-color .2s; box-sizing: border-box; margin: 4px 2px; background-color: #FAFBFC; }
+        .time-input { width: 60px; } .time-input.downtime { width: 75px; } .waste-input { width: 55px; }
+        .pieces-per-box-input { width: 50px; text-align: right; padding-right: 5px; }
+        .input-field:focus { outline: none; border-color: var(--primary-color); background-color: #FFF; }
+        .output-cell-container { font-weight: 500; padding: 8px 6px; }
+        .output-pieces, .output-boxes { display: inline-block; padding: 2px 4px; border-radius: 3px; transition: background-color .3s, color .3s; }
+        .output-pieces { color: var(--secondary-color); font-weight: 700; }
+        .output-boxes { background-color: var(--box-color-bg); color: var(--box-color-text); }
+        .output-pieces.zero, .output-boxes.zero { font-weight: 400; color: var(--text-color); }
+        .output-boxes.zero { background-color: transparent; padding: 0; }
+        .separator.hidden { display: none; }
+        .sub-row td.product-name-cell { padding-left: 25px; }
+        td.product-name-cell > span { padding: 9px 0; display: inline-block; }
+        .sub-name-input { border: 1px solid transparent; background: transparent; font-weight: 400; padding: 8px 4px; border-radius: 3px; width: 100%; font-style: italic; }
+        .sub-name-input:focus { background: white; border-color: var(--primary-color); outline: none; font-style: normal; }
+        .action-btn { cursor: pointer; font-size: 16px; opacity: 0.4; transition: opacity .2s; border: none; background: none; padding: 0 4px; }
+        .action-btn:hover { opacity: 1; }
+        .add-branch-btn { color: #28a745; } .delete-branch-btn { color: #dc3545; }
+        .modal-overlay { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background-color: #fefefe; margin: auto; padding: 25px; border: 1px solid #888; width: 90%; max-width: 500px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; }
+        .modal-close { color: #aaa; position: absolute; top: 10px; right: 15px; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .modal-btn { background-color: var(--primary-color); color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 13px; transition: background-color .3s; }
+        .calculator-section { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-color); }
+        .modal-title { margin-top: 0; }
+        .calculator-section h3 { margin-top: 0; font-size: 14px; color: var(--primary-color); transition: color .3s; }
+        .modal-form-group { margin-bottom: 15px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+        .modal-form-group label { font-weight: 500; }
+        .modal-input { padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 4px; }
+        #calculator-product-select { width: 100%; padding: 8px; font-size: 13px; }
+        .modal-result { margin-top: 15px; font-weight: 600; font-size: 14px; color: #333; min-height: 20px; }
+        .modal-result .value { color: var(--primary-color); transition: color .3s; }
+        #avg-inputs-container { max-height: 200px; overflow-y: auto; padding: 5px; border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 10px; }
+        #avg-modal-footer { display: flex; justify-content: space-between; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left"><div class="header-text"><h1 id="main-title">Production Calculator</h1></div><button id="open-calculator-btn" title="Quick Calculator">Calculator</button></div>
+            <div class="mode-selector"><button id="mode-without-foil" class="mode-btn">Without Foil</button><button id="mode-with-foil" class="mode-btn">With Foil</button></div>
+            <button id="export-btn">Download as Excel</button>
+        </div>
+        <div class="search-container"><input type="text" id="search-input" placeholder="Search by product group, name, or branch..."></div>
+        
+        <div id="groups-container">
+            </div>
+
+    </div>
+    <div id="calculator-modal" class="modal-overlay"><div class="modal-content"><span id="modal-close-btn" class="modal-close">&times;</span><h2 class="modal-title">Quick Calculator</h2><div class="modal-form-group"><label for="calculator-product-select">Select Product:</label><select id="calculator-product-select" class="modal-input"></select></div><div class="calculator-section"><h3>Calculate Quantity from Time</h3><div class="modal-form-group"><label for="calc-time-input">Production Time:</label><input type="text" id="calc-time-input" class="modal-input" value="00:00:00" placeholder="H:M:S"></div><div id="calc-qty-result" class="modal-result"></div></div><div class="calculator-section"><h3>Calculate Time from Quantity</h3><div class="modal-form-group"><label for="calc-qty-input">Quantity:</label><input type="number" id="calc-qty-input" class="modal-input" value="1"><select id="calc-qty-type" class="modal-input"><option value="pieces">Pieces</option><option value="boxes">Boxes</option></select></div><div id="calc-time-result" class="modal-result"></div></div></div></div>
+    <div id="average-value-modal" class="modal-overlay"><div class="modal-content"><span id="avg-modal-close-btn" class="modal-close">&times;</span><h2 id="avg-modal-title" class="modal-title">Calculate Average</h2><p id="avg-modal-description">Enter multiple values to find the average.</p><div id="avg-inputs-container"></div><div id="avg-modal-footer"><button id="add-avg-input-btn" class="modal-btn">Add Value</button><button id="save-avg-value-btn" class="modal-btn">Calculate & Save</button></div></div></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getDatabase, ref, set, onValue, remove, off } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCaBkl26zD1jR7-P9MWv7d4uD0T0QXUrnQ",
+            authDomain: "appd-326a4.firebaseapp.com",
+            databaseURL: "https://appd-326a4-default-rtdb.firebaseio.com",
+            projectId: "appd-326a4",
+            storageBucket: "appd-326a4.firebasestorage.app",
+            messagingSenderId: "1001287247517",
+            appId: "1:1001287247517:web:4c6e2a3b1cbada09821674",
+            measurementId: "G-Y9FGL8S1N2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        window.firebaseDB = { db, ref, set, onValue, remove, off }; 
+    </script>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        
+        // --- Product list is now sorted by name, but grouping is dynamic ---
+        const products = [
+            { name: "CIMAISE 200-1", piecesPerBox: 40 }, { name: "CIMAISE 201-1", piecesPerBox: 65 }, { name: "CIMAISE 202-1", piecesPerBox: 30 }, { name: "CIMAISE 203-1", piecesPerBox: 72 }, { name: "CIMAISE 204-1", piecesPerBox: 104 }, { name: "CIMAISE 206-1", piecesPerBox: 120 }, { name: "CIMAISE 207-1", piecesPerBox: 50 }, { name: "CIMAISE 208-1", piecesPerBox: 29 }, { name: "CIMAISE 209-1", piecesPerBox: 66 }, { name: "CIMAISE 215-1", piecesPerBox: 33 }, { name: "CIMAISE 216-1", piecesPerBox: 65 }, { name: "CIMAISE 217-1", piecesPerBox: 125 }, 
+            { name: "PLINTHE 100-1", piecesPerBox: 24 }, { name: "PLINTHE 101-1", piecesPerBox: 12 }, { name: "PLINTHE 102-1", piecesPerBox: 14 }, { name: "PLINTHE 103-1", piecesPerBox: 37 }, { name: "PLINTHE 104-1", piecesPerBox: 18 }, { name: "PLINTHE 105-1", piecesPerBox: 24 }, { name: "PLINTHE 106-1", piecesPerBox: 20 }, { name: "PLINTHE 109-1", piecesPerBox: 15 }, { name: "PLINTHE 116-1", piecesPerBox: 26 }, { name: "PLINTHE 117-1", piecesPerBox: 17 }, 
+            { name: "Wall panel 400-1", piecesPerBox: 13 }, { name: "Wall panel 401-1", piecesPerBox: 56 }, { name: "Wall panel 402-1", piecesPerBox: 20 }, 
+            { name: "CORNIERE 351-1", piecesPerBox: 84 }, { name: "CORNIERE 353-1", piecesPerBox: 108 },
+            { name: "CORNICHE 300-1", piecesPerBox: 14 }, { name: "CORNICHE 301-1", piecesPerBox: 21 }, { name: "CORNICHE 315-1", piecesPerBox: 22 },
+            { name: "CADRE 700-1", piecesPerBox: 77 }, { name: "CADRE 701-1", piecesPerBox: 44 }, { name: "CADRE 702-1", piecesPerBox: 25 }, { name: "CADRE 703-1", piecesPerBox: 66 }, { name: "CADRE 704-1", piecesPerBox: 21 }, { name: "CADRE 705-1", piecesPerBox: 22 }, { name: "CADRE 706-1", piecesPerBox: 15 },
+            { name: "CADRE 707-1", piecesPerBox: 12 }, { name: "CADRE 708-1", piecesPerBox: 36 }
+        ].sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically
+
+        let currentMode = 'withoutFoil';
+        let subProducts = {};
+        
+        const { db, ref, set, onValue, remove, off } = window.firebaseDB;
+        let dbRef;
+        let isInitialLoad = true;
+        
+        // --- CHANGED: Reference the new groups container ---
+        const groupsContainer = document.getElementById('groups-container');
+        // --- CHANGED: Table header is now a constant, to be reused ---
+        const tableHeaderHTML = '<thead><tr><th>Product Type</th><th>Production Time (M:S)</th><th>Downtime (H:M:S)</th><th>Production in 8h</th><th>Production in 12h</th><th>Production in 24h</th><th>Waste (kg)</th></tr></thead>';
+
+        const exportBtn = document.getElementById('export-btn');
+        const searchInput = document.getElementById('search-input');
+        const quickCalcModal = document.getElementById('calculator-modal');
+        const openQuickCalcBtn = document.getElementById('open-calculator-btn');
+        const closeQuickCalcBtn = document.getElementById('modal-close-btn');
+        const productSelect = document.getElementById('calculator-product-select');
+        const calcTimeInput = document.getElementById('calc-time-input');
+        const calcQtyInput = document.getElementById('calc-qty-input');
+        const calcQtyType = document.getElementById('calc-qty-type');
+        const avgModal = document.getElementById('average-value-modal');
+        const closeAvgBtn = document.getElementById('avg-modal-close-btn');
+        const addAvgInputBtn = document.getElementById('add-avg-input-btn');
+        const saveAvgValueBtn = document.getElementById('save-avg-value-btn');
+        const avgInputsContainer = document.getElementById('avg-inputs-container');
+        let targetAvgInput = null;
+        let currentAvgConfig = {};
+
+        // --- NEW: Function to determine group name ---
+        const getGroupName = (productName) => {
+            const prefixes = ["CIMAISE", "PLINTHE", "Wall panel", "CORNIERE", "CORNICHE", "CADRE"];
+            for (const prefix of prefixes) {
+                if (productName.startsWith(prefix)) return prefix;
+            }
+            // Group '707-1' style names under 'CADRE'
+            if (productName.match(/^\d+-\d+/)) return "CADRE"; 
+            return "Others";
+        };
+
+        // --- NEW: Colors for each group ---
+        const groupColors = {
+            "CIMAISE": "#FFE0B2", // Orange
+            "PLINTHE": "#C8E6C9", // Green
+            "Wall panel": "#B3E5FC", // Blue
+            "CORNIERE": "#FFCDD2", // Red
+            "CORNICHE": "#D1C4E9", // Purple
+            "CADRE": "#F0F4C3", // Lime
+            "Others": "#CFD8DC" // Grey
+        };
+
+        // --- NEW: Function to group products ---
+        const getGroupedProducts = () => {
+            const groups = {};
+            products.forEach(p => {
+                const groupName = getGroupName(p.name);
+                if (!groups[groupName]) {
+                    groups[groupName] = {
+                        color: groupColors[groupName] || groupColors["Others"],
+                        products: []
+                    };
+                }
+                groups[groupName].products.push(p);
+            });
+            // Sort groups by name
+            const sortedGroups = Object.keys(groups).sort().reduce((obj, key) => { 
+                obj[key] = groups[key]; 
+                return obj;
+            }, {});
+            return sortedGroups;
+        };
+
+
+        const parseTimeToSeconds = (timeString) => { if (!timeString || !timeString.includes(':')) return 0; const parts = timeString.split(':').map(p => parseInt(p, 10) || 0); let h = 0, m = 0, s = 0; if (parts.length === 3) { [h, m, s] = parts; } else if (parts.length === 2) { [m, s] = parts; } else return 0; return (h * 3600) + (m * 60) + s; };
+        
+        const saveData = (key, value) => {
+            localStorage.setItem(`${currentMode}_${key}`, value);
+            const path = `productionData/${currentMode}/${key.replace(/_/g, '/')}`;
+            set(ref(db, path), value);
+        };
+        const loadData = (key) => localStorage.getItem(`${currentMode}_${key}`) || '';
+        
+        const loadSubProducts = () => { const data = localStorage.getItem(`${currentMode}_subProducts`); subProducts = data ? JSON.parse(data) : {}; };
+        
+        const saveSubProducts = () => {
+            localStorage.setItem(`${currentMode}_subProducts`, JSON.stringify(subProducts));
+            set(ref(db, `productionData/${currentMode}/subProducts`), subProducts);
+        };
+
+        const deleteSubProductData = (subId) => {
+            ['prodTime', 'downTime', 'wasteKg', 'avgProdTimes', 'avgDowntimes', 'avgWastes'].forEach(suffix => {
+                const key = `${currentMode}_${subId}_${suffix}`;
+                localStorage.removeItem(key);
+                const path = `productionData/${currentMode}/${subId}/${suffix}`;
+                remove(ref(db, path));
+            });
+        };
+        
+        const formatSecondsToHMS = (secs) => { const h = Math.floor(secs / 3600); const m = Math.floor((secs % 3600) / 60); const s = Math.round(secs % 60); return [h, m, s].map(v => v.toString().padStart(2, '0')).join(':'); };
+        const formatSecondsToMS = (secs) => { secs = Math.round(secs); const m = Math.floor(secs / 60); const s = secs % 60; return [m, s].map(v => v.toString().padStart(2, '0')).join(':'); };
+        const autoFormatTime = (event) => { const input = event.target; const isHms = (input.placeholder?.toLowerCase().includes('h:m:s')); let digits = input.value.replace(/[^0-9]/g, ''); let result = ''; if (isHms) { if (digits.length > 4) result = `${digits.substring(0, 2)}:${digits.substring(2, 4)}:${digits.substring(4, 6)}`; else if (digits.length > 2) result = `${digits.substring(0, 2)}:${digits.substring(2, 4)}`; else result = digits; } else { if (digits.length > 2) result = `${digits.substring(0, 2)}:${digits.substring(2, 4)}`; else result = digits; } input.value = result; };
+
+        const calculateProduction = (row) => {
+            if (!row) return;
+            const prodSeconds = parseTimeToSeconds(row.querySelector('.production-time').value);
+            const downSeconds = parseTimeToSeconds(row.querySelector('.downtime').value);
+            const piecesPerBox = parseInt(row.dataset.piecesPerBox, 10) || 1; 
+            const calculateForPeriod = (hours) => { if (prodSeconds <= 0) return { pieces: 0, boxes: 0 }; const availableTime = (hours * 3600) - downSeconds; if (availableTime <= 0) return { pieces: 0, boxes: 0 }; const totalPieces = Math.floor(availableTime / prodSeconds); return { pieces: totalPieces, boxes: Math.floor(totalPieces / piecesPerBox) }; };
+            [8, 12, 24].forEach(h => {
+                const prodData = calculateForPeriod(h);
+                const piecesCell = row.querySelector(`.output-${h}h-pieces`);
+                const boxesCell = row.querySelector(`.output-${h}h-boxes`);
+                if (!piecesCell || !boxesCell) return;
+                const separator = boxesCell.previousElementSibling;
+                piecesCell.textContent = prodData.pieces;
+                boxesCell.textContent = prodData.boxes;
+                piecesCell.classList.toggle('zero', prodData.pieces === 0);
+                boxesCell.classList.toggle('zero', prodData.boxes === 0);
+                separator?.classList.toggle('hidden', prodData.boxes === 0);
+            });
+        };
+
+        // --- createRowHTML function is unchanged ---
+        const createRowHTML = (id, name, piecesPerBox, isSub = false, parentName = '') => {
+            const prodKey = `${id}_prodTime`, downKey = `${id}_downTime`, wasteKey = `${id}_wasteKg`;
+            const prodValue = loadData(prodKey) || '00:00', downValue = loadData(downKey) || '00:00:00', wasteValue = loadData(wasteKey) || '';
+            const ppBKey = `${id}_piecesPerBox`;
+            const nameCellContent = isSub
+                ? `<input type="text" class="sub-name-input" value="${name}" data-id="${id}" title="Edit Branch Name"><button class="action-btn delete-branch-btn" data-id="${id}" data-parent-name="${parentName}" title="Delete Branch">-</button>`
+                : `<span>${name} (</span><input type="number" class="input-field pieces-per-box-input" data-key="${ppBKey}" value="${piecesPerBox}" title="Edit Pieces per Box"><span>)</span><button class="action-btn add-branch-btn" data-parent-name="${name}" title="Add Branch">+</button>`;
+            
+            const row = document.createElement('tr');
+            row.dataset.id = id;
+            row.dataset.piecesPerBox = piecesPerBox; 
+            if (isSub) row.classList.add('sub-row');
+            row.innerHTML = `<td class="product-name-cell">${nameCellContent}</td><td><div class="input-with-icon"><input type="text" class="input-field time-input production-time" placeholder="M:S" data-key="${prodKey}" value="${prodValue}"><span class="avg-calc-trigger" data-type="prod_time">⚙️</span></div></td><td><div class="input-with-icon"><input type="text" class="input-field time-input downtime" placeholder="H:M:S" data-key="${downKey}" value="${downValue}"><span class="avg-calc-trigger" data-type="downtime">⚙️</span></div></td><td class="output-cell-container"><span class="output-pieces output-8h-pieces">0</span><span class="separator"> / </span><span class="output-boxes output-8h-boxes">0</span></td><td class="output-cell-container"><span class="output-pieces output-12h-pieces">0</span><span class="separator"> / </span><span class="output-boxes output-12h-boxes">0</span></td><td class="output-cell-container"><span class="output-pieces output-24h-pieces">0</span><span class="separator"> / </span><span class="output-boxes output-24h-boxes">0</span></td><td><div class="input-with-icon"><input type="number" class="input-field waste-input" placeholder="kg" data-key="${wasteKey}" value="${wasteValue}"><span class="avg-calc-trigger" data-type="waste">⚙️</span></div></td>`;
+            calculateProduction(row);
+            return row;
+        };
+
+        // --- CHANGED: populateTable now builds cards and tables ---
+        const populateTable = () => {
+            const focusedElement = document.activeElement;
+            const focusedId = focusedElement?.dataset.key || focusedElement?.dataset.id;
+            const selectionStart = focusedElement?.selectionStart;
+
+            groupsContainer.innerHTML = ''; // Clear the main container
+            const productGroups = getGroupedProducts();
+
+            // Loop over each group
+            for (const groupName in productGroups) {
+                if (productGroups.hasOwnProperty(groupName)) {
+                    const group = productGroups[groupName];
+                    
+                    // 1. Create card
+                    const card = document.createElement('div');
+                    card.className = 'product-group-card';
+                    card.style.setProperty('--group-color', group.color);
+                    
+                    // 2. Create header
+                    const header = document.createElement('h2');
+                    header.textContent = groupName;
+                    card.appendChild(header);
+
+                    // 3. Create table wrapper for scrolling
+                    const tableWrapper = document.createElement('div');
+                    tableWrapper.className = 'table-wrapper';
+                    
+                    // 4. Create table
+                    const table = document.createElement('table');
+                    table.innerHTML = tableHeaderHTML; // Add the header
+                    const tBody = document.createElement('tbody');
+                    table.appendChild(tBody);
+
+                    // 5. Populate table with products in this group
+                    group.products.forEach(p => {
+                        const ppBKey = `${p.name}_piecesPerBox`;
+                        const savedPPB = loadData(ppBKey);
+                        const effectivePPB = savedPPB ? parseInt(savedPPB, 10) : p.piecesPerBox;
+
+                        tBody.appendChild(createRowHTML(p.name, p.name, effectivePPB));
+                        subProducts[p.name]?.forEach(sub => {
+                            tBody.appendChild(createRowHTML(sub.id, sub.name, effectivePPB, true, p.name));
+                        });
+                    });
+                    
+                    tableWrapper.appendChild(table);
+                    card.appendChild(tableWrapper);
+                    groupsContainer.appendChild(card);
+                }
+            }
+            
+            searchInput.dispatchEvent(new Event('input')); // Trigger search to apply visibility
+            
+            if (focusedId) {
+                // Find focused element within the new structure
+                const newFocusElement = groupsContainer.querySelector(`[data-key="${focusedId}"], [data-id="${focusedId}"]`);
+                if (newFocusElement) {
+                    newFocusElement.focus();
+                    if(selectionStart) newFocusElement.setSelectionRange(selectionStart, selectionStart);
+                }
+            }
+        };
+
+        // --- CHANGED: syncUIWithFirebaseData queries groupsContainer ---
+        const syncUIWithFirebaseData = (data) => {
+            const remoteSubProducts = data.subProducts || {};
+            if (JSON.stringify(remoteSubProducts) !== JSON.stringify(subProducts)) {
+                subProducts = remoteSubProducts;
+                localStorage.setItem(`${currentMode}_subProducts`, JSON.stringify(subProducts));
+                populateTable(); 
+                return;
+            }
+
+            // Update values in all cards
+            groupsContainer.querySelectorAll('tr[data-id]').forEach(row => {
+                const id = row.dataset.id;
+                const remoteRowData = data[id];
+                if (!remoteRowData) return;
+
+                const fields = {
+                    prodTime: '.production-time',
+                    downTime: '.downtime',
+                    wasteKg: '.waste-input',
+                    piecesPerBox: '.pieces-per-box-input'
+                };
+                
+                let needsRecalculating = false;
+                for (const key in fields) {
+                    const selector = fields[key];
+                    const input = row.querySelector(selector);
+                    let remoteValue = remoteRowData[key];
+
+                    if (remoteValue == null) {
+                        if (key === 'prodTime') remoteValue = '00:00';
+                        else if (key === 'downTime') remoteValue = '00:00:00';
+                        else if (key === 'wasteKg') remoteValue = '';
+                        else if (key === 'piecesPerBox') {
+                            const p = products.find(p => p.name === id);
+                            remoteValue = p ? p.piecesPerBox.toString() : '1';
+                        }
+                    }
+                    
+                    if (input && input.value !== remoteValue) {
+                        if (document.activeElement !== input) {
+                            input.value = remoteValue;
+                            localStorage.setItem(`${currentMode}_${id}_${key}`, remoteValue);
+                            
+                            if (key === 'piecesPerBox') {
+                                const newPPB = parseInt(remoteValue, 10) || 1;
+                                row.dataset.piecesPerBox = newPPB;
+                                subProducts[id]?.forEach(sub => {
+                                    // Query the whole document for the sub-row
+                                    const subRow = document.querySelector(`tr[data-id="${sub.id}"]`);
+                                    if (subRow) {
+                                        subRow.dataset.piecesPerBox = newPPB;
+                                        calculateProduction(subRow);
+                                    }
+                                });
+                            }
+                            needsRecalculating = true;
+                        }
+                    }
+                }
+                
+                if (needsRecalculating) {
+                    calculateProduction(row);
+                }
+            });
+        };
+        
+        const initializePageForMode = () => {
+            isInitialLoad = true;
+            if (dbRef) off(dbRef); 
+
+            loadSubProducts();
+            populateTable(); // This will now build the grouped cards
+
+            dbRef = ref(db, `productionData/${currentMode}`);
+            onValue(dbRef, (snapshot) => {
+                if (!snapshot.exists()) {
+                    console.log("No data in Firebase for this mode.");
+                    return;
+                }
+                const data = snapshot.val();
+
+                if (isInitialLoad) {
+                    isInitialLoad = false;
+                    for (const id in data) {
+                        if (id === 'subProducts') {
+                            localStorage.setItem(`${currentMode}_subProducts`, JSON.stringify(data.subProducts || {}));
+                        } else {
+                            for (const key in data[id]) {
+                                localStorage.setItem(`${currentMode}_${id}_${key}`, data[id][key]);
+                            }
+                        }
+                    }
+                    loadSubProducts();
+                    populateTable();
+                } else {
+                    syncUIWithFirebaseData(data);
+                }
+            });
+
+            const container = document.querySelector('.container');
+            const mainTitle = document.getElementById('main-title');
+            const withoutFoilBtn = document.getElementById('mode-without-foil');
+            const withFoilBtn = document.getElementById('mode-with-foil');
+            if (currentMode === 'withFoil') {
+                mainTitle.textContent = 'Production Calculator (With Foil)';
+                withFoilBtn.classList.add('active'); withoutFoilBtn.classList.remove('active');
+                container.classList.add('foil-mode');
+            } else {
+                mainTitle.textContent = 'Production Calculator (Without Foil)';
+                withoutFoilBtn.classList.add('active'); withFoilBtn.classList.remove('active');
+                container.classList.remove('foil-mode');
+            }
+        };
+
+        document.getElementById('mode-without-foil').addEventListener('click', () => { if (currentMode !== 'withoutFoil') { currentMode = 'withoutFoil'; initializePageForMode(); } });
+        document.getElementById('mode-with-foil').addEventListener('click', () => { if (currentMode !== 'withFoil') { currentMode = 'withFoil'; initializePageForMode(); } });
+        
+        // --- CHANGED: Search logic updated for card structure ---
+        searchInput.addEventListener('input', () => {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            
+            groupsContainer.querySelectorAll('.product-group-card').forEach(card => {
+                const groupTitle = card.querySelector('h2').textContent.toLowerCase();
+                const groupMatches = groupTitle.includes(searchTerm);
+                let cardHasVisibleRow = false;
+
+                const rows = card.querySelectorAll('table tbody tr');
+                const rowVisibility = new Map(); // Store visibility decision
+                let parentName = '';
+                let parentMatches = false;
+                let parentId = '';
+
+                // First pass: determine visibility based on self and children
+                rows.forEach(row => {
+                    let matches = false;
+                    if (row.classList.contains('sub-row')) {
+                        const subName = row.querySelector('.sub-name-input').value.toLowerCase();
+                        matches = subName.includes(searchTerm) || parentMatches;
+                    } else {
+                        // This is a parent row
+                        parentName = row.querySelector('.product-name-cell span')?.textContent.toLowerCase() || '';
+                        parentMatches = parentName.includes(searchTerm);
+                        parentId = row.dataset.id;
+                        matches = parentMatches;
+                        
+                        // Check children (sub-products)
+                        if (!matches && subProducts[parentId]) {
+                            matches = subProducts[parentId].some(sub => sub.name.toLowerCase().includes(searchTerm));
+                        }
+                    }
+                    rowVisibility.set(row, matches);
+                });
+                
+                // Final pass to show rows and card
+                rows.forEach(row => {
+                    if (rowVisibility.get(row)) {
+                        row.style.display = '';
+                        cardHasVisibleRow = true;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                // Show card if title matches or it has a visible row
+                card.style.display = (groupMatches || cardHasVisibleRow) ? '' : 'none';
+            });
+        });
+
+        // --- CHANGED: Event listeners attached to groupsContainer ---
+        groupsContainer.addEventListener('input', (e) => {
+            const target = e.target;
+            if (target.classList.contains('input-field')) {
+                if (target.classList.contains('time-input')) autoFormatTime(e);
+                
+                saveData(target.dataset.key, target.value);
+                
+                const row = target.closest('tr');
+                
+                if (target.classList.contains('pieces-per-box-input')) {
+                    const newPPB = parseInt(target.value, 10) || 1;
+                    row.dataset.piecesPerBox = newPPB;
+
+                    const parentName = row.dataset.id;
+                    subProducts[parentName]?.forEach(sub => {
+                        // Find sub-row anywhere in the document
+                        const subRow = document.querySelector(`tr[data-id="${sub.id}"]`);
+                        if (subRow) {
+                            subRow.dataset.piecesPerBox = newPPB;
+                            calculateProduction(subRow);
+                        }
+                    });
+                }
+                calculateProduction(row);
+            }
+            if (target.classList.contains('sub-name-input')) {
+                const subId = target.dataset.id;
+                const parentId = Object.keys(subProducts).find(key => subProducts[key].some(sub => sub.id === subId));
+                if (parentId) {
+                    const subToUpdate = subProducts[parentId].find(sub => sub.id === subId);
+                    if (subToUpdate) {
+                        subToUpdate.name = target.value;
+                        saveSubProducts();
+                    }
+                }
+            }
+        });
+
+        groupsContainer.addEventListener('click', (e) => {
+            const target = e.target;
+            if (target.classList.contains('add-branch-btn')) {
+                const parentRow = target.closest('tr');
+                const parentName = target.dataset.parentName;
+                const currentPPB = parseInt(parentRow.dataset.piecesPerBox, 10);
+                
+                if (!parentName || !currentPPB) return;
+
+                const newSub = { id: `sub_${Date.now()}`, name: 'New Branch' };
+                if (!subProducts[parentName]) subProducts[parentName] = [];
+                subProducts[parentName].push(newSub);
+                saveSubProducts();
+                
+                const newRow = createRowHTML(newSub.id, newSub.name, currentPPB, true, parentName);
+                
+                target.closest('tr').after(newRow);
+                newRow.querySelector('.sub-name-input').focus();
+            }
+            if (target.classList.contains('delete-branch-btn')) {
+                const subId = target.dataset.id;
+                const parentName = target.dataset.parentName;
+                if (subProducts[parentName]) {
+                    subProducts[parentName] = subProducts[parentName].filter(sub => sub.id !== subId);
+                    if (subProducts[parentName].length === 0) delete subProducts[parentName];
+                    saveSubProducts();
+                    deleteSubProductData(subId);
+                    target.closest('tr').remove();
+                }
+            }
+            if (target.classList.contains('avg-calc-trigger')) {
+                targetAvgInput = target.closest('.input-with-icon').querySelector('.input-field');
+                const triggerType = target.dataset.type;
+                const configs = { prod_time: { title: "Average Production Time", placeholder: "M:S", type: 'time', format: formatSecondsToMS, storageKey: 'avgProdTimes' }, downtime: { title: "Average Downtime", placeholder: "H:M:S", type: 'time', format: formatSecondsToHMS, storageKey: 'avgDowntimes' }, waste: { title: "Average Waste", placeholder: "kg", type: 'number', inputType: 'number', format: val => parseFloat(val).toFixed(2), storageKey: 'avgWastes' }};
+                currentAvgConfig = configs[triggerType];
+                document.getElementById('avg-modal-title').textContent = currentAvgConfig.title;
+                document.getElementById('avg-modal-description').textContent = `Enter multiple values (${currentAvgConfig.placeholder}) to find the average.`;
+                const dataKey = targetAvgInput.dataset.key;
+                const id = dataKey.substring(0, dataKey.lastIndexOf('_'));
+                const savedValues = JSON.parse(loadData(`${id}_${currentAvgConfig.storageKey}`) || '[]');
+                avgInputsContainer.innerHTML = '';
+                if (savedValues.length > 0) savedValues.forEach(val => addNewAvgInput(val));
+                else { addNewAvgInput(); addNewAvgInput(); }
+                avgModal.style.display = 'flex';
+            }
+        });
+
+        openQuickCalcBtn.onclick = () => { quickCalcModal.style.display = "flex"; calculateQtyFromTime(); calculateTimeFromQty(); };
+        closeQuickCalcBtn.onclick = () => { quickCalcModal.style.display = "none"; };
+        
+        productSelect.innerHTML = '';
+        products.forEach(p => productSelect.appendChild(new Option(`${p.name} (${p.piecesPerBox})`, p.name)));
+        
+        const calculateQtyFromTime = () => { const productData = getSelectedProductData(); const resultEl = document.getElementById('calc-qty-result'); if (!productData) { resultEl.textContent = `Set production time for ${productSelect.value} first.`; return; } const totalSeconds = parseTimeToSeconds(calcTimeInput.value); const totalPieces = Math.floor(totalSeconds / productData.prodTimeSeconds); resultEl.innerHTML = `Produces: <span class="value">${totalPieces}</span> pieces / <span class="value">${Math.floor(totalPieces/productData.piecesPerBox)}</span> boxes`; };
+        const calculateTimeFromQty = () => { const productData = getSelectedProductData(); const resultEl = document.getElementById('calc-time-result'); if (!productData) { resultEl.textContent = `Set production time for ${productSelect.value} first.`; return; } let totalPieces = parseInt(calcQtyInput.value, 10) || 0; if (calcQtyType.value === 'boxes') totalPieces *= productData.piecesPerBox; resultEl.innerHTML = `Required Time: <span class="value">${formatSecondsToHMS(totalPieces * productData.prodTimeSeconds)}</span>`; };
+        
+        const getSelectedProductData = () => {
+            const pName = productSelect.value;
+            const product = products.find(p => p.name === pName);
+            if (!product) return null;
+            const prodTime = parseTimeToSeconds(loadData(`${pName}_prodTime`));
+            if (prodTime === 0) return null;
+            const ppBKey = `${pName}_piecesPerBox`;
+            const savedPPB = loadData(ppBKey);
+            const effectivePPB = savedPPB ? parseInt(savedPPB, 10) : product.piecesPerBox;
+            return { ...product, piecesPerBox: effectivePPB, prodTimeSeconds: prodTime };
+        };
+        
+        [calcTimeInput, calcQtyInput, calcQtyType, productSelect].forEach(el => el.addEventListener('input', () => { if(el === calcTimeInput) autoFormatTime({target: el}); calculateQtyFromTime(); calculateTimeFromQty(); }));
+        
+        const addNewAvgInput = (value = '') => { const input = document.createElement('input'); input.type = currentAvgConfig.inputType || 'text'; input.className = 'modal-input avg-input-row'; input.placeholder = currentAvgConfig.placeholder; input.value = value; avgInputsContainer.appendChild(input); return input; };
+        closeAvgBtn.onclick = () => { avgModal.style.display = 'none'; };
+        addAvgInputBtn.onclick = () => { addNewAvgInput().focus(); };
+        avgInputsContainer.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); if (!e.target.classList.contains('avg-input-row')) return; const allInputs = [...avgInputsContainer.querySelectorAll('.avg-input-row')]; const currentIndex = allInputs.indexOf(e.target); if (currentIndex > -1 && currentIndex < allInputs.length - 1) allInputs[currentIndex + 1].focus(); else addNewAvgInput().focus(); }});
+        saveAvgValueBtn.onclick = () => {
+            const inputs = [...avgInputsContainer.querySelectorAll('input')];
+            let total = 0, count = 0;
+            const valuesToSave = inputs.map(i => i.value).filter(Boolean);
+            valuesToSave.forEach(valStr => { const val = currentAvgConfig.type === 'time' ? parseTimeToSeconds(valStr) : parseFloat(valStr); if (!isNaN(val)) { total += val; count++; }});
+            if (targetAvgInput) {
+                targetAvgInput.value = count > 0 ? currentAvgConfig.format(total / count) : (currentAvgConfig.type === 'time' ? '00:00' : '0');
+                targetAvgInput.dispatchEvent(new Event('input', { bubbles: true }));
+                const dataKey = targetAvgInput.dataset.key;
+                const id = dataKey.substring(0, dataKey.lastIndexOf('_'));
+                saveData(`${id}_${currentAvgConfig.storageKey}`, JSON.stringify(valuesToSave));
+            }
+            avgModal.style.display = 'none';
+        };
+
+        // --- CHANGED: Export logic updated to include group headers ---
+        exportBtn.addEventListener('click', () => {
+             const headers = ["Product Type", "Pcs/Box", "Prod. Time (M:S)", "Downtime (H:M:S)", "Prod. in 8h (Pcs/Box)", "Prod. in 12h (Pcs/Box)", "Prod. in 24h (Pcs/Box)", "Waste (kg)"];
+             const data = [];
+             const merges = [];
+             let rowIndex = 0; // Excel row index (0-based)
+             
+             data.push(headers);
+             rowIndex++;
+
+             // Iterate over visible cards
+             groupsContainer.querySelectorAll('.product-group-card').forEach(card => {
+                 if (card.style.display === 'none') return; // Skip hidden cards
+
+                 const groupTitle = card.querySelector('h2').textContent;
+                 data.push([groupTitle]); // Add group title row
+                 // Add merge instruction for this row (from col 0 to col 7)
+                 merges.push({ s: { r: rowIndex, c: 0 }, e: { r: rowIndex, c: 7 } });
+                 rowIndex++;
+                 
+                 // Iterate over visible rows in this card
+                 card.querySelectorAll('table tbody tr').forEach(row => {
+                     if (row.style.display === 'none') return; // Skip hidden rows
+                     
+                     const formatOutput = (h) => `${row.querySelector(`.output-${h}h-pieces`).textContent} / ${row.querySelector(`.output-${h}h-boxes`).textContent}`;
+                     let name = '';
+                     let piecesPerBox = row.dataset.piecesPerBox || '';
+                     
+                     if (row.classList.contains('sub-row')) {
+                         name = '  ↳ ' + row.querySelector('.sub-name-input').value;
+                     } else {
+                         name = row.querySelector('.product-name-cell span')?.textContent || '';
+                         piecesPerBox = row.querySelector('.pieces-per-box-input')?.value || piecesPerBox;
+                     }
+                     
+                     data.push([ 
+                         name, piecesPerBox,
+                         row.querySelector('.production-time').value, 
+                         row.querySelector('.downtime').value, 
+                         formatOutput(8), formatOutput(12), formatOutput(24), 
+                         row.querySelector('.waste-input').value 
+                     ]);
+                     rowIndex++;
+                 });
+             });
+             
+             const fileName = `production_data${currentMode === 'withFoil' ? '_with_foil' : ''}.xlsx`;
+             const ws = XLSX.utils.aoa_to_sheet(data); // Create sheet from array (includes headers)
+             ws['!cols'] = [{ wch: 30 }, { wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 15 }];
+             ws['!merges'] = merges; // Apply the cell merges
+             
+             const wb = XLSX.utils.book_new();
+             XLSX.utils.book_append_sheet(wb, ws, "Production Data");
+             XLSX.writeFile(wb, fileName);
+        });
+
+        window.onclick = (event) => { if (event.target == quickCalcModal || event.target == avgModal) { quickCalcModal.style.display = "none"; avgModal.style.display = "none"; } };
+
+        initializePageForMode();
+    });
+    </script>
+</body>
+</html>
