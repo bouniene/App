@@ -1196,52 +1196,17 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
     function getCornerRotation(d){const a=d.toUpperCase().trim();return a.startsWith("PLINTHE")?0:a.startsWith("CADRE")?0:a.startsWith("WALL PANEL")?15:a.startsWith("CIMAISE")?-10:a.startsWith("CORNIERE")?0:0}
     function getCornerShapeClipPath(d){const a=d.toUpperCase().trim();return a.startsWith("CIMAISE")?"polygon(0 0, 100% 0, 100% 40%, 40% 40%, 40% 100%, 0 100%)":a.startsWith("PLINTHE")?"polygon(0 0, 100% 0, 100% 100%, 30% 100%, 0 70%)":a.startsWith("CADRE")?"polygon(0 0, 100% 0, 100% 100%, 0 100%)":a.startsWith("WALL PANEL")?"polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)":a.startsWith("CORNIERE")?"polygon(0 0, 30% 0, 30% 70%, 0 100%)":"polygon(0 0, 100% 0, 0 100%)"}
     function getLastSuffixNumber(d){const a=d.trim().match(/-(\d+)$/);return a?parseInt(a[1],10):null}
-function updateLabelQR(d, a, length){
+    function updateLabelQR(d,a,length){
         const e = d.querySelector(".qr-code-container");
         if(!e) return;
         e.innerHTML = "";
         
-        // 1. استخراج البيانات
-        let fullRef = d.querySelector(".ref").textContent || "";
-        fullRef = fullRef.replace("Référence :", "").trim();
-
-        let pcsVal = d.querySelector(".pcs").textContent || "0";
-        pcsVal = pcsVal.replace("PCS/Carton:", "").trim();
-
-        // 2. فصل النوع عن الرقم
-        let category = "";
-        let number = fullRef;
-        const match = fullRef.match(/^(.*?)\s+(\d+[-]\d+)$/);
-        if (match) {
-            category = match[1].trim().toUpperCase();
-            number = match[2].trim();
-        } else {
-            const parts = fullRef.split(' ');
-            if(parts.length > 1) {
-                number = parts.pop();
-                category = parts.join(' ').toUpperCase();
-            }
-        }
-
-        // 3. الاختصارات
-        const typeMap = {
-            "WALL PANEL": "WP",
-            "CIMAISE":    "CI",
-            "CORNICHE":   "COR",
-            "CORNIERE":   "COR",
-            "PLINTHE":    "PL",
-            "CADRE":      "CA"
-        };
-        const typeCode = typeMap[category] || category.substring(0, 2).toUpperCase();
-
-        // 4. تكوين النص النهائي
-        const i = `CRT-${typeCode}-${number}-${length}-${pcsVal}`;
+        const t = d.querySelector(".ref").textContent || "Référence : N/A";
+        const n = t.trim();
+        const s = calculateWeeksAndDayOfWeek("2024-05-11");
+        const r = formatRefForQR(n);
+        const i = `${r}-${length},${s}${a}`;
         
-        // ---------------------------------------------------------
-        // /// هذا هو السطر الجديد والضروري لإظهار النص عند مرور الماوس ///
-        e.title = i; 
-        // ---------------------------------------------------------
-
         const codeType = document.getElementById('codeTypeSelect').value;
 
         if (codeType === 'qrcode') {
@@ -1254,6 +1219,7 @@ function updateLabelQR(d, a, length){
                 correctLevel: QRCode.CorrectLevel.L
             });
         } else {
+            // Data Matrix using bwip-js
             let canvas = document.createElement('canvas');
             try {
                 bwipjs.toCanvas(canvas, {
