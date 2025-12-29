@@ -1196,17 +1196,58 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
     function getCornerRotation(d){const a=d.toUpperCase().trim();return a.startsWith("PLINTHE")?0:a.startsWith("CADRE")?0:a.startsWith("WALL PANEL")?15:a.startsWith("CIMAISE")?-10:a.startsWith("CORNIERE")?0:0}
     function getCornerShapeClipPath(d){const a=d.toUpperCase().trim();return a.startsWith("CIMAISE")?"polygon(0 0, 100% 0, 100% 40%, 40% 40%, 40% 100%, 0 100%)":a.startsWith("PLINTHE")?"polygon(0 0, 100% 0, 100% 100%, 30% 100%, 0 70%)":a.startsWith("CADRE")?"polygon(0 0, 100% 0, 100% 100%, 0 100%)":a.startsWith("WALL PANEL")?"polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)":a.startsWith("CORNIERE")?"polygon(0 0, 30% 0, 30% 70%, 0 100%)":"polygon(0 0, 100% 0, 0 100%)"}
     function getLastSuffixNumber(d){const a=d.trim().match(/-(\d+)$/);return a?parseInt(a[1],10):null}
-    function updateLabelQR(d,a,length){
+    function updateLabelQR(d, a, length){
         const e = d.querySelector(".qr-code-container");
         if(!e) return;
         e.innerHTML = "";
         
-        const t = d.querySelector(".ref").textContent || "Référence : N/A";
-        const n = t.trim();
-        const s = calculateWeeksAndDayOfWeek("2024-05-11");
-        const r = formatRefForQR(n);
-        const i = `${r}-${length},${s}${a}`;
+        // 1. استخراج البيانات من داخل الملصق نفسه
+        // استخراج المرجع وتنظيفه
+        let fullRef = d.querySelector(".ref").textContent || "";
+        fullRef = fullRef.replace("Référence :", "").trim();
+
+        // استخراج عدد القطع وتنظيفه
+        let pcsVal = d.querySelector(".pcs").textContent || "0";
+        pcsVal = pcsVal.replace("PCS/Carton:", "").trim();
+
+        // 2. تحليل الاسم لفصل "النوع" عن "الرقم"
+        let category = "";
+        let number = fullRef;
         
+        // البحث عن نمط: (نص) ثم مسافة ثم (أرقام-أرقام)
+        const match = fullRef.match(/^(.*?)\s+(\d+[-]\d+)$/);
+        if (match) {
+            category = match[1].trim().toUpperCase(); // مثال: CIMAISE
+            number = match[2].trim(); // مثال: 200-1
+        } else {
+            // محاولة بديلة في حال كان التنسيق مختلفاً
+            const parts = fullRef.split(' ');
+            if(parts.length > 1) {
+                number = parts.pop();
+                category = parts.join(' ').toUpperCase();
+            }
+        }
+
+        // 3. جدول الاختصارات حسب طلبك
+        const typeMap = {
+            "WALL PANEL": "WP",
+            "CIMAISE":    "CI",
+            "CORNICHE":   "COR",
+            "CORNIERE":   "COR",
+            "PLINTHE":    "PL",
+            "CADRE":      "CA"
+        };
+
+        // تحديد الرمز المختصر
+        const typeCode = typeMap[category] || category.substring(0, 2).toUpperCase();
+
+        // 4. تكوين النص النهائي للكود
+        // الصيغة: CRT-{TYPE}-{NUMBER}-{LENGTH}-{PCS}
+        const i = `CRT-${typeCode}-${number}-${length}-${pcsVal}`;
+        
+        // 5. تعيين العنوان ليظهر عند مرور الماوس (هام جداً)
+        e.title = i;
+
         const codeType = document.getElementById('codeTypeSelect').value;
 
         if (codeType === 'qrcode') {
@@ -1239,6 +1280,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
             }
         }
         
+        // الإبقاء على الكود العشوائي القصير أسفل الصورة كمعرف فريد للصفحة
         const o = document.createElement("div");
         o.className = "qr-unique-id";
         o.textContent = a;
