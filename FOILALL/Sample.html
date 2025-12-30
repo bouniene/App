@@ -890,7 +890,7 @@ main#main-content {
             // =========== الخطوة 2: استبدال كائن المزامنة بالكامل ==============
             // =================================================================
             FirebasePersistence: {
-                // Helper to convert array to Firebase object {id: item}
+                // دالة مساعدة لتحويل المصفوفة إلى كائن
                 _arrayToObject(array, keyField = 'docId') {
                     if (!array || !Array.isArray(array)) return {};
                     return array.reduce((obj, item) => {
@@ -900,28 +900,34 @@ main#main-content {
                         return obj;
                     }, {});
                 },
-                
-                // Fetches all data from Firebase in one go
+
+                // ✨ دالة جديدة: تنظيف البيانات من undefined و NaN قبل الإرسال
+                _cleanData(data) {
+                    return JSON.parse(JSON.stringify(data, (key, value) => {
+                        // Firebase يكره undefined، نحولها إلى null
+                        if (value === undefined) return null;
+                        // Firebase يكره NaN، نحولها إلى null
+                        if (typeof value === 'number' && isNaN(value)) return null;
+                        return value;
+                    }));
+                },
+
+                // جلب البيانات
                 async getData() {
                     console.log("Fetching data from Firebase...");
                     try {
-                        const dbRef = ref(database); // Use 'database' from module scope
+                        const dbRef = ref(database);
                         const snapshot = await get(dbRef);
                         if (snapshot.exists()) {
                             const data = snapshot.val();
-                            // Convert Firebase objects to arrays for the app
                             const samples = Object.values(data.samples || {});
                             const logs = Object.values(data.logs || {});
-                            // As requested, 'rolls' data comes from Firebase
                             const rolls = Object.values(data.rolls || {}); 
-					                        const sidebarOrder = data.settings?.sidebarOrder || []; // ✨ أضف هذا السطر
-		
-							
-							
-                return { samples, logs, rolls, sidebarOrder }; // ✨ أضف sidebarOrder هنا
+                            const sidebarOrder = data.settings?.sidebarOrder || [];
+                            
+                            return { samples, logs, rolls, sidebarOrder };
                         } else {
-                            console.log("No data available in Firebase.");
-                            return { samples: [], logs: [], rolls: [] };
+                            return { samples: [], logs: [], rolls: [], sidebarOrder: [] };
                         }
                     } catch (error) {
                         console.error("Firebase GET failed:", error);
@@ -929,31 +935,31 @@ main#main-content {
                     }
                 },
 
-                // Saves the state to Firebase
+                // حفظ البيانات
                 async saveData(state) {
                     console.log("Saving data to Firebase...");
                     try {
-                        // Filter out items marked for deletion, they will be removed from Firebase
                         const samplesToSave = state.samples.filter(s => !s.isDeleted);
                         const samplesObject = this._arrayToObject(samplesToSave);
                         const logsObject = this._arrayToObject(state.logs, 'id');
 
-                        // Use a multi-path update to only affect samples and logs,
-                        // leaving other data (like rolls/foils) untouched.
-                        const updates = {
+                        // تجهيز التحديثات
+                        const rawUpdates = {
                             '/samples': samplesObject,
                             '/logs': logsObject,
-							                            '/settings/sidebarOrder': state.sidebarOrder || [] // ✨ أضف هذا السطر
-
-							
+                            '/settings/sidebarOrder': state.sidebarOrder || []
                         };
-        await update(ref(database), updates); // استخدم 'database' من module scope
+
+                        // ✨ تنظيف البيانات قبل الإرسال لتجنب أخطاء Firebase
+                        const cleanUpdates = this._cleanData(rawUpdates);
+
+                        await update(ref(database), cleanUpdates);
                         return { success: true, message: "Data saved to Firebase." };
 
                     } catch (error) {
-                        console.error("Firebase POST failed:", error);
-                        const errorText = error.message || "Unknown error";
-                        throw new Error(`Firebase API POST failed: ${errorText}`);
+                        // طباعة الخطأ بالتفصيل في الكونسول لمعرفة السبب
+                        console.error("Firebase Save Error Detailed:", error);
+                        throw new Error(error.message || "Unknown error during save");
                     }
                 }
             },
@@ -1888,7 +1894,10 @@ const location = SampleManagerApp.state.locationSelect ? SampleManagerApp.state.
 				                // =================== الإضافة الجديدة هنا ===================
                 const status = document.getElementById('sample-status').value;
                 const quantityValue = document.getElementById('sample-quantity').value;
-                const quantity = (status === 'Available' && quantityValue) ? parseInt(quantityValue, 10) : null;
+                // إضافة || 0 لضمان أن النتيجة رقم صحيح أو null
+let parsedQty = parseInt(quantityValue, 10);
+if (isNaN(parsedQty)) parsedQty = 0; 
+const quantity = (status === 'Available' && quantityValue) ? parsedQty : null;
                 // =========================================================
 
                 if (!name) {
@@ -1923,7 +1932,11 @@ if (imageFile) {
         
         // 2. إعادة تعيين إحداثيات العلامات (لأنها خاصة بالصورة القديمة)
         //    نستخدم متغير 'components' الذي يحتوي على IDs المكونات من الفورم
-        sampleData.components = components.map(id => ({ id: id, points: [] }));
+        if (editId) {
+    sampleData.components = components.map(id => ({ id: id, points: [] }));
+} else {
+    sampleData.components = components;
+}
 
         // =================== الإضافة الجديدة تنتهي هنا ===================
 
@@ -2173,71 +2186,52 @@ if (imageFile) {
             },
 
 renderSearchControls(view) {
-    const searchContainer = SampleManagerApp.elements.searchContainer;
-    const logicContainer = document.getElementById('search-logic-container');
+            const searchContainer = SampleManagerApp.elements.searchContainer;
+            // ✨ الحصول على الحاوية الجديدة
+            const logicContainer = document.getElementById('search-logic-container'); 
 
-    // 1. تحديد معرف (ID) حقل البحث المتوقع لهذه الواجهة
-    const inputId = `${view}-search-input`;
-    const existingInput = document.getElementById(inputId);
+            if (view === 'reports' || (view !== 'foil' && SampleManagerApp.state.showArchived)) {
+                searchContainer.innerHTML = '';
+                logicContainer.innerHTML = ''; // ✨ إفراغ الحاوية وإخفاؤها
+                return;
+            }
+            
+            // ✨ تم حذف أزرار البحث من هذا القالب
+            searchContainer.innerHTML = `
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="search" id="${view}-search-input" class="form-control" placeholder="Search..." autocomplete="off">
+                    <span id="item-count-display" class="input-group-text bg-light text-dark"></span>
+                </div>
+                <div id="advanced-search-dropdown" class="advanced-search-dropdown" style="display: none;"></div>
+            `;
+            
+            // ✨ إضافة الأزرار برمجياً إلى الحاوية الجديدة
+            logicContainer.innerHTML = `
+                <button type="button" data-logic="AND" class="btn btn-outline-secondary ${SampleManagerApp.state.searchLogic === 'AND' ? 'active' : ''}" title="Match ALL terms">All</button>
+                <button type="button" data-logic="OR" class="btn btn-outline-secondary ${SampleManagerApp.state.searchLogic === 'OR' ? 'active' : ''}" title="Match ANY term">Any</button>
+            `;
 
-    // ✨ التعديل الجوهري: إذا كان حقل البحث موجوداً بالفعل، لا تقم بإعادة بنائه
-    if (existingInput) {
-        // لكن يجب علينا التأكد من تحديث أزرار المنطق (AND/OR) لتعكس الحالة الحالية
-        if (logicContainer) {
-            const buttons = logicContainer.querySelectorAll('button');
-            buttons.forEach(btn => {
-                if (btn.dataset.logic === SampleManagerApp.state.searchLogic) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
+            // ربط الأحداث مع العناصر التي تم إنشاؤها للتو
+            const input = document.getElementById(`${view}-search-input`);
+            input.addEventListener('focus', () => this.showAdvancedSearch(view));
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && input.value.trim()) {
+                    e.preventDefault();
+                    SampleManagerApp.Search.addTerm(view, input.value.trim());
                 }
             });
-        }
-        return; // 🛑 توقف هنا ولا تمسح النص المكتوب
-    }
 
-    if (view === 'reports' || (view !== 'foil' && SampleManagerApp.state.showArchived)) {
-        searchContainer.innerHTML = '';
-        logicContainer.innerHTML = ''; 
-        return;
-    }
-    
-    // إنشاء HTML لشريط البحث (يتم تنفيذه فقط إذا لم يكن الحقل موجوداً)
-    searchContainer.innerHTML = `
-        <div class="input-group">
-            <span class="input-group-text"><i class="bi bi-search"></i></span>
-            <input type="search" id="${view}-search-input" class="form-control" placeholder="Search..." autocomplete="off">
-            <span id="item-count-display" class="input-group-text bg-light text-dark"></span>
-        </div>
-        <div id="advanced-search-dropdown" class="advanced-search-dropdown" style="display: none;"></div>
-    `;
-    
-    // إنشاء أزرار المنطق
-    logicContainer.innerHTML = `
-        <button type="button" data-logic="AND" class="btn btn-outline-secondary ${SampleManagerApp.state.searchLogic === 'AND' ? 'active' : ''}" title="Match ALL terms">All</button>
-        <button type="button" data-logic="OR" class="btn btn-outline-secondary ${SampleManagerApp.state.searchLogic === 'OR' ? 'active' : ''}" title="Match ANY term">Any</button>
-    `;
-
-    // ربط الأحداث (Event Listeners)
-    const input = document.getElementById(`${view}-search-input`);
-    input.addEventListener('focus', () => this.showAdvancedSearch(view));
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && input.value.trim()) {
-            e.preventDefault();
-            SampleManagerApp.Search.addTerm(view, input.value.trim());
-        }
-    });
-
-    const dropdown = document.getElementById('advanced-search-dropdown');
-    dropdown.addEventListener('click', (e) => {
-        const item = e.target.closest('.search-dropdown-item');
-        if (item && item.dataset.filterKey && item.dataset.filterValue) {
-            const { filterKey, filterValue } = item.dataset;
-            const term = `${filterKey}:"${filterValue}"`;
-            SampleManagerApp.Search.addTerm(view, term);
-        }
-    });
-},
+            const dropdown = document.getElementById('advanced-search-dropdown');
+            dropdown.addEventListener('click', (e) => {
+                const item = e.target.closest('.search-dropdown-item');
+                if (item && item.dataset.filterKey && item.dataset.filterValue) {
+                    const { filterKey, filterValue } = item.dataset;
+                    const term = `${filterKey}:"${filterValue}"`;
+                    SampleManagerApp.Search.addTerm(view, term);
+                }
+            });
+        },
             showAdvancedSearch(view) {
                 const dropdown = document.getElementById('advanced-search-dropdown');
                 if (!dropdown) return;
