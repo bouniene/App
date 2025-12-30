@@ -2173,52 +2173,71 @@ if (imageFile) {
             },
 
 renderSearchControls(view) {
-            const searchContainer = SampleManagerApp.elements.searchContainer;
-            // ✨ الحصول على الحاوية الجديدة
-            const logicContainer = document.getElementById('search-logic-container'); 
+    const searchContainer = SampleManagerApp.elements.searchContainer;
+    const logicContainer = document.getElementById('search-logic-container');
 
-            if (view === 'reports' || (view !== 'foil' && SampleManagerApp.state.showArchived)) {
-                searchContainer.innerHTML = '';
-                logicContainer.innerHTML = ''; // ✨ إفراغ الحاوية وإخفاؤها
-                return;
-            }
-            
-            // ✨ تم حذف أزرار البحث من هذا القالب
-            searchContainer.innerHTML = `
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-search"></i></span>
-                    <input type="search" id="${view}-search-input" class="form-control" placeholder="Search..." autocomplete="off">
-                    <span id="item-count-display" class="input-group-text bg-light text-dark"></span>
-                </div>
-                <div id="advanced-search-dropdown" class="advanced-search-dropdown" style="display: none;"></div>
-            `;
-            
-            // ✨ إضافة الأزرار برمجياً إلى الحاوية الجديدة
-            logicContainer.innerHTML = `
-                <button type="button" data-logic="AND" class="btn btn-outline-secondary ${SampleManagerApp.state.searchLogic === 'AND' ? 'active' : ''}" title="Match ALL terms">All</button>
-                <button type="button" data-logic="OR" class="btn btn-outline-secondary ${SampleManagerApp.state.searchLogic === 'OR' ? 'active' : ''}" title="Match ANY term">Any</button>
-            `;
+    // 1. تحديد معرف (ID) حقل البحث المتوقع لهذه الواجهة
+    const inputId = `${view}-search-input`;
+    const existingInput = document.getElementById(inputId);
 
-            // ربط الأحداث مع العناصر التي تم إنشاؤها للتو
-            const input = document.getElementById(`${view}-search-input`);
-            input.addEventListener('focus', () => this.showAdvancedSearch(view));
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && input.value.trim()) {
-                    e.preventDefault();
-                    SampleManagerApp.Search.addTerm(view, input.value.trim());
+    // ✨ التعديل الجوهري: إذا كان حقل البحث موجوداً بالفعل، لا تقم بإعادة بنائه
+    if (existingInput) {
+        // لكن يجب علينا التأكد من تحديث أزرار المنطق (AND/OR) لتعكس الحالة الحالية
+        if (logicContainer) {
+            const buttons = logicContainer.querySelectorAll('button');
+            buttons.forEach(btn => {
+                if (btn.dataset.logic === SampleManagerApp.state.searchLogic) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
                 }
             });
+        }
+        return; // 🛑 توقف هنا ولا تمسح النص المكتوب
+    }
 
-            const dropdown = document.getElementById('advanced-search-dropdown');
-            dropdown.addEventListener('click', (e) => {
-                const item = e.target.closest('.search-dropdown-item');
-                if (item && item.dataset.filterKey && item.dataset.filterValue) {
-                    const { filterKey, filterValue } = item.dataset;
-                    const term = `${filterKey}:"${filterValue}"`;
-                    SampleManagerApp.Search.addTerm(view, term);
-                }
-            });
-        },
+    if (view === 'reports' || (view !== 'foil' && SampleManagerApp.state.showArchived)) {
+        searchContainer.innerHTML = '';
+        logicContainer.innerHTML = ''; 
+        return;
+    }
+    
+    // إنشاء HTML لشريط البحث (يتم تنفيذه فقط إذا لم يكن الحقل موجوداً)
+    searchContainer.innerHTML = `
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="search" id="${view}-search-input" class="form-control" placeholder="Search..." autocomplete="off">
+            <span id="item-count-display" class="input-group-text bg-light text-dark"></span>
+        </div>
+        <div id="advanced-search-dropdown" class="advanced-search-dropdown" style="display: none;"></div>
+    `;
+    
+    // إنشاء أزرار المنطق
+    logicContainer.innerHTML = `
+        <button type="button" data-logic="AND" class="btn btn-outline-secondary ${SampleManagerApp.state.searchLogic === 'AND' ? 'active' : ''}" title="Match ALL terms">All</button>
+        <button type="button" data-logic="OR" class="btn btn-outline-secondary ${SampleManagerApp.state.searchLogic === 'OR' ? 'active' : ''}" title="Match ANY term">Any</button>
+    `;
+
+    // ربط الأحداث (Event Listeners)
+    const input = document.getElementById(`${view}-search-input`);
+    input.addEventListener('focus', () => this.showAdvancedSearch(view));
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && input.value.trim()) {
+            e.preventDefault();
+            SampleManagerApp.Search.addTerm(view, input.value.trim());
+        }
+    });
+
+    const dropdown = document.getElementById('advanced-search-dropdown');
+    dropdown.addEventListener('click', (e) => {
+        const item = e.target.closest('.search-dropdown-item');
+        if (item && item.dataset.filterKey && item.dataset.filterValue) {
+            const { filterKey, filterValue } = item.dataset;
+            const term = `${filterKey}:"${filterValue}"`;
+            SampleManagerApp.Search.addTerm(view, term);
+        }
+    });
+},
             showAdvancedSearch(view) {
                 const dropdown = document.getElementById('advanced-search-dropdown');
                 if (!dropdown) return;
