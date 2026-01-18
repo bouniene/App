@@ -1550,20 +1550,57 @@ if (dateValue && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
     monthName = MONTH_NAMES_AR[monthIndex] || 'شهر';
 }
 
+// ... داخل renderProductionOrderView ...
+
+// التحقق من ID والحالة
+if (!entry.id) entry.id = 'BON-' + Math.random().toString(36).substr(2, 5).toUpperCase();
+if (!entry.status) entry.status = 'pending';
+
+const isValidated = entry.status === 'validated';
+
+// تصغير حجم الأيقونات قليلاً لتتناسب مع السطر الواحد
+const statusIcon = isValidated 
+    ? '<i class="fas fa-check-circle text-success" style="font-size: 0.7rem;" title="تم التأكيد"></i>' 
+    : '<i class="fas fa-hourglass-half text-warning" style="font-size: 0.7rem;" title="غير مؤكد"></i>';
+
 const firstCellHtml = `
-    <td class="text-center no-print">
-        <div class="d-flex align-items-center justify-content-center gap-2">
-            <button class="btn btn-sm btn-outline-danger p-0" style="width: 1.5rem; height: 1.5rem;" data-action="delete-stock-entry" data-entry-index="${entryIndex}" title="حذف السجل"><i class="fas fa-trash-alt"></i></button>
+    <td class="text-center no-print" style="white-space: nowrap;">
+        <div class="d-flex flex-column align-items-center gap-1">
+
             
-            <div class="custom-date-container" title="تغيير التاريخ">
-                <span class="date-part date-day">${day}</span>
-                <span class="date-part date-month">${monthName}</span>
-                <span class="date-part date-year">${year}</span>
+            <div class="d-flex align-items-center justify-content-center gap-1">
                 
-                <input type="date" class="hidden-date-input"
-                       data-field="added_entry_date" 
-                       data-entry-index="${entryIndex}" 
-                       value="${dateValue}">
+                <button class="btn btn-sm btn-outline-dark p-0 d-flex align-items-center justify-content-center" 
+                        style="width: 20px; height: 26px;" 
+                        data-action="print-stock-entry-row" 
+                        data-entry-index="${entryIndex}" 
+                        title="طباعة">
+                        <i class="fas fa-print" style="font-size: 0.9rem;"></i>
+                </button>
+                
+                <div class="d-flex align-items-center justify-content-center" style="width: 26px; height: 26px;">
+                    ${statusIcon}
+                </div>
+
+                <button class="btn btn-sm btn-outline-danger p-0 d-flex align-items-center justify-content-center" 
+                        style="width: 26px; height: 26px;" 
+                        data-action="delete-stock-entry" 
+                        data-entry-index="${entryIndex}" 
+                        title="حذف">
+                        <i class="fas fa-trash-alt" style="font-size: 0.9rem;"></i>
+                </button>
+
+                <div class="vr mx-1 text-muted"></div>
+
+                <div class="custom-date-container m-0" title="تغيير التاريخ" style="height: 26px; display: flex; align-items: center;">
+                    <span class="date-part date-day">${day}</span>
+                    <span class="date-part date-month">${monthName}</span>
+                    <span class="date-part date-year">${year}</span>
+                    <input type="date" class="hidden-date-input"
+                           data-field="added_entry_date" 
+                           data-entry-index="${entryIndex}" 
+                           value="${dateValue}">
+                </div>
             </div>
         </div>
     </td>
@@ -2867,11 +2904,18 @@ case 'open-adjust-modal': {
 // =========================================================
 
 case 'add-stock-entry':
-historyManager.pushState(); // <--- حفظ قبل الإضافة
+    historyManager.pushState(); 
     if (!po.rawMaterials.addedEntries) po.rawMaterials.addedEntries = [];
     
     const today = new Date().toISOString().split('T')[0];
-    po.rawMaterials.addedEntries.push({ date: today }); 
+    // توليد رقم بون فريد (مثال: BON-X9Y2)
+    const uniqueBonID = 'BON-' + Math.floor(Math.random() * 3656158440062976).toString(36).slice(0, 5).toUpperCase();
+
+    po.rawMaterials.addedEntries.push({ 
+        date: today,
+        id: uniqueBonID,      // <--- المعرف الفريد
+        status: 'pending'     // <--- الحالة الافتراضية (غير مؤكد)
+    }); 
     
     po.rawMaterials.addedCollapsed = false;
     updates[`productionOrders/${poIndex}/rawMaterials/addedEntries`] = po.rawMaterials.addedEntries;
@@ -4205,6 +4249,223 @@ $('#production-order-wrapper')
 // =================================================================
 // END: NEW CODE
 // =================================================================
+
+
+// =================================================================
+// START: Stock Entry Row Print Logic (New Feature)
+// =================================================================
+// =================================================================
+// منطق طباعة وصل المخزون (محدث مع زر التأكيد)
+// =================================================================
+$(document).on('click', 'button[data-action="print-stock-entry-row"]', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const po = state.productionOrders.find(p => p.id === state.activePOId);
+    if (!po) return;
+
+    const entryIndex = $(this).data('entry-index');
+    const entryData = po.rawMaterials.addedEntries[entryIndex];
+    if (!entryData) return;
+
+    // تصفية المواد
+    const materialsToPrint = [];
+    po.materialsList.forEach(materialName => {
+        const val = parseFloat(entryData[materialName]);
+        if (val && val > 0) {
+            materialsToPrint.push({ name: materialName, qty: formatNumber(val) });
+        }
+    });
+
+    if (materialsToPrint.length === 0) {
+        alert("لا توجد مواد مسجلة بقيم في هذا السطر للطباعة.");
+        return;
+    }
+
+    const deleteBtnHtml = `<td class="action-col no-print"><button class="btn-delete" onclick="deleteRow(this)">×</button></td>`;
+    
+    let rowsHtml = materialsToPrint.map(item => `
+        <tr>
+            <td class="text-left fw-bold" contenteditable="true" style="padding: 10px;">${item.name}</td>
+            <td contenteditable="true" style="font-size: 1.2rem; font-weight: bold;">${item.qty}</td>
+            <td contenteditable="true">Kg</td>
+            <td contenteditable="true"></td>
+            ${deleteBtnHtml}
+        </tr>
+    `).join('');
+
+    const printStyles = `
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+        @page { size: A4; margin: 15mm; }
+        body { font-family: 'Segoe UI', 'Cairo', sans-serif; color: #000; direction: ltr; margin: 0; padding: 0; background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .header-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 3px solid #3b5998; padding-bottom: 15px; }
+        .header-info h1 { margin: 0; font-size: 1.8rem; color: #3b5998; text-transform: uppercase; }
+        .header-info p { margin: 2px 0; color: #444; }
+        .bon-id-box { border: 2px dashed #3b5998; padding: 5px 15px; border-radius: 5px; color: #3b5998; font-weight: bold; font-size: 1.2rem; display: inline-block; margin-top: 5px;}
+        .print-logo { max-height: 80px; width: auto; object-fit: contain; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        table, th, td { border: 1px solid #000 !important; }
+        thead th { background-color: #4472c4 !important; color: white !important; padding: 10px; text-align: center; font-weight: bold; font-size: 1rem; }
+        td { padding: 8px; text-align: center; vertical-align: middle; font-size: 0.95rem; }
+        .text-left { text-align: left !important; padding-left: 15px; }
+        .signature-section { margin-top: 50px; display: flex; justify-content: space-between; page-break-inside: avoid; }
+        .signature-box { width: 40%; border-top: 1px solid #000; padding-top: 10px; text-align: center; font-weight: bold; }
+        .btn-delete { background: #ff4d4d; color: white; border: none; border-radius: 3px; width: 20px; height: 20px; cursor: pointer; }
+        .btn-add { width: 100%; padding: 8px; background-color: #28a745; color: white; border: none; cursor: pointer; margin-top: 10px; border-radius: 4px; }
+        
+        /* زر التأكيد الجديد */
+        .btn-validate { 
+            padding: 8px 20px; 
+            background: #198754; 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            border-radius: 4px; 
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-validate:hover { background: #157347; }
+        
+        @media print {
+            .no-print { display: none !important; }
+            td[contenteditable="true"] { outline: none !important; }
+        }
+    </style>`;
+
+    const internalScript = `
+    <script>
+        function deleteRow(btn) { if(confirm('Delete row?')) btn.closest('tr').remove(); }
+        function addRow() {
+            const tbody = document.querySelector('tbody');
+            const tr = document.createElement('tr');
+            tr.innerHTML = \`
+                <td class="text-left fw-bold" contenteditable="true">New Item</td>
+                <td contenteditable="true">0</td>
+                <td contenteditable="true">Kg</td>
+                <td contenteditable="true"></td>
+                <td class="action-col no-print"><button class="btn-delete" onclick="deleteRow(this)">×</button></td>
+            \`;
+            tbody.appendChild(tr);
+        }
+
+        // دالة التأكيد التي تستدعي النافذة الأم
+        function confirmEntry() {
+            if(window.opener && !window.opener.closed) {
+                // استدعاء الدالة في التطبيق الرئيسي
+                window.opener.validateStockEntry('${po.id}', ${entryIndex});
+                window.close(); // إغلاق النافذة
+            } else {
+                alert("The main application window is closed. Cannot sync status.");
+            }
+        }
+    <\/script>`;
+
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Bon de Sortie - ${entryData.id}</title>
+        ${printStyles}
+    </head>
+    <body>
+        <div class="print-controls no-print" style="display: flex; justify-content: center; gap: 10px; background: #eee; padding: 10px; position: sticky; top: 0; border-bottom: 1px solid #ccc;">
+            <button onclick="window.print()" style="padding: 8px 20px; background: #3b5998; color: white; border: none; cursor: pointer; border-radius: 4px;">🖨️ Print</button>
+            
+            <button onclick="confirmEntry()" class="btn-validate">
+                <span>✅ Valider & Fermer</span>
+            </button>
+        </div>
+
+        <div class="header-container">
+            <div class="header-info">
+                <h1>Bon de Sortie / وصل خروج</h1>
+                <p><strong>Date:</strong> <span contenteditable="true">${entryData.date}</span></p>
+                <div class="bon-id-box">REF: ${entryData.id}</div>
+                <p><strong>Order:</strong> ${po.name}</p>
+            </div>
+            <div class="logo-center">
+                <img src="https://i.imgur.com/j70b5GV.jpeg" alt="Logo" class="print-logo">
+            </div>
+        </div>
+
+        <h3 style="text-align: center; text-decoration: underline; margin-bottom: 5px;">Matières Premières / المواد الأولية</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 40%;">Désignation / البيان</th>
+                    <th style="width: 20%;">Quantité / الكمية</th>
+                    <th style="width: 15%;">Unité / الوحدة</th>
+                    <th style="width: 25%;">Observation / ملاحظات</th>
+                    <th class="action-col no-print" style="width: 5%;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                ${rowsHtml}
+            </tbody>
+        </table>
+        <button class="btn-add no-print" onclick="addRow()">+ Add Row</button>
+
+        <div class="signature-section">
+            <div class="signature-box" contenteditable="true">
+                Le Magasinier<br>
+                (Storekeeper)
+                <br><br><br>
+            </div>
+            <div class="signature-box" contenteditable="true">
+                Réceptionnaire<br>
+                (Receiver)
+                <br><br><br>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; font-size: 0.8rem; text-align: center; border-top: 1px dashed #ccc; padding-top: 5px;">
+            Printed on: ${new Date().toLocaleString('en-GB')} | Ref: ${entryData.id}
+        </div>
+        ${internalScript}
+    </body>
+    </html>`;
+
+    const popup = window.open('', '_blank', 'width=900,height=900');
+    popup.document.write(htmlContent);
+    popup.document.close();
+});
+// =================================================================
+// END: Stock Entry Row Print Logic
+// =================================================================
+
+
+
+
+// =================================================================
+// دالة توثيق البون (يتم استدعاؤها من نافذة الطباعة المنبثقة)
+// =================================================================
+window.validateStockEntry = (poId, entryIndex) => {
+    // 1. البحث عن الطلب
+    const po = state.productionOrders.find(p => p.id === poId);
+    if (!po) return;
+    const poIndex = state.productionOrders.findIndex(p => p.id === poId);
+
+    // 2. تحديث الحالة
+    if (po.rawMaterials.addedEntries && po.rawMaterials.addedEntries[entryIndex]) {
+        // نستخدم historyManager للحفظ قبل التعديل (اختياري هنا لأن التعديل من نافذة خارجية)
+        // po.rawMaterials.addedEntries[entryIndex].status = 'validated'; // تم التعديل أدناه مع التحديث
+        
+        const updates = {};
+        updates[`productionOrders/${poIndex}/rawMaterials/addedEntries/${entryIndex}/status`] = 'validated';
+        
+        // تحديث محلي وتحديث القاعدة
+        po.rawMaterials.addedEntries[entryIndex].status = 'validated';
+        db.update(updates);
+        
+        // إعادة رسم التطبيق لإظهار الايقونة الخضراء
+        renderApp();
+    }
+};
 
 initializeApp();
 
