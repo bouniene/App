@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow Ultimate - Final Fixed</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #0052CC;
+            --bg-color: #f4f5f7;
+            --border-color: #dfe1e6;
+            --sidebar-width: 260px;
+            --column-width: 280px;
+        }
+
+        body {
+            font-family: 'Inter', 'Cairo', sans-serif;
+            background-color: var(--bg-color);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Header --- */
+        .app-header {
+            background: white;
+            border-bottom: 1px solid #dfe1e6;
+            padding: 0.5rem 1.5rem;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        /* --- Top Navigation Bar --- */
+        .top-nav-bar {
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.5rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .nav-link-custom {
+            color: #42526e;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            border-radius: 3px;
+            margin-right: 5px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .nav-link-custom:hover { background-color: #ebecf0; color: #172b4d; }
+        .nav-link-custom.active {
+            background-color: #deebff;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        .nav-link-custom i { margin-right: 6px; }
+
+        /* --- Sidebar --- */
+        #sidebar {
+            width: var(--sidebar-width);
+            background-color: #f4f5f7;
+            border-right: 1px solid #dfe1e6;
+            transition: margin-left 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        #sidebar.collapsed { margin-left: calc(var(--sidebar-width) * -1); }
+
+        .sidebar-header {
+            padding: 1rem;
+            font-weight: 700;
+            color: #42526e;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #dfe1e6;
+        }
+
+        .folder-item {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            color: #42526e;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .folder-item:hover { background-color: #ebecf0; }
+
+        .project-item {
+            padding: 0.4rem 1rem 0.4rem 2.2rem;
+            font-size: 0.9rem;
+            color: #5e6c84;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            display: flex;
+            align-items: center;
+        }
+        .project-item:hover { background-color: #ebecf0; color: #172b4d; }
+        .project-item.active {
+            background-color: white;
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+            font-weight: 600;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        /* --- Content Area --- */
+        .content-wrapper { display: flex; flex: 1; overflow: hidden; }
+        .main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* --- Kanban Board --- */
+        .kanban-container {
+            display: flex;
+            height: 100%;
+            padding: 1.5rem;
+            gap: 1rem;
+            overflow-x: auto;
+            align-items: flex-start;
+        }
+        .kanban-column {
+            flex-shrink: 0;
+            width: var(--column-width);
+            display: flex;
+            flex-direction: column;
+            max-height: 100%;
+            background-color: #f4f5f7;
+            border-radius: 3px;
+        }
+        .kanban-header { padding: 1rem; font-weight: 600; color: #5e6c84; font-size: 0.8rem; text-transform: uppercase; }
+        .kanban-body { padding: 0 0.5rem 0.5rem 0.5rem; overflow-y: auto; flex: 1; min-height: 100px; }
+        .kanban-body.drag-over { background-color: rgba(0,82,204, 0.1); }
+
+        .kanban-card {
+            background-color: white;
+            border-radius: 3px;
+            padding: 10px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 2px rgba(9, 30, 66, 0.25);
+            cursor: grab;
+            transition: transform 0.1s;
+            border: 1px solid transparent;
+        }
+        .kanban-card:hover { background-color: #ebecf0; border-color: #dfe1e6; }
+        
+        .card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+        .card-tag { font-size: 0.65rem; padding: 2px 6px; border-radius: 3px; font-weight: 700; text-transform: uppercase; }
+        
+        .card-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; border-top: 1px solid #f4f5f7; padding-top: 8px;}
+        
+        .prio-icon-High { color: #FF5630; }
+        .prio-icon-Medium { color: #FFAB00; }
+        .prio-icon-Low { color: #36B37E; }
+
+        .issue-type-story i { color: #36B37E; } 
+        .issue-type-task i { color: #4BADE8; } 
+        .issue-type-bug i { color: #FF5630; } 
+        .issue-type-epic i { color: #6554C0; } 
+
+        /* --- Backlog View --- */
+        .backlog-container { padding: 1.5rem; overflow-y: auto; height: 100%; }
+        .backlog-drop-zone { min-height: 50px; border: 2px dashed transparent; transition: all 0.2s; }
+        .backlog-drop-zone.drag-over { border-color: var(--primary-color); background-color: rgba(0,82,204, 0.05); }
+
+        .backlog-item {
+            background: white;
+            border: 1px solid #dfe1e6;
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            margin-bottom: -1px;
+            cursor: grab;
+        }
+        .backlog-item:hover { background-color: #fafbfc; }
+        .sprint-header { display: flex; justify-content: space-between; align-items: center; margin: 20px 0 10px 0; background: #f4f5f7; padding: 10px; border-radius: 4px; }
+
+        /* --- Reports View (New Layout) --- */
+        .reports-container { display: flex; height: 100%; background: white; }
+        .reports-sidebar {
+            width: 250px;
+            background-color: #f4f5f7;
+            border-right: 1px solid #dfe1e6;
+            overflow-y: auto;
+            padding: 1rem 0;
+        }
+        .reports-main { flex: 1; padding: 2rem; overflow-y: auto; display: flex; flex-direction: column; }
+        
+        .report-category {
+            padding: 0.5rem 1.5rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #5e6c84;
+            text-transform: uppercase;
+            margin-top: 1rem;
+        }
+        .report-nav-item {
+            padding: 0.6rem 1.5rem;
+            cursor: pointer;
+            color: #172b4d;
+            font-size: 0.9rem;
+            border-left: 3px solid transparent;
+        }
+        .report-nav-item:hover { background-color: #ebecf0; }
+        .report-nav-item.active { background-color: #e6effc; color: var(--primary-color); border-left-color: var(--primary-color); }
+        
+        .chart-container-fixed {
+            position: relative;
+            height: 60vh; /* Fixed height for screen fitting */
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* --- Releases View --- */
+        .releases-container { padding: 1.5rem; overflow-y: auto; height: 100%; }
+        .release-card { 
+            background: white; border: 1px solid #dfe1e6; border-radius: 8px; padding: 15px; margin-bottom: 15px; 
+            border-left: 4px solid #dfe1e6; transition: border-color 0.2s;
+        }
+        .release-card.released { border-left-color: #36B37E; }
+        .release-card.unreleased { border-left-color: #0052CC; }
+        .progress-thick { height: 10px; border-radius: 5px; }
+
+        /* --- Badges & Avatar --- */
+        .badge-points { background-color: #dfe1e6; color: #172b4d; border-radius: 10px; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; }
+        .avatar-circle { width: 24px; height: 24px; background: #0052cc; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; text-transform: uppercase; }
+        
+        .nav-tabs .nav-link { color: #42526e; }
+        .nav-tabs .nav-link.active { font-weight: 600; color: var(--primary-color); }
+        .history-item { font-size: 0.85rem; border-left: 2px solid #dfe1e6; padding-left: 10px; margin-bottom: 10px; }
+        .comment-box { background: #f4f5f7; padding: 10px; border-radius: 4px; margin-bottom: 10px; }
+
+        /* Column Manager List */
+        .col-manage-item { padding: 8px; border: 1px solid #eee; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; background: #fff; cursor: grab;}
+        .col-manage-item.dragging { opacity: 0.5; }
+        
+        /* Fixed Assignee Display in Card */
+        .assignee-display {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.75rem;
+            color: #172b4d;
+            background: #ebecf0;
+            padding: 2px 6px 2px 2px;
+            border-radius: 12px;
+            max-width: 120px;
+        }
+        .assignee-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="app-header d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-3">
+            <button class="btn btn-sm" id="sidebarToggle"><i class="bi bi-list fs-5"></i></button>
+            <h5 class="m-0 fw-bold text-primary"><i class="bi bi-kanban-fill me-2"></i>TaskFlow <span class="badge bg-warning text-dark" style="font-size: 0.6em">ULTIMATE</span></h5>
+        </div>
+        <div>
+            <div class="avatar-circle" title="User Profile">ME</div>
+        </div>
+    </header>
+
+    <div class="top-nav-bar">
+        <div class="d-flex">
+            <div class="nav-link-custom active" id="nav-board" onclick="switchView('board')">
+                <i class="bi bi-kanban"></i> Active Board
+            </div>
+            <div class="nav-link-custom" id="nav-backlog" onclick="switchView('backlog')">
+                <i class="bi bi-list-task"></i> Backlog
+            </div>
+            <div class="nav-link-custom" id="nav-reports" onclick="switchView('reports')">
+                <i class="bi bi-graph-up"></i> Reports
+            </div>
+            <div class="nav-link-custom" id="nav-releases" onclick="switchView('releases')">
+                <i class="bi bi-box-seam"></i> Releases
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-sm btn-light border" onclick="openColumnManager()">
+                <i class="bi bi-layout-three-columns"></i> Columns
+            </button>
+            <span class="badge bg-white text-dark border d-flex align-items-center" id="active-project-display">
+                <i class="bi bi-folder2-open me-2 text-warning"></i> No Project Selected
+            </span>
+            <button class="btn btn-primary btn-sm" onclick="openTaskModal()"><i class="bi bi-plus-lg me-1"></i> Create</button>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <aside id="sidebar">
+            <div class="sidebar-header d-flex justify-content-between align-items-center">
+                <span>Workspaces</span>
+                <button class="btn btn-sm text-primary p-0" onclick="openProjectModal()"><i class="bi bi-plus-circle"></i></button>
+            </div>
+            
+            <div class="flex-grow-1 overflow-auto" id="sidebar-tree">
+            </div>
+
+            <div class="p-3 border-top mt-auto">
+                <button class="btn btn-sm btn-outline-secondary w-100" onclick="openFolderModal()">
+                    <i class="bi bi-folder-plus me-2"></i>New Folder
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-area">
+            
+            <div id="board-view" class="kanban-container"></div>
+
+            <div id="backlog-view" class="backlog-container d-none">
+                <div id="backlog-content"></div>
+            </div>
+
+            <div id="reports-view" class="reports-container d-none">
+                <div class="reports-sidebar">
+                    <div class="report-category">Agile Reports</div>
+                    <div class="report-nav-item" onclick="loadReport('burndown', this)">Burndown Chart</div>
+                    <div class="report-nav-item" onclick="loadReport('sprint', this)">Sprint Report</div>
+                    <div class="report-nav-item" onclick="loadReport('velocity', this)">Velocity Chart</div>
+                    <div class="report-nav-item" onclick="loadReport('cumulative', this)">Cumulative Flow</div>
+                    <div class="report-nav-item" onclick="loadReport('control', this)">Control Chart</div>
+                    <div class="report-nav-item" onclick="loadReport('epic', this)">Epic Burndown</div>
+                    
+                    <div class="report-category">Issue Analysis</div>
+                    <div class="report-nav-item" onclick="loadReport('pie', this)">Pie Chart Report</div>
+                    <div class="report-nav-item" onclick="loadReport('created_resolved', this)">Created vs Resolved</div>
+                    <div class="report-nav-item" onclick="loadReport('avg_age', this)">Average Age</div>
+                    
+                    <div class="report-category">Forecast & Management</div>
+                    <div class="report-nav-item" onclick="loadReport('user_workload', this)">User Workload</div>
+                    <div class="report-nav-item" onclick="loadReport('time_tracking', this)">Time Tracking</div>
+                </div>
+                <div class="reports-main">
+                    <div id="report-header" class="mb-4">
+                        <h4 class="fw-bold text-secondary">Select a report to view</h4>
+                        <p class="text-muted">Analyze your team's progress and performance.</p>
+                    </div>
+                    <div class="card border-0 shadow-sm flex-grow-1">
+                        <div class="card-body">
+                            <div class="chart-container-fixed">
+                                <canvas id="reportCanvas"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="releases-view" class="releases-container d-none">
+                <div class="container-fluid" id="releases-content">
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <div class="modal fade" id="taskModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="taskForm">
+                    <div class="modal-header">
+                        <div class="d-flex align-items-center gap-2">
+                            <select class="form-select form-select-sm border-0 bg-light fw-bold" id="taskType" style="width: auto;">
+                                <option value="Story">📖 Story</option>
+                                <option value="Task">✅ Task</option>
+                                <option value="Bug">🐞 Bug</option>
+                                <option value="Epic">⚡ Epic</option>
+                            </select>
+                            <span class="text-muted small" id="taskKeyDisplay">NEW</span>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <input type="text" id="taskTitle" class="form-control fs-5 fw-bold border-0 px-0" placeholder="Issue Summary" required>
+                                </div>
+                                <ul class="nav nav-tabs mb-3" id="taskTabs" role="tablist">
+                                    <li class="nav-item"><button class="nav-link active" data-bs-target="#tab-desc" data-bs-toggle="tab" type="button">Description</button></li>
+                                    <li class="nav-item"><button class="nav-link" data-bs-target="#tab-comments" data-bs-toggle="tab" type="button">Comments</button></li>
+                                    <li class="nav-item"><button class="nav-link" data-bs-target="#tab-history" data-bs-toggle="tab" type="button">History</button></li>
+                                </ul>
+                                <div class="tab-content">
+                                    <div class="tab-pane fade show active" id="tab-desc">
+                                        <textarea id="taskDesc" class="form-control mb-3" rows="5" placeholder="Add a description..."></textarea>
+                                        <div class="mb-3">
+                                            <label class="form-label small fw-bold text-muted">TAGS</label>
+                                            <input type="text" id="taskTags" class="form-control" placeholder="e.g. Frontend, API, Urgent (comma separated)">
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade" id="tab-comments">
+                                        <div class="d-flex gap-2 mb-3">
+                                            <div class="avatar-circle">ME</div>
+                                            <input type="text" id="newCommentInput" class="form-control form-control-sm" placeholder="Add a comment...">
+                                            <button type="button" class="btn btn-sm btn-secondary" onclick="addComment()">Save</button>
+                                        </div>
+                                        <div id="commentsList"></div>
+                                    </div>
+                                    <div class="tab-pane fade" id="tab-history">
+                                        <div id="historyList" class="text-muted small"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 bg-light p-3 rounded">
+                                <input type="hidden" id="taskId">
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold text-muted">STATUS</label>
+                                    <select id="taskStatus" class="form-select form-select-sm"></select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold text-muted">ASSIGNEE</label>
+                                    <input type="text" id="taskAssignee" class="form-control form-control-sm" placeholder="Full Name">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold text-muted">PRIORITY</label>
+                                    <select id="taskPriority" class="form-select form-select-sm">
+                                        <option value="High" class="text-danger">High 🔴</option>
+                                        <option value="Medium" class="text-warning">Medium 🟡</option>
+                                        <option value="Low" class="text-success">Low 🟢</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold text-muted">STORY POINTS</label>
+                                    <input type="number" id="taskPoints" class="form-control form-control-sm" placeholder="e.g. 3">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold text-muted">FIX VERSION</label>
+                                    <input type="text" id="taskVersion" class="form-control form-control-sm" placeholder="e.g. v1.0" list="versionOptions">
+                                    <datalist id="versionOptions"></datalist>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold text-muted">SPRINT</label>
+                                    <select id="taskSprint" class="form-select form-select-sm">
+                                        <option value="active">Active Sprint</option>
+                                        <option value="backlog">Backlog</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-link text-danger me-auto" onclick="deleteTask()">Delete Issue</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="entityModal" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <form id="entityForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="entityModalTitle">New Item</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="entityType">
+                        <div class="mb-3">
+                            <label class="form-label">Name</label>
+                            <input type="text" id="entityName" class="form-control" required>
+                        </div>
+                        <div class="mb-3" id="parentFolderDiv">
+                            <label class="form-label">Parent Folder</label>
+                            <select id="parentFolderSelect" class="form-select"></select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="columnManagerModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Manage Columns</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3 d-flex gap-2">
+                        <input type="text" id="newColName" class="form-control" placeholder="New Column Name">
+                        <button class="btn btn-primary" onclick="addNewColumn()">Add</button>
+                    </div>
+                    <p class="small text-muted">Drag to reorder.</p>
+                    <div id="column-list-container" class="list-group">
+                        </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // --- Colors Helper for Tags ---
+        const pastelColors = [
+            { bg: '#dcfce7', text: '#166534' }, // Green
+            { bg: '#fee2e2', text: '#991b1b' }, // Red
+            { bg: '#e0f2fe', text: '#075985' }, // Blue
+            { bg: '#fef9c3', text: '#854d0e' }, // Yellow
+            { bg: '#f3e8ff', text: '#6b21a8' }, // Purple
+            { bg: '#ffedd5', text: '#9a3412' }  // Orange
+        ];
+
+        function getTagColor(text) {
+            let hash = 0;
+            for (let i = 0; i < text.length; i++) {
+                hash = text.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const index = Math.abs(hash) % pastelColors.length;
+            return pastelColors[index];
+        }
+
+        // --- Database ---
+        const DB = {
+            folders: JSON.parse(localStorage.getItem('tf_folders')) || [{id:'f1', name:'Development', collapsed: false}],
+            projects: JSON.parse(localStorage.getItem('tf_projects')) || [{id:'p1', name:'Mobile App', folderId:'f1', key:'MOB'}],
+            tasks: JSON.parse(localStorage.getItem('tf_tasks')) || [
+                {id: 'MOB-101', title: 'Setup Repo', type: 'Task', status: 'done', priority: 'High', points: 2, assignee: 'Ali Ahmed', sprint: 'active', tags: ['DevOps', 'Init'], comments: [], history: [], projectId: 'p1', version: 'v1.0'},
+                {id: 'MOB-102', title: 'Login Page UI', type: 'Story', status: 'todo', priority: 'Medium', points: 5, assignee: 'Sara Smith', sprint: 'active', tags: ['Frontend'], comments: [], history: [], projectId: 'p1', version: 'v1.0'},
+                {id: 'MOB-103', title: 'Fix Crash', type: 'Bug', status: 'review', priority: 'High', points: 3, assignee: 'Ali Ahmed', sprint: 'active', tags: ['Bugfix', 'Urgent'], comments: [], history: [], projectId: 'p1', version: 'v1.1'}
+            ],
+            columns: JSON.parse(localStorage.getItem('tf_columns')) || [
+                {id: 'todo', title: 'To Do'},
+                {id: 'prog', title: 'In Progress'},
+                {id: 'review', title: 'In Review'},
+                {id: 'done', title: 'Done'}
+            ],
+            save() {
+                localStorage.setItem('tf_folders', JSON.stringify(this.folders));
+                localStorage.setItem('tf_projects', JSON.stringify(this.projects));
+                localStorage.setItem('tf_tasks', JSON.stringify(this.tasks));
+                localStorage.setItem('tf_columns', JSON.stringify(this.columns));
+            }
+        };
+
+        let state = {
+            currentProject: 'p1',
+            view: 'board',
+            draggedTask: null,
+            draggedColumnIndex: null
+        };
+        
+        let activeChart = null;
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            if(DB.projects.length > 0 && !DB.projects.find(p => p.id === state.currentProject)){
+                state.currentProject = DB.projects[0].id;
+            }
+            renderSidebar();
+            renderApp();
+            document.getElementById('sidebarToggle').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.toggle('collapsed');
+            });
+        });
+
+        // --- View Logic ---
+        function switchView(viewName) {
+            state.view = viewName;
+            document.querySelectorAll('.nav-link-custom').forEach(el => el.classList.remove('active'));
+            document.getElementById(`nav-${viewName}`).classList.add('active');
+
+            document.getElementById('board-view').classList.add('d-none');
+            document.getElementById('backlog-view').classList.add('d-none');
+            document.getElementById('reports-view').classList.add('d-none');
+            document.getElementById('releases-view').classList.add('d-none');
+
+            document.getElementById(`${viewName}-view`).classList.remove('d-none');
+
+            renderApp();
+        }
+
+        function renderApp() {
+            const proj = DB.projects.find(p => p.id === state.currentProject);
+            const disp = document.getElementById('active-project-display');
+            if(proj) {
+                disp.innerHTML = `<i class="bi bi-folder2-open me-2 text-warning"></i> ${proj.name}`;
+            } else {
+                disp.innerHTML = `<i class="bi bi-exclamation-circle me-2 text-danger"></i> No Project`;
+            }
+
+            if(state.view === 'board') renderBoard();
+            else if (state.view === 'backlog') renderBacklog();
+            else if (state.view === 'reports') { /* Reports logic handled on click */ }
+            else if (state.view === 'releases') renderReleases();
+        }
+
+        function getFilteredTasks() {
+            return DB.tasks.filter(t => t.projectId === state.currentProject);
+        }
+
+        // --- REPORTS LOGIC (Split View & Fixed Chart) ---
+        function loadReport(type, element) {
+            // Highlight active link
+            document.querySelectorAll('.report-nav-item').forEach(el => el.classList.remove('active'));
+            if(element) element.classList.add('active');
+
+            const header = document.getElementById('report-header');
+            const tasks = getFilteredTasks();
+            const ctx = document.getElementById('reportCanvas').getContext('2d');
+            
+            // Destroy previous chart
+            if(activeChart) activeChart.destroy();
+
+            let title = '';
+            let description = '';
+            let chartType = 'bar';
+            let data = {};
+            let options = { maintainAspectRatio: false, responsive: true };
+
+            // Data Preparation
+            if (type === 'burndown') {
+                title = 'Burndown Chart'; description = 'Remaining work over time.';
+                chartType = 'line';
+                data = {
+                    labels: ['Start', 'Day 1', 'Day 2', 'Day 3', 'Day 4', 'End'],
+                    datasets: [{
+                        label: 'Guideline', data: [20, 16, 12, 8, 4, 0], borderColor: '#dfe1e6', borderDash: [5, 5], fill: false
+                    }, {
+                        label: 'Remaining Values', data: [20, 18, 15, 10, 5, 2], borderColor: '#ff5630', backgroundColor: 'rgba(255, 86, 48, 0.1)', fill: true, tension: 0.3
+                    }]
+                };
+            } else if (type === 'sprint') {
+                title = 'Sprint Report'; description = 'Completed vs Incomplete tasks.';
+                const completed = tasks.filter(t => t.status === 'done').length;
+                const incomplete = tasks.length - completed;
+                chartType = 'bar';
+                data = {
+                    labels: ['Completed', 'Incomplete'],
+                    datasets: [{ label: 'Tasks', data: [completed, incomplete], backgroundColor: ['#36b37e', '#ffab00'] }]
+                };
+            } else if (type === 'velocity') {
+                title = 'Velocity Chart'; description = 'Story points completed per sprint.';
+                chartType = 'bar';
+                data = {
+                    labels: ['Sprint 1', 'Sprint 2', 'Sprint 3'],
+                    datasets: [{ label: 'Committed', data: [20, 25, 30], backgroundColor: '#dfe1e6' }, { label: 'Completed', data: [18, 22, 28], backgroundColor: '#36b37e' }]
+                };
+            } else if (type === 'cumulative') {
+                title = 'Cumulative Flow'; description = 'Task distribution over time.';
+                chartType = 'line';
+                data = {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    datasets: [
+                        { label: 'Done', data: [2, 5, 10, 15], fill: true, backgroundColor: '#36b37e80' },
+                        { label: 'In Progress', data: [5, 10, 15, 20], fill: true, backgroundColor: '#0052cc80' },
+                        { label: 'To Do', data: [10, 15, 18, 22], fill: true, backgroundColor: '#dfe1e680' }
+                    ]
+                };
+                options.scales = { y: { stacked: true } };
+            } else if (type === 'pie') {
+                title = 'Pie Chart (Status)'; description = 'Breakdown by status.';
+                const counts = {}; DB.columns.forEach(c => counts[c.id] = 0);
+                tasks.forEach(t => { if(counts[t.status] !== undefined) counts[t.status]++ });
+                chartType = 'doughnut';
+                data = {
+                    labels: DB.columns.map(c => c.title),
+                    datasets: [{ data: Object.values(counts), backgroundColor: ['#dfe1e6', '#0052CC', '#FFAB00', '#36B37E'] }]
+                };
+            } else if (type === 'created_resolved') {
+                title = 'Created vs Resolved'; description = 'Issues over time.';
+                chartType = 'line';
+                data = {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr'],
+                    datasets: [
+                        { label: 'Created', data: [5, 10, 8, 12], borderColor: '#ff5630', tension: 0.3 },
+                        { label: 'Resolved', data: [3, 8, 9, 11], borderColor: '#36b37e', tension: 0.3 }
+                    ]
+                };
+            } else {
+                 title = 'Report Demo'; description = 'Select a valid report type.';
+                 chartType = 'bar';
+                 data = { labels: ['A'], datasets: [{ data: [0] }] };
+            }
+
+            // Update Header
+            header.innerHTML = `<h4 class="fw-bold text-secondary">${title}</h4><p class="text-muted">${description}</p>`;
+            
+            // Draw Chart
+            activeChart = new Chart(ctx, { type: chartType, data: data, options: options });
+        }
+
+
+        // --- RELEASES LOGIC ---
+        function renderReleases() {
+            const container = document.getElementById('releases-content');
+            container.innerHTML = '';
+            const tasks = getFilteredTasks();
+            const versions = {};
+            tasks.forEach(t => {
+                const v = t.version || 'Unscheduled';
+                if (!versions[v]) versions[v] = { total: 0, completed: 0, tasks: [] };
+                versions[v].total++;
+                if (t.status === DB.columns[DB.columns.length-1].id) versions[v].completed++;
+                versions[v].tasks.push(t);
+            });
+
+            const versionKeys = Object.keys(versions).sort().filter(v => v !== 'Unscheduled');
+            if(versions['Unscheduled']) versionKeys.push('Unscheduled');
+
+            if(versionKeys.length === 0) {
+                 container.innerHTML = `<div class="text-center text-muted p-5">No versions defined in tasks. Edit tasks and add a "Fix Version" (e.g., v1.0)</div>`;
+                 return;
+            }
+
+            versionKeys.forEach(v => {
+                const data = versions[v];
+                const percentage = Math.round((data.completed / data.total) * 100) || 0;
+                const statusClass = (percentage === 100 && data.total > 0) ? 'released' : 'unreleased';
+                const statusText = (percentage === 100 && data.total > 0) ? 'RELEASED' : 'UNRELEASED';
+                const statusBadge = (percentage === 100) ? 'bg-success' : 'bg-primary';
+                let tasksHtml = data.tasks.map(t => `<span class="badge bg-light text-dark border me-1">${t.id}</span>`).join('');
+
+                const card = `
+                <div class="release-card ${statusClass}">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="fw-bold mb-1">${v}</h5>
+                            <span class="badge ${statusBadge} small">${statusText}</span>
+                            <span class="text-muted small ms-2">${data.completed} / ${data.total} issues done</span>
+                        </div>
+                        <h3 class="text-secondary mb-0">${percentage}%</h3>
+                    </div>
+                    <div class="progress progress-thick mb-3">
+                        <div class="progress-bar ${statusBadge}" role="progressbar" style="width: ${percentage}%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="small text-muted text-truncate" style="max-width: 70%;">${tasksHtml}</div>
+                         <div><button class="btn btn-sm btn-light border" onclick="alert('Manage Release ${v}')">Manage</button></div>
+                    </div>
+                </div>`;
+                container.insertAdjacentHTML('beforeend', card);
+            });
+        }
+
+        // --- Sidebar Logic ---
+        function renderSidebar() {
+            const container = document.getElementById('sidebar-tree');
+            container.innerHTML = '';
+
+            DB.folders.forEach(f => {
+                const folderDiv = document.createElement('div');
+                const chevron = f.collapsed ? 'bi-chevron-right' : 'bi-chevron-down';
+                const display = f.collapsed ? 'none' : 'block';
+                
+                folderDiv.innerHTML = `
+                    <div class="folder-item" onclick="toggleFolder('${f.id}')" ondrop="dropProject(event, '${f.id}')" ondragover="allowDrop(event)">
+                        <span><i class="bi bi-folder2 text-secondary me-2"></i>${f.name}</span>
+                        <i class="bi ${chevron} text-muted small"></i>
+                    </div>
+                    <div class="ps-2" style="display: ${display}" id="folder-${f.id}"></div>
+                `;
+                container.appendChild(folderDiv);
+                
+                const content = folderDiv.querySelector(`#folder-${f.id}`);
+                DB.projects.filter(p => p.folderId === f.id).forEach(p => renderProjectLink(content, p));
+            });
+
+            DB.projects.filter(p => !p.folderId).forEach(p => renderProjectLink(container, p));
+        }
+
+        function renderProjectLink(container, proj) {
+            const div = document.createElement('div');
+            div.className = `project-item ${state.currentProject === proj.id ? 'active' : ''}`;
+            div.innerHTML = `<span><i class="bi bi-kanban me-2 small"></i>${proj.name}</span>`;
+            div.draggable = true;
+            div.ondragstart = (e) => { e.dataTransfer.setData('type', 'project'); e.dataTransfer.setData('id', proj.id); };
+            
+            div.onclick = () => {
+                state.currentProject = proj.id;
+                renderSidebar();
+                renderApp();
+            };
+            container.appendChild(div);
+        }
+
+        function toggleFolder(id) {
+            const f = DB.folders.find(x => x.id === id);
+            if(f) { f.collapsed = !f.collapsed; DB.save(); renderSidebar(); }
+        }
+
+        // --- Kanban & Backlog ---
+        function renderBoard() {
+            const container = document.getElementById('board-view');
+            container.innerHTML = '';
+            
+            DB.columns.forEach(col => {
+                const tasks = getFilteredTasks().filter(t => t.status === col.id && t.sprint === 'active');
+                const colHTML = `
+                    <div class="kanban-column">
+                        <div class="kanban-header d-flex justify-content-between">
+                            <span>${col.title}</span>
+                            <span class="badge bg-secondary bg-opacity-10 text-dark">${tasks.length}</span>
+                        </div>
+                        <div class="kanban-body" ondrop="dropTask(event, '${col.id}')" ondragover="allowDrop(event)">
+                            ${tasks.map(t => createCardHTML(t)).join('')}
+                        </div>
+                    </div>`;
+                container.insertAdjacentHTML('beforeend', colHTML);
+            });
+        }
+
+        function renderBacklog() {
+            const container = document.getElementById('backlog-content');
+            container.innerHTML = '';
+            const sprintTasks = getFilteredTasks().filter(t => t.sprint === 'active');
+            const backlogTasks = getFilteredTasks().filter(t => t.sprint === 'backlog');
+
+            container.innerHTML += `
+                <div class="sprint-header">
+                    <div><i class="bi bi-arrow-repeat me-2"></i><strong>Active Sprint</strong><span class="text-muted small ms-2">(${sprintTasks.length} issues)</span></div>
+                    <button class="btn btn-sm btn-light border">Complete Sprint</button>
+                </div>
+                <div class="backlog-drop-zone list-group mb-4 shadow-sm" ondrop="dropToSprint(event, 'active')" ondragover="allowDrop(event)">
+                    ${sprintTasks.map(t => createBacklogItemHTML(t)).join('')}
+                    ${sprintTasks.length === 0 ? '<div class="p-3 text-center text-muted small">Drop items here to start sprint</div>' : ''}
+                </div>
+
+                <div class="sprint-header">
+                    <div><i class="bi bi-inboxes me-2"></i><strong>Backlog</strong><span class="text-muted small ms-2">(${backlogTasks.length} issues)</span></div>
+                    <button class="btn btn-sm btn-primary" onclick="openTaskModal()">Create Issue</button>
+                </div>
+                <div class="backlog-drop-zone list-group shadow-sm" ondrop="dropToSprint(event, 'backlog')" ondragover="allowDrop(event)">
+                    ${backlogTasks.map(t => createBacklogItemHTML(t)).join('')}
+                    ${backlogTasks.length === 0 ? '<div class="p-3 text-center text-muted small">Backlog is empty</div>' : ''}
+                </div>
+            `;
+        }
+
+        // --- HTML Helpers (Cards & Backlog) ---
+        function getIcon(type) {
+            switch(type) {
+                case 'Story': return '<span class="issue-type-story"><i class="bi bi-bookmark-fill"></i></span>';
+                case 'Bug': return '<span class="issue-type-bug"><i class="bi bi-bug-fill"></i></span>';
+                case 'Epic': return '<span class="issue-type-epic"><i class="bi bi-lightning-fill"></i></span>';
+                default: return '<span class="issue-type-task"><i class="bi bi-check-square-fill"></i></span>';
+            }
+        }
+
+        function createCardHTML(t) {
+            // Priority
+            let prioIcon = '';
+            if(t.priority === 'High') prioIcon = '<i class="bi bi-arrow-up-circle-fill prio-icon-High" title="High"></i>';
+            else if(t.priority === 'Medium') prioIcon = '<i class="bi bi-dash-circle-fill prio-icon-Medium" title="Medium"></i>';
+            else prioIcon = '<i class="bi bi-arrow-down-circle-fill prio-icon-Low" title="Low"></i>';
+
+            // Tags Colored
+            let tagsHtml = '';
+            if(t.tags && t.tags.length > 0) {
+                tagsHtml = `<div class="card-tags">${t.tags.map(tag => {
+                    const c = getTagColor(tag);
+                    return `<span class="card-tag" style="background:${c.bg}; color:${c.text}">${tag}</span>`;
+                }).join('')}</div>`;
+            }
+
+            // Assignee with Name
+            let assigneeHtml = '';
+            if (t.assignee) {
+                assigneeHtml = `
+                <div class="assignee-display" title="${t.assignee}">
+                    <div class="avatar-circle" style="width:18px;height:18px;font-size:0.5rem;min-width:18px;">${t.assignee[0].toUpperCase()}</div>
+                    <span class="assignee-name">${t.assignee.split(' ')[0]}</span>
+                </div>`;
+            } else {
+                assigneeHtml = `<div class="avatar-circle" style="width:20px;height:20px;font-size:0.6rem;background:#dfe1e6;color:#5e6c84" title="Unassigned">?</div>`;
+            }
+
+            return `
+                <div class="kanban-card" draggable="true" ondragstart="dragStart(event, '${t.id}')" onclick="openTaskModal('${t.id}')">
+                    <div class="mb-2 text-dark fw-medium">${t.title}</div>
+                    ${tagsHtml}
+                    <div class="card-meta">
+                        <div class="d-flex align-items-center gap-2">
+                            ${getIcon(t.type)}
+                            <span class="text-muted small fw-bold" style="font-size: 0.75rem;">${t.id}</span>
+                            <span class="ms-1" style="font-size:0.8rem">${prioIcon}</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            ${t.points ? `<span class="badge-points">${t.points}</span>` : ''}
+                            ${assigneeHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function createBacklogItemHTML(t) {
+             let prioIcon = '';
+            if(t.priority === 'High') prioIcon = '<i class="bi bi-arrow-up text-danger" title="High"></i>';
+            else if(t.priority === 'Medium') prioIcon = '<i class="bi bi-dash text-warning" title="Medium"></i>';
+            else prioIcon = '<i class="bi bi-arrow-down text-success" title="Low"></i>';
+
+            let assigneeHtml = t.assignee ? `<div class="assignee-display ms-2"><div class="avatar-circle" style="width:16px;height:16px;font-size:0.4rem;">${t.assignee[0]}</div> <span class="assignee-name">${t.assignee}</span></div>` : '';
+
+            return `
+                <div class="backlog-item" onclick="openTaskModal('${t.id}')" draggable="true" ondragstart="dragStart(event, '${t.id}')">
+                    <div class="me-3">${getIcon(t.type)}</div>
+                    <div class="fw-bold text-muted me-3 small" style="width: 70px;">${t.id}</div>
+                    <div class="flex-grow-1 text-dark d-flex align-items-center">
+                        <span class="fw-medium">${t.title}</span>
+                        ${t.tags && t.tags.length ? t.tags.map(tag => {
+                            const c = getTagColor(tag);
+                            return `<span class="badge ms-2" style="background:${c.bg}; color:${c.text}; font-size:0.6rem; font-weight:600">${tag}</span>`;
+                        }).join('') : ''}
+                    </div>
+                    <div class="d-flex gap-3 align-items-center">
+                         ${prioIcon}
+                         <span class="badge bg-light text-dark border small" style="min-width: 80px;">${DB.columns.find(c => c.id === t.status)?.title || t.status}</span>
+                         ${t.points ? `<span class="badge-points">${t.points}</span>` : ''}
+                         ${assigneeHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- Drag & Drop ---
+        function allowDrop(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+        
+        function dragStart(e, id) { 
+            state.draggedTask = id; 
+            e.dataTransfer.setData('taskId', id); 
+            e.stopPropagation(); 
+        }
+
+        function dropTask(e, colId) {
+            e.preventDefault();
+            document.querySelectorAll('.kanban-body').forEach(el => el.classList.remove('drag-over'));
+            const task = DB.tasks.find(t => t.id === state.draggedTask);
+            if (task) {
+                if(task.status !== colId) {
+                    logHistory(task, `Status changed to ${colId}`);
+                    task.status = colId;
+                    DB.save();
+                    renderApp();
+                }
+            }
+            state.draggedTask = null;
+        }
+        
+        function dropToSprint(e, targetSprint) {
+            e.preventDefault();
+            document.querySelectorAll('.backlog-drop-zone').forEach(el => el.classList.remove('drag-over'));
+            const taskId = e.dataTransfer.getData('taskId');
+            const task = DB.tasks.find(t => t.id === taskId);
+            
+            if(task && task.sprint !== targetSprint) {
+                task.sprint = targetSprint;
+                logHistory(task, `Moved to ${targetSprint === 'active' ? 'Active Sprint' : 'Backlog'}`);
+                DB.save();
+                renderApp();
+            }
+        }
+
+        function dropProject(e, fId) {
+            e.preventDefault();
+            if(e.dataTransfer.getData('type') === 'project') {
+                const pId = e.dataTransfer.getData('id');
+                const p = DB.projects.find(x => x.id === pId);
+                if(p) { p.folderId = fId; DB.save(); renderSidebar(); }
+            }
+        }
+
+        // --- Column Manager ---
+        const colModal = new bootstrap.Modal(document.getElementById('columnManagerModal'));
+        
+        function openColumnManager() {
+            renderColumnList();
+            colModal.show();
+        }
+
+        function renderColumnList() {
+            const list = document.getElementById('column-list-container');
+            list.innerHTML = DB.columns.map((col, index) => `
+                <div class="col-manage-item" draggable="true" ondragstart="dragColStart(event, ${index})" ondrop="dropCol(event, ${index})" ondragover="allowDrop(event)">
+                    <span><i class="bi bi-grip-vertical text-muted me-2"></i> ${col.title}</span>
+                    <button class="btn btn-sm btn-link text-danger" onclick="deleteColumn(${index})"><i class="bi bi-trash"></i></button>
+                </div>
+            `).join('');
+        }
+
+        function addNewColumn() {
+            const input = document.getElementById('newColName');
+            if(!input.value.trim()) return;
+            const id = input.value.toLowerCase().replace(/\s+/g, '-');
+            DB.columns.push({ id: id, title: input.value });
+            DB.save();
+            input.value = '';
+            renderColumnList();
+            renderApp();
+        }
+
+        function deleteColumn(index) {
+            if(confirm('Delete this column?')) {
+                DB.columns.splice(index, 1);
+                DB.save();
+                renderColumnList();
+                renderApp();
+            }
+        }
+
+        function dragColStart(e, index) {
+            state.draggedColumnIndex = index;
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function dropCol(e, targetIndex) {
+            e.preventDefault();
+            if(state.draggedColumnIndex === null) return;
+            const item = DB.columns.splice(state.draggedColumnIndex, 1)[0];
+            DB.columns.splice(targetIndex, 0, item);
+            DB.save();
+            state.draggedColumnIndex = null;
+            renderColumnList();
+            renderApp();
+        }
+
+        // --- Modals (Task, Entity) ---
+        const taskModal = new bootstrap.Modal(document.getElementById('taskModal'));
+        const entityModal = new bootstrap.Modal(document.getElementById('entityModal'));
+        let editingTaskId = null;
+
+        window.openTaskModal = (id = null) => {
+            if(!state.currentProject) { alert("Select a project first."); return; }
+            document.getElementById('taskForm').reset();
+            document.getElementById('historyList').innerHTML = '';
+            document.getElementById('commentsList').innerHTML = '';
+            editingTaskId = id;
+
+            const sSel = document.getElementById('taskStatus');
+            sSel.innerHTML = DB.columns.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+            
+            const versions = [...new Set(getFilteredTasks().map(t => t.version).filter(Boolean))];
+            document.getElementById('versionOptions').innerHTML = versions.map(v => `<option value="${v}">`).join('');
+
+            if (id) {
+                const t = DB.tasks.find(x => x.id === id);
+                document.getElementById('taskTitle').value = t.title;
+                document.getElementById('taskDesc').value = t.desc || '';
+                document.getElementById('taskType').value = t.type;
+                document.getElementById('taskStatus').value = t.status;
+                document.getElementById('taskPriority').value = t.priority;
+                document.getElementById('taskAssignee').value = t.assignee || '';
+                document.getElementById('taskPoints').value = t.points || '';
+                document.getElementById('taskSprint').value = t.sprint;
+                document.getElementById('taskKeyDisplay').innerText = t.id;
+                document.getElementById('taskVersion').value = t.version || '';
+                document.getElementById('taskTags').value = (t.tags || []).join(', ');
+                t.history.forEach(h => document.getElementById('historyList').innerHTML += `<div class="history-item text-muted">${h}</div>`);
+                renderComments(t);
+            } else {
+                document.getElementById('taskKeyDisplay').innerText = "NEW";
+                document.getElementById('taskSprint').value = state.view === 'board' ? 'active' : 'backlog';
+            }
+            taskModal.show();
+        };
+
+        document.getElementById('taskForm').onsubmit = (e) => {
+            e.preventDefault();
+            const formData = {
+                title: document.getElementById('taskTitle').value,
+                desc: document.getElementById('taskDesc').value,
+                type: document.getElementById('taskType').value,
+                status: document.getElementById('taskStatus').value,
+                priority: document.getElementById('taskPriority').value,
+                assignee: document.getElementById('taskAssignee').value,
+                points: document.getElementById('taskPoints').value,
+                sprint: document.getElementById('taskSprint').value,
+                version: document.getElementById('taskVersion').value,
+                tags: document.getElementById('taskTags').value.split(',').map(s=>s.trim()).filter(Boolean),
+                projectId: state.currentProject
+            };
+
+            if (editingTaskId) {
+                const task = DB.tasks.find(x => x.id === editingTaskId);
+                if(task.status !== formData.status) logHistory(task, `Status -> ${formData.status}`);
+                Object.assign(task, formData);
+            } else {
+                const proj = DB.projects.find(p => p.id === state.currentProject);
+                const newId = (proj.key || 'TASK') + '-' + (Math.floor(Math.random() * 1000) + 100);
+                const newTask = { id: newId, ...formData, comments: [], history: [`Created on ${new Date().toLocaleString()}`] };
+                DB.tasks.push(newTask);
+            }
+            DB.save();
+            taskModal.hide();
+            renderApp();
+        };
+
+        window.openFolderModal = () => {
+            document.getElementById('entityForm').reset();
+            document.getElementById('entityModalTitle').innerText = "New Folder";
+            document.getElementById('entityType').value = "folder";
+            document.getElementById('parentFolderDiv').classList.add('d-none');
+            entityModal.show();
+        };
+        window.openProjectModal = () => {
+            document.getElementById('entityForm').reset();
+            document.getElementById('entityModalTitle').innerText = "New Project";
+            document.getElementById('entityType').value = "project";
+            document.getElementById('parentFolderSelect').innerHTML = `<option value="">(Root)</option>` + DB.folders.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+            document.getElementById('parentFolderDiv').classList.remove('d-none');
+            entityModal.show();
+        };
+        document.getElementById('entityForm').onsubmit = (e) => {
+            e.preventDefault();
+            const type = document.getElementById('entityType').value;
+            const name = document.getElementById('entityName').value;
+            if(type === 'folder') {
+                DB.folders.push({id:'f'+Date.now(), name, collapsed: false});
+            } else {
+                const fId = document.getElementById('parentFolderSelect').value || null;
+                const key = name.substring(0, 3).toUpperCase();
+                DB.projects.push({id:'p'+Date.now(), name, folderId: fId, key: key});
+            }
+            DB.save();
+            renderSidebar();
+            entityModal.hide();
+        };
+
+        function logHistory(task, action) { task.history.unshift(`${action} - ${new Date().toLocaleString()}`); }
+        function renderComments(task) {
+            document.getElementById('commentsList').innerHTML = task.comments.map(c => `
+                <div class="comment-box"><div class="d-flex align-items-center mb-1 gap-2"><span class="avatar-circle" style="width:20px;height:20px;font-size:0.6rem">ME</span><strong>You</strong> <small class="text-muted">${c.date}</small></div><div>${c.text}</div></div>`).join('');
+        }
+        window.addComment = () => {
+            if(!editingTaskId) return;
+            const input = document.getElementById('newCommentInput');
+            if(!input.value) return;
+            const task = DB.tasks.find(t => t.id === editingTaskId);
+            task.comments.push({ text: input.value, date: new Date().toLocaleString() });
+            DB.save();
+            renderComments(task);
+            input.value = '';
+        };
+        window.deleteTask = () => {
+            if(!editingTaskId) return;
+            if(confirm("Delete this issue?")) {
+                DB.tasks = DB.tasks.filter(t => t.id !== editingTaskId);
+                DB.save();
+                taskModal.hide();
+                renderApp();
+            }
+        };
+    </script>
+</body>
+</html>

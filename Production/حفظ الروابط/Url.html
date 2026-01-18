@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Link Manager System Pro</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<style>
+    :root {
+        --bs-primary: #007bff;
+        --bs-primary-rgb: 0, 123, 255;
+        --bs-body-font-family: "Cairo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+        --bs-body-font-size: 0.85rem;
+        --bs-body-color: #333;
+        --folder-default-color: #ffc107;
+        --sidebar-width: 260px;
+    }
+
+    body {
+        background-color: #f8f9fa;
+        font-family: var(--bs-body-font-family);
+        color: var(--bs-body-color);
+        font-size: var(--bs-body-font-size);
+        overflow: hidden; /* Prevent body scroll */
+    }
+
+    /* Connection Status */
+    #connection-status { width: 12px; height: 12px; border-radius: 50%; transition: background-color 0.5s ease; }
+    #connection-status.connected { background-color: #28a745; box-shadow: 0 0 8px #28a745; }
+    #connection-status.disconnected { background-color: #dc3545; box-shadow: 0 0 8px #dc3545; }
+
+    /* Layout */
+    .main-container { display: flex; height: 100vh; position: relative; }
+    
+    /* Sidebar Styling */
+    #sidebar {
+        width: var(--sidebar-width);
+        min-width: var(--sidebar-width);
+        background-color: #fff;
+        border-right: 1px solid #dee2e6; /* In RTL flex logic, sidebar is on the left visually if it's the second child? No, let's fix order */
+        display: flex;
+        flex-direction: column;
+        transition: margin-left 0.3s ease, transform 0.3s ease;
+        z-index: 1040;
+    }
+
+    /* Mobile & Toggle Logic */
+    #sidebar.hidden-desktop {
+        margin-left: calc(var(--sidebar-width) * -1);
+    }
+
+    @media (max-width: 768px) {
+        #sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            height: 100%;
+            transform: translateX(-100%); /* Hide off-screen left */
+            margin-left: 0;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        #sidebar.mobile-show {
+            transform: translateX(0);
+        }
+        /* Overlay for mobile */
+        #sidebar-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 1030;
+            display: none;
+        }
+        #sidebar-overlay.show { display: block; }
+    }
+
+    #sidebar-content { flex-grow: 1; overflow-y: auto; }
+    .sidebar-header { border-bottom: 1px solid #dee2e6; height: 50px; }
+    
+    /* Sub-folder Indentation */
+    .folder-level-0 { padding-right: 1rem; }
+    .folder-level-1 { padding-right: 2rem; border-right: 2px solid #e9ecef; }
+    .folder-level-2 { padding-right: 3rem; border-right: 2px solid #e9ecef; }
+    .folder-level-3 { padding-right: 4rem; border-right: 2px solid #e9ecef; }
+
+    .list-group-item {
+        border: none; padding: 0.6rem 1rem; cursor: pointer; user-select: none;
+        transition: background-color 0.2s; position: relative;
+    }
+    .list-group-item:hover { background-color: #f8f9fa; }
+    .list-group-item.active {
+        font-weight: 700;
+        background-color: var(--bs-primary) !important;
+        color: white !important;
+    }
+    
+    /* Main Content */
+    #main-container-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+    #top-nav { height: 50px; background-color: #fff; border-bottom: 1px solid #dee2e6; z-index: 10; gap: 0.5rem; padding: 0 1rem; }
+    #main-content-area { flex-grow: 1; overflow-y: auto; padding: 1rem; }
+
+    /* Card & General Styles (Same as original) */
+    .link-card {
+        background-color: #fff; border: 1px solid #dee2e6; border-radius: 0.5rem;
+        margin-bottom: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        transition: transform 0.2s, box-shadow 0.2s; height: 100%;
+        display: flex; flex-direction: column; padding: 0.75rem; position: relative; cursor: pointer;
+    }
+    .link-card:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); border-color: #86b7fe; }
+    .card-fav-icon { position: absolute; top: 8px; left: 8px; color: #dee2e6; font-size: 1rem; transition: color 0.2s; }
+    .card-fav-icon.active { color: #ffc107; }
+    .link-header { display: flex; align-items: start; gap: 0.75rem; margin-bottom: 0.5rem; }
+    .link-favicon { width: 32px; height: 32px; min-width: 32px; border-radius: 4px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #6c757d; object-fit: cover; border: 1px solid #dee2e6; }
+    .link-info { flex-grow: 1; overflow: hidden; padding-left: 15px; }
+    .link-title { font-weight: 700; font-size: 0.9rem; margin-bottom: 0; line-height: 1.2; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .link-url { color: #6c757d; font-size: 0.7rem; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; direction: ltr; text-align: right; }
+    .link-desc { font-size: 0.75rem; color: #495057; margin-bottom: 0.5rem; flex-grow: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 1.5em; }
+    .card-meta { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-bottom: 0.5rem; font-size: 0.7rem; }
+    .tag-badge { background-color: #e9ecef; color: #495057; padding: 1px 6px; border-radius: 4px; font-size: 0.65rem; }
+    .rating-stars { color: #ffc107; font-size: 0.7rem; }
+    .link-actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f1f1; padding-top: 0.5rem; margin-top: auto; }
+
+    /* Table & Other Utilities */
+    .table-view-container { background: #fff; border: 1px solid #dee2e6; border-radius: 0.5rem; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .table-compact th, .table-compact td { padding: 0.6rem 0.8rem !important; font-size: 0.85rem !important; vertical-align: middle; border-bottom: 1px solid #e9ecef; }
+    thead th { background-color: #f1f3f5 !important; color: #495057; font-weight: 700; border-bottom: 2px solid #dee2e6 !important; }
+    tbody tr:hover { background-color: #f8f9fa; }
+    .table-favicon { width: 24px; height: 24px; border-radius: 4px; vertical-align: middle; margin-left: 8px; border: 1px solid #dee2e6; }
+    
+    #filter-bar { background-color: #fff; border: 1px solid #dee2e6; border-radius: 0.5rem; padding: 0.5rem; margin-bottom: 1rem; display: none; }
+    #filter-bar.show { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+    .star-rating-input { direction: ltr; display: inline-block; }
+    .star-rating-input input { display: none; }
+    .star-rating-input label { font-size: 1.2rem; color: #ddd; cursor: pointer; float: right; transition: color 0.2s; }
+    .star-rating-input input:checked ~ label, .star-rating-input label:hover, .star-rating-input label:hover ~ label { color: #ffc107; }
+
+    .icon-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; max-height: 150px; overflow-y: auto; padding: 5px; border: 1px solid #dee2e6; border-radius: 4px; }
+    .icon-option { cursor: pointer; padding: 5px; text-align: center; border-radius: 3px; transition: background 0.2s; font-size: 1.1rem; color: #555; }
+    .icon-option:hover { background-color: #e9ecef; color: var(--bs-primary); }
+    .icon-option.selected { background-color: var(--bs-primary); color: white; }
+
+    .empty-state { text-align: center; padding: 3rem 1rem; color: #6c757d; }
+    .empty-state i { font-size: 3rem; margin-bottom: 0.5rem; color: #dee2e6; }
+    .folder-header { font-weight: 600; background-color: #f1f3f5; padding: 0.5rem 1rem; font-size: 0.8rem; color: #495057; border-bottom: 1px solid #dee2e6; border-top: 1px solid #dee2e6; }
+    
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+</style>
+</head>
+<body>
+
+<div id="sidebar-overlay"></div>
+
+<div class="main-container">
+    
+    <main id="main-container-wrapper">
+        <nav id="top-nav" class="d-flex align-items-center justify-content-between px-2">
+            
+            <div class="d-flex align-items-center">
+                <button id="sidebar-toggle-btn" class="btn btn-sm btn-light border me-2">
+                    <i class="fas fa-bars"></i>
+                </button>
+
+                <h5 id="current-view-name" class="fs-6 fw-bold mb-0 text-nowrap d-none d-sm-block">لوحة التحكم</h5>
+                
+                <div class="btn-group ms-3 direction-ltr" role="group">
+                    <button id="undo-btn" class="btn btn-sm btn-outline-secondary" title="تراجع (Ctrl+Z)" disabled><i class="fas fa-undo"></i></button>
+                    <button id="redo-btn" class="btn btn-sm btn-outline-secondary" title="إعادة (Ctrl+Y)" disabled><i class="fas fa-redo"></i></button>
+                </div>
+
+                <div class="btn-group ms-2 bg-white" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-primary active" id="view-grid-btn"><i class="fas fa-th-large"></i></button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="view-table-btn"><i class="fas fa-list"></i></button>
+                </div>
+            </div>
+            
+            <div id="global-search-container" class="flex-grow-1 mx-2 d-flex gap-1" style="max-width: 400px;">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
+                    <input type="search" id="global-search" class="form-control" placeholder="بحث...">
+                </div>
+                <button class="btn btn-sm btn-outline-secondary" id="toggle-filters-btn"><i class="fas fa-filter"></i></button>
+            </div>
+
+            <div class="action-buttons d-flex align-items-center gap-2">
+                
+                <div class="dropdown">
+                    <button id="notes-icon-button" class="btn btn-link text-secondary p-0 position-relative" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-bell fs-5"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-start p-2 shadow-sm" style="width: 250px;">
+                        <li><span class="dropdown-item-text small text-muted text-center">لا توجد إشعارات</span></li>
+                    </ul>
+                </div>
+
+                <div class="backup-controls d-flex gap-1">
+                    <button id="import-btn" class="btn btn-sm btn-outline-warning" title="استيراد"><i class="fas fa-upload"></i></button>
+                    <button id="export-btn" class="btn btn-sm btn-outline-info" title="تصدير"><i class="fas fa-file-excel"></i></button>
+                    <input type="file" id="import-input" hidden accept=".json">
+                </div>
+
+                <div id="connection-status-container" class="d-flex align-items-center" title="الحالة">
+                    <div id="connection-status" class="disconnected"></div>
+                </div>
+            </div>
+        </nav>
+
+        <div id="main-content-area">
+            <div id="dashboard-view"></div>
+            <div id="folder-view" class="d-none"></div>
+        </div>
+    </main>
+
+    <aside id="sidebar">
+        <div class="sidebar-header d-flex align-items-center justify-content-between p-3">
+            <h6 class="mb-0 fw-bold text-primary"><i class="fas fa-link me-2"></i>Link Manager</h6>
+            <button class="btn btn-sm btn-light d-md-none" id="close-sidebar-mobile"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="px-2 pt-2 pb-1">
+            <input type="text" id="sidebar-search" class="form-control form-control-sm mb-2" placeholder="تصفية المجلدات...">
+            <button id="new-folder-btn" class="btn btn-primary w-100 btn-sm mb-2">
+                <i class="fas fa-plus me-1"></i> مجلد جديد
+            </button>
+        </div>
+        
+        <div class="folder-header">المجلدات</div>
+        <div id="sidebar-content">
+            <div id="folder-list" class="list-group list-group-flush">
+                </div>
+        </div>
+        
+        <div class="p-2 border-top bg-light text-center small text-muted">
+            <span style="font-size: 0.75rem;">Link Manager Pro v3.0</span>
+        </div>
+    </aside>
+</div>
+
+<div class="modal fade" id="folder-modal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title fw-bold">إدارة المجلد</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-3">
+                <input type="hidden" id="folder-id">
+                <div class="mb-2">
+                    <label class="form-label mb-1 small">اسم المجلد</label>
+                    <input type="text" id="folder-name" class="form-control form-control-sm" placeholder="اسم المجلد...">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label mb-1 small">المجلد الأب (اختياري)</label>
+                    <select id="folder-parent" class="form-select form-select-sm">
+                        <option value="">-- مجلد رئيسي --</option>
+                        </select>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label mb-1 small">وصف</label>
+                    <input type="text" id="folder-desc" class="form-control form-control-sm" placeholder="وصف قصير...">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label mb-1 small">الأيقونة</label>
+                    <input type="hidden" id="folder-icon" value="fa-folder">
+                    <div class="icon-grid" id="icon-picker"></div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label mb-1 small">لون المجلد</label>
+                    <input type="color" id="folder-color" class="form-control form-control-color w-100 form-control-sm" value="#ffc107">
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" id="save-folder-btn" class="btn btn-primary btn-sm">حفظ</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="link-modal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title fw-bold">إضافة / تعديل رابط</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-3">
+                <input type="hidden" id="link-id">
+                <div class="row g-2 mb-2">
+                    <div class="col-8">
+                        <label class="form-label mb-1 small">العنوان</label>
+                        <input type="text" id="link-title" class="form-control form-control-sm" placeholder="عنوان الرابط...">
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label mb-1 small">التاقات</label>
+                        <input type="text" id="link-tags" class="form-control form-control-sm" placeholder="عمل, مراجع...">
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label mb-1 small">URL</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="fas fa-link"></i></span>
+                        <input type="url" id="link-url" class="form-control" placeholder="https://..." style="direction: ltr;">
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="form-label mb-0 small">التقييم:</label>
+                        <div class="star-rating-input">
+                            <input type="radio" id="star5" name="rating" value="5" /><label for="star5">★</label>
+                            <input type="radio" id="star4" name="rating" value="4" /><label for="star4">★</label>
+                            <input type="radio" id="star3" name="rating" value="3" /><label for="star3">★</label>
+                            <input type="radio" id="star2" name="rating" value="2" /><label for="star2">★</label>
+                            <input type="radio" id="star1" name="rating" value="1" /><label for="star1">★</label>
+                        </div>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="link-favorite">
+                        <label class="form-check-label small" for="link-favorite"><i class="fas fa-heart text-danger"></i> المفضلة</label>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label mb-1 small">ملاحظات / وصف</label>
+                    <textarea id="link-desc" class="form-control form-control-sm" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" id="save-link-btn" class="btn btn-primary btn-sm">حفظ الرابط</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="dropdown-menu" id="context-menu" style="position: absolute; display: none; z-index: 1050;"></div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- Configuration ---
+    const DB_PATH = 'link_manager_app_db'; 
+    const DEFAULT_FOLDER_COLOR = '#ffc107'; 
+    const ICON_LIST = [
+        'fa-folder', 'fa-folder-open', 'fa-star', 'fa-bookmark', 'fa-link', 'fa-globe',
+        'fa-briefcase', 'fa-graduation-cap', 'fa-code', 'fa-database', 'fa-chart-pie',
+        'fa-shopping-cart', 'fa-home', 'fa-user', 'fa-users', 'fa-building',
+        'fa-utensils', 'fa-plane', 'fa-music', 'fa-video', 'fa-image', 'fa-gamepad',
+        'fa-check-circle', 'fa-exclamation-circle', 'fa-lock', 'fa-cog', 'fa-tools', 'fa-heart'
+    ];
+
+    // --- State ---
+    let state = {
+        folders: [], 
+        activeFolderId: null,
+        view: 'dashboard',
+        viewMode: 'grid', 
+        filters: { favoritesOnly: false, minRating: 0, tag: '' }
+    };
+
+    let sidebarSortable = null;
+    let gridSortable = null;
+
+    // --- History Management ---
+    const historyManager = {
+        past: [], future: [], maxDepth: 20,
+        pushState() {
+            const copy = JSON.parse(JSON.stringify(state));
+            this.past.push(copy);
+            if (this.past.length > this.maxDepth) this.past.shift();
+            this.future = [];
+            this.updateButtons();
+        },
+        undo() {
+            if (this.past.length === 0) return;
+            const current = JSON.parse(JSON.stringify(state));
+            this.future.push(current);
+            const prev = this.past.pop();
+            Object.assign(state, prev);
+            db.save();
+            renderApp();
+            this.updateButtons();
+        },
+        redo() {
+            if (this.future.length === 0) return;
+            const current = JSON.parse(JSON.stringify(state));
+            this.past.push(current);
+            const next = this.future.pop();
+            Object.assign(state, next);
+            db.save();
+            renderApp();
+            this.updateButtons();
+        },
+        updateButtons() {
+            document.getElementById('undo-btn').disabled = this.past.length === 0;
+            document.getElementById('redo-btn').disabled = this.future.length === 0;
+        }
+    };
+
+    // --- Firebase Init ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyCaBkl26zD1jR7-P9MWv7d4uD0T0QXUrnQ",
+        authDomain: "appd-326a4.firebaseapp.com",
+        databaseURL: "https://appd-326a4-default-rtdb.firebaseio.com",
+        projectId: "appd-326a4",
+        storageBucket: "appd-326a4.firebasestorage.app",
+        messagingSenderId: "1001287247517",
+        appId: "1:1001287247517:web:4c6e2a3b1cbada09821674"
+    };
+
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    const dbRef = database.ref(DB_PATH);
+
+    // --- Database Operations ---
+    const db = {
+        init: () => {
+            const connectedRef = firebase.database().ref(".info/connected");
+            connectedRef.on("value", (snap) => {
+                const el = document.getElementById('connection-status');
+                if (snap.val() === true) {
+                    el.className = 'connected';
+                } else {
+                    el.className = 'disconnected';
+                }
+            });
+
+            dbRef.on('value', (snapshot) => {
+                const val = snapshot.val();
+                if (val) {
+                    state.folders = val.folders || [];
+                    state.folders.forEach(f => {
+                        if (!f.links) f.links = [];
+                        if (!f.icon) f.icon = 'fa-folder';
+                        if (!f.color) f.color = DEFAULT_FOLDER_COLOR;
+                        if (!f.parentId) f.parentId = ""; // Ensure parentId exists
+                        f.links.forEach(l => {
+                            if(!l.tags) l.tags = [];
+                            if(typeof l.rating === 'undefined') l.rating = 0;
+                            if(typeof l.isFavorite === 'undefined') l.isFavorite = false;
+                        });
+                    });
+                } else {
+                    state.folders = [];
+                }
+                renderApp();
+            });
+        },
+        save: () => {
+            dbRef.set({ folders: state.folders, lastUpdated: new Date().toISOString() }).catch(e => console.error(e));
+        }
+    };
+
+    // --- Rendering ---
+    
+    // Recursive function to render folders tree
+    const renderFolderTree = (container, parentId = "", level = 0, filter = "") => {
+        const folders = state.folders.filter(f => {
+            // If filtering, ignore hierarchy logic (show flat list)
+            if (filter) return f.name.toLowerCase().includes(filter);
+            return (f.parentId || "") === parentId;
+        });
+
+        // Use standard sort if not using manual sort order (here relying on array order)
+        
+        folders.forEach(folder => {
+            const item = document.createElement('a');
+            const paddingClass = filter ? '' : `folder-level-${Math.min(level, 3)}`;
+            item.className = `list-group-item list-group-item-action d-flex justify-content-between align-items-center ${state.activeFolderId === folder.id ? 'active' : ''} ${paddingClass}`;
+            item.href = '#';
+            
+            const linkCount = folder.links ? folder.links.length : 0;
+            
+            // Indent icon
+            let indentHTML = '';
+            if (!filter && level > 0) {
+                indentHTML = `<i class="fas fa-level-up-alt fa-rotate-90 ms-2 text-muted opacity-25" style="font-size: 0.7em;"></i>`;
+            }
+
+            item.innerHTML = `
+                <div class="text-truncate d-flex align-items-center">
+                    ${indentHTML}
+                    <i class="fas ${folder.icon} me-2" style="color: ${state.activeFolderId === folder.id ? '#fff' : folder.color}"></i>
+                    ${folder.name}
+                </div>
+                <div class="d-flex align-items-center">
+                    <span class="badge rounded-pill ${state.activeFolderId === folder.id ? 'bg-light text-primary' : 'bg-light text-secondary'} ms-1" style="font-size: 0.7rem;">${linkCount}</span>
+                    <i class="fas fa-ellipsis-v ms-2 context-trigger" style="font-size: 0.8rem; opacity: 0.5;" data-id="${folder.id}" data-type="folder"></i>
+                </div>
+            `;
+            
+            item.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('context-trigger')) {
+                    e.preventDefault();
+                    state.activeFolderId = folder.id;
+                    state.view = 'folder';
+                    state.filters = { favoritesOnly: false, minRating: 0, tag: '' };
+                    
+                    // On mobile, close sidebar on select
+                    if (window.innerWidth <= 768) {
+                        toggleSidebar(false);
+                    }
+                    
+                    renderApp();
+                }
+            });
+            container.appendChild(item);
+
+            // Recursively render children
+            if (!filter) {
+                renderFolderTree(container, folder.id, level + 1, filter);
+            }
+        });
+    };
+
+    const renderSidebar = () => {
+        const list = document.getElementById('folder-list');
+        list.innerHTML = '';
+        const filter = document.getElementById('sidebar-search').value.toLowerCase();
+        
+        renderFolderTree(list, "", 0, filter);
+        
+        // Sorting is only enabled if no filter and simple flat view might be tricky with tree.
+        // For simplicity and stability with Subfolders, drag-and-drop sort of folders is disabled in this view 
+        // to prevent hierarchy corruption until a complex tree-sort library is used.
+    };
+
+    const renderDashboard = () => {
+        const view = document.getElementById('dashboard-view');
+        const totalLinks = state.folders.reduce((acc, curr) => acc + (curr.links ? curr.links.length : 0), 0);
+        const rootFolders = state.folders.filter(f => !f.parentId); // Only show root folders in dashboard overview
+
+        let html = `
+            <div class="alert alert-info border-0 shadow-sm mb-4">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-info-circle fs-4 me-3"></i>
+                    <div>
+                        <h6 class="fw-bold mb-0">مرحباً بك في نظام إدارة الروابط</h6>
+                        <small>لديك ${state.folders.length} مجلدات و ${totalLinks} روابط محفوظة.</small>
+                    </div>
+                </div>
+            </div>
+            
+            <h6 class="fw-bold text-muted mb-3">المجلدات الرئيسية</h6>
+            <div class="row g-3">
+        `;
+        
+        rootFolders.forEach(f => {
+            // Count total links including subfolders? No, keep it simple first
+            html += `
+                <div class="col-md-3 col-sm-6">
+                    <div class="card h-100 shadow-sm border-0" style="cursor: pointer; border-top: 3px solid ${f.color} !important;" onclick="openFolder('${f.id}')">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="fw-bold mb-0 text-truncate" title="${f.name}">${f.name}</h6>
+                                <i class="fas ${f.icon} text-muted"></i>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <span class="badge bg-light text-dark border">${f.links.length} رابط</span>
+                                <small class="text-muted" style="font-size: 0.7rem;">عرض <i class="fas fa-arrow-left ms-1"></i></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        if (state.folders.length === 0) {
+            html += `<div class="col-12"><div class="empty-state"><i class="fas fa-folder-open"></i><p>لا توجد مجلدات.</p></div></div>`;
+        }
+        
+        html += `</div>`;
+        view.innerHTML = html;
+        window.openFolder = (id) => { state.activeFolderId = id; state.view = 'folder'; renderApp(); };
+    };
+
+    const renderFolderView = () => {
+        const folder = state.folders.find(f => f.id === state.activeFolderId);
+        if (!folder) { state.view = 'dashboard'; renderApp(); return; }
+
+        const container = document.getElementById('folder-view');
+        container.innerHTML = '';
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'd-flex justify-content-between align-items-center mb-3 bg-white p-2 rounded border shadow-sm';
+        header.innerHTML = `
+            <div class="d-flex align-items-center overflow-hidden">
+                <span class="badge me-2 p-2 flex-shrink-0" style="background-color: ${folder.color}; color: #333;"><i class="fas ${folder.icon}"></i></span>
+                <div class="overflow-hidden">
+                    <h6 class="mb-0 fw-bold text-truncate">${folder.name}</h6>
+                    <small class="text-muted text-truncate d-block" style="font-size: 0.75rem;">${folder.desc || '---'}</small>
+                </div>
+            </div>
+            <div class="flex-shrink-0 ms-2">
+                <button class="btn btn-primary btn-sm" id="add-link-btn"><i class="fas fa-plus me-1"></i> <span class="d-none d-sm-inline">رابط</span></button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="editFolder('${folder.id}')"><i class="fas fa-cog"></i></button>
+            </div>
+        `;
+        container.appendChild(header);
+
+        // Sub-folders display (if any children exist)
+        const subFolders = state.folders.filter(f => f.parentId === folder.id);
+        if (subFolders.length > 0) {
+            const subContainer = document.createElement('div');
+            subContainer.className = 'mb-3';
+            subContainer.innerHTML = '<h6 class="small text-muted mb-2">مجلدات فرعية:</h6><div class="d-flex gap-2 flex-wrap"></div>';
+            const subWrap = subContainer.querySelector('div');
+            
+            subFolders.forEach(sub => {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-sm btn-light border d-flex align-items-center gap-2';
+                btn.innerHTML = `<i class="fas ${sub.icon}" style="color:${sub.color}"></i> ${sub.name}`;
+                btn.onclick = () => { state.activeFolderId = sub.id; renderApp(); };
+                subWrap.appendChild(btn);
+            });
+            container.appendChild(subContainer);
+        }
+
+        // Filter Bar
+        const filterBar = document.createElement('div');
+        filterBar.id = 'filter-bar';
+        const showFilters = document.getElementById('toggle-filters-btn').classList.contains('active');
+        if(showFilters) filterBar.classList.add('show');
+        
+        filterBar.innerHTML = `
+            <div class="form-check form-switch border-end ps-4 pe-2">
+                <input class="form-check-input" type="checkbox" id="filter-fav" ${state.filters.favoritesOnly ? 'checked' : ''}>
+                <label class="form-check-label small" for="filter-fav">المفضلة</label>
+            </div>
+            <div class="d-flex align-items-center gap-2 border-end px-2">
+                <label class="small text-muted mb-0">★</label>
+                <select class="form-select form-select-sm py-0" id="filter-rating" style="width: auto;">
+                    <option value="0" ${state.filters.minRating === 0 ? 'selected' : ''}>الكل</option>
+                    <option value="3" ${state.filters.minRating === 3 ? 'selected' : ''}>+3</option>
+                    <option value="5" ${state.filters.minRating === 5 ? 'selected' : ''}>5</option>
+                </select>
+            </div>
+            <div class="flex-grow-1">
+                <input type="text" class="form-control form-control-sm" id="filter-tags" placeholder="فلتر بالتاق..." value="${state.filters.tag}">
+            </div>
+        `;
+        container.appendChild(filterBar);
+
+        // Filtering Logic
+        const searchTerm = document.getElementById('global-search').value.toLowerCase();
+        
+        const filteredLinks = folder.links.filter(l => {
+            const tagsString = (l.tags || []).join(' ').toLowerCase();
+            const textMatch = l.title.toLowerCase().includes(searchTerm) || 
+                              l.url.toLowerCase().includes(searchTerm) || 
+                              (l.desc || '').toLowerCase().includes(searchTerm) ||
+                              tagsString.includes(searchTerm);
+            
+            if (!textMatch) return false;
+            if (state.filters.favoritesOnly && !l.isFavorite) return false;
+            if (l.rating < state.filters.minRating) return false;
+            if (state.filters.tag && !tagsString.includes(state.filters.tag.toLowerCase())) return false;
+
+            return true;
+        });
+
+        // Event listeners
+        filterBar.querySelector('#filter-fav').addEventListener('change', (e) => { state.filters.favoritesOnly = e.target.checked; renderFolderView(); });
+        filterBar.querySelector('#filter-rating').addEventListener('change', (e) => { state.filters.minRating = parseInt(e.target.value); renderFolderView(); });
+        filterBar.querySelector('#filter-tags').addEventListener('input', (e) => { state.filters.tag = e.target.value; renderFolderView(); });
+
+        if (filteredLinks.length === 0) {
+            container.innerHTML += `<div class="empty-state bg-white rounded border"><i class="fas fa-link"></i><p>لا توجد روابط.</p></div>`;
+            document.getElementById('add-link-btn').addEventListener('click', () => openLinkModal());
+            return;
+        }
+
+        if (state.viewMode === 'table') {
+            // Table View
+            const tableResponsive = document.createElement('div');
+            tableResponsive.className = 'table-responsive table-view-container';
+            let tableHtml = `
+                <table class="table table-bordered table-hover table-compact mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">#</th>
+                            <th>العنوان</th>
+                            <th class="d-none d-md-table-cell">التاقات</th>
+                            <th style="width: 80px;">التقييم</th>
+                            <th style="width: 50px;">مفضل</th>
+                            <th style="width: 100px;">إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            filteredLinks.forEach((link, idx) => {
+                let domain = ''; try { domain = new URL(link.url).hostname; } catch(e){}
+                const faviconUrl = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=32` : '';
+                const imgTag = faviconUrl ? `<img src="${faviconUrl}" class="table-favicon" onerror="this.style.display='none'">` : '';
+                
+                const tagsHtml = (link.tags || []).map(t => `<span class="badge bg-light text-secondary border me-1">${t}</span>`).join('');
+                const starsHtml = '★'.repeat(link.rating);
+                const favIcon = link.isFavorite ? '<i class="fas fa-heart text-danger"></i>' : '<i class="far fa-heart text-muted"></i>';
+
+                tableHtml += `
+                    <tr>
+                        <td class="text-center text-muted small">${idx + 1}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                ${imgTag}
+                                <div class="ms-2" style="min-width: 0;">
+                                    <div class="fw-bold text-dark text-truncate">${link.title}</div>
+                                    <a href="${link.url}" target="_blank" class="text-decoration-none small text-muted text-truncate d-block" style="direction: ltr;">${link.url}</a>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="d-none d-md-table-cell">${tagsHtml}</td>
+                        <td class="text-warning small">${starsHtml}</td>
+                        <td class="text-center cursor-pointer" onclick="toggleFav('${link.id}')">${favIcon}</td>
+                        <td class="align-middle">
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-light text-primary border" onclick="copyLink('${link.url}')"><i class="far fa-copy"></i></button>
+                                <button class="btn btn-light text-dark border" onclick="editLink('${link.id}')"><i class="fas fa-pen"></i></button>
+                                <button class="btn btn-light text-danger border" onclick="deleteLink('${link.id}')"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            tableHtml += `</tbody></table>`;
+            tableResponsive.innerHTML = tableHtml;
+            container.appendChild(tableResponsive);
+
+        } else {
+            // Grid View
+            const grid = document.createElement('div');
+            grid.className = 'row g-2';
+            
+            filteredLinks.forEach(link => {
+                const col = document.createElement('div');
+                col.className = 'col-xxl-2 col-xl-3 col-lg-4 col-md-6';
+                
+                let domain = ''; try { domain = new URL(link.url).hostname; } catch(e){}
+                const faviconUrl = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=64` : '';
+                const imgTag = faviconUrl ? `<img src="${faviconUrl}" class="link-favicon" alt="icon">` : `<div class="link-favicon"><i class="fas fa-globe"></i></div>`;
+                
+                const tagsHtml = (link.tags || []).slice(0, 3).map(t => `<span class="tag-badge">${t}</span>`).join('');
+                const starsHtml = link.rating > 0 ? `<span class="rating-stars">${'★'.repeat(link.rating)}</span>` : '';
+
+                col.innerHTML = `
+                    <div class="link-card" onclick="visitLink('${link.url}', event)">
+                        <i class="fas fa-heart card-fav-icon ${link.isFavorite ? 'active' : ''}" onclick="toggleFav('${link.id}', event)"></i>
+                        <div class="link-header">
+                            ${imgTag}
+                            <div class="link-info">
+                                <div class="link-title" title="${link.title}">${link.title}</div>
+                                <div class="link-url" title="${link.url}">${domain || 'Link'}</div>
+                            </div>
+                        </div>
+                        <div class="card-meta">
+                            ${starsHtml}
+                            ${tagsHtml}
+                        </div>
+                        <div class="link-desc" title="${link.desc || ''}">${link.desc || ''}</div>
+                        <div class="link-actions" onclick="event.stopPropagation()">
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-light text-secondary px-1" onclick="copyLink('${link.url}')"><i class="far fa-copy"></i></button>
+                                <button class="btn btn-light text-secondary px-1" onclick="editLink('${link.id}')"><i class="fas fa-pen"></i></button>
+                                <button class="btn btn-light text-danger px-1" onclick="deleteLink('${link.id}')"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                            <a href="${link.url}" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">زيارة</a>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(col);
+            });
+            container.appendChild(grid);
+            
+            if (gridSortable) gridSortable.destroy();
+            gridSortable = new Sortable(grid, {
+                animation: 150,
+                handle: '.link-card',
+                onEnd: (evt) => {
+                    if (evt.oldIndex === evt.newIndex || searchTerm || state.filters.favoritesOnly || state.filters.minRating || state.filters.tag) return;
+                    historyManager.pushState();
+                    const item = folder.links.splice(evt.oldIndex, 1)[0];
+                    folder.links.splice(evt.newIndex, 0, item);
+                    db.save();
+                }
+            });
+        }
+        document.getElementById('add-link-btn').addEventListener('click', () => openLinkModal());
+    };
+
+    const renderApp = () => {
+        renderSidebar();
+        const dashboard = document.getElementById('dashboard-view');
+        const folderView = document.getElementById('folder-view');
+        const title = document.getElementById('current-view-name');
+
+        if (state.view === 'dashboard') {
+            dashboard.classList.remove('d-none');
+            folderView.classList.add('d-none');
+            title.textContent = "لوحة التحكم";
+            state.activeFolderId = null;
+            document.querySelectorAll('.list-group-item').forEach(el => el.classList.remove('active'));
+            renderDashboard();
+        } else {
+            dashboard.classList.add('d-none');
+            folderView.classList.remove('d-none');
+            const folder = state.folders.find(f => f.id === state.activeFolderId);
+            title.textContent = folder ? folder.name : 'مجلد';
+            renderFolderView();
+        }
+        
+        const gridBtn = document.getElementById('view-grid-btn');
+        const tableBtn = document.getElementById('view-table-btn');
+        if (state.viewMode === 'grid') {
+            gridBtn.classList.add('active');
+            tableBtn.classList.remove('active');
+        } else {
+            gridBtn.classList.remove('active');
+            tableBtn.classList.add('active');
+        }
+    };
+
+    // --- Sidebar Toggle Logic (New) ---
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    
+    function toggleSidebar(show) {
+        if (window.innerWidth <= 768) {
+            // Mobile
+            if (show === undefined) show = !sidebar.classList.contains('mobile-show');
+            if (show) {
+                sidebar.classList.add('mobile-show');
+                overlay.classList.add('show');
+            } else {
+                sidebar.classList.remove('mobile-show');
+                overlay.classList.remove('show');
+            }
+        } else {
+            // Desktop
+            if (show === undefined) show = sidebar.classList.contains('hidden-desktop');
+            if (show) {
+                sidebar.classList.remove('hidden-desktop');
+            } else {
+                sidebar.classList.add('hidden-desktop');
+            }
+        }
+    }
+
+    document.getElementById('sidebar-toggle-btn').addEventListener('click', () => toggleSidebar());
+    document.getElementById('close-sidebar-mobile').addEventListener('click', () => toggleSidebar(false));
+    overlay.addEventListener('click', () => toggleSidebar(false));
+
+    // --- Interaction ---
+    const folderModal = new bootstrap.Modal(document.getElementById('folder-modal'));
+    const linkModal = new bootstrap.Modal(document.getElementById('link-modal'));
+    
+    document.getElementById('view-grid-btn').addEventListener('click', () => { state.viewMode = 'grid'; renderApp(); });
+    document.getElementById('view-table-btn').addEventListener('click', () => { state.viewMode = 'table'; renderApp(); });
+    
+    document.getElementById('toggle-filters-btn').addEventListener('click', function() {
+        this.classList.toggle('active');
+        if(this.classList.contains('active')) {
+            this.classList.remove('btn-outline-secondary');
+            this.classList.add('btn-secondary');
+        } else {
+            this.classList.add('btn-outline-secondary');
+            this.classList.remove('btn-secondary');
+        }
+        renderFolderView();
+    });
+
+    const iconGrid = document.getElementById('icon-picker');
+    ICON_LIST.forEach(icon => {
+        const div = document.createElement('div');
+        div.className = 'icon-option';
+        div.innerHTML = `<i class="fas ${icon}"></i>`;
+        div.onclick = () => {
+            document.querySelectorAll('.icon-option').forEach(el => el.classList.remove('selected'));
+            div.classList.add('selected');
+            document.getElementById('folder-icon').value = icon;
+        };
+        iconGrid.appendChild(div);
+    });
+
+    document.getElementById('new-folder-btn').addEventListener('click', () => {
+        document.getElementById('folder-id').value = '';
+        document.getElementById('folder-name').value = '';
+        document.getElementById('folder-desc').value = '';
+        document.getElementById('folder-color').value = DEFAULT_FOLDER_COLOR;
+        
+        // Populate Parent Select
+        const parentSelect = document.getElementById('folder-parent');
+        parentSelect.innerHTML = '<option value="">-- مجلد رئيسي --</option>';
+        state.folders.forEach(f => {
+            parentSelect.innerHTML += `<option value="${f.id}">${f.name}</option>`;
+        });
+
+        document.querySelectorAll('.icon-option').forEach(el => el.classList.remove('selected'));
+        document.querySelector('[data-icon="fa-folder"]')?.classList.add('selected'); // Optional chaining if class not found
+        document.getElementById('folder-icon').value = 'fa-folder';
+        folderModal.show();
+    });
+
+    window.editFolder = (id) => {
+        const f = state.folders.find(x => x.id === id);
+        if (!f) return;
+        document.getElementById('folder-id').value = f.id;
+        document.getElementById('folder-name').value = f.name;
+        document.getElementById('folder-desc').value = f.desc || '';
+        document.getElementById('folder-color').value = f.color || DEFAULT_FOLDER_COLOR;
+        
+        // Populate Parent Select (Exclude self and children to prevent circular reference)
+        const parentSelect = document.getElementById('folder-parent');
+        parentSelect.innerHTML = '<option value="">-- مجلد رئيسي --</option>';
+        state.folders.forEach(folder => {
+            if (folder.id !== f.id && folder.parentId !== f.id) {
+                parentSelect.innerHTML += `<option value="${folder.id}">${folder.name}</option>`;
+            }
+        });
+        parentSelect.value = f.parentId || "";
+
+        document.querySelectorAll('.icon-option').forEach(el => el.classList.remove('selected'));
+        const icons = document.querySelectorAll('.icon-option');
+        for(let i=0; i<icons.length; i++) {
+            if(icons[i].innerHTML.includes(f.icon)) {
+                icons[i].classList.add('selected');
+                break;
+            }
+        }
+        document.getElementById('folder-icon').value = f.icon;
+        folderModal.show();
+    };
+
+    document.getElementById('save-folder-btn').addEventListener('click', () => {
+        const id = document.getElementById('folder-id').value;
+        const name = document.getElementById('folder-name').value.trim();
+        const desc = document.getElementById('folder-desc').value.trim();
+        const icon = document.getElementById('folder-icon').value;
+        const color = document.getElementById('folder-color').value;
+        const parentId = document.getElementById('folder-parent').value;
+
+        if (!name) return alert('اسم المجلد مطلوب');
+
+        historyManager.pushState();
+
+        if (id) {
+            const f = state.folders.find(x => x.id === id);
+            if (f) { f.name = name; f.desc = desc; f.icon = icon; f.color = color; f.parentId = parentId; }
+        } else {
+            const newFolder = { id: 'folder_' + Date.now(), name, desc, icon, color, parentId, links: [] };
+            state.folders.push(newFolder);
+        }
+        db.save();
+        folderModal.hide();
+        renderApp();
+    });
+
+    function openLinkModal(linkId = null) {
+        document.getElementById('link-id').value = linkId || '';
+        const starInputs = document.querySelectorAll('input[name="rating"]');
+        
+        if (linkId) {
+            const folder = state.folders.find(f => f.id === state.activeFolderId);
+            const link = folder.links.find(l => l.id === linkId);
+            document.getElementById('link-title').value = link.title;
+            document.getElementById('link-url').value = link.url;
+            document.getElementById('link-desc').value = link.desc || '';
+            document.getElementById('link-tags').value = (link.tags || []).join(', ');
+            document.getElementById('link-favorite').checked = link.isFavorite || false;
+            
+            const rating = link.rating || 0;
+            if(rating > 0) {
+                const radio = document.querySelector(`input[name="rating"][value="${rating}"]`);
+                if(radio) radio.checked = true;
+            } else {
+                starInputs.forEach(i => i.checked = false);
+            }
+
+        } else {
+            document.getElementById('link-title').value = '';
+            document.getElementById('link-url').value = '';
+            document.getElementById('link-desc').value = '';
+            document.getElementById('link-tags').value = '';
+            document.getElementById('link-favorite').checked = false;
+            starInputs.forEach(i => i.checked = false);
+        }
+        linkModal.show();
+    }
+
+    document.getElementById('save-link-btn').addEventListener('click', () => {
+        if (!state.activeFolderId) return;
+        const id = document.getElementById('link-id').value;
+        const title = document.getElementById('link-title').value.trim();
+        let url = document.getElementById('link-url').value.trim();
+        const desc = document.getElementById('link-desc').value.trim();
+        const tagsStr = document.getElementById('link-tags').value.trim();
+        const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()) : [];
+        const isFavorite = document.getElementById('link-favorite').checked;
+        const ratingInput = document.querySelector('input[name="rating"]:checked');
+        const rating = ratingInput ? parseInt(ratingInput.value) : 0;
+
+        if (!title || !url) return alert('العنوان والرابط مطلوبان');
+        if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+        historyManager.pushState();
+        const folder = state.folders.find(f => f.id === state.activeFolderId);
+        const linkData = { title, url, desc, tags, isFavorite, rating, date: new Date().toISOString() };
+
+        if (id) {
+            const link = folder.links.find(l => l.id === id);
+            if (link) Object.assign(link, linkData);
+        } else {
+            folder.links.push({ id: 'link_' + Date.now(), ...linkData });
+        }
+        db.save();
+        linkModal.hide();
+        renderFolderView();
+    });
+
+    window.toggleFav = (id, e) => {
+        if(e) e.stopPropagation();
+        const folder = state.folders.find(f => f.id === state.activeFolderId);
+        const link = folder.links.find(l => l.id === id);
+        if(link) {
+            link.isFavorite = !link.isFavorite;
+            db.save();
+            renderFolderView();
+        }
+    };
+
+    window.visitLink = (url, e) => {
+        window.open(url, '_blank');
+    };
+
+    window.editLink = (id) => openLinkModal(id);
+    window.deleteLink = (id) => {
+        if (confirm('حذف الرابط؟')) {
+            historyManager.pushState();
+            const folder = state.folders.find(f => f.id === state.activeFolderId);
+            folder.links = folder.links.filter(l => l.id !== id);
+            db.save();
+            renderFolderView();
+        }
+    };
+    window.copyLink = (url) => {
+        navigator.clipboard.writeText(url);
+    };
+
+    document.addEventListener('click', (e) => {
+        const menu = document.getElementById('context-menu');
+        if (e.target.classList.contains('context-trigger')) {
+            e.preventDefault();
+            const id = e.target.dataset.id;
+            menu.innerHTML = `
+                <a class="dropdown-item small" href="#" onclick="editFolder('${id}')"><i class="fas fa-pen text-warning me-2"></i>تعديل</a>
+                <a class="dropdown-item small text-danger" href="#" onclick="deleteFolder('${id}')"><i class="fas fa-trash me-2"></i>حذف</a>
+            `;
+            menu.style.display = 'block';
+            menu.style.top = e.pageY + 'px';
+            menu.style.left = e.pageX + 'px';
+        } else {
+            menu.style.display = 'none';
+        }
+    });
+
+    window.deleteFolder = (id) => {
+        if (confirm('حذف المجلد وكل محتوياته؟')) {
+            historyManager.pushState();
+            // Also delete children? For now, we orphan them or delete them. Let's delete flatly.
+            state.folders = state.folders.filter(f => f.id !== id);
+            // Optionally: Clean up children parentIds
+            state.folders.forEach(f => { if(f.parentId === id) f.parentId = ""; });
+            
+            if (state.activeFolderId === id) { state.view = 'dashboard'; state.activeFolderId = null; }
+            db.save();
+            renderApp();
+        }
+    };
+
+    document.getElementById('sidebar-search').addEventListener('input', renderSidebar);
+    document.getElementById('global-search').addEventListener('input', () => { if (state.view === 'folder') renderFolderView(); });
+
+    document.getElementById('undo-btn').addEventListener('click', () => historyManager.undo());
+    document.getElementById('redo-btn').addEventListener('click', () => historyManager.redo());
+
+    document.getElementById('export-btn').addEventListener('click', () => {
+        const folder = state.folders.find(f => f.id === state.activeFolderId);
+        if (folder) {
+            const data = folder.links.map(l => ({ 
+                'العنوان': l.title, 
+                'الرابط': l.url, 
+                'ملاحظات': l.desc,
+                'التاقات': (l.tags || []).join(', '),
+                'التقييم': l.rating,
+                'مفضل': l.isFavorite ? 'نعم' : 'لا'
+            }));
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, folder.name.substring(0, 30));
+            XLSX.writeFile(wb, `${folder.name}.xlsx`);
+        } else {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.folders));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "links_backup.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+    });
+    
+    document.getElementById('import-btn').addEventListener('click', () => document.getElementById('import-input').click());
+    document.getElementById('import-input').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (Array.isArray(data)) {
+                    if (confirm('استبدال البيانات الحالية؟')) {
+                        historyManager.pushState();
+                        state.folders = data;
+                        db.save();
+                        renderApp();
+                    }
+                }
+            } catch (err) { alert('ملف غير صالح'); }
+        };
+        reader.readAsText(file);
+    });
+
+    db.init();
+});
+</script>
+</body>
+</html>

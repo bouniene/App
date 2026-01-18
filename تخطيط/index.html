@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise APS | Advanced Scheduler</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-dark: #1e1e1e;
+            --bg-panel: #252526;
+            --bg-header: #333333;
+            --border: #454545;
+            --text-main: #cccccc;
+            --text-highlight: #ffffff;
+            --accent: #007acc;
+            --danger: #d9534f;
+            --success: #5cb85c;
+            
+            --color-setup: #4daafc;
+            --color-run: #4caf50;
+            --color-late: #ff5252;
+            --color-grid: #3a3a3a;
+            
+            --time-scale: 2px; 
+            --row-height: 50px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            font-size: 13px;
+        }
+
+        /* --- Layout --- */
+        #app {
+            display: grid;
+            grid-template-rows: 100px 1fr; /* Increased header height for Tabs */
+            height: 100vh;
+        }
+
+        /* --- Header --- */
+        header {
+            background-color: var(--bg-header);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 20px 0 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 50px;
+        }
+
+        .kpi-container { display: flex; gap: 20px; }
+        .kpi-card {
+            background: var(--bg-panel);
+            padding: 5px 15px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+        }
+        .kpi-label { font-size: 0.8em; opacity: 0.7; }
+        .kpi-value { font-size: 1.2em; font-weight: bold; color: var(--text-highlight); }
+
+        .btn-group { display: flex; gap: 10px; }
+        
+        button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        button:hover { filter: brightness(1.1); }
+        button.secondary { background-color: #555; }
+        button.danger { background-color: var(--danger); }
+        button.success { background-color: var(--success); }
+
+        /* --- Navigation Tabs --- */
+        .nav-tabs {
+            display: flex;
+            gap: 5px;
+        }
+        .nav-tab {
+            padding: 8px 20px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            cursor: pointer;
+            color: #aaa;
+            transition: all 0.2s;
+        }
+        .nav-tab:hover { background: #3e3e42; color: #fff; }
+        .nav-tab.active {
+            background: var(--bg-dark);
+            color: var(--accent);
+            border-top: 2px solid var(--accent);
+            font-weight: bold;
+        }
+
+        /* --- View Containers --- */
+        .view-container {
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        /* --- Gantt Chart Specifics --- */
+        .gantt-wrapper {
+            display: grid;
+            grid-template-rows: 1fr 200px;
+            height: 100%;
+        }
+        .gantt-chart-area {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            overflow: hidden;
+            border-bottom: 5px solid var(--bg-dark);
+            height: 100%;
+        }
+
+        .resource-list {
+            background-color: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        .resource-header {
+            height: 40px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            font-weight: bold;
+            background: var(--bg-header);
+        }
+
+        .resource-row {
+            height: var(--row-height);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            justify-content: space-between;
+            padding-right: 10px;
+        }
+
+        .timeline-area {
+            position: relative;
+            overflow: auto;
+            background: var(--bg-dark);
+        }
+
+        .grid-background {
+            position: absolute;
+            top: 0; left: 0; height: 100%;
+            width: 3000px;
+            background-image: linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
+            background-size: 60px 100%;
+            pointer-events: none;
+        }
+
+        .time-header {
+            height: 40px;
+            position: sticky;
+            top: 0;
+            background: var(--bg-header);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            z-index: 5;
+            width: 3000px;
+        }
+
+        .time-marker {
+            width: 120px;
+            border-right: 1px solid var(--border);
+            padding: 5px;
+            font-size: 11px;
+            color: #888;
+        }
+
+        .gantt-row {
+            height: var(--row-height);
+            border-bottom: 1px solid #2a2a2a;
+            position: relative;
+            width: 3000px;
+        }
+
+        /* --- Operations (Bars) --- */
+        .op-bar {
+            position: absolute;
+            height: 36px;
+            top: 7px;
+            border-radius: 3px;
+            cursor: grab;
+            display: flex;
+            overflow: hidden;
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-size: 11px;
+            user-select: none;
+            transition: transform 0.1s;
+        }
+        .op-bar:active { cursor: grabbing; }
+        .op-bar:hover { z-index: 100; box-shadow: 0 0 0 2px white; }
+        .op-bar.late-delivery { border: 2px solid var(--color-late); }
+
+        .bar-setup {
+            background-color: var(--color-setup);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            min-width: 5px;
+            position: relative;
+        }
+        .bar-setup::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(45deg, rgba(255,255,255,.2) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.2) 50%, rgba(255,255,255,.2) 75%, transparent 75%, transparent);
+            background-size: 10px 10px;
+        }
+
+        .bar-run {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* --- Bottom Pane --- */
+        .orders-panel {
+            background: var(--bg-panel);
+            border-top: 1px solid var(--border);
+            padding: 10px;
+            overflow-y: auto;
+        }
+        
+        .orders-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+        .order-card {
+            background: #333;
+            border: 1px solid #555;
+            padding: 8px;
+            width: 200px;
+            border-radius: 4px;
+            cursor: grab;
+        }
+        .order-card:hover { border-color: var(--accent); }
+
+        /* --- Table View --- */
+        .table-view {
+            padding: 20px;
+            overflow: auto;
+            height: 100%;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .data-table th, .data-table td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        .data-table th {
+            background-color: var(--bg-header);
+            cursor: pointer;
+            user-select: none;
+        }
+        .data-table th:hover { background-color: #444; }
+        .data-table tr:hover { background-color: #2a2a2a; }
+        .status-badge {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        /* --- Kanban View --- */
+        .kanban-view {
+            display: flex;
+            gap: 15px;
+            padding: 20px;
+            overflow-x: auto;
+            height: 100%;
+            align-items: flex-start;
+        }
+        .kanban-col {
+            background: var(--bg-panel);
+            min-width: 280px;
+            width: 280px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            max-height: 100%;
+        }
+        .kanban-header {
+            padding: 10px;
+            background: var(--bg-header);
+            border-bottom: 1px solid var(--border);
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .kanban-body {
+            padding: 10px;
+            overflow-y: auto;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .kanban-card {
+            background: #333;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--accent);
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .kanban-card:hover { background: #3a3a3a; }
+
+        /* --- Modals --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 999;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .modal-window {
+            background: var(--bg-panel);
+            width: 500px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        .modal-header { font-size: 1.2em; font-weight: bold; margin-bottom: 15px; color: var(--text-highlight); display: flex; justify-content: space-between; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #aaa; }
+        .form-control {
+            width: 100%; padding: 8px;
+            background: #111; border: 1px solid var(--border);
+            color: white; border-radius: 3px;
+        }
+        textarea.form-control { resize: vertical; min-height: 60px; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        
+        .resource-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px; background: #333; margin-bottom: 5px; border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <header>
+        <div class="header-top">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <i class="fa-solid fa-industry fa-lg"></i>
+                <h3>APS Scheduler <span style="font-weight:normal; opacity:0.6; font-size:0.8em;">Pro</span></h3>
+            </div>
+
+            <div class="kpi-container">
+                <div class="kpi-card">
+                    <span class="kpi-label">OTIF</span>
+                    <span class="kpi-value" :style="{color: kpis.otif > 90 ? '#4caf50' : '#ff5252'}">{{ kpis.otif }}%</span>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-label">Utilization</span>
+                    <span class="kpi-value">{{ kpis.utilization }}%</span>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button class="secondary" @click="openResourcesModal"><i class="fa-solid fa-gear"></i> Settings</button>
+                <button class="secondary" @click="resetData"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+                <button @click="autoSchedule"><i class="fa-solid fa-magic"></i> Auto-Schedule</button>
+                <button class="success" @click="openAddOrderModal"><i class="fa-solid fa-plus"></i> Add Order</button>
+            </div>
+        </div>
+
+        <div class="nav-tabs">
+            <div class="nav-tab" :class="{active: currentView === 'gantt'}" @click="currentView = 'gantt'">
+                <i class="fa-solid fa-chart-gantt"></i> Gantt Chart
+            </div>
+            <div class="nav-tab" :class="{active: currentView === 'table'}" @click="currentView = 'table'">
+                <i class="fa-solid fa-table"></i> Production List
+            </div>
+            <div class="nav-tab" :class="{active: currentView === 'kanban'}" @click="currentView = 'kanban'">
+                <i class="fa-solid fa-border-all"></i> Kanban Board
+            </div>
+        </div>
+    </header>
+
+    <div v-if="currentView === 'gantt'" class="view-container gantt-wrapper">
+        <div class="gantt-chart-area">
+            <div class="resource-list">
+                <div class="resource-header">Resources</div>
+                <div class="resource-row" v-for="res in resources" :key="res.id">
+                    <div>
+                        <div>{{ res.name }}</div>
+                        <div style="font-size:0.8em; opacity:0.6;">{{ res.group }}</div>
+                    </div>
+                    <i class="fa-solid fa-circle" :style="{color: '#4caf50', fontSize:'8px'}"></i>
+                </div>
+            </div>
+
+            <div class="timeline-area" ref="timelineScroll">
+                <div class="time-header">
+                    <div class="time-marker" v-for="h in 48" :key="h">
+                        {{ formatTimeHeader(h-1) }}
+                    </div>
+                </div>
+
+                <div class="grid-background"></div>
+
+                <svg style="position:absolute; top:0; left:0; width:3000px; height:100%; pointer-events:none; z-index:2;">
+                    <path v-for="line in peggingLines" :d="line.path" 
+                          style="fill:none; stroke:#ffd700; stroke-width:2; stroke-dasharray:5,5; opacity:0.8;"></path>
+                </svg>
+
+                <div class="gantt-row" 
+                     v-for="res in resources" 
+                     :key="res.id"
+                     @dragover.prevent
+                     @drop="onDrop($event, res.id)">
+                    
+                    <div v-for="op in getOpsForResource(res.id)" 
+                         :key="op.id"
+                         class="op-bar"
+                         draggable="true"
+                         :class="{'late-delivery': isLate(op)}"
+                         :style="getBarStyle(op)"
+                         @dragstart="startDrag($event, op)"
+                         @click="openEditOpModal(op)">
+                        
+                        <div class="bar-setup" v-if="op.setupDuration > 0" :style="{width: (op.setupDuration * pixelsPerMin) + 'px'}">
+                            <i class="fa-solid fa-wrench" style="font-size:0.8em;"></i>
+                        </div>
+                        <div class="bar-run" :style="{backgroundColor: op.color}">
+                            <strong>{{ op.orderId }}</strong>
+                            <span>{{ op.product }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="orders-panel">
+            <h4 style="margin-top:0; margin-bottom:10px; display:flex; justify-content:space-between;">
+                <span>Unscheduled Operations ({{ unscheduledOps.length }})</span>
+                <span style="font-size:0.8em; opacity:0.6;">Drag card to chart to schedule</span>
+            </h4>
+            <div class="orders-grid">
+                <div class="order-card" 
+                     v-for="op in unscheduledOps" 
+                     :key="op.id"
+                     draggable="true"
+                     @dragstart="startDrag($event, op)"
+                     @click="openEditOpModal(op)">
+                     
+                    <div style="display:flex; justify-content:space-between;">
+                        <strong>{{ op.orderId }}</strong>
+                        <span style="background:#444; padding:2px 4px; border-radius:3px; font-size:10px;">{{ op.product }}</span>
+                    </div>
+                    <div style="font-size:0.9em; margin-top:5px; color:#aaa;">
+                        Run: {{ op.runDuration }}m | Due: {{ formatTime(op.dueDate) }}
+                    </div>
+                    <div style="margin-top:5px; font-size:0.8em; color: var(--accent);">
+                        <i class="fa-solid fa-arrow-up"></i> Needs: {{ op.requiredGroup }}
+                    </div>
+                    <div v-if="op.batchGroup" style="font-size:0.8em; color:#888;">Group: {{op.batchGroup}}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="currentView === 'table'" class="view-container table-view">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th @click="sort('orderId')">Order ID <i class="fa-solid fa-sort"></i></th>
+                    <th @click="sort('product')">Product <i class="fa-solid fa-sort"></i></th>
+                    <th @click="sort('batchGroup')">Group <i class="fa-solid fa-sort"></i></th>
+                    <th @click="sort('status')">Status <i class="fa-solid fa-sort"></i></th>
+                    <th @click="sort('resourceId')">Machine <i class="fa-solid fa-sort"></i></th>
+                    <th @click="sort('qty')">Qty <i class="fa-solid fa-sort"></i></th>
+                    <th @click="sort('dueDate')">Due Date <i class="fa-solid fa-sort"></i></th>
+                    <th>Notes</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="op in sortedOps" :key="op.id">
+                    <td><strong>{{ op.orderId }}</strong></td>
+                    <td>{{ op.product }} <span style="font-size:0.8em; color:#888;">({{op.color}})</span></td>
+                    <td>{{ op.batchGroup || '-' }}</td>
+                    <td>
+                        <span class="status-badge" 
+                              :style="{background: op.status === 'scheduled' ? 'var(--success)' : '#555'}">
+                            {{ op.status }}
+                        </span>
+                    </td>
+                    <td>{{ getResourceName(op.resourceId) }}</td>
+                    <td>{{ op.qty }}</td>
+                    <td>{{ formatTimeDay(op.dueDate) }}</td>
+                    <td style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        {{ op.notes }}
+                    </td>
+                    <td>
+                        <button class="secondary" style="padding:2px 6px; font-size:0.9em;" @click="openEditOpModal(op)">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div v-if="currentView === 'kanban'" class="view-container kanban-view">
+        <div class="kanban-col" v-for="res in resources" :key="res.id">
+            <div class="kanban-header">
+                <span>{{ res.name }}</span>
+                <span style="font-size:0.8em; font-weight:normal;">{{ getOpsForResource(res.id).length }} Ops</span>
+            </div>
+            <div class="kanban-body">
+                <div v-for="op in getSortedOpsForResource(res.id)" 
+                     :key="op.id" 
+                     class="kanban-card"
+                     :style="{borderLeftColor: op.color}"
+                     @click="openEditOpModal(op)">
+                     
+                    <div style="font-weight:bold; display:flex; justify-content:space-between;">
+                        <span>{{ op.orderId }}</span>
+                        <span style="font-size:0.8em; opacity:0.7;">{{ formatTime(op.startTime) }}</span>
+                    </div>
+                    <div>{{ op.product }}</div>
+                    <div style="font-size:0.8em; margin-top:5px; display:flex; gap:10px;">
+                        <span><i class="fa-solid fa-cubes"></i> {{ op.qty }}</span>
+                        <span v-if="op.batchGroup"><i class="fa-solid fa-layer-group"></i> {{ op.batchGroup }}</span>
+                    </div>
+                    <div v-if="op.notes" style="margin-top:5px; font-size:0.8em; font-style:italic; color:#aaa; border-top:1px solid #444; padding-top:2px;">
+                        "{{ op.notes }}"
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" v-if="modals.resources">
+        <div class="modal-window">
+            <div class="modal-header">
+                <span>Manage Resources</span>
+                <button class="secondary" @click="modals.resources = false">X</button>
+            </div>
+            <div style="max-height: 300px; overflow-y:auto; margin-bottom:15px;">
+                <div class="resource-item" v-for="(res, idx) in resources" :key="res.id">
+                    <span><b>{{ res.name }}</b> ({{ res.group }})</span>
+                    <button class="danger" style="padding:4px 8px;" @click="removeResource(idx)"> <i class="fa-solid fa-trash"></i></button>
+                </div>
+            </div>
+            <hr style="border-color:#444;">
+            <h5>Add New Resource</h5>
+            <div style="display:flex; gap:10px;">
+                <input v-model="newRes.name" placeholder="Name (e.g. PS 100)" class="form-control">
+                <select v-model="newRes.group" class="form-control">
+                    <option value="Extrusion">Extrusion</option>
+                    <option value="Assembly">Assembly</option>
+                    <option value="Packaging">Packaging</option>
+                </select>
+                <button class="success" @click="addResource">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" v-if="modals.addOrder">
+        <div class="modal-window">
+            <div class="modal-header">Add New Order</div>
+            
+            <div class="form-group">
+                <label>Order ID</label>
+                <input v-model="newOrder.id" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Product Name</label>
+                <input v-model="newOrder.product" class="form-control">
+            </div>
+            <div style="display:flex; gap:10px;">
+                <div class="form-group" style="flex:1;">
+                    <label>Color</label>
+                    <select v-model="newOrder.color" class="form-control">
+                        <option value="Black">Black</option>
+                        <option value="White">White</option>
+                        <option value="Red">Red</option>
+                        <option value="Blue">Blue</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Qty</label>
+                    <input type="number" v-model="newOrder.qty" class="form-control">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Batch / Group (Optional)</label>
+                <input v-model="newOrder.batchGroup" placeholder="e.g. Batch-001" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Due Time (Minutes from 8:00)</label>
+                <input type="number" v-model="newOrder.due" class="form-control">
+                <small style="color:#666">Example: 1440 = Day 2 08:00</small>
+            </div>
+            <div class="form-group">
+                <label>Notes</label>
+                <textarea v-model="newOrder.notes" class="form-control" placeholder="Production instructions..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Routing (Select Stages)</label>
+                <div style="display:flex; gap:10px;">
+                    <label><input type="checkbox" v-model="newOrder.ops" value="Extrusion"> Extrusion</label>
+                    <label><input type="checkbox" v-model="newOrder.ops" value="Assembly"> Assembly</label>
+                    <label><input type="checkbox" v-model="newOrder.ops" value="Packaging"> Packaging</label>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="secondary" @click="modals.addOrder = false">Cancel</button>
+                <button class="success" @click="saveNewOrder">Create Order</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" v-if="modals.editOp && selectedOp">
+        <div class="modal-window">
+            <div class="modal-header">
+                <span>Edit Operation: {{ selectedOp.orderId }}</span>
+                <span style="font-size:0.6em; background:var(--accent); padding:3px 6px; border-radius:4px;">{{ selectedOp.status }}</span>
+            </div>
+            
+            <div class="form-group">
+                <label>Product</label>
+                <input v-model="selectedOp.product" class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label>Required Group</label>
+                <input v-model="selectedOp.requiredGroup" disabled class="form-control" style="opacity:0.5;">
+            </div>
+            
+            <div class="form-group">
+                <label>Quantity</label>
+                <input type="number" v-model.number="selectedOp.qty" @change="updateRunTime(selectedOp)" class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label>Run Duration (Minutes)</label>
+                <input type="number" v-model.number="selectedOp.runDuration" class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label>Batch / Group</label>
+                <input v-model="selectedOp.batchGroup" class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label>Notes</label>
+                <textarea v-model="selectedOp.notes" class="form-control"></textarea>
+            </div>
+
+            <div class="modal-footer">
+                <button class="danger" @click="deleteOp">Delete</button>
+                <button v-if="selectedOp.status === 'scheduled'" class="secondary" @click="unscheduleOp">Unschedule</button>
+                <button class="success" @click="modals.editOp = false">Save & Close</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const { createApp, reactive, computed, ref, onMounted } = Vue;
+
+    createApp({
+        setup() {
+            // --- CONSTANTS ---
+            const pixelsPerMin = ref(2); 
+            const ROW_HEIGHT = 50;
+            
+            // --- VIEW STATE ---
+            const currentView = ref('gantt'); // 'gantt', 'table', 'kanban'
+            const sortKey = ref('orderId');
+            const sortAsc = ref(true);
+
+            // --- DATA STATE ---
+            // Updated Machine names as requested
+            const resources = reactive([
+                { id: 'r1', name: 'PS 100', group: 'Extrusion' },
+                { id: 'r2', name: 'PS 75', group: 'Extrusion' },
+                { id: 'r3', name: 'PS 75-1', group: 'Extrusion' },
+                { id: 'r4', name: 'Assembly Line 1', group: 'Assembly' },
+                { id: 'r5', name: 'Pack & Ship', group: 'Packaging' }
+            ]);
+
+            const scheduledOps = reactive([]);
+            const unscheduledOps = reactive([]);
+
+            // Modals State
+            const modals = reactive({
+                resources: false,
+                addOrder: false,
+                editOp: false
+            });
+
+            // Forms Data
+            const newRes = reactive({ name: '', group: 'Extrusion' });
+            // Added notes and batchGroup to newOrder
+            const newOrder = reactive({ id: 'ORD-NEW', product: 'Box-A1', color: 'Black', qty: 100, due: 600, ops: ['Extrusion'], notes: '', batchGroup: '' });
+            const selectedOp = ref(null);
+            const draggingOp = ref(null);
+
+            // Matrix Setup
+            const setupMatrix = {
+                'Black': { 'Black': 0, 'White': 60, 'Red': 30, 'Blue': 30 },
+                'White': { 'Black': 45, 'White': 0, 'Red': 30, 'Blue': 30 },
+                'Red':   { 'Black': 30, 'White': 30, 'Red': 0, 'Blue': 30 },
+                'Blue':  { 'Black': 30, 'White': 30, 'Red': 30, 'Blue': 0 }
+            };
+
+            // --- INITIALIZATION ---
+            const initData = () => {
+                scheduledOps.length = 0;
+                unscheduledOps.length = 0;
+                // Add some initial orders with new structure
+                createOrder('ORD-101', 'PS-Container', 'Black', 500, 600, ['Extrusion', 'Assembly'], '', 'Batch-A');
+                createOrder('ORD-102', 'Lid-Standard', 'White', 300, 1500, ['Extrusion', 'Assembly'], 'Check quality', 'Batch-A');
+                createOrder('ORD-103', 'Gear-Box',     'Red',    1000, 800, ['Extrusion', 'Packaging'], '', 'Batch-B');
+            };
+
+            const createOrder = (id, prod, color, qty, due, route, notes = '', batchGroup = '') => {
+                route.forEach((stage, idx) => {
+                    unscheduledOps.push({
+                        id: `${id}-${idx}-${Date.now()}`,
+                        orderId: id,
+                        product: prod,
+                        color: color,
+                        qty: qty,
+                        stageIndex: idx,
+                        requiredGroup: stage,
+                        runDuration: Math.ceil(qty * 0.2),
+                        setupDuration: 0,
+                        dueDate: due,
+                        startTime: 0,
+                        resourceId: null,
+                        status: 'unscheduled',
+                        notes: notes,
+                        batchGroup: batchGroup
+                    });
+                });
+            };
+
+            onMounted(initData);
+
+            // --- LOGIC: CALCULATION ---
+            const calculateSetup = (op, resId, startTime) => {
+                const sorted = scheduledOps
+                    .filter(o => o.resourceId === resId && o.id !== op.id)
+                    .sort((a,b) => a.startTime - b.startTime);
+                
+                let prev = null;
+                for(let s of sorted) {
+                    if (s.startTime + s.setupDuration + s.runDuration <= startTime) prev = s;
+                    else break;
+                }
+
+                if(!prev) return 15; // Startup
+                const map = setupMatrix[prev.color];
+                return (map && map[op.color] !== undefined) ? map[op.color] : 15;
+            };
+
+            const hasCollision = (op, start, resId) => {
+                const end = start + op.setupDuration + op.runDuration;
+                return scheduledOps.some(o => {
+                    if(o.id === op.id || o.resourceId !== resId) return false;
+                    const oStart = o.startTime;
+                    const oEnd = o.startTime + o.setupDuration + o.runDuration;
+                    return (start < oEnd && end > oStart);
+                });
+            };
+
+            // --- ACTIONS: RESOURCES ---
+            const openResourcesModal = () => modals.resources = true;
+            const addResource = () => {
+                if(!newRes.name) return;
+                resources.push({ 
+                    id: `r-${Date.now()}`, 
+                    name: newRes.name, 
+                    group: newRes.group 
+                });
+                newRes.name = '';
+            };
+            const removeResource = (idx) => {
+                const res = resources[idx];
+                const toRemove = scheduledOps.filter(o => o.resourceId === res.id);
+                toRemove.forEach(o => {
+                    o.resourceId = null;
+                    o.startTime = 0;
+                    o.setupDuration = 0;
+                    o.status = 'unscheduled';
+                    unscheduledOps.push(o);
+                });
+                for (let i = scheduledOps.length - 1; i >= 0; i--) {
+                    if (scheduledOps[i].resourceId === res.id) scheduledOps.splice(i, 1);
+                }
+                resources.splice(idx, 1);
+            };
+
+            // --- ACTIONS: ORDERS ---
+            const openAddOrderModal = () => modals.addOrder = true;
+            const saveNewOrder = () => {
+                createOrder(newOrder.id, newOrder.product, newOrder.color, newOrder.qty, newOrder.due, newOrder.ops, newOrder.notes, newOrder.batchGroup);
+                modals.addOrder = false;
+            };
+            
+            const openEditOpModal = (op) => {
+                selectedOp.value = op;
+                modals.editOp = true;
+            };
+
+            const updateRunTime = (op) => {
+                op.runDuration = Math.ceil(op.qty * 0.2);
+            };
+
+            const unscheduleOp = () => {
+                const idx = scheduledOps.indexOf(selectedOp.value);
+                if(idx > -1) {
+                    const op = scheduledOps.splice(idx, 1)[0];
+                    op.status = 'unscheduled';
+                    op.startTime = 0;
+                    op.resourceId = null;
+                    op.setupDuration = 0;
+                    unscheduledOps.push(op);
+                    modals.editOp = false;
+                }
+            };
+
+            const deleteOp = () => {
+                let idx = scheduledOps.indexOf(selectedOp.value);
+                if(idx > -1) scheduledOps.splice(idx, 1);
+                
+                idx = unscheduledOps.indexOf(selectedOp.value);
+                if(idx > -1) unscheduledOps.splice(idx, 1);
+                
+                modals.editOp = false;
+            };
+
+            // --- DRAG & DROP ENGINE ---
+            const startDrag = (e, op) => {
+                draggingOp.value = op;
+                e.dataTransfer.effectAllowed = 'move'; 
+                e.dataTransfer.dropEffect = 'move';
+                e.dataTransfer.setData('text/plain', JSON.stringify(op));
+            };
+
+            const onDrop = (e, resId) => {
+                const op = draggingOp.value;
+                if(!op) return;
+
+                const res = resources.find(r => r.id === resId);
+                if(res.group !== op.requiredGroup) {
+                    alert(`Machine group mismatch. Needs ${op.requiredGroup}`);
+                    return;
+                }
+
+                const rect = e.currentTarget.getBoundingClientRect();
+                const scrollX = e.currentTarget.parentElement.scrollLeft;
+                const clickX = e.clientX - rect.left + scrollX;
+                let time = Math.round((clickX / pixelsPerMin.value) / 5) * 5;
+                if(time < 0) time = 0;
+
+                if(op.stageIndex > 0) {
+                    let prev = scheduledOps.find(o => o.orderId === op.orderId && o.stageIndex === op.stageIndex - 1);
+                    if (!prev && unscheduledOps.find(o => o.orderId === op.orderId && o.stageIndex === op.stageIndex - 1)) {
+                        alert("Please schedule the previous operation first.");
+                        return;
+                    }
+                    if(prev && time < (prev.startTime + prev.setupDuration + prev.runDuration)) {
+                        time = prev.startTime + prev.setupDuration + prev.runDuration;
+                    }
+                }
+
+                const oldRes = op.resourceId;
+                const oldTime = op.startTime;
+                
+                op.setupDuration = calculateSetup(op, resId, time);
+                
+                if(hasCollision(op, time, resId)) {
+                    alert("Collision detected. Please drop in an empty space.");
+                    if(op.status === 'scheduled') {
+                         op.setupDuration = calculateSetup(op, oldRes, oldTime);
+                    }
+                    draggingOp.value = null;
+                    return;
+                }
+
+                op.resourceId = resId;
+                op.startTime = time;
+                op.status = 'scheduled';
+
+                const uIdx = unscheduledOps.findIndex(o => o.id === op.id);
+                if(uIdx > -1) {
+                    unscheduledOps.splice(uIdx, 1);
+                    scheduledOps.push(op);
+                }
+
+                draggingOp.value = null;
+            };
+            
+            const autoSchedule = () => {
+                unscheduledOps.sort((a,b) => a.dueDate - b.dueDate);
+                const list = [...unscheduledOps];
+                list.forEach(op => {
+                    const cands = resources.filter(r => r.group === op.requiredGroup);
+                    let bestT = Infinity, bestR = null;
+
+                    cands.forEach(r => {
+                        let t = 0;
+                        if(op.stageIndex > 0) {
+                             const prev = scheduledOps.find(o => o.orderId === op.orderId && o.stageIndex === op.stageIndex - 1);
+                             if(prev) t = prev.startTime + prev.setupDuration + prev.runDuration;
+                             else return; 
+                        }
+
+                        let safe = false;
+                        while(!safe && t < 3000) {
+                             op.setupDuration = calculateSetup(op, r.id, t);
+                             if(!hasCollision(op, t, r.id)) safe = true;
+                             else t += 5;
+                        }
+                        if(safe && t < bestT) { bestT = t; bestR = r.id; }
+                    });
+
+                    if(bestR) {
+                        op.resourceId = bestR;
+                        op.startTime = bestT;
+                        op.setupDuration = calculateSetup(op, bestR, bestT);
+                        op.status = 'scheduled';
+                        scheduledOps.push(op);
+                        unscheduledOps.splice(unscheduledOps.indexOf(op), 1);
+                    }
+                });
+            };
+
+            // --- SORTING LOGIC FOR TABLE VIEW ---
+            const sort = (key) => {
+                if (sortKey.value === key) {
+                    sortAsc.value = !sortAsc.value;
+                } else {
+                    sortKey.value = key;
+                    sortAsc.value = true;
+                }
+            };
+
+            const sortedOps = computed(() => {
+                // Combine lists for the table view
+                const all = [...scheduledOps, ...unscheduledOps];
+                return all.sort((a, b) => {
+                    let valA = a[sortKey.value];
+                    let valB = b[sortKey.value];
+                    
+                    if (typeof valA === 'string') valA = valA.toLowerCase();
+                    if (typeof valB === 'string') valB = valB.toLowerCase();
+
+                    if (valA < valB) return sortAsc.value ? -1 : 1;
+                    if (valA > valB) return sortAsc.value ? 1 : -1;
+                    return 0;
+                });
+            });
+
+            // --- HELPERS ---
+            const getOpsForResource = (rid) => scheduledOps.filter(o => o.resourceId === rid);
+            
+            const getSortedOpsForResource = (rid) => {
+                return scheduledOps.filter(o => o.resourceId === rid).sort((a,b) => a.startTime - b.startTime);
+            }
+
+            const getResourceName = (rid) => {
+                const r = resources.find(x => x.id === rid);
+                return r ? r.name : 'Unassigned';
+            };
+
+            const getBarStyle = (op) => ({
+                left: (op.startTime * pixelsPerMin.value) + 'px',
+                width: ((op.setupDuration + op.runDuration) * pixelsPerMin.value) + 'px'
+            });
+
+            // Format HH:MM
+            const formatTime = (m) => {
+                const totalMinutes = m + 480; // Start at 8:00
+                const h = Math.floor(totalMinutes / 60) % 24;
+                const min = Math.floor(totalMinutes % 60);
+                return `${h}:${min.toString().padStart(2,'0')}`;
+            };
+
+            // Header Format: Day 1 08:00
+            const formatTimeHeader = (hIndex) => {
+                const hourOfDay = (hIndex + 8) % 24;
+                const day = Math.floor((hIndex + 8) / 24) + 1;
+                return `Day ${day} ${hourOfDay}:00`;
+            };
+
+            // Full Date format for Table
+            const formatTimeDay = (m) => {
+                const totalMinutes = m + 480;
+                const days = Math.floor(totalMinutes / 1440) + 1;
+                const h = Math.floor((totalMinutes % 1440) / 60);
+                const min = Math.floor(totalMinutes % 60);
+                return `Day ${days} - ${h}:${min.toString().padStart(2,'0')}`;
+            };
+
+            const isLate = (op) => (op.startTime + op.setupDuration + op.runDuration) > op.dueDate;
+
+            // --- COMPUTED ---
+            const kpis = computed(() => {
+                if(!scheduledOps.length) return { otif: 100, utilization: 0 };
+                const late = scheduledOps.filter(isLate).length;
+                const otif = Math.round(((scheduledOps.length - late)/scheduledOps.length)*100);
+                const totalRun = scheduledOps.reduce((a,c) => a+c.runDuration, 0);
+                const capacity = resources.length * 24 * 60; 
+                return { otif, utilization: Math.round((totalRun/capacity)*100) };
+            });
+
+            const peggingLines = computed(() => {
+                const lines = [];
+                const orders = [...new Set(scheduledOps.map(o => o.orderId))];
+                orders.forEach(oid => {
+                     const ops = scheduledOps.filter(o => o.orderId === oid).sort((a,b) => a.stageIndex - b.stageIndex);
+                     for(let i=0; i<ops.length-1; i++) {
+                         const curr = ops[i];
+                         const next = ops[i+1];
+                         
+                         const r1 = resources.findIndex(r => r.id === curr.resourceId);
+                         const r2 = resources.findIndex(r => r.id === next.resourceId);
+                         if(r1<0 || r2<0) continue;
+
+                         const x1 = (curr.startTime + curr.setupDuration + curr.runDuration) * pixelsPerMin.value;
+                         const y1 = (r1 * ROW_HEIGHT) + (ROW_HEIGHT/2);
+                         const x2 = next.startTime * pixelsPerMin.value;
+                         const y2 = (r2 * ROW_HEIGHT) + (ROW_HEIGHT/2);
+                         
+                         lines.push({ path: `M ${x1} ${y1} C ${x1+50} ${y1}, ${x2-50} ${y2}, ${x2} ${y2}` });
+                     }
+                });
+                return lines;
+            });
+
+            return {
+                resources, scheduledOps, unscheduledOps, modals, newRes, newOrder, selectedOp,
+                kpis, peggingLines, pixelsPerMin, currentView, sortKey, sortedOps,
+                // Methods
+                initData, resetData: initData,
+                openResourcesModal, addResource, removeResource,
+                openAddOrderModal, saveNewOrder,
+                openEditOpModal, updateRunTime, unscheduleOp, deleteOp,
+                startDrag, onDrop, autoSchedule,
+                getOpsForResource, getBarStyle, formatTime, formatTimeHeader, formatTimeDay, isLate,
+                getSortedOpsForResource, sort, getResourceName
+            };
+        }
+    }).mount('#app');
+</script>
+
+</body>
+</html>

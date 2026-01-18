@@ -1,180 +1,271 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shareable Compact Calculator</title>
+    <title>Pro Factory Calculator</title>
     <style>
         :root {
-            --bg-color: #f7f8fc;
-            --main-color: #ffffff;
-            --border-color: #e9ecef;
-            --header-bg: #f8f9fa;
-            --text-primary: #212529;
-            --text-secondary: #6c757d;
-            --accent-primary: #0052cc;
-            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #334155;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+            --header-bg: #1e293b;
+            --header-text: #f8fafc;
         }
 
         body {
-            font-family: var(--font-family);
-            background-color: var(--bg-color);
-            color: var(--text-primary);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
             margin: 0;
-            padding: 15px;
-            font-size: 14px;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            background-color: var(--main-color);
             padding: 20px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        }
-
-        h1 {
-            text-align: center;
-            color: var(--text-primary);
-            margin-bottom: 20px;
-            font-size: 1.5em;
-        }
-
-        .main-layout {
-            display: flex;
-            gap: 20px;
-            align-items: flex-start;
-        }
-
-        .input-column { flex: 1; }
-        .results-column { flex: 1.5; }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            font-size: 0.8em;
-        }
-
-        textarea {
-            width: 100%;
-            height: 400px;
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
             font-size: 14px;
-            box-sizing: border-box;
-            resize: vertical;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 15px;
-            table-layout: auto;
-        }
-        
-        th, td {
-            border: 1px solid var(--border-color);
-            padding: 8px 10px;
-            text-align: center;
-            vertical-align: middle;
-            cursor: pointer;
-            white-space: nowrap;
         }
 
-        th:first-child, td:first-child {
-             width: 40%;
-             white-space: normal;
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        /* --- Header & Layout --- */
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--bg-card); padding: 12px 20px;
+            border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 15px;
+        }
+        .header h1 { margin: 0; font-size: 1.2rem; font-weight: 700; color: var(--text-main); }
+        
+        .btn-icon {
+            background: transparent; border: 1px solid var(--border);
+            padding: 6px; border-radius: 6px; cursor: pointer; color: var(--text-light);
+            transition: all 0.2s;
+        }
+        .btn-icon:hover { background: var(--bg-body); color: var(--primary); border-color: var(--primary); }
+
+        .tabs { display: flex; gap: 8px; margin-bottom: 15px; }
+        .tab-btn {
+            padding: 8px 16px; border: none; background: #e2e8f0;
+            border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem;
+            color: var(--text-light); transition: all 0.2s;
+        }
+        .tab-btn.active { background: var(--primary); color: white; }
+
+        .grid-layout { display: grid; grid-template-columns: 1fr 1.6fr; gap: 15px; }
+        @media (max-width: 768px) { .grid-layout { grid-template-columns: 1fr; } }
+
+        .card {
+            background: var(--bg-card); padding: 15px;
+            border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+        }
+
+        /* --- Improved Table Styling --- */
+        table { 
+            width: 100%; border-collapse: separate; border-spacing: 0; 
+            margin-top: 10px; border: 1px solid var(--border);
+            border-radius: 6px; overflow: hidden;
         }
         
         th {
-            background-color: var(--header-bg);
-            font-weight: bold;
-            font-size: 0.8em;
-            cursor: default;
+            background-color: var(--header-bg); color: var(--header-text); font-weight: 600;
+            padding: 8px 10px; text-align: center; font-size: 0.85rem; letter-spacing: 0.5px;
         }
-                
+        
+        td {
+            padding: 6px 10px; border-bottom: 1px solid var(--border);
+            text-align: center; font-size: 0.9rem; color: var(--text-main);
+        }
+
+        tbody tr:nth-child(even) { background-color: #f8fafc; }
+        tbody tr:hover { background-color: #f1f5f9; }
+        td:first-child { text-align: left; font-weight: 500; }
+        td:nth-child(n+2) { font-family: 'Consolas', 'Monaco', monospace; }
+
+        tfoot tr { background-color: #eff6ff !important; }
         tfoot td {
-            font-weight: bold;
-            background-color: var(--header-bg);
+            font-weight: bold; padding: 10px; border-top: 2px solid #bfdbfe; color: var(--primary-dark);
         }
 
-        .final-total-cell { display: none; }
-        table.show-final .final-total-cell { display: table-cell; }
+        .clickable-cell { cursor: pointer; position: relative; }
+        .clickable-cell:active { background-color: #bbf7d0 !important; }
+        .copied-tooltip {
+            position: absolute; top: -25px; left: 50%; transform: translateX(-50%);
+            background: #1e293b; color: white; padding: 3px 8px; border-radius: 4px;
+            font-size: 11px; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+        }
+        .show-tooltip .copied-tooltip { opacity: 1; }
 
-        #toggle-column {
-            cursor: pointer;
-            display: inline-block;
-            margin-left: 5px;
-            font-weight: bold;
-            color: var(--accent-primary);
+        /* --- Inputs --- */
+        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.85rem; color: var(--text-light); }
+        textarea { 
+            width: 100%; height: 350px; padding: 12px; 
+            border: 1px solid var(--border); border-radius: 6px;
+            font-family: 'Consolas', monospace; font-size: 13px;
+            resize: vertical; box-sizing: border-box;
+        }
+        textarea:focus, input:focus { outline: 2px solid var(--primary); border-color: transparent; }
+
+        /* Table Input Mode Styling */
+        .input-row { display: flex; gap: 5px; margin-bottom: 5px; }
+        .input-row input {
+            padding: 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 13px;
+        }
+        .inp-model { flex: 2; }
+        .inp-box, .inp-extra { flex: 1; text-align: center; }
+        .btn-del { 
+            background: #fee2e2; color: #ef4444; border: none; 
+            border-radius: 4px; width: 28px; cursor: pointer; font-weight: bold;
+        }
+        .btn-del:hover { background: #ef4444; color: white; }
+        
+        .btn-add {
+            background: var(--success); color: white; border: none;
+            padding: 8px; border-radius: 4px; cursor: pointer; width: 100%;
+            font-weight: 600; margin-top: 5px;
+        }
+        .mode-switch-btn {
+            background: none; border: none; color: var(--primary);
+            font-size: 0.85rem; cursor: pointer; text-decoration: underline; float: right;
         }
 
-        .tags-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
+        /* --- Modal & Hidden --- */
+        .hidden { display: none !important; }
+        
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 999;
         }
-        .product-tag {
-            color: #42526e;
-            background-color: #dfe1e6;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.8em;
+        .modal {
+            background: white; width: 90%; max-width: 450px; max-height: 80vh;
+            border-radius: 8px; padding: 20px; display: flex; flex-direction: column;
         }
+        .modal-body { overflow-y: auto; flex: 1; margin: 15px 0; }
+        .settings-row { display: grid; grid-template-columns: 2fr 1fr 30px; gap: 8px; margin-bottom: 8px; }
+        .settings-row input { padding: 6px; border: 1px solid var(--border); border-radius: 4px; }
+        .btn-save { background: var(--primary); color: white; border: none; padding: 10px; border-radius: 6px; width: 100%; cursor: pointer; }
 
-        .cell-copied {
-            background-color: #d4edda !important;
-            transition: background-color 0.1s ease-in-out;
+        /* Reverse Calc UI */
+        .reverse-container { padding: 20px; text-align: center; }
+        .rev-input-group { margin-bottom: 20px; text-align: left; }
+        /* Updated Input Style for Datalist */
+        .rev-input-group input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; }
+        
+        .rev-result-box {
+            background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 20px;
+            display: flex; justify-content: center; align-items: center; gap: 30px;
         }
+        .rev-num { font-size: 2.5rem; font-weight: 700; color: var(--primary); line-height: 1; }
+        .rev-label { font-size: 0.8rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; }
+
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Shareable Calculator</h1>
-    
-    <div class="main-layout">
-        <div class="input-column">
-            <label for="inputData">Input Data</label>
-            <textarea id="inputData" placeholder="Example:&#10;207-1 30 9&#10;100 10"></textarea>
+    <div class="header">
+        <h1>🏭 Factory Calculator Pro</h1>
+        <button class="btn-icon" onclick="openSettings()" title="Settings">⚙️ Settings</button>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('standard')">Standard Calc</button>
+        <button class="tab-btn" onclick="switchTab('reverse')">Reverse Calc</button>
+    </div>
+
+    <div id="standard-tab" class="grid-layout">
+        <div class="card">
+            <button class="mode-switch-btn" id="toggleInputModeBtn" onclick="toggleInputMode()">Switch to Table Input</button>
+            <h3 style="margin:0 0 10px 0; font-size:1rem;">Input Data</h3>
+            
+            <div id="textInputContainer">
+                <textarea id="inputData" placeholder="Format: Model Box Extra&#10;Example:&#10;207 30 9&#10;100 10"></textarea>
+            </div>
+
+            <div id="tableInputContainer" class="hidden">
+                <div id="manualRowsContainer"></div>
+                <button class="btn-add" onclick="addManualRow()">+ Add Row</button>
+            </div>
         </div>
-        
-        <div class="results-column">
-            <label>Results</label>
+
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3 style="margin:0; font-size:1rem;">Results</h3>
+                <small style="color:var(--text-light)">Click cells to copy</small>
+            </div>
+            
             <table id="resultsTable">
                 <thead>
                     <tr>
-                        <th>Model</th>
-                        <th>Boxes</th>
-                        <th>Extras</th>
-                        <th>Box Total <span id="toggle-column">›</span></th>
-                        <th class="final-total-cell">Final Total</th>
+                        <th style="width: 35%;">Model</th>
+                        <th style="width: 15%;">Boxes</th>
+                        <th style="width: 15%;">Extra</th>
+                        <th style="width: 15%;">Pcs Total</th>
+                        <th style="width: 20%;">Final Total</th>
                     </tr>
                 </thead>
                 <tbody id="resultsBody"></tbody>
                 <tfoot>
-                    <tr>
-                        <td colspan="3">Grand Total</td>
-                        <td id="grandTotalBox">0</td>
-                        <td id="grandTotalFinal" class="final-total-cell">0</td>
+                    <tr class="total-row">
+                        <td style="text-align: right;">GRAND TOTAL:</td>
+                        <td id="sumBoxes">0</td>
+                        <td id="sumExtras" style="color: #64748b;">0</td>
+                        <td id="sumPiecesInBoxes" style="color: #64748b; font-weight:normal;">0</td>
+                        <td id="sumFinal">0</td>
                     </tr>
                 </tfoot>
             </table>
-            
-            <label>Pieces/Box Reference</label>
-            <div id="tagsContainer" class="tags-container"></div>
         </div>
+    </div>
+
+    <div id="reverse-tab" class="card hidden" style="display: none; max-width: 600px; margin: 0 auto;">
+        <h3 style="text-align: center; margin-bottom: 20px;">Reverse Calculator (Pieces → Boxes)</h3>
+        
+        <div class="rev-input-group">
+            <label>Search & Select Product</label>
+            <input list="modelDataList" id="revModelSearch" placeholder="Type model name to search..." oninput="calcReverse()">
+            <datalist id="modelDataList"></datalist>
+        </div>
+        <div class="rev-input-group">
+            <label>Total Pieces</label>
+            <input type="number" id="revTotalInput" placeholder="Enter total number of pieces..." oninput="calcReverse()">
+        </div>
+
+        <div id="revResult" class="hidden">
+            <div class="rev-result-box">
+                <div>
+                    <span class="rev-num" id="revBoxes">0</span>
+                    <div class="rev-label">Boxes</div>
+                </div>
+                <div style="font-size: 2rem; color: #cbd5e1;">+</div>
+                <div>
+                    <span class="rev-num" id="revExtras" style="color: var(--text-light);">0</span>
+                    <div class="rev-label">Extra</div>
+                </div>
+            </div>
+            <p style="text-align: center; color: var(--text-light); margin-top: 10px; font-size: 0.85rem;">
+                Based on <span id="revPackSize">0</span> pcs/box
+            </p>
+        </div>
+    </div>
+
+</div>
+
+<div id="settingsModal" class="modal-overlay">
+    <div class="modal">
+        <h2 style="margin-top:0">⚙️ Product Settings</h2>
+        <div class="modal-body" id="settingsList"></div>
+        <button style="background:#e2e8f0; color:#334155; border:none; padding:8px; border-radius:4px; width:100%; margin-bottom:10px; cursor:pointer;" onclick="addSettingRow()">+ Add New Model</button>
+        <button class="btn-save" onclick="saveSettings()">Save Changes</button>
+        <button style="background:transparent; color:#64748b; border:none; margin-top:10px; cursor:pointer;" onclick="closeSettings()">Cancel</button>
     </div>
 </div>
 
 <script>
-    const productData = {
+    // --- Data & Initialization ---
+    const defaultData = {
         '200': 40, '201': 65, '202': 30, '203': 72, '204': 104, '206': 120, '207': 50, '208': 29, '209': 66,
         '100': 24, '101': 12, '103': 37, '104': 18, '105': 24, '106': 20, '109': 15, '116': 26, '117': 17, '102': 14,
         '300': 14, '301': 21, '351': 84, '353': 108, '315': 22,
@@ -183,113 +274,273 @@
         '215': 33, '216': 65, '217': 125
     };
 
-    const inputArea = document.getElementById('inputData');
-    const resultsTable = document.getElementById('resultsTable');
-    const resultsBody = document.getElementById('resultsBody');
-    const grandTotalBoxCell = document.getElementById('grandTotalBox');
-    const grandTotalFinalCell = document.getElementById('grandTotalFinal');
-    const tagsContainer = document.getElementById('tagsContainer');
-    const toggleButton = document.getElementById('toggle-column');
-    const grandTotalLabel = document.querySelector('tfoot td:first-child');
+    let productData = JSON.parse(localStorage.getItem('factoryCalcData')) || defaultData;
 
+    // --- DOM Elements ---
+    const inputArea = document.getElementById('inputData');
+    const resultsBody = document.getElementById('resultsBody');
+    const tableInputContainer = document.getElementById('tableInputContainer');
+    const textInputContainer = document.getElementById('textInputContainer');
+    const manualRowsContainer = document.getElementById('manualRowsContainer');
+
+    // --- Logic: Calculation ---
     function calculateTotal() {
+        if (!tableInputContainer.classList.contains('hidden')) {
+            syncTableToText();
+        }
+
         const lines = inputArea.value.trim().split('\n');
         resultsBody.innerHTML = '';
-        tagsContainer.innerHTML = '';
-        let grandTotalBox = 0, grandTotalFinal = 0;
-        const uniqueModels = new Map();
+        
+        let totalBoxes = 0, totalExtras = 0, totalPcsInBox = 0, grandFinal = 0;
 
         lines.forEach(line => {
-            if (line.trim() === '' || /^[0-9]+[a-zA-Z]+$/.test(line.trim())) return;
+            if (!line.trim() || /^[0-9]+[a-zA-Z]+$/.test(line.trim())) return;
+            
             const parts = line.trim().split(/\s+/);
             if (parts.length < 2) return;
+            
             let modelName, boxCount, extraPieces;
             
-            if (parts.length >= 3 && !isNaN(parseInt(parts[parts.length - 1])) && !isNaN(parseInt(parts[parts.length - 2]))) {
-                extraPieces = parseInt(parts.pop(), 10); boxCount = parseInt(parts.pop(), 10); modelName = parts.join(' ');
+            if (parts.length >= 3 && !isNaN(parts[parts.length - 1]) && !isNaN(parts[parts.length - 2])) {
+                extraPieces = parseInt(parts.pop(), 10); 
+                boxCount = parseInt(parts.pop(), 10); 
+                modelName = parts.join(' ');
             } else {
-                extraPieces = 0; boxCount = parseInt(parts.pop(), 10); modelName = parts.join(' ');
+                extraPieces = 0; 
+                boxCount = parseInt(parts.pop(), 10); 
+                modelName = parts.join(' ');
             }
             if (isNaN(boxCount)) return;
 
             const modelCode = modelName.split('-')[0].trim();
             const piecesPerBox = productData[modelCode] || 0;
-            if (modelCode && productData.hasOwnProperty(modelCode)) { uniqueModels.set(modelCode, piecesPerBox); }
             
-            const totalBoxPieces = boxCount * piecesPerBox;
-            const finalTotal = totalBoxPieces + extraPieces;
-            grandTotalBox += totalBoxPieces; grandTotalFinal += finalTotal;
+            const currentBoxPieces = boxCount * piecesPerBox;
+            const currentFinal = currentBoxPieces + extraPieces;
+            
+            totalBoxes += boxCount;
+            totalExtras += extraPieces;
+            totalPcsInBox += currentBoxPieces;
+            grandFinal += currentFinal;
             
             const row = resultsBody.insertRow();
-            row.innerHTML = `<td>${modelName}</td> <td>${boxCount}</td> <td>${extraPieces}</td> <td>${totalBoxPieces}</td> <td class="final-total-cell">${finalTotal}</td>`;
+            row.innerHTML = `
+                <td>
+                    <div style="font-weight:600; color:var(--text-main)">${modelName}</div>
+                    <div style="font-size:0.75rem; color:var(--text-light)">${piecesPerBox} pcs/box</div>
+                </td> 
+                <td style="font-weight:bold; color:var(--primary); font-size:1.1em">${boxCount}</td> 
+                <td>${extraPieces > 0 ? extraPieces : '-'}</td> 
+                <td class="clickable-cell" onclick="copyCell(this)">
+                    ${currentBoxPieces} <span class="copied-tooltip">Copied!</span>
+                </td> 
+                <td class="clickable-cell" onclick="copyCell(this)" style="font-weight:bold;">
+                    ${currentFinal} <span class="copied-tooltip">Copied!</span>
+                </td>
+            `;
         });
         
-        grandTotalBoxCell.textContent = grandTotalBox;
-        grandTotalFinalCell.textContent = grandTotalFinal;
+        document.getElementById('sumBoxes').textContent = totalBoxes;
+        document.getElementById('sumExtras').textContent = totalExtras;
+        document.getElementById('sumPiecesInBoxes').textContent = totalPcsInBox;
+        document.getElementById('sumFinal').textContent = grandFinal;
 
-        const sortedModels = new Map([...uniqueModels.entries()].sort());
-        sortedModels.forEach((pieces, code) => {
-            const tag = document.createElement('span');
-            tag.className = 'product-tag';
-            tag.textContent = `${code} (${pieces})`;
-            tagsContainer.appendChild(tag);
+        updateUrlFromText();
+    }
+
+    // --- Logic: Table Input & Enter Navigation ---
+    function addManualRow(model='', boxes='', extras='') {
+        const div = document.createElement('div');
+        div.className = 'input-row';
+        div.innerHTML = `
+            <input type="text" placeholder="Model" class="inp-model" value="${model}" oninput="calculateTotal()">
+            <input type="number" placeholder="Box" class="inp-box" value="${boxes}" oninput="calculateTotal()">
+            <input type="number" placeholder="Extra" class="inp-extra" value="${extras}" oninput="calculateTotal()">
+            <button class="btn-del" tabindex="-1" onclick="this.parentElement.remove(); calculateTotal();">×</button>
+        `;
+        manualRowsContainer.appendChild(div);
+        return div;
+    }
+
+    manualRowsContainer.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const allInputs = Array.from(manualRowsContainer.querySelectorAll('input'));
+            const currentInput = e.target;
+            const currentIndex = allInputs.indexOf(currentInput);
+            if (currentIndex === allInputs.length - 1) {
+                const newRow = addManualRow();
+                newRow.querySelector('.inp-model').focus();
+            } else if (currentIndex >= 0 && currentIndex < allInputs.length - 1) {
+                allInputs[currentIndex + 1].focus();
+                allInputs[currentIndex + 1].select();
+            }
+        }
+    });
+
+    function toggleInputMode() {
+        const isTextMode = textInputContainer.classList.contains('hidden');
+        if (isTextMode) {
+            textInputContainer.classList.remove('hidden');
+            tableInputContainer.classList.add('hidden');
+            document.getElementById('toggleInputModeBtn').textContent = "Switch to Table Input";
+            calculateTotal(); 
+        } else {
+            textInputContainer.classList.add('hidden');
+            tableInputContainer.classList.remove('hidden');
+            document.getElementById('toggleInputModeBtn').textContent = "Switch to Text Input";
+            parseTextToTable();
+        }
+    }
+
+    function parseTextToTable() {
+        manualRowsContainer.innerHTML = '';
+        const lines = inputArea.value.trim().split('\n');
+        lines.forEach(line => {
+            if(!line.trim()) return;
+            const parts = line.trim().split(/\s+/);
+            if(parts.length < 2) return;
+            let model, boxes, extra;
+            if (parts.length >= 3 && !isNaN(parts[parts.length-1]) && !isNaN(parts[parts.length-2])) {
+                extra = parts.pop(); boxes = parts.pop(); model = parts.join(' ');
+            } else {
+                extra = 0; boxes = parts.pop(); model = parts.join(' ');
+            }
+            addManualRow(model, boxes, extra);
+        });
+        if(manualRowsContainer.children.length === 0) {
+            const row = addManualRow();
+            setTimeout(() => row.querySelector('.inp-model').focus(), 50); 
+        }
+    }
+
+    function syncTableToText() {
+        let text = '';
+        const rows = manualRowsContainer.querySelectorAll('.input-row');
+        rows.forEach(row => {
+            const m = row.querySelector('.inp-model').value.trim();
+            const b = row.querySelector('.inp-box').value.trim();
+            const e = row.querySelector('.inp-extra').value.trim();
+            if(m && b) text += `${m} ${b} ${e || 0}\n`;
+        });
+        inputArea.value = text;
+    }
+
+    // --- Logic: Reverse Calc (Updated for Search) ---
+    function calcReverse() {
+        // Changed to get value from INPUT instead of SELECT
+        const modelInput = document.getElementById('revModelSearch'); 
+        const totalInput = document.getElementById('revTotalInput');
+        
+        const model = modelInput.value.trim();
+        const total = parseInt(totalInput.value);
+        const resultBox = document.getElementById('revResult');
+
+        // Check if model exists in data
+        const perBox = productData[model];
+
+        if (!model || !perBox || isNaN(total) || total < 0) {
+            resultBox.classList.add('hidden');
+            return;
+        }
+
+        const boxes = Math.floor(total / perBox);
+        const extras = total % perBox;
+
+        document.getElementById('revPackSize').textContent = perBox;
+        document.getElementById('revBoxes').textContent = boxes;
+        document.getElementById('revExtras').textContent = extras;
+        resultBox.classList.remove('hidden');
+    }
+
+    // --- Logic: Settings ---
+    function openSettings() {
+        const list = document.getElementById('settingsList');
+        list.innerHTML = '';
+        Object.keys(productData).sort().forEach(key => addSettingRowUI(key, productData[key]));
+        document.getElementById('settingsModal').style.display = 'flex';
+    }
+    function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
+    function addSettingRowUI(key='', val='') {
+        const div = document.createElement('div');
+        div.className = 'settings-row';
+        div.innerHTML = `
+            <input type="text" placeholder="Model" class="set-key" value="${key}">
+            <input type="number" placeholder="Pcs" class="set-val" value="${val}">
+            <button class="btn-del" onclick="this.parentElement.remove()">×</button>
+        `;
+        document.getElementById('settingsList').appendChild(div);
+    }
+    function addSettingRow() { 
+        addSettingRowUI(); 
+        const body = document.querySelector('.modal-body');
+        body.scrollTop = body.scrollHeight;
+    }
+    function saveSettings() {
+        const newMap = {};
+        document.querySelectorAll('.settings-row').forEach(row => {
+            const key = row.querySelector('.set-key').value.trim();
+            const val = parseInt(row.querySelector('.set-val').value.trim());
+            if (key && !isNaN(val)) newMap[key] = val;
+        });
+        productData = newMap;
+        localStorage.setItem('factoryCalcData', JSON.stringify(productData));
+        closeSettings();
+        calculateTotal();
+        populateReverseDropdown();
+    }
+
+    // --- Utils & Init ---
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        const stdTab = document.getElementById('standard-tab');
+        const revTab = document.getElementById('reverse-tab');
+        
+        if (tab === 'standard') {
+            stdTab.classList.remove('hidden'); stdTab.style.display = 'grid';
+            revTab.classList.add('hidden'); revTab.style.display = 'none';
+            document.querySelectorAll('.tab-btn')[0].classList.add('active');
+        } else {
+            stdTab.classList.add('hidden'); stdTab.style.display = 'none';
+            revTab.classList.remove('hidden'); revTab.style.display = 'block';
+            document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            populateReverseDropdown();
+        }
+    }
+
+    // Updated to use DATALIST for search capability
+    function populateReverseDropdown() {
+        const dataList = document.getElementById('modelDataList');
+        dataList.innerHTML = '';
+        Object.keys(productData).sort().forEach(key => {
+            const opt = document.createElement('option');
+            opt.value = key; // The searchable value (Model Name)
+            opt.label = `${productData[key]} pcs/box`; // Helper text shown in dropdown
+            dataList.appendChild(opt);
         });
     }
 
-    function copyCellContent(event) {
-        if (event.target.tagName === 'TD') {
-            navigator.clipboard.writeText(event.target.textContent.trim()).then(() => {
-                event.target.classList.add('cell-copied');
-                setTimeout(() => event.target.classList.remove('cell-copied'), 250);
-            });
-        }
+    function copyCell(cell) {
+        navigator.clipboard.writeText(cell.innerText.split('\n')[0]);
+        cell.classList.add('show-tooltip');
+        setTimeout(() => cell.classList.remove('show-tooltip'), 800);
     }
-
-    function toggleFinalColumn() {
-        resultsTable.classList.toggle('show-final');
-        const isShown = resultsTable.classList.contains('show-final');
-        toggleButton.textContent = isShown ? '‹' : '›';
-        grandTotalLabel.colSpan = isShown ? 3 : 4;
-    }
-
-    // --- UPDATED: URL Functionality (No Base64) ---
 
     function updateUrlFromText() {
-        const textToEncode = inputArea.value;
-        if (textToEncode.trim()) {
-            // Encode for URL safety
-            const encodedData = encodeURIComponent(textToEncode);
-            history.replaceState(null, '', '#' + encodedData);
-        } else {
-            history.replaceState(null, '', window.location.pathname + window.location.search);
-        }
+        const val = inputArea.value.trim();
+        history.replaceState(null, '', val ? '#' + encodeURIComponent(val) : window.location.pathname);
     }
 
-    function loadTextFromUrl() {
-        try {
-            if (window.location.hash) {
-                const encodedData = window.location.hash.substring(1);
-                // Decode from URL safe format
-                const decodedData = decodeURIComponent(encodedData);
-                inputArea.value = decodedData;
-                calculateTotal();
-            }
-        } catch (e) {
-            console.error("Could not load data from URL hash:", e);
-            history.replaceState(null, '', window.location.pathname + window.location.search);
+    inputArea.addEventListener('input', calculateTotal);
+    window.addEventListener('load', () => {
+        if(window.location.hash) {
+            inputArea.value = decodeURIComponent(window.location.hash.substring(1));
+            calculateTotal();
         }
-    }
-
-    // --- Attach Event Listeners ---
-    inputArea.addEventListener('input', () => {
-        calculateTotal();
-        updateUrlFromText();
+        populateReverseDropdown();
     });
-    resultsTable.addEventListener('click', copyCellContent);
-    toggleButton.addEventListener('click', toggleFinalColumn);
-    window.addEventListener('load', loadTextFromUrl);
 
 </script>
-
 </body>
 </html>

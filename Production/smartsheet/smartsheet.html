@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SheetSmart - Project Management & Collaboration</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for Dashboard -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50: '#f0f9ff', 100: '#e0f2fe', 500: '#0ea5e9', 600: '#0284c7', 900: '#0c4a6e' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', system-ui, sans-serif; background: #f3f4f6; overflow: hidden; }
+        .sheet-grid { display: grid; grid-template-columns: 40px repeat(6, minmax(120px, 1fr)) 40px; }
+        .sheet-header { position: sticky; top: 0; z-index: 10; }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        .gantt-bar { transition: all 0.2s; }
+        .gantt-bar:hover { filter: brightness(1.1); transform: scaleY(1.1); }
+        .animate-pulse-fast { animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        
+        /* Conditional Formatting Classes */
+        .row-delayed { background-color: #fee2e2 !important; } /* Red bg */
+        .row-complete { background-color: #dcfce7 !important; text-decoration: line-through; color: #888; }
+        .row-highlight { background-color: #ffedd5 !important; }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col text-sm text-slate-800">
+
+    <!-- TOP NAVIGATION -->
+    <nav class="h-12 bg-brand-900 text-white flex items-center justify-between px-4 shadow-md z-20">
+        <div class="flex items-center gap-3">
+            <i class="fa-solid fa-table-cells text-xl text-brand-500"></i>
+            <span class="font-bold text-lg tracking-tight">SheetSmart</span>
+            <div class="ml-6 flex bg-brand-800 rounded p-0.5">
+                <button onclick="setView('grid')" id="nav-grid" class="px-3 py-1 rounded text-xs hover:bg-white hover:text-brand-900 transition font-medium">Grid</button>
+                <button onclick="setView('gantt')" id="nav-gantt" class="px-3 py-1 rounded text-xs hover:bg-white hover:text-brand-900 transition font-medium">Gantt</button>
+                <button onclick="setView('card')" id="nav-card" class="px-3 py-1 rounded text-xs hover:bg-white hover:text-brand-900 transition font-medium">Card</button>
+                <button onclick="setView('dashboard')" id="nav-dashboard" class="px-3 py-1 rounded text-xs hover:bg-white hover:text-brand-900 transition font-medium">Dashboard</button>
+                <button onclick="setView('form')" id="nav-form" class="px-3 py-1 rounded text-xs hover:bg-white hover:text-brand-900 transition font-medium">Forms</button>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <div id="collab-indicator" class="hidden text-xs text-brand-100 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> User B is typing...
+            </div>
+            <div class="relative">
+                <input type="text" placeholder="Search..." class="bg-brand-800 text-white text-xs px-3 py-1.5 rounded border-none focus:ring-1 focus:ring-brand-500 placeholder-brand-300">
+                <i class="fa-solid fa-search absolute right-3 top-2 text-brand-300 text-xs"></i>
+            </div>
+            <button onclick="toggleSidePanel('activity')" class="hover:text-brand-100"><i class="fa-solid fa-clock-rotate-left"></i></button>
+            <button class="hover:text-brand-100"><i class="fa-solid fa-bell"></i></button>
+            <div class="w-7 h-7 bg-brand-500 rounded-full flex items-center justify-center text-xs font-bold border border-white">JD</div>
+        </div>
+    </nav>
+
+    <!-- TOOLBAR -->
+    <div class="h-10 bg-white border-b border-slate-200 flex items-center px-4 justify-between">
+        <div class="flex items-center gap-2">
+            <button onclick="actions.addRow()" class="flex items-center gap-1 px-2 py-1 bg-brand-600 text-white rounded text-xs hover:bg-brand-700 shadow-sm"><i class="fa-solid fa-plus"></i> Row</button>
+            <button onclick="actions.addChild()" class="px-2 py-1 text-slate-600 hover:bg-slate-100 rounded" title="Add Child"><i class="fa-solid fa-indent"></i></button>
+            <button onclick="actions.outdent()" class="px-2 py-1 text-slate-600 hover:bg-slate-100 rounded" title="Outdent"><i class="fa-solid fa-outdent"></i></button>
+            <div class="h-4 w-px bg-slate-300 mx-1"></div>
+            <button class="px-2 py-1 text-slate-600 hover:bg-slate-100 rounded" title="Filter"><i class="fa-solid fa-filter"></i></button>
+            <button class="px-2 py-1 text-slate-600 hover:bg-slate-100 rounded" title="Sort"><i class="fa-solid fa-arrow-down-a-z"></i></button>
+            <div class="h-4 w-px bg-slate-300 mx-1"></div>
+            <button onclick="actions.exportData()" class="px-2 py-1 text-slate-600 hover:bg-slate-100 rounded" title="Export JSON"><i class="fa-solid fa-file-export"></i></button>
+        </div>
+        <div class="flex items-center gap-3 text-xs font-semibold text-slate-600" id="summary-bar">
+            <!-- Summary totals injected here -->
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT AREA -->
+    <main id="app-container" class="flex-1 overflow-hidden relative flex">
+        <!-- Views are rendered here -->
+        <div id="view-port" class="flex-1 overflow-auto bg-white relative"></div>
+        
+        <!-- RIGHT SIDE PANEL (Hidden by default) -->
+        <div id="side-panel" class="w-80 border-l border-slate-200 bg-white h-full transform translate-x-full transition-transform duration-300 absolute right-0 top-0 shadow-xl z-30 flex flex-col">
+            <div class="h-10 border-b flex items-center justify-between px-4 bg-slate-50">
+                <span class="font-bold text-slate-700" id="panel-title">Details</span>
+                <button onclick="toggleSidePanel(null)" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div id="panel-content" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
+        </div>
+    </main>
+
+    <!-- TOAST CONTAINER -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
+
+    <!-- SCRIPTS -->
+    <script>
+        // --- 1. STATE MANAGEMENT & ARCHITECTURE ---
+        
+        const generateId = () => Math.random().toString(36).substr(2, 9);
+        const today = new Date().toISOString().split('T')[0];
+
+        // Initial Data Mock
+        const defaultColumns = [
+            { id: 'col_task', type: 'text', title: 'Task Name', width: 250, editable: true },
+            { id: 'col_start', type: 'date', title: 'Start Date', width: 130, editable: true },
+            { id: 'col_end', type: 'date', title: 'End Date', width: 130, editable: true },
+            { id: 'col_assign', type: 'contact', title: 'Assigned To', width: 150, options: ['John Doe', 'Jane Smith', 'Mike Ross'], editable: true },
+            { id: 'col_status', type: 'dropdown', title: 'Status', width: 120, options: ['Not Started', 'In Progress', 'Complete', 'Delayed', 'On Hold'], editable: true },
+            { id: 'col_pct', type: 'progress', title: '% Complete', width: 100, editable: true },
+        ];
+
+        let state = {
+            view: 'grid',
+            rows: [],
+            columns: defaultColumns,
+            activityLog: [],
+            settings: {
+                automation: true,
+                conditionalFormatting: true
+            }
+        };
+
+        // LocalStorage Wrapper
+        const db = {
+            save: () => {
+                localStorage.setItem('sheetSmartData', JSON.stringify(state));
+                renderSummary();
+            },
+            load: () => {
+                const data = localStorage.getItem('sheetSmartData');
+                if (data) {
+                    state = JSON.parse(data);
+                } else {
+                    // Seed initial data
+                    state.rows = [
+                        createRow('Project Kickoff', today, today, 'John Doe', 'Complete', 100),
+                        createRow('Planning Phase', today, '2026-02-01', 'Jane Smith', 'In Progress', 40),
+                        createRow('Research', today, '2026-01-20', 'Mike Ross', 'In Progress', 80, 1), // Indented
+                        createRow('Design', '2026-01-21', '2026-02-01', 'John Doe', 'Not Started', 0, 1)
+                    ];
+                    db.save();
+                }
+            }
+        };
+
+        function createRow(task, start, end, assign, status, pct, indent = 0) {
+            return {
+                id: generateId(),
+                indent: indent,
+                expanded: true,
+                cells: {
+                    col_task: task,
+                    col_start: start,
+                    col_end: end,
+                    col_assign: assign,
+                    col_status: status,
+                    col_pct: pct
+                },
+                comments: [],
+                attachments: [],
+                history: [],
+                locked: false
+            };
+        }
+
+        // --- 2. LOGIC ENGINE (Formulas, Automation) ---
+
+        const logic = {
+            // Recalculate Parent rows based on children (Mini-Smartsheet logic)
+            calculateHierarchy: () => {
+                // Find parents (rows with children below them that have higher indent)
+                // Simplified: Just simple aggregation for demo
+                // In a real app, we'd build a tree. Here we trigger visual updates.
+            },
+            
+            checkAutomation: (row) => {
+                if (!state.settings.automation) return;
+                
+                // Rule 1: If Status is Complete, set % to 100
+                if (row.cells.col_status === 'Complete' && row.cells.col_pct != 100) {
+                    row.cells.col_pct = 100;
+                    showToast('Automation: set % Complete to 100', 'blue');
+                }
+                // Rule 2: If Date passed, flag as Delayed (visual only via CSS)
+            },
+
+            getFormattedValue: (col, val) => {
+                if (col.id === 'col_status') {
+                    if (val === 'Red') return '🔴 Red';
+                    if (val === 'Green') return '🟢 Green';
+                    if (val === 'Yellow') return '🟡 Yellow';
+                }
+                return val;
+            },
+            
+            getRowClass: (row) => {
+                let classes = "hover:bg-slate-50 border-b border-slate-200 group transition-colors ";
+                
+                // Conditional Formatting
+                if (state.settings.conditionalFormatting) {
+                    if (row.cells.col_status === 'Delayed') classes += "row-delayed ";
+                    if (row.cells.col_status === 'Complete') classes += "row-complete ";
+                    if (row.cells.col_pct == 100) classes += "row-complete ";
+                }
+                return classes;
+            }
+        };
+
+        // --- 3. RENDERING ENGINE ---
+
+        const dom = {
+            viewport: document.getElementById('view-port'),
+            summary: document.getElementById('summary-bar')
+        };
+
+        function setView(viewName) {
+            state.view = viewName;
+            
+            // Update Nav Active State
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('bg-white', 'text-brand-900'));
+            const btn = document.getElementById(`nav-${viewName}`);
+            if(btn) btn.classList.add('bg-white', 'text-brand-900');
+
+            renderMain();
+        }
+
+        function renderMain() {
+            dom.viewport.innerHTML = '';
+            
+            switch (state.view) {
+                case 'grid': renderGrid(); break;
+                case 'gantt': renderGantt(); break;
+                case 'card': renderKanban(); break;
+                case 'dashboard': renderDashboard(); break;
+                case 'form': renderFormBuilder(); break;
+            }
+        }
+
+        function renderSummary() {
+            // Calculate Total Budget or Counts
+            const totalTasks = state.rows.length;
+            const completed = state.rows.filter(r => r.cells.col_status === 'Complete').length;
+            dom.summary.innerHTML = `
+                <span>Total Items: ${totalTasks}</span>
+                <span class="text-green-600">Completed: ${completed}</span>
+            `;
+        }
+
+        // --- GRID VIEW ---
+        function renderGrid() {
+            const table = document.createElement('div');
+            table.className = 'min-w-full inline-block align-middle relative';
+            
+            // Header
+            let headerHTML = `<div class="sheet-grid bg-slate-100 border-b border-slate-300 sheet-header text-xs font-bold text-slate-600 uppercase tracking-wider">
+                <div class="p-2 text-center border-r"><i class="fa-solid fa-list-ol"></i></div>`;
+            
+            state.columns.forEach(col => {
+                headerHTML += `<div class="p-2 border-r truncate resize-x overflow-hidden" style="width:${col.width}px">${col.title}</div>`;
+            });
+            headerHTML += `<div class="p-2 text-center"><i class="fa-solid fa-gear"></i></div></div>`;
+            
+            // Body
+            let bodyHTML = '<div id="grid-body">';
+            state.rows.forEach((row, index) => {
+                const rowClass = logic.getRowClass(row);
+                // Indentation padding
+                const padding = row.indent * 24; 
+                
+                bodyHTML += `<div class="sheet-grid ${rowClass} items-center text-xs" data-id="${row.id}">
+                    <div class="p-2 text-center text-slate-400 border-r bg-slate-50 select-none cursor-move">${index + 1}</div>`;
+                
+                state.columns.forEach(col => {
+                    const cellVal = row.cells[col.id] || '';
+                    let inputHTML = '';
+                    const style = col.id === 'col_task' ? `padding-left: ${8 + padding}px;` : '';
+                    
+                    if(row.locked) {
+                         inputHTML = `<div class="w-full truncate py-1">${cellVal}</div>`;
+                    } else if (col.type === 'dropdown') {
+                        inputHTML = `<select onchange="actions.updateCell('${row.id}', '${col.id}', this.value)" class="w-full bg-transparent outline-none cursor-pointer">
+                            ${col.options.map(opt => `<option value="${opt}" ${opt === cellVal ? 'selected' : ''}>${opt}</option>`).join('')}
+                        </select>`;
+                    } else if (col.type === 'date') {
+                        inputHTML = `<input type="date" value="${cellVal}" onchange="actions.updateCell('${row.id}', '${col.id}', this.value)" class="w-full bg-transparent outline-none font-mono text-slate-600">`;
+                    } else if (col.type === 'progress') {
+                         inputHTML = `<div class="flex items-center gap-2"><div class="w-16 h-2 bg-slate-200 rounded-full overflow-hidden"><div class="h-full bg-green-500" style="width:${cellVal}%"></div></div><input type="number" min="0" max="100" value="${cellVal}" onchange="actions.updateCell('${row.id}', '${col.id}', this.value)" class="w-8 bg-transparent text-right outline-none"></div>`;
+                    } else {
+                        // Text / Contact
+                        // Check for formula
+                        const displayVal = (typeof cellVal === 'string' && cellVal.startsWith('=')) ? '#FORMULA' : cellVal;
+                        
+                        inputHTML = `<input type="text" value="${displayVal}" onchange="actions.updateCell('${row.id}', '${col.id}', this.value)" style="${style}" class="w-full bg-transparent outline-none p-1 focus:bg-white focus:ring-1 focus:ring-brand-500 rounded text-slate-700 placeholder-slate-400">`;
+                        
+                        // Add expand/collapse icon if it's task name
+                        if (col.id === 'col_task' && hasChildren(index)) {
+                            inputHTML = `<button onclick="actions.toggleExpand('${row.id}')" class="mr-1 w-4 text-center hover:bg-slate-200 rounded text-[10px]"><i class="fa-solid fa-chevron-${row.expanded ? 'down' : 'right'}"></i></button>` + inputHTML;
+                        }
+                    }
+
+                    bodyHTML += `<div class="p-1 border-r h-full flex items-center overflow-hidden">${inputHTML}</div>`;
+                });
+
+                bodyHTML += `<div class="p-2 text-center flex items-center justify-center gap-2 text-slate-400 relative">
+                        <button onclick="openRowMenu('${row.id}')" class="hover:text-brand-600"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                        <button onclick="actions.openComments('${row.id}')" class="${row.comments.length > 0 ? 'text-brand-500' : 'hover:text-blue-500'}"><i class="fa-regular fa-message"></i></button>
+                    </div></div>`;
+            });
+            bodyHTML += '</div>';
+
+            table.innerHTML = headerHTML + bodyHTML;
+            dom.viewport.appendChild(table);
+        }
+        
+        function hasChildren(index) {
+            if (index >= state.rows.length - 1) return false;
+            return state.rows[index + 1].indent > state.rows[index].indent;
+        }
+
+        // --- GANTT VIEW ---
+        function renderGantt() {
+            // Split View: List | Timeline
+            const container = document.createElement('div');
+            container.className = 'flex h-full';
+
+            // Left List (Task name only)
+            const list = document.createElement('div');
+            list.className = 'w-64 border-r bg-white overflow-y-hidden pt-10 flex-shrink-0';
+            state.rows.forEach(row => {
+               const div = document.createElement('div');
+               div.className = `h-10 px-2 border-b flex items-center text-xs truncate pl-${(row.indent * 4) + 2}`;
+               div.textContent = row.cells.col_task;
+               list.appendChild(div);
+            });
+
+            // Right Timeline (SVG)
+            const timelineWrapper = document.createElement('div');
+            timelineWrapper.className = 'flex-1 overflow-auto bg-slate-50 relative';
+            
+            // Calculate Dates range
+            // Simple approach: Show next 30 days starting from earliest date
+            const dayWidth = 40;
+            const headerHeight = 40;
+            const rowHeight = 40;
+            
+            const svgWidth = 60 * dayWidth; // 60 days view
+            
+            let svgContent = '';
+            
+            // Draw Grid & Header
+            let headers = '';
+            for(let i=0; i<60; i++) {
+                const d = new Date();
+                d.setDate(d.getDate() + (i - 5)); // Start 5 days ago
+                const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
+                const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                const fill = isWeekend ? '#f1f5f9' : 'transparent';
+                
+                svgContent += `<rect x="${i * dayWidth}" y="0" width="${dayWidth}" height="100%" fill="${fill}" stroke="#e2e8f0" />`;
+                headers += `<div style="position:absolute; left:${i*dayWidth}px; top:0; width:${dayWidth}px; height:${headerHeight}px; text-align:center; line-height:${headerHeight}px; font-size:10px; border-right:1px solid #e2e8f0; background:white;">${dateStr}</div>`;
+            }
+
+            // Draw Bars
+            state.rows.forEach((row, idx) => {
+                if(!row.cells.col_start || !row.cells.col_end) return;
+                
+                const start = new Date(row.cells.col_start);
+                const end = new Date(row.cells.col_end);
+                const base = new Date();
+                base.setDate(base.getDate() - 5); // Match grid offset
+                
+                const diffDaysStart = Math.ceil((start - base) / (1000 * 60 * 60 * 24));
+                const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+                
+                const x = diffDaysStart * dayWidth;
+                const width = Math.max(duration * dayWidth, 5); // min width
+                const color = row.cells.col_pct == 100 ? '#22c55e' : '#3b82f6';
+
+                svgContent += `<rect x="${x}" y="${(idx * rowHeight) + 10}" width="${width}" height="20" rx="4" fill="${color}" class="gantt-bar cursor-pointer" onclick="alert('Task: ${row.cells.col_task}')">
+                    <title>${row.cells.col_task}: ${row.cells.col_start} - ${row.cells.col_end}</title>
+                </rect>`;
+                
+                // Progress Bar inside
+                if(row.cells.col_pct > 0 && row.cells.col_pct < 100) {
+                     svgContent += `<rect x="${x}" y="${(idx * rowHeight) + 10}" width="${width * (row.cells.col_pct/100)}" height="20" rx="4" fill="rgba(255,255,255,0.3)" pointer-events="none"/>`;
+                }
+            });
+
+            timelineWrapper.innerHTML = `
+                <div style="height:${headerHeight}px; width:${svgWidth}px; position:sticky; top:0; z-index:10;">${headers}</div>
+                <svg width="${svgWidth}" height="${state.rows.length * rowHeight}" style="margin-top:0px;">
+                    ${svgContent}
+                </svg>
+            `;
+
+            container.appendChild(list);
+            container.appendChild(timelineWrapper);
+            dom.viewport.appendChild(container);
+        }
+
+        // --- KANBAN VIEW ---
+        function renderKanban() {
+            const container = document.createElement('div');
+            container.className = 'flex h-full overflow-x-auto p-6 gap-6 bg-slate-100';
+            
+            const statuses = ['Not Started', 'In Progress', 'Delayed', 'Complete'];
+            
+            statuses.forEach(status => {
+                const col = document.createElement('div');
+                col.className = 'w-72 flex-shrink-0 flex flex-col bg-slate-200 rounded-lg max-h-full';
+                
+                // Header
+                col.innerHTML = `<div class="p-3 font-bold text-slate-700 flex justify-between">
+                    <span>${status}</span>
+                    <span class="bg-slate-300 text-xs px-2 py-0.5 rounded-full">${state.rows.filter(r => r.cells.col_status === status).length}</span>
+                </div>`;
+                
+                // Cards Container
+                const cardList = document.createElement('div');
+                cardList.className = 'flex-1 overflow-y-auto p-2 space-y-2';
+                
+                state.rows.filter(r => r.cells.col_status === status).forEach(row => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-white p-3 rounded shadow-sm hover:shadow-md cursor-pointer border-l-4 ' + (status === 'Delayed' ? 'border-red-400' : 'border-brand-500');
+                    card.innerHTML = `
+                        <div class="font-semibold text-sm mb-1">${row.cells.col_task}</div>
+                        <div class="text-xs text-slate-500 flex justify-between">
+                            <span><i class="fa-regular fa-calendar"></i> ${row.cells.col_end}</span>
+                            <div class="flex -space-x-1">
+                                <div class="w-5 h-5 bg-brand-200 rounded-full flex items-center justify-center text-[10px] border border-white">JD</div>
+                            </div>
+                        </div>
+                    `;
+                    // Simple simulated Drag trigger
+                    card.onclick = () => {
+                        const newStatus = prompt("Move card to status:", "Complete");
+                        if(newStatus && statuses.includes(newStatus)){
+                            actions.updateCell(row.id, 'col_status', newStatus);
+                        }
+                    };
+                    cardList.appendChild(card);
+                });
+                
+                col.appendChild(cardList);
+                container.appendChild(col);
+            });
+            
+            dom.viewport.appendChild(container);
+        }
+
+        // --- DASHBOARD VIEW ---
+        function renderDashboard() {
+            const container = document.createElement('div');
+            container.className = 'p-8 bg-slate-50 h-full overflow-y-auto grid grid-cols-2 gap-6';
+            
+            // KPIs
+            const total = state.rows.length;
+            const late = state.rows.filter(r => r.cells.col_status === 'Delayed').length;
+            const complete = state.rows.filter(r => r.cells.col_status === 'Complete').length;
+            
+            container.innerHTML = `
+                <div class="col-span-2 grid grid-cols-4 gap-4">
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-100">
+                        <div class="text-xs text-slate-400 uppercase font-bold">Total Tasks</div>
+                        <div class="text-3xl font-bold text-slate-800">${total}</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-100">
+                        <div class="text-xs text-slate-400 uppercase font-bold">At Risk</div>
+                        <div class="text-3xl font-bold text-red-500">${late}</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-100">
+                        <div class="text-xs text-slate-400 uppercase font-bold">Completion Rate</div>
+                        <div class="text-3xl font-bold text-green-500">${Math.round((complete/total)*100)}%</div>
+                    </div>
+                     <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-100 flex items-center justify-center cursor-pointer hover:bg-slate-50 border-dashed border-2">
+                        <div class="text-center text-slate-400"><i class="fa-solid fa-plus block mb-1"></i> Add Widget</div>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm col-span-1 h-80">
+                    <h3 class="font-bold text-slate-700 mb-4">Status Distribution</h3>
+                    <canvas id="chartStatus"></canvas>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm col-span-1 h-80">
+                    <h3 class="font-bold text-slate-700 mb-4">Task Velocity</h3>
+                    <div class="flex items-center justify-center h-full text-slate-400">Chart Placeholder (Requires more historic data)</div>
+                </div>
+            `;
+            
+            dom.viewport.appendChild(container);
+            
+            // Render Chart.js
+            setTimeout(() => {
+                const ctx = document.getElementById('chartStatus').getContext('2d');
+                const statuses = ['Not Started', 'In Progress', 'Complete', 'Delayed'];
+                const data = statuses.map(s => state.rows.filter(r => r.cells.col_status === s).length);
+                
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: statuses,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: ['#e2e8f0', '#3b82f6', '#22c55e', '#ef4444']
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            }, 100);
+        }
+
+        // --- FORM BUILDER ---
+        function renderFormBuilder() {
+            const container = document.createElement('div');
+            container.className = 'max-w-2xl mx-auto mt-10 bg-white p-8 rounded-xl shadow-lg border border-slate-200';
+            
+            container.innerHTML = `
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-slate-800">Project Intake Form</h2>
+                    <p class="text-slate-500">Submit a new task to the grid via this public form.</p>
+                </div>
+                <div class="space-y-4">
+                    ${state.columns.map(col => {
+                        if(col.id === 'col_pct') return ''; // Skip internal fields
+                        return `<div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">${col.title} ${col.id === 'col_task' ? '*' : ''}</label>
+                            ${col.type === 'dropdown' 
+                                ? `<select class="w-full border p-2 rounded bg-slate-50"><option>Select...</option>${col.options.map(o=>`<option>${o}</option>`).join('')}</select>`
+                                : `<input type="${col.type === 'date' ? 'date' : 'text'}" class="w-full border p-2 rounded bg-slate-50" placeholder="Enter value...">`
+                            }
+                        </div>`;
+                    }).join('')}
+                    
+                    <button onclick="showToast('Form Submitted (Mock)', 'green'); setView('grid')" class="w-full bg-brand-600 text-white py-3 rounded font-bold hover:bg-brand-700 mt-4 shadow-lg shadow-brand-200">Submit Request</button>
+                    
+                    <div class="mt-8 pt-8 border-t text-center">
+                        <p class="text-xs text-slate-400 mb-2">Scan to access form on mobile</p>
+                        <div class="w-24 h-24 bg-slate-800 mx-auto rounded flex items-center justify-center text-white"><i class="fa-solid fa-qrcode text-3xl"></i></div>
+                    </div>
+                </div>
+            `;
+            dom.viewport.appendChild(container);
+        }
+
+        // --- ACTIONS & CONTROLLER ---
+
+        const actions = {
+            updateCell: (rowId, colId, value) => {
+                const row = state.rows.find(r => r.id === rowId);
+                if (row) {
+                    const oldVal = row.cells[colId];
+                    row.cells[colId] = value;
+                    
+                    // Logic triggers
+                    logic.checkAutomation(row);
+                    
+                    // Log activity
+                    if(oldVal !== value) {
+                        state.activityLog.unshift({ 
+                            time: new Date().toLocaleTimeString(), 
+                            text: `Updated "${state.columns.find(c=>c.id===colId).title}" to "${value}"` 
+                        });
+                    }
+                    
+                    db.save();
+                    // Don't re-render full grid on simple text edit to keep focus
+                    // Only re-render if visual logic changes (status/progress)
+                    if (['col_status', 'col_pct'].includes(colId)) {
+                        renderMain();
+                    }
+                }
+            },
+
+            addRow: () => {
+                state.rows.push(createRow('New Task', today, today, '', 'Not Started', 0));
+                db.save();
+                renderMain();
+                showToast('Row added', 'green');
+            },
+            
+            addChild: () => {
+                // Mock logic: Indent the last added row or currently focused
+                const lastRow = state.rows[state.rows.length - 1];
+                if(lastRow) lastRow.indent = Math.min(lastRow.indent + 1, 3);
+                db.save();
+                renderMain();
+            },
+            
+            outdent: () => {
+                const lastRow = state.rows[state.rows.length - 1];
+                if(lastRow) lastRow.indent = Math.max(lastRow.indent - 1, 0);
+                db.save();
+                renderMain();
+            },
+
+            toggleExpand: (rowId) => {
+                const row = state.rows.find(r => r.id === rowId);
+                if(row) {
+                    row.expanded = !row.expanded;
+                    // In a real tree, we would hide children here. 
+                    // For this flat list demo, we'll just toggle icon.
+                    db.save();
+                    renderMain();
+                }
+            },
+            
+            openComments: (rowId) => {
+                const row = state.rows.find(r => r.id === rowId);
+                const panel = document.getElementById('panel-content');
+                document.getElementById('panel-title').innerText = "Comments & Attachments";
+                
+                let html = `<div class="mb-4">
+                    <h4 class="font-bold">${row.cells.col_task}</h4>
+                    <p class="text-xs text-slate-500">ID: ${row.id}</p>
+                </div>
+                <div class="space-y-3 mb-4">
+                    ${row.comments.map(c => `
+                        <div class="bg-slate-100 p-2 rounded text-xs">
+                            <div class="font-bold text-slate-700 flex justify-between">${c.user} <span class="text-slate-400 font-normal">${c.time}</span></div>
+                            <div class="mt-1">${c.text}</div>
+                        </div>
+                    `).join('')}
+                    ${row.comments.length === 0 ? '<div class="text-slate-400 text-xs italic text-center py-4">No comments yet</div>' : ''}
+                </div>
+                <div class="flex gap-2">
+                    <input type="text" id="new-comment" class="border rounded px-2 py-1 w-full text-xs" placeholder="Add a comment...">
+                    <button onclick="addComment('${row.id}')" class="bg-brand-600 text-white rounded px-3 py-1 text-xs">Post</button>
+                </div>
+                <hr class="my-6">
+                <div class="text-xs font-bold uppercase mb-2">Attachments</div>
+                <label class="block border-2 border-dashed border-slate-300 rounded p-4 text-center cursor-pointer hover:bg-slate-50">
+                    <i class="fa-solid fa-cloud-arrow-up text-slate-400 text-xl mb-1"></i>
+                    <div class="text-xs text-slate-500">Click to upload mock file</div>
+                    <input type="file" class="hidden" onchange="showToast('File uploaded to row state', 'blue')">
+                </label>
+                `;
+                
+                panel.innerHTML = html;
+                toggleSidePanel('details');
+            },
+
+            exportData: () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", "sheet_smart_export.json");
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+                showToast('Data exported successfully', 'green');
+            }
+        };
+
+        // --- UTILS & UI HELPERS ---
+
+        function addComment(rowId) {
+            const input = document.getElementById('new-comment');
+            if(!input.value) return;
+            const row = state.rows.find(r => r.id === rowId);
+            row.comments.push({ user: 'Me', text: input.value, time: 'Just now' });
+            input.value = '';
+            db.save();
+            actions.openComments(rowId); // Refresh panel
+            renderMain(); // Update icon
+        }
+
+        function toggleSidePanel(type) {
+            const panel = document.getElementById('side-panel');
+            if (!type) {
+                panel.classList.add('translate-x-full');
+            } else {
+                if(type === 'activity') {
+                    document.getElementById('panel-title').innerText = "Activity Log";
+                    document.getElementById('panel-content').innerHTML = state.activityLog.map(l => `
+                        <div class="text-xs border-b py-2">
+                            <span class="text-slate-400 mr-2">${l.time}</span>
+                            <span>${l.text}</span>
+                        </div>
+                    `).join('');
+                }
+                panel.classList.remove('translate-x-full');
+            }
+        }
+
+        function showToast(msg, color = 'blue') {
+            const el = document.createElement('div');
+            el.className = `bg-white border-l-4 border-${color}-500 shadow-lg rounded p-3 text-xs flex items-center animate-pulse-fast`;
+            el.innerHTML = `<span class="font-bold text-slate-700 mr-2">Info</span> ${msg}`;
+            document.getElementById('toast-container').appendChild(el);
+            setTimeout(() => el.remove(), 3000);
+        }
+        
+        // Simulating Real-time Collab
+        setInterval(() => {
+            const indicator = document.getElementById('collab-indicator');
+            if (Math.random() > 0.7) {
+                indicator.classList.remove('hidden');
+                setTimeout(() => indicator.classList.add('hidden'), 3000);
+            }
+        }, 10000);
+
+        // --- INIT ---
+        window.onload = () => {
+            db.load();
+            setView('grid');
+            
+            // Add a global row menu handler mock
+            window.openRowMenu = (id) => {
+                if(confirm("Delete this row?")) {
+                    state.rows = state.rows.filter(r => r.id !== id);
+                    db.save();
+                    renderMain();
+                }
+            };
+        };
+
+    </script>
+</body>
+</html>

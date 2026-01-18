@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تنبيه حركة المركبات</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-color: #1f2937;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 25px;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-color);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #1d4ed8;
+        }
+
+        button:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .status-message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            display: none;
+            font-weight: bold;
+        }
+        
+        .success { background-color: #d1fae5; color: #065f46; }
+        .error { background-color: #fee2e2; color: #991b1b; }
+
+        /* أيقونة التحميل */
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>🚗 حركة السيارات بالمصنع</h2>
+        <form id="movementForm">
+            
+            <div class="form-group">
+                <label>رقم المركبة (Vehicle)</label>
+                <input type="number" id="vehicle" placeholder="مثال: 05" required>
+            </div>
+
+            <div class="form-group">
+                <label>اسم السائق</label>
+                <input type="text" id="driverName" placeholder="مثال: عمر" required>
+            </div>
+
+            <div class="form-group">
+                <label>رقم هاتف السائق</label>
+                <input type="tel" id="driverPhone" placeholder="0665xxxxxx" required>
+            </div>
+
+            <div class="form-group">
+                <label>من (From)</label>
+                <select id="fromLoc" required>
+                    <option value="" disabled selected>اختر الموقع...</option>
+                    <option value="Factory">المصنع (Factory)</option>
+                    <option value="Warehouse">المخزن (Warehouse)</option>
+                    <option value="Main Gate">البوابة الرئيسية</option>
+                    <option value="Raw Materials">مخزن المواد الأولية</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>إلى (To)</label>
+                <select id="toLoc" required>
+                    <option value="" disabled selected>اختر الوجهة...</option>
+                    <option value="Factory">المصنع (Factory)</option>
+                    <option value="Warehouse">المخزن (Warehouse)</option>
+                    <option value="Client">الزبون</option>
+                    <option value="Maintenance">الصيانة</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>ملاحظات (اختياري)</label>
+                <textarea id="notes" rows="2" placeholder="أي تفاصيل إضافية..."></textarea>
+            </div>
+
+            <button type="submit" id="submitBtn">
+                <span id="btnText">إرسال التنبيه</span>
+                <div class="spinner" id="loadingSpinner"></div>
+            </button>
+
+            <div id="statusMsg" class="status-message"></div>
+        </form>
+    </div>
+
+    <script>
+        // ⚠️⚠️ ضع رابط Google Apps Script الخاص بك هنا ⚠️⚠️
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxy4ECve44ecOmk25YmbIqdZKT0B7f28z_T9DAUUVB0913Fi_ohloLSbs7AVJZitMHN/exec";
+
+        document.getElementById('movementForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const btn = document.getElementById('submitBtn');
+            const btnText = document.getElementById('btnText');
+            const spinner = document.getElementById('loadingSpinner');
+            const statusMsg = document.getElementById('statusMsg');
+
+            // تجهيز البيانات
+            const formData = {
+                vehicle: document.getElementById('vehicle').value,
+                driverName: document.getElementById('driverName').value,
+                driverPhone: document.getElementById('driverPhone').value,
+                fromLoc: document.getElementById('fromLoc').value,
+                toLoc: document.getElementById('toLoc').value,
+                notes: document.getElementById('notes').value
+            };
+
+            // واجهة التحميل
+            btn.disabled = true;
+            btnText.style.display = 'none';
+            spinner.style.display = 'block';
+            statusMsg.style.display = 'none';
+
+            // إرسال البيانات
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors', // مهم جداً لتجنب مشاكل CORS مع جوجل سكربت
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => {
+                // ملاحظة: مع no-cors لا يمكننا قراءة الرد بدقة، لذا نفترض النجاح إذا لم يحدث خطأ بالشبكة
+                showStatus('تم إرسال التنبيه بنجاح ✅', 'success');
+                document.getElementById('movementForm').reset();
+            })
+            .catch(error => {
+                showStatus('حدث خطأ في الاتصال ❌', 'error');
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btnText.style.display = 'block';
+                spinner.style.display = 'none';
+            });
+        });
+
+        function showStatus(msg, type) {
+            const el = document.getElementById('statusMsg');
+            el.textContent = msg;
+            el.className = 'status-message ' + type;
+            el.style.display = 'block';
+            setTimeout(() => {
+                el.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
