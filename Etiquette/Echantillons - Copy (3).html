@@ -1,0 +1,1960 @@
+<html lang="ar"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>étiquette</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" xintegrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&amp;display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bwip-js@3.0.4/dist/bwip-js-min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    /* أنماط الشريط الجانبي الأيسر (الآن للإعدادات .controls) */
+    .controls { /* كان على اليمين، الآن على اليسار */
+      position: fixed;
+      left: 0; /* تم التغيير: الآن على اليسار */
+      right: auto; /* إضافة لضمان الموقع */
+      top: 0;
+      height: 100vh;
+      width: 260px; /* عرض الشريط (كان عرض .controls الأصلي) */
+      background: #f8f9fa;
+      padding: 20px;
+      background-color: #212529;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1); /* ظل على اليمين (لأنه الآن على اليسار) */
+      z-index: 990;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+    .controls * {
+      color: #adb5bd !important;
+    }
+    /* أنماط الشريط الجانبي الأيمن (الآن لقائمة المنتجات .sidebar) */
+    .sidebar { /* كان على اليسار، الآن على اليمين */
+      position: fixed;
+      right: 0; /* تم التغيير: الآن على اليمين */
+      left: auto; /* إضافة لضمان الموقع */
+      top: 0;
+      height: 100vh;
+      width: 160px; /* عرض الشريط (كان عرض .sidebar الأصلي) */
+      background: #f8f9fa;
+      padding: 5px 5px;
+      box-shadow: -2px 0 5px rgba(0,0,0,0.1); /* ظل على اليسار (لأنه الآن على اليمين) */
+      z-index: 1000;
+      overflow-y: auto;
+    }
+html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
+  direction: ltr !important;
+}
+    .sidebar-button {
+      display: flex; /* *** تعديل: لاستيعاب أيقونة التعديل *** */
+      justify-content: center; /* *** تعديل: لتوسيط النص *** */
+      align-items: center; /* *** تعديل: لمحاذاة النص والأيقونة *** */
+      width: 100%;
+      padding: 1px;
+      margin: 8px 0;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      color: white;
+      text-align: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+      font-size: 14px;
+      text-align: center !important;
+      position: relative;
+    }
+    .sidebar-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+    }
+    .sidebar-button.is-new::after {
+        content: 'new';
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        background-color: #ffc107;
+        color: #000;
+        font-size: 9px;
+        font-weight: bold;
+        padding: 1px 4px;
+        border-radius: 4px;
+        transform: rotate(15deg);
+    }
+    /* *** إضافة جديدة: نمط أيقونة التعديل *** */
+    .edit-icon {
+        position: absolute;
+        left: 4px;
+        font-size: 16px !important;
+        color: rgba(255, 255, 255, 0.7) !important;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+    .edit-icon:hover {
+        color: rgba(255, 255, 255, 1) !important;
+    }
+    /* ألوان الفئات للأزرار الجانبية (الآن في الشريط الأيمن) */
+    .CIMAISE { background: #d61e1e; }
+    .PLINTHE { background: #525045; }
+    .CADRE { background: #4dabf7; }
+    .Wall-panel { background: #f783ac; }
+    .CORNICHE { background: #ff922b; }
+    .CORNIERE { background: #94d82d; }
+    /* تعديل الهوامش الرئيسية لـ body لتعكس الترتيب الجديد */
+    body {
+      font-family: Arial, sans-serif;
+      direction: rtl;
+      margin: 0;
+      padding: 20px 180px 20px 280px;
+      background: #f0f0f0;
+      line-height: 1.6;
+      transition: padding 0.3s ease-in-out;
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .controls label {
+      font-weight: bold;
+      margin-bottom: 0;
+      font-size: 0.9em;
+      color: #adb5bd;
+    }
+    .controls input[type="text"],
+    .controls input[list],
+    .controls input[type="file"],
+    .controls select {
+      padding: 8px 6px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 100%;
+      box-sizing: border-box;
+      min-width: auto;
+      direction: ltr;
+    }
+      .controls input[type="file"] {
+        padding: 3px;
+        background: #fff;
+      }
+    .controls button.action-btn {
+      padding: 10px 20px;
+      font-size: 14px;
+      cursor: pointer;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      transition: background-color 0.3s ease;
+      margin-top: 5px;
+      width: 100%;
+    }
+    .controls .print-btn { background-color: #007bff; }
+    .controls .print-btn:hover { background-color: #0056b3; }
+    .controls .add-model-btn { background-color: #198754; }
+    .controls .add-model-btn:hover { background-color: #157347; }
+    .controls .export-btn { background-color: #6c757d; }
+    .controls .export-btn:hover { background-color: #5c636a; }
+    .control-group #hide-container {
+      display: grid !important;
+      grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+      gap: 8px !important;
+      padding-top: 5px;
+    }
+    #hide-container label {
+      font-size: 0.9em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 3px 5px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      background-color: #212529;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    #hide-container label:hover {
+      background-color: #f0f0f0;
+    }
+    #hide-container input[type="checkbox"] {
+      margin: 0;
+    }
+    .display-options {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background-color: #2c3034;
+        padding: 10px;
+        border-radius: 4px;
+    }
+    .display-options label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        font-size: 0.9em !important;
+    }
+    .display-options input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+    }
+    .a4-container {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      padding: 15mm 10mm 10mm 10mm;
+      background: #fff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-sizing: border-box;
+      position: relative;
+    }
+    .page-header {
+        position: absolute;
+        top: 0.9mm;
+        left: 10mm;
+        right: 10mm;
+        height: 12mm;
+        box-sizing: border-box;
+        overflow: hidden;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .header-text {
+        text-align: center;
+        font-size: 14px;
+        font-weight: bold;
+        color: #333;
+        flex-grow: 1;
+    }
+    .header-logo {
+        max-height: 10mm;
+        max-width: 40mm;
+        object-fit: contain;
+    }
+    .labels-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(4, calc((297mm - 20mm) / 4 - 3mm));
+      gap: 6mm;
+      width: 100%;
+      height: calc(297mm - 20mm);
+    }
+    .label-box {
+      position: relative;
+      overflow: hidden;
+      background: #fff;
+      text-align: center;
+      border: 1px dashed #eee;
+    }
+    .label-box.hide-qr .qr-code-container {
+        visibility: hidden;
+    }
+    .label-box.hide-shapes .corner-shape,
+    .label-box.hide-shapes .bubble-container {
+        visibility: hidden;
+    }
+    .qr-code-container {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 60px;
+        z-index: 15;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .qr-code-container img, .qr-code-container canvas {
+        width: 55px !important;
+        height: 55px !important;
+        padding: 2px;
+        background: white;
+        border: 1px solid #eee;
+        box-sizing: border-box;
+    }
+    .qr-unique-id {
+        width: 55px;
+        font-size: 10px;
+        font-weight: bold;
+        color: #333;
+        margin-top: 2px;
+        font-family: 'Courier New', Courier, monospace;
+        letter-spacing: 1px;
+        text-align: center;
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+    .corner-shape {
+      position: absolute;
+      top: 15px;
+      left: 0;
+      width: 40px;
+      height: 40px;
+      z-index: 10;
+      transform-origin: top left;
+      transition: all 0.3s ease;
+    }
+    .bubble-container {
+        position: absolute;
+        top: 15px;
+        right: 70px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px;
+        align-items: center;
+        justify-content: flex-end;
+        z-index: 10;
+        pointer-events: none;
+        max-width: 50%;
+        max-height: 40px;
+        overflow: hidden;
+        padding: 1px;
+    }
+    .bubble {
+      display: block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: #ccc;
+      box-shadow:
+        inset 0 0 1px rgba(255, 255, 255, 0.5),
+        0 1px 1px rgba(0,0,0,0.1);
+      flex-shrink: 0;
+      transition: background-color 0.3s ease;
+    }
+    .label-box .bg-shape {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: auto;
+      max-height: 35%;
+      object-fit: cover;
+      z-index: 1;
+    }
+    .label-box .logo {
+      position: absolute;
+      top: 10mm;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 43mm;
+      height: auto;
+      z-index: 2;
+    }
+    .label-box .text-area {
+      position: absolute;
+      top: calc(8mm + 15mm + 5mm);
+      left: 5%;
+      width: 90%;
+      z-index: 3;
+      font-size: 16px;
+      color: #000;
+      text-align: center;
+      line-height: 1.3;
+    }
+    .label-box .text-area .ref {
+      font-weight: bold;
+      font-size: 1.1em;
+      margin-bottom: 4px;
+      word-wrap: break-word;
+      direction: ltr;
+    }
+    .label-box .text-area .pcs { margin-bottom: 4px; }
+    .label-box .text-area .dim { margin-bottom: 4px; }
+    .label-box.hidden {
+      visibility: hidden;
+    }
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 1050;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        visibility: hidden;
+        opacity: 0;
+        transition: opacity 0.3s, visibility 0.3s;
+    }
+    .modal-overlay.visible {
+        visibility: visible;
+        opacity: 1;
+    }
+    .modal-content {
+        background: #fff;
+        padding: 25px;
+        border-radius: 8px;
+        width: 350px; /* عرض أكبر قليلاً */
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .modal-content h3 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        color: #333;
+    }
+    .modal-content .form-group {
+        margin-bottom: 15px;
+        text-align: left;
+    }
+    .modal-content .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #555;
+    }
+    .modal-content .form-group.inline { /* *** إضافة جديدة: لتنسيق الحقول المتجاورة *** */
+        display: flex;
+        gap: 10px;
+    }
+    .modal-content .form-group.inline > div {
+        flex: 1;
+    }
+    .modal-content input[type="text"],
+    .modal-content input[type="number"],
+    .modal-content select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 1em;
+        box-sizing: border-box;
+    }
+    .modal-content .checkbox-group {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 8px;
+    }
+    .modal-content .modal-actions {
+        margin-top: 20px;
+    }
+    .modal-content .modal-actions button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1em;
+        margin: 0 5px;
+    }
+    .modal-content .btn-confirm {
+        background-color: #007bff;
+        color: white;
+    }
+     .modal-content .btn-cancel {
+        background-color: #6c757d;
+        color: white;
+    }
+    
+    
+    /* --- تنسيق الجسم لضمان عدم تغطية المحتوى --- */
+    body {
+      /* padding-top: ارتفاع الشريط العلوي (50px) + مسافة جمالية (20px) = 70px
+          الهوامش الجانبية تبقى كما هي في كودك الأصلي لضمان مكان القوائم 
+      */
+      padding: 70px 180px 20px 280px !important; 
+      transition: padding 0.3s ease-in-out;
+    }
+
+    /* --- تنسيق الشريط العلوي (محصور في الوسط) --- */
+    .top-navbar {
+        position: fixed;
+        top: 0;
+        height: 50px;
+        background-color: #212529; /* لون خلفية الشريط */
+        
+        /* هنا السحر: نحدد بدايته ونهايته بناءً على عرض القوائم الجانبية */
+        left: 260px;  /* يبدأ بعد القائمة اليسرى تماماً */
+        right: 160px; /* ينتهي قبل القائمة اليمنى تماماً */
+        
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        z-index: 900; /* أقل من القوائم الجانبية حتى لا يغطي عليها عند الفتح في الموبايل */
+    }
+
+    /* باقي تنسيقات عناصر الشريط كما هي */
+    .menu-trigger {
+        color: #fff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        padding: 5px 10px;
+        border-radius: 4px;
+        transition: background 0.3s;
+        font-size: 0.9em;
+    }
+    .menu-trigger:hover { background-color: rgba(255,255,255,0.1); }
+
+    .nav-links { display: flex; gap: 5px; }
+
+    .nav-sq {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 60px; /* تصغير العرض قليلاً ليتناسب مع المساحة */
+        height: 30px;
+        background-color: #495057;
+        color: #fff;
+        text-decoration: none;
+        font-size: 12px;
+        border-radius: 3px;
+        font-weight: bold;
+        transition: all 0.2s ease;
+    }
+    .nav-sq:hover { background-color: #0d6efd; color: white; }
+    .nav-sq.active { background-color: #0d6efd; border: 1px solid #rgba(255,255,255,0.5); }
+
+    /* --- تنسيق خاص للموبايل (هام جداً) --- */
+    /* عندما تختفي القوائم الجانبية في الشاشات الصغيرة، يجب أن يمتد الشريط العلوي */
+    @media (max-width: 1024px) {
+        .top-navbar {
+            left: 0 !important;
+            right: 0 !important;
+            width: 100%;
+            z-index: 900;
+        }
+        
+        body {
+            /* تعديل الهوامش في الموبايل */
+            padding: 60px 15px 20px 15px !important;
+        }
+        
+        /* إنزال أزرار فتح القوائم في الموبايل لتكون تحت الشريط */
+        .mobile-toggle-btn {
+            top: 60px !important; 
+        }
+    }
+
+    @media print {
+        .top-navbar { display: none !important; }
+        body { padding: 0 !important; }
+    }
+    
+    /* تنسيق الجدول (نفس السابق) */
+    .codes-table-container { max-height: 65vh; overflow-y: auto; }
+    .codes-table th { position: sticky; top: 0; background: #f8f9fa; z-index: 2; }
+    .code-cell { font-family: 'Courier New', monospace; font-weight: bold; color: #d63384; direction: ltr; }
+    
+    
+    
+    
+    
+    
+    @media print {
+      body {
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      body > *:not(#print-output) {
+        display: none !important;
+      }
+      #print-output {
+        display: block !important;
+      }
+      #print-output .a4-container {
+        display: block !important;
+        width: 210mm;
+        min-height: 217mm;
+        height: 297mm;
+        margin: 0;
+        padding: 15mm 10mm 10mm 10mm;
+        box-shadow: none;
+        box-sizing: border-box;
+        page-break-after: always;
+      }
+      #print-output .a4-container:last-child {
+        page-break-after: auto;
+      }
+      #print-output .page-header {
+      }
+      #print-output .labels-grid {
+          display: grid !important;
+          grid-template-columns: repeat(2, 1fr);
+          grid-template-rows: repeat(4, calc((297mm - 45mm) / 4 - 3mm));
+          gap: 8mm;
+          width: 100%;
+          height: calc(297mm - 20mm);
+      }
+      #print-output .label-box {
+          border: 0px dashed #eee;
+      }
+      #print-output .label-box.hidden {
+          visibility: hidden !important;
+      }
+      @page {
+        size: A4;
+        margin: 0;
+      }
+    }
+    /* --- START: Mobile Responsive Styles --- */
+    #mobile-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 980;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    #mobile-overlay.visible {
+      display: block;
+      opacity: 1;
+    }
+    .mobile-toggle-btn {
+      display: none;
+      position: fixed;
+      top: 15px;
+      width: 50px;
+      height: 50px;
+      background-color: #0d6efd;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      z-index: 1010;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+    .mobile-toggle-btn.left { left: 15px; }
+    .mobile-toggle-btn.right { right: 15px; }
+    @media (max-width: 1024px) {
+      .mobile-toggle-btn { display: flex; }
+      body { padding: 80px 15px 20px 15px; }
+      .controls, .sidebar {
+        transition: transform 0.3s ease-in-out;
+        z-index: 999;
+      }
+      .controls {
+        transform: translateX(-100%);
+        width: 280px;
+      }
+      .controls.open { transform: translateX(0); }
+      .sidebar {
+        transform: translateX(100%);
+        width: 200px;
+      }
+      .sidebar.open { transform: translateX(0); }
+      .a4-viewport {
+        width: 100%;
+        margin: 0 auto;
+      }
+      .a4-container { transform-origin: top center; }
+      .modal-content {
+        width: 90%;
+        max-width: 350px;
+      }
+    }
+    @media (max-width: 480px) {
+      .labels-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      .label-box .text-area { font-size: 14px; }
+    }
+    /* --- END: Mobile Responsive Styles --- */
+    /* --- START: أنماط مُحسَّنة للطباعة المجمعة --- */
+    #batchPrintModal .modal-content {
+        width: 95%;
+        max-width: 1200px;
+        height: 80vh;
+        display: flex;
+        flex-direction: column;
+    }
+    #batchAddForm {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 15px;
+        flex-shrink: 0;
+    }
+    #batchAddForm .form-group {
+        margin-bottom: 0;
+        flex-grow: 1;
+    }
+    #batchAddForm button {
+        flex-shrink: 0;
+        padding: 8px 12px !important;
+        font-size: 14px !important;
+    }
+    #batchItemsContainer {
+        flex-grow: 1; /* تجعل الجدول يأخذ المساحة المتاحة */
+        overflow-y: auto; /* تضيف شريط تمرير عند الحاجة */
+        border-top: 1px solid #eee;
+        border-bottom: 1px solid #eee;
+    }
+    #batchPrintTable {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        table-layout: fixed; /* لتحكم أفضل في عرض الأعمدة */
+    }
+    #batchPrintTable th, #batchPrintTable td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+        vertical-align: middle;
+        word-break: break-word; /* لمنع النصوص الطويلة من تخريب التنسيق */
+    }
+    #batchPrintTable thead {
+        position: sticky;
+        top: 0;
+        background-color: #f8f9fa;
+        z-index: 10;
+    }
+    #batchPrintTable th {
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.5px;
+    }
+    #batchPrintTable .inline-input,
+    #batchPrintTable .inline-select {
+        width: 100%;
+        padding: 6px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 13px;
+        box-sizing: border-box;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    #batchPrintTable .inline-input:focus,
+    #batchPrintTable .inline-select:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        outline: none;
+    }
+    #batchPrintTable .pages-input {
+        text-align: center;
+    }
+    #batchPrintTable tr.model-row:nth-child(even) { background-color: #f9f9f9; }
+    #batchPrintTable tr.model-row:hover { background-color: #f1f1f1; }
+    #batchPrintTable .drag-handle {
+        cursor: move;
+        text-align: center;
+        color: #aaa;
+        padding: 0 4px;
+    }
+    .actions-cell {
+        text-align: center;
+    }
+    .actions-cell button {
+        background: none;
+        border: none;
+        color: #dc3545;
+        cursor: pointer;
+        padding: 0;
+        font-size: 20px;
+    }
+    .actions-cell button:hover {
+        color: #a71d2a;
+    }
+    .blank-page-row td {
+        background-color: #fff9c4;
+    }
+    tr.dragging {
+        opacity: 0.6;
+        background: #cce5ff;
+    }
+    tr.drag-over-indicator {
+        border-top: 2px dashed #007bff;
+    }
+    #batchPrintModal .modal-actions {
+        flex-shrink: 0;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+    }
+    @media print {
+      #print-output .a4-container.blank-page-content {
+        padding: 20mm;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        font-size: 16px;
+      }
+    }
+    /* --- END: أنماط الطباعة المجمعة --- */
+  </style>
+</head>
+<body>
+
+
+<div class="top-navbar">
+    <div class="menu-trigger" onclick="openCodesModal()">
+        <span class="material-icons">menu</span>
+        <span style="margin-right: 8px; font-weight: bold;">قائمة الرموز</span>
+    </div>
+    
+    <div class="nav-links">
+        <a href="2EMEC.html" class="nav-sq" id="link-2EMEC">2EMEC</a>
+        <a href="valpaint.html" class="nav-sq" id="link-valpaint">valpaint</a>
+        <a href="Ui.html" class="nav-sq" id="link-Ui">Ui</a>
+    </div>
+  </div>
+  <div id="mobile-overlay"></div>
+  <button id="toggle-controls-btn" class="mobile-toggle-btn left">
+    <span class="material-icons">settings</span>
+  </button>
+  <button id="toggle-sidebar-btn" class="mobile-toggle-btn right">
+    <span class="material-icons">view_list</span>
+  </button>
+  <div class="controls">
+    <div class="control-group">
+<div class="d-flex align-items-center mb-3" style="border-bottom: 1px solid #333; padding-bottom: 10px; gap: 10px;">
+    
+    <button id="go-back-btn" class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center" 
+            style="width: 32px; height: 32px; padding: 0; border-color: #495057;" 
+            title="رجوع">
+        <span class="material-icons" style="font-size: 1.2rem; color: #adb5bd;">arrow_back</span> 
+    </button>
+
+    <h2 class="fw-bold m-0 d-flex align-items-center gap-2" style="color: #0d6efd; font-size: 1.4rem;">
+        <span class="material-icons">print</span>
+        Etiquette
+    </h2>
+    
+</div>
+        <button class="action-btn print-btn" onclick="showPrintDialog()">طباعة الملصقات</button>
+        <button id="batchPrintBtn" class="action-btn" style="background-color: #ffc107; color: black;">طباعة مجمعة</button>
+        <div class="buttons-container">
+          <button id="addModelBtn" class="action-btn add-model-btn">اضافة</button>
+          <button id="exportAppBtn" class="action-btn export-btn">تصدير</button>
+        </div>
+        <style>
+          .buttons-container {
+          display: flex;
+          gap: 10px; /* مسافة بين الأزرار */
+          flex-wrap: nowrap; /* يمنع النزول إلى سطر جديد */
+          }
+        </style>
+    </div>
+    <div class="control-group">
+        <label for="headerLogoFileInput">تحميل صورة للرأس (يمين):</label>
+        <input type="file" id="headerLogoFileInput" accept="image/*">
+    </div>
+    <div class="control-group">
+      <label for="refInput">Référence</label>
+      <input list="refOptions" id="refInput" value="" placeholder="مثال: CIMAISE 207-1">
+      <datalist id="refOptions">
+        <option value="CIMAISE 209-1"></option>
+        <option value="CIMAISE 208-1"></option>
+        <option value="CIMAISE 207-1"></option>
+        <option value="CIMAISE 206-1"></option>
+        <option value="CIMAISE 204-1"></option>
+        <option value="CIMAISE 203-1"></option>
+        <option value="CIMAISE 202-1"></option>
+        <option value="CIMAISE 201-1"></option>
+        <option value="CIMAISE 200-1"></option>
+        <option value="PLINTHE 106-1"></option>
+        <option value="PLINTHE 107-1"></option>
+        <option value="PLINTHE 105-1"></option>
+        <option value="PLINTHE 104-1"></option>
+        <option value="PLINTHE 103-1"></option>
+        <option value="PLINTHE 101-1"></option>
+        <option value="PLINTHE 100-1"></option>
+        <option value="Wall panel 402-1"></option>
+        <option value="Wall panel 401-1"></option>
+        <option value="Wall panel 400-1"></option>
+        <option value="CORNIERE 351-1"></option>
+        <option value="CORNIERE 353-1"></option>
+        <option value="CORNICHE 301-1"></option>
+        <option value="CORNICHE 300-1"></option>
+            <option value="CADRE 708-1"></option>
+            <option value="CADRE 707-1"></option>
+        <option value="CADRE 706-1"></option>
+        <option value="CADRE 705-1"></option>
+        <option value="CADRE 704-1"></option>
+        <option value="CADRE 703-1"></option>
+        <option value="CADRE 702-1"></option>
+        <option value="CADRE 701-1"></option>
+        <option value="CADRE 700-1"></option>
+      <option value="CIMAISE 217-1"></option><option value="CORNIERE 353-1"></option><option value="PLINTHE 116-1"></option><option value="PLINTHE 109-1"></option><option value="PLINTHE 117-1"></option><option value="CIMAISE 215-1"></option><option value="CIMAISE 216-1"></option><option value="CORNICHE 315-1"></option><option value="PLINTHE 102-1"></option></datalist>
+    </div>
+    <div class="control-group"> <label for="pcsInput">العدد/كرتون:</label> <input type="text" id="pcsInput" value="15" placeholder="مثال: 15"> </div>
+    <div class="control-group"> <label for="lengthInput">الطول (مم):</label> <input type="text" id="lengthInput" value="20" placeholder="مثال: 2900"> </div>
+    <div class="control-group"> <label for="widthInput">العرض (مم):</label> <input type="text" id="widthInput" value="100" placeholder="مثال: 64"> </div>
+    <div class="control-group"> <label for="thicknessInput">السمك (مم):</label> <input type="text" id="thicknessInput" value="12" placeholder="مثال: 39"> </div>
+    <div class="control-group">
+        <label for="codeTypeSelect">نوع الكود:</label>
+        <select id="codeTypeSelect">
+            <option value="datamatrix" selected>Data Matrix</option>
+            <option value="qrcode">QR Code</option>
+        </select>
+    </div>
+    <div class="control-group">
+        <label>خيارات العرض</label>
+        <div class="display-options">
+            <label> <input type="checkbox" id="toggleQrCode" checked=""> <span>إظهار الكود</span> </label>
+            <label> <input type="checkbox" id="toggleSameCodeInRow" checked=""> <span>رمز موحد لكل سطر</span> </label>
+            <label> <input type="checkbox" id="toggleShapes"> <span>إظهار الأشكال الملونة</span> </label>
+        </div>
+    </div>
+    <div class="control-group">
+      <label>إخفاء الملصقات</label>
+      <div id="hide-container"></div>
+    </div>
+  </div>
+  <div class="sidebar">
+    <button class="sidebar-button CIMAISE" data-ref="CIMAISE 200-1">CIMAISE 200-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CIMAISE" data-ref="CIMAISE 201-1">CIMAISE 201-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CIMAISE" data-ref="CIMAISE 202-1">CIMAISE 202-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CIMAISE" data-ref="CIMAISE 203-1">CIMAISE 203-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CIMAISE" data-ref="CIMAISE 204-1">CIMAISE 204-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CIMAISE" data-ref="CIMAISE 205-1">CIMAISE 205-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CIMAISE" data-ref="CIMAISE 206-1">CIMAISE 206-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CIMAISE" data-ref="CIMAISE 207-1">CIMAISE 207-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CIMAISE" data-ref="CIMAISE 208-1">CIMAISE 208-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CIMAISE" data-ref="CIMAISE 209-1">CIMAISE 209-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button CIMAISE is-new" data-ref="CIMAISE 217-1">CIMAISE 217-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button CIMAISE is-new" data-ref="CIMAISE 215-1">CIMAISE 215-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button CIMAISE is-new" data-ref="CIMAISE 216-1">CIMAISE 216-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button PLINTHE" data-ref="PLINTHE 100-1">PLINTHE 100-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button PLINTHE" data-ref="PLINTHE 101-1">PLINTHE 101-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button PLINTHE" data-ref="PLINTHE 103-1">PLINTHE 103-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button PLINTHE" data-ref="PLINTHE 104-1">PLINTHE 104-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button PLINTHE" data-ref="PLINTHE 105-1">PLINTHE 105-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button PLINTHE" data-ref="PLINTHE 106-1">PLINTHE 106-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button PLINTHE" data-ref="PLINTHE 107-1">PLINTHE 107-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 116-1">PLINTHE 116-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 109-1">PLINTHE 109-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 117-1">PLINTHE 117-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button PLINTHE is-new" data-ref="PLINTHE 102-1">PLINTHE 102-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button Wall-panel" data-ref="Wall panel 400-1">Wall panel 400-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button Wall-panel" data-ref="Wall panel 401-1">Wall panel 401-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button Wall-panel" data-ref="Wall panel 402-1">Wall panel 402-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CORNICHE" data-ref="CORNICHE 300-1">CORNICHE 300-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CORNICHE" data-ref="CORNICHE 301-1">CORNICHE 301-1<span class="material-icons edit-icon">edit</span></button><button class="sidebar-button CORNICHE is-new" data-ref="CORNICHE 315-1">CORNICHE 315-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CORNIERE" data-ref="CORNIERE 351-1">CORNIERE 351-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CORNIERE is-new" data-ref="CORNIERE 353-1">CORNIERE 353-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CADRE" data-ref="CADRE 700-1">CADRE 700-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CADRE" data-ref="CADRE 701-1">CADRE 701-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CADRE" data-ref="CADRE 702-1">CADRE 702-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CADRE" data-ref="CADRE 703-1">CADRE 703-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CADRE" data-ref="CADRE 704-1">CADRE 704-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CADRE" data-ref="CADRE 705-1">CADRE 705-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CADRE" data-ref="CADRE 706-1">CADRE 706-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CADRE" data-ref="CADRE 708-1">CADRE 708-1<span class="material-icons edit-icon">edit</span></button>
+    <button class="sidebar-button CADRE" data-ref="CADRE 707-1">CADRE 707-1<span class="material-icons edit-icon">edit</span></button>
+  </div>
+  <div id="editor-page">
+    <div class="a4-viewport" style="height: auto;">
+      <div id="a4" class="a4-container" style="transform: none;">
+        <div class="page-header">
+          <div class="header-text" contenteditable="true">...</div>
+          <img id="headerLogo" class="header-logo" src="" alt="Header Logo" style="display: none;">
+        </div>
+        <div class="labels-grid"><div class="label-box hide-shapes">
+            <div class="qr-code-container" title="353-1-29,741d82t043"><div class="qr-unique-id">d82t043</div></div>
+            <div class="corner-shape" style="background-color: rgb(231, 54, 231); width: 39px; height: 39px; transform: rotate(0deg); clip-path: polygon(0px 0px, 30% 0px, 30% 70%, 0px 100%);"></div>
+            <div class="bubble-container"><div class="bubble" style="background-color: rgb(231, 54, 231);"></div></div>
+            <img class="bg-shape" src="https://i.imgur.com/XEhRZ3w.png" alt="">
+            <img class="logo" src="https://i.imgur.com/5iNKPp1.png" alt="">
+            <div class="text-area">
+              <div class="ref" contenteditable="true">Référence : CORNIERE 353-1</div>
+              <div class="pcs" contenteditable="true">PCS/Carton: 108</div>
+              <div class="dim" contenteditable="true">Dimensions: 30 x 30 mm</div>
+            </div>
+          </div><div class="label-box hide-shapes">
+            <div class="qr-code-container" title="353-1-29,741d82t043"><div class="qr-unique-id">d82t043</div></div>
+            <div class="corner-shape" style="background-color: rgb(231, 54, 231); width: 39px; height: 39px; transform: rotate(0deg); clip-path: polygon(0px 0px, 30% 0px, 30% 70%, 0px 100%);"></div>
+            <div class="bubble-container"><div class="bubble" style="background-color: rgb(231, 54, 231);"></div></div>
+            <img class="bg-shape" src="https://i.imgur.com/XEhRZ3w.png" alt="">
+            <img class="logo" src="https://i.imgur.com/5iNKPp1.png" alt="">
+            <div class="text-area">
+              <div class="ref" contenteditable="true">Référence : CORNIERE 353-1</div>
+              <div class="pcs" contenteditable="true">PCS/Carton: 108</div>
+              <div class="dim" contenteditable="true">Dimensions: 30 x 30 mm</div>
+            </div>
+          </div><div class="label-box hide-shapes">
+            <div class="qr-code-container" title="353-1-29,7411mvc264"><div class="qr-unique-id">1mvc264</div></div>
+            <div class="corner-shape" style="background-color: rgb(231, 54, 231); width: 39px; height: 39px; transform: rotate(0deg); clip-path: polygon(0px 0px, 30% 0px, 30% 70%, 0px 100%);"></div>
+            <div class="bubble-container"><div class="bubble" style="background-color: rgb(231, 54, 231);"></div></div>
+            <img class="bg-shape" src="https://i.imgur.com/XEhRZ3w.png" alt="">
+            <img class="logo" src="https://i.imgur.com/5iNKPp1.png" alt="">
+            <div class="text-area">
+              <div class="ref" contenteditable="true">Référence : CORNIERE 353-1</div>
+              <div class="pcs" contenteditable="true">PCS/Carton: 108</div>
+              <div class="dim" contenteditable="true">Dimensions: 30 x 30 mm</div>
+            </div>
+          </div><div class="label-box hide-shapes">
+            <div class="qr-code-container" title="353-1-29,7411mvc264"><div class="qr-unique-id">1mvc264</div></div>
+            <div class="corner-shape" style="background-color: rgb(231, 54, 231); width: 39px; height: 39px; transform: rotate(0deg); clip-path: polygon(0px 0px, 30% 0px, 30% 70%, 0px 100%);"></div>
+            <div class="bubble-container"><div class="bubble" style="background-color: rgb(231, 54, 231);"></div></div>
+            <img class="bg-shape" src="https://i.imgur.com/XEhRZ3w.png" alt="">
+            <img class="logo" src="https://i.imgur.com/5iNKPp1.png" alt="">
+            <div class="text-area">
+              <div class="ref" contenteditable="true">Référence : CORNIERE 353-1</div>
+              <div class="pcs" contenteditable="true">PCS/Carton: 108</div>
+              <div class="dim" contenteditable="true">Dimensions: 30 x 30 mm</div>
+            </div>
+          </div><div class="label-box hide-shapes">
+            <div class="qr-code-container" title="353-1-29,741uiq2531"><div class="qr-unique-id">uiq2531</div></div>
+            <div class="corner-shape" style="background-color: rgb(231, 54, 231); width: 39px; height: 39px; transform: rotate(0deg); clip-path: polygon(0px 0px, 30% 0px, 30% 70%, 0px 100%);"></div>
+            <div class="bubble-container"><div class="bubble" style="background-color: rgb(231, 54, 231);"></div></div>
+            <img class="bg-shape" src="https://i.imgur.com/XEhRZ3w.png" alt="">
+            <img class="logo" src="https://i.imgur.com/5iNKPp1.png" alt="">
+            <div class="text-area">
+              <div class="ref" contenteditable="true">Référence : CORNIERE 353-1</div>
+              <div class="pcs" contenteditable="true">PCS/Carton: 108</div>
+              <div class="dim" contenteditable="true">Dimensions: 30 x 30 mm</div>
+            </div>
+          </div><div class="label-box hide-shapes">
+            <div class="qr-code-container" title="353-1-29,741uiq2531"><div class="qr-unique-id">uiq2531</div></div>
+            <div class="corner-shape" style="background-color: rgb(231, 54, 231); width: 39px; height: 39px; transform: rotate(0deg); clip-path: polygon(0px 0px, 30% 0px, 30% 70%, 0px 100%);"></div>
+            <div class="bubble-container"><div class="bubble" style="background-color: rgb(231, 54, 231);"></div></div>
+            <img class="bg-shape" src="https://i.imgur.com/XEhRZ3w.png" alt="">
+            <img class="logo" src="https://i.imgur.com/5iNKPp1.png" alt="">
+            <div class="text-area">
+              <div class="ref" contenteditable="true">Référence : CORNIERE 353-1</div>
+              <div class="pcs" contenteditable="true">PCS/Carton: 108</div>
+              <div class="dim" contenteditable="true">Dimensions: 30 x 30 mm</div>
+            </div>
+          </div><div class="label-box hide-shapes">
+            <div class="qr-code-container" title="353-1-29,741jzca806"><div class="qr-unique-id">jzca806</div></div>
+            <div class="corner-shape" style="background-color: rgb(231, 54, 231); width: 39px; height: 39px; transform: rotate(0deg); clip-path: polygon(0px 0px, 30% 0px, 30% 70%, 0px 100%);"></div>
+            <div class="bubble-container"><div class="bubble" style="background-color: rgb(231, 54, 231);"></div></div>
+            <img class="bg-shape" src="https://i.imgur.com/XEhRZ3w.png" alt="">
+            <img class="logo" src="https://i.imgur.com/5iNKPp1.png" alt="">
+            <div class="text-area">
+              <div class="ref" contenteditable="true">Référence : CORNIERE 353-1</div>
+              <div class="pcs" contenteditable="true">PCS/Carton: 108</div>
+              <div class="dim" contenteditable="true">Dimensions: 30 x 30 mm</div>
+            </div>
+          </div><div class="label-box hide-shapes">
+            <div class="qr-code-container" title="353-1-29,741jzca806"><div class="qr-unique-id">jzca806</div></div>
+            <div class="corner-shape" style="background-color: rgb(231, 54, 231); width: 39px; height: 39px; transform: rotate(0deg); clip-path: polygon(0px 0px, 30% 0px, 30% 70%, 0px 100%);"></div>
+            <div class="bubble-container"><div class="bubble" style="background-color: rgb(231, 54, 231);"></div></div>
+            <img class="bg-shape" src="https://i.imgur.com/XEhRZ3w.png" alt="">
+            <img class="logo" src="https://i.imgur.com/5iNKPp1.png" alt="">
+            <div class="text-area">
+              <div class="ref" contenteditable="true">Référence : CORNIERE 353-1</div>
+              <div class="pcs" contenteditable="true">PCS/Carton: 108</div>
+              <div class="dim" contenteditable="true">Dimensions: 30 x 30 mm</div>
+            </div>
+          </div></div>
+      </div>
+    </div>
+  </div>
+  <div id="print-output" style="display: none;"></div>
+  <div id="printModal" class="modal-overlay">
+      <div class="modal-content">
+          <h3>عدد النسخ للطباعة</h3>
+          <div class="form-group">
+            <input type="number" id="pageCountInput" value="1" min="1">
+          </div>
+          <div class="modal-actions">
+              <button id="confirmPrintBtn" class="btn-confirm">تأكيد الطباعة</button>
+              <button id="cancelPrintBtn" class="btn-cancel">إلغاء</button>
+          </div>
+      </div>
+  </div>
+  <div id="modelModal" class="modal-overlay" data-mode="add">
+      <div class="modal-content">
+          <h3 id="modelModalTitle">إضافة مودال جديد</h3>
+          <input type="hidden" id="originalModelRef" value=""> <div class="form-group">
+              <label for="modelCategory">نوع المودال:</label>
+              <select id="modelCategory">
+                  <option value="CIMAISE">CIMAISE</option>
+                  <option value="PLINTHE">PLINTHE</option>
+                  <option value="Wall-panel">Wall panel</option>
+                  <option value="CORNICHE">CORNICHE</option>
+                  <option value="CORNIERE">CORNIERE</option>
+                  <option value="CADRE">CADRE</option>
+              </select>
+          </div>
+          <div class="form-group">
+              <label for="modelNumber">أرقام المودال (بدون النوع):</label>
+              <input type="text" id="modelNumber" placeholder="مثال: 300-1">
+          </div>
+          <div class="form-group">
+              <label for="modelPcs">PCS/Carton:</label>
+              <input type="text" id="modelPcs" placeholder="مثال: 15">
+          </div>
+          <div class="form-group inline">
+              <div>
+                <label for="modelWidth">العرض (مم):</label>
+                <input type="text" id="modelWidth" placeholder="مثال: 64">
+              </div>
+              <div>
+                <label for="modelThickness">السمك (مم):</label>
+                <input type="text" id="modelThickness" placeholder="مثال: 39">
+              </div>
+          </div>
+          <div class="form-group checkbox-group">
+              <input type="checkbox" id="modelIsNew">
+              <label for="modelIsNew">إضافة علامة "جديد"</label>
+          </div>
+          <div class="modal-actions">
+              <button id="saveModelBtn" class="btn-confirm">حفظ</button>
+              <button id="cancelModelBtn" class="btn-cancel">إلغاء</button>
+          </div>
+      </div>
+  </div>
+  <div id="batchPrintModal" class="modal-overlay">
+    <div class="modal-content">
+        <h3>إنشاء طباعة مجمعة (اسحب الأسطر لتغيير الترتيب)</h3>
+        <div id="batchAddForm">
+            <div class="form-group">
+                <label for="batchRefInput">اختر النوع (يمكنك الكتابة للبحث):</label>
+                <input type="text" id="batchRefInput" list="batchRefOptions" class="inline-input">
+                <datalist id="batchRefOptions"></datalist>
+            </div>
+            <button id="addToBatchBtn" class="btn-confirm">إضافة مودال</button>
+            <button id="addBlankPageBtn" class="btn-cancel" style="background-color: #ffc107; color: black;">إضافة صفحة فارغة</button>
+        </div>
+        <div id="batchItemsContainer">
+            <table id="batchPrintTable">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">#</th>
+                        <th style="width: 70px;">الكمية</th>
+                        <th style="width: 15%;">النوع الأصلي</th>
+                        <th>النص العلوي</th>
+                         <th style="width: 25%;">Référence</th>
+                        <th>PCS/Carton</th>
+                        <th>Dimensions</th>
+                        <th style="width: 50px;">حذف</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+        <div class="modal-actions">
+            <button id="confirmBatchPrintBtn" class="btn-confirm">توليد وطباعة الدفعة</button>
+            <button id="cancelBatchPrintBtn" class="btn-cancel">إلغاء</button>
+        </div>
+    </div>
+  </div>
+  <div id="temp-render-container" style="position: absolute; top: -9999px; left: -9999px; opacity: 0;"></div>
+<script>
+    const refData = {
+    "CIMAISE 209-1": { "pcs": " ", "width": "40", "thickness": "10" },
+    "CIMAISE 208-1": { "pcs": "", "width": "70", "thickness": "15" },
+    "CIMAISE 207-1": { "pcs": "", "width": "40", "thickness": "16" },
+    "CIMAISE 206-1": { "pcs": "", "width": "25", "thickness": "12" },
+    "CIMAISE 204-1": { "pcs": "", "width": "31", "thickness": "10" },
+    "CIMAISE 203-1": { "pcs": "", "width": "15", "thickness": "35" },
+    "CIMAISE 202-1": { "pcs": "", "width": "60", "thickness": "21" },
+    "CIMAISE 201-1": { "pcs": "", "width": "40", "thickness": "13" },
+    "CIMAISE 200-1": { "pcs": "", "width": "52", "thickness": "19" },
+    "PLINTHE 106-1": { "pcs": "", "width": "100", "thickness": "15" },
+    "PLINTHE 107-1": { "pcs": "", "width": "100", "thickness": "10" },
+    "PLINTHE 105-1": { "pcs": "", "width": "100", "thickness": "15" },
+    "PLINTHE 104-1": { "pcs": "", "width": "121", "thickness": "15" },
+    "PLINTHE 103-1": { "pcs": "", "width": "71", "thickness": "11" },
+    "PLINTHE 101-1": { "pcs": "", "width": "110", "thickness": "22" },
+    "PLINTHE 100-1": { "pcs": "", "width": "100", "thickness": "22" },
+    "Wall panel 402-1": { "pcs": "", "width": "118", "thickness": "12" },
+    "Wall panel 401-1": { "pcs": "", "width": "34", "thickness": "20" },
+    "Wall panel 400-1": { "pcs": "", "width": "121", "thickness": "21" },
+    "CORNIERE 351-1": { "pcs": "", "width": "30", "thickness": "20" },
+    "CORNICHE 301-1": { "pcs": "", "width": "72", "thickness": "41" },
+    "CORNICHE 300-1": { "pcs": "", "width": "100", "thickness": "47" },
+    "CADRE 708-1": { "pcs": "", "width": "25", "thickness": "39" },
+    "CADRE 707-1": { "pcs": "", "width": "35", "thickness": "39" },
+    "CADRE 706-1": { "pcs": "", "width": "64", "thickness": "39" },
+    "CADRE 705-1": { "pcs": "", "width": "37", "thickness": "34" },
+    "CADRE 704-1": { "pcs": "", "width": "64", "thickness": "30" },
+    "CADRE 703-1": { "pcs": "", "width": "24", "thickness": "20" },
+    "CADRE 702-1": { "pcs": "", "width": "42", "thickness": "30" },
+    "CADRE 701-1": { "pcs": "", "width": "45", "thickness": "20" },
+    "CADRE 700-1": { "pcs": "", "width": "20", "thickness": "20" },
+    "CIMAISE 217-1": { "pcs": "", "width": "25", "thickness": "12" },
+    "CORNIERE 353-1": { "pcs": "", "width": "30", "thickness": "30" },
+    "PLINTHE 116-1": { "pcs": "", "width": "100", "thickness": "10" },
+    "PLINTHE 109-1": { "pcs": "", "width": "100", "thickness": "18" },
+    "PLINTHE 117-1": { "pcs": "", "width": "120", "thickness": "22" },
+    "CIMAISE 215-1": { "pcs": "", "width": "60", "thickness": "20" },
+    "CIMAISE 216-1": { "pcs": "", "width": "40", "thickness": "16" },
+    "CORNICHE 315-1": { "pcs": "", "width": "57", "thickness": "40" },
+    "PLINTHE 102-1": { "pcs": "", "width": "144", "thickness": "23" }
+};
+    const refInput = document.getElementById('refInput');
+    const pcsInput = document.getElementById('pcsInput');
+    const lengthInput = document.getElementById('lengthInput');
+    const widthInput = document.getElementById('widthInput');
+    const thicknessInput = document.getElementById('thicknessInput');
+    const headerLogoFileInput = document.getElementById('headerLogoFileInput');
+    let printBatch = [];
+    let sortedRefKeys = Object.keys(refData).sort();
+    function calculateWeeksAndDayOfWeek(d){const a=new Date(d),e=new Date,t=Math.abs(e-a),n=Math.floor(t/864e5),s=Math.floor(n/7);return`${s}${(e.getDay()+1)%7}`}
+    function generateShortUniqueId(){const d=Math.random().toString(36).substring(2,6),a=String(Math.floor(1e3*Math.random())).padStart(3,"0");return(d+a).slice(0,7)}
+    function formatRefForQR(d){const a=["CIMAISE","PLINTHE","Wall panel","CORNIERE","CADRE","CORNICHE","Référence :"];let e=d.trim(),t=!0;for(;t;){t=!1;for(const n of a){const s=new RegExp(`^${n.replace(/[-\/\\^$*+?.()|[\]{}]/g,"\\$&")}\\s*`,"i");if(s.test(e)){e=e.replace(s,""),t=!0;break}}}return e}
+    function getStyleAttributesFromRef(d){const a=d.trim();let e=0,t="DEFAULT";const n=a.match(/(\d)-\d+$/);n&&n[1]&&(t=n[1],e=parseInt(t,10));const s=100*e%360,r=0===e||1===e?30+20*e:70+3*e,i=8===e||0===e?40:50+2*e,o=Math.min(100,Math.max(0,r)),l=Math.min(100,Math.max(0,i)),c=`hsl(${s}, ${o}%, ${l}%)`;let g=0;const h=t.length>0?t:"X";for(let m=0;m<h.length;m++)g=h.charCodeAt(m)+(g<<5)-g,g&=g;return{color:c,size:30+Math.abs(g)%21}}
+    function getCornerRotation(d){const a=d.toUpperCase().trim();return a.startsWith("PLINTHE")?0:a.startsWith("CADRE")?0:a.startsWith("WALL PANEL")?15:a.startsWith("CIMAISE")?-10:a.startsWith("CORNIERE")?0:0}
+    function getCornerShapeClipPath(d){const a=d.toUpperCase().trim();return a.startsWith("CIMAISE")?"polygon(0 0, 100% 0, 100% 40%, 40% 40%, 40% 100%, 0 100%)":a.startsWith("PLINTHE")?"polygon(0 0, 100% 0, 100% 100%, 30% 100%, 0 70%)":a.startsWith("CADRE")?"polygon(0 0, 100% 0, 100% 100%, 0 100%)":a.startsWith("WALL PANEL")?"polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)":a.startsWith("CORNIERE")?"polygon(0 0, 30% 0, 30% 70%, 0 100%)":"polygon(0 0, 100% 0, 0 100%)"}
+    function getLastSuffixNumber(d){const a=d.trim().match(/-(\d+)$/);return a?parseInt(a[1],10):null}
+    function updateLabelQR(d, a, length){
+        const e = d.querySelector(".qr-code-container");
+        if(!e) return;
+        e.innerHTML = "";
+        
+        // 1. استخراج البيانات من داخل الملصق نفسه
+        // استخراج المرجع وتنظيفه
+        let fullRef = d.querySelector(".ref").textContent || "";
+        fullRef = fullRef.replace("Référence :", "").trim();
+
+        // استخراج عدد القطع وتنظيفه
+        let pcsVal = d.querySelector(".pcs").textContent || "0";
+        pcsVal = pcsVal.replace("PCS/Carton:", "").trim();
+
+        // 2. تحليل الاسم لفصل "النوع" عن "الرقم"
+        let category = "";
+        let number = fullRef;
+        
+        // البحث عن نمط: (نص) ثم مسافة ثم (أرقام-أرقام)
+        const match = fullRef.match(/^(.*?)\s+(\d+[-]\d+)$/);
+        if (match) {
+            category = match[1].trim().toUpperCase(); // مثال: CIMAISE
+            number = match[2].trim(); // مثال: 200-1
+        } else {
+            // محاولة بديلة في حال كان التنسيق مختلفاً
+            const parts = fullRef.split(' ');
+            if(parts.length > 1) {
+                number = parts.pop();
+                category = parts.join(' ').toUpperCase();
+            }
+        }
+
+        // 3. جدول الاختصارات حسب طلبك
+        const typeMap = {
+            "WALL PANEL": "WP",
+            "CIMAISE":    "CI",
+            "CORNICHE":   "COR",
+            "CORNIERE":   "COR",
+            "PLINTHE":    "PL",
+            "CADRE":      "CA"
+        };
+
+        // تحديد الرمز المختصر
+        const typeCode = typeMap[category] || category.substring(0, 2).toUpperCase();
+
+        // 4. تكوين النص النهائي للكود
+        // الصيغة: CRT-{TYPE}-{NUMBER}-{LENGTH}-{PCS}
+        const i = `CRT-${typeCode}-${number}-${length}-${pcsVal}-ECH`;
+        
+        // 5. تعيين العنوان ليظهر عند مرور الماوس (هام جداً)
+        e.title = i;
+
+        const codeType = document.getElementById('codeTypeSelect').value;
+
+        if (codeType === 'qrcode') {
+            new QRCode(e, {
+                text: i,
+                width: 55,
+                height: 55,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.L
+            });
+        } else {
+            // Data Matrix using bwip-js
+            let canvas = document.createElement('canvas');
+            try {
+                bwipjs.toCanvas(canvas, {
+                    bcid:        'datamatrix', 
+                    text:        i,
+                    scale:       3,
+                    height:      10,
+                    includetext: false,
+                    textxalign:  'center',
+                    barcolor:    '000000',
+                });
+                let img = document.createElement('img');
+                img.src = canvas.toDataURL('image/png');
+                e.appendChild(img);
+            } catch (err) {
+                console.error('Error generating Data Matrix:', err);
+            }
+        }
+        
+        // الإبقاء على الكود العشوائي القصير أسفل الصورة كمعرف فريد للصفحة
+        const o = document.createElement("div");
+        o.className = "qr-unique-id";
+        o.textContent = a;
+        e.appendChild(o);
+    }
+    function updateLabels(){
+        const d=refInput.value.trim();
+        if(refData.hasOwnProperty(d)){
+            pcsInput.value=refData[d].pcs,
+            widthInput.value=refData[d].width,
+            thicknessInput.value=refData[d].thickness
+        };
+        const a=pcsInput.value.trim(),
+              e=lengthInput.value.trim(),
+              t=widthInput.value.trim(),
+              n=thicknessInput.value.trim(),
+              s=document.getElementById("toggleQrCode").checked,
+              r=document.getElementById("toggleShapes").checked,
+              i=document.getElementById("toggleSameCodeInRow").checked,
+              {color:o,size:l}=getStyleAttributesFromRef(d),
+              c=getCornerRotation(d),
+              g=getCornerShapeClipPath(d),
+              h=getLastSuffixNumber(d),
+              m=h>0?h:0,
+              p=Math.max(20,l*(h>=2?.8:1));
+        let u="";
+        document.querySelectorAll("#editor-page .label-box").forEach((f,b)=>{
+            const y=f.querySelector(".ref");
+            y.dataset.manual||(y.textContent="Référence : "+(d||"N/A"));
+            const v=f.querySelector(".pcs");
+            v.dataset.manual||(v.textContent="PCS/Carton: "+(a||"N/A"));
+            const w=f.querySelector(".dim");
+            // *** تم التعديل هنا لعرض الطول فقط ***
+            w.dataset.manual||(w.textContent=`Dimensions: ${e||"N/A"} mm`); 
+            f.classList.toggle("hide-qr",!s),
+            f.classList.toggle("hide-shapes",!r);
+            const L=f.querySelector(".corner-shape");
+            L&&(L.style.backgroundColor=o,L.style.width=`${p}px`,L.style.height=`${p}px`,L.style.transform=`rotate(${c}deg)`,L.style.clipPath=g);
+            const C=f.querySelector(".bubble-container");
+            if(C){
+                C.innerHTML="";
+                for(let I=0;I<m;I++){
+                    const k=document.createElement("div");
+                    k.classList.add("bubble"),
+                    k.style.backgroundColor=o,
+                    C.appendChild(k)
+                }
+            }
+            let q;
+            i?b%2==0?(u=generateShortUniqueId(),q=u):q=u:q=generateShortUniqueId(),
+            updateLabelQR(f,q,e)
+        })
+    }
+    function generateAndPrintPages(d) {
+    const a = document.getElementById("print-output");
+    a.innerHTML = "";
+    const e = document.getElementById("a4"),
+          t = document.getElementById("toggleSameCodeInRow").checked,
+          n = lengthInput.value.trim();
+
+    for (let s = 0; s < d; s++) {
+        const r = e.cloneNode(!0);
+        r.removeAttribute("id");
+        const i = r.querySelector(".header-text");
+        i && i.removeAttribute("contenteditable");
+        let o = "";
+        const l = r.querySelectorAll(".label-box");
+        l.forEach((c, g) => {
+            const h = document.querySelectorAll("#editor-page .label-box")[g];
+            h && (c.innerHTML = h.innerHTML, c.className = h.className);
+            let m;
+            t ? g % 2 == 0 ? (o = generateShortUniqueId(), m = o) : m = o : m = generateShortUniqueId(), updateLabelQR(c, m, n)
+        }), a.appendChild(r)
+    }
+
+    // === التعديل هنا: تأخير الطباعة لمدة 500 ميلي ثانية ===
+    setTimeout(() => {
+        window.print();
+    }, 500);
+}
+    function showPrintDialog(){document.getElementById("printModal").classList.add("visible")}
+    function hidePrintDialog(){document.getElementById("printModal").classList.remove("visible")}
+    function showBatchPrintModal() {
+        const batchRefOptions = document.getElementById('batchRefOptions');
+        batchRefOptions.innerHTML = '';
+        sortedRefKeys.forEach(ref => {
+            batchRefOptions.innerHTML += `<option value="${ref}"></option>`;
+        });
+        document.getElementById('batchRefInput').value = '';
+        renderBatchTable();
+        document.getElementById('batchPrintModal').classList.add('visible');
+    }
+    function hideBatchPrintModal() {
+        document.getElementById('batchPrintModal').classList.remove('visible');
+    }
+    function renderBatchTable() {
+        const batchTableBody = document.querySelector('#batchPrintTable tbody');
+        batchTableBody.innerHTML = '';
+        if (printBatch.length === 0) {
+            batchTableBody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 20px;">لم تتم إضافة أي عناصر بعد.</td></tr>';
+            return;
+        }
+        let selectOptionsHTML = sortedRefKeys.map(ref => `<option value="${ref}">${ref}</option>`).join('');
+        printBatch.forEach((item, index) => {
+            const row = document.createElement('tr');
+            row.dataset.index = index;
+            row.draggable = true;
+            if (item.type === 'model') {
+                row.className = 'model-row';
+                let currentOriginalRefSelect = `<select class="inline-select" data-field="originalRef">`;
+                sortedRefKeys.forEach(ref => {
+                    currentOriginalRefSelect += `<option value="${ref}" ${ref === item.originalRef ? 'selected' : ''}>${ref}</option>`;
+                });
+                currentOriginalRefSelect += `</select>`;
+                row.innerHTML = `
+                    <td class="drag-handle"><span class="material-icons">drag_indicator</span></td>
+                    <td><input type="number" value="${item.pages}" class="inline-input pages-input" data-field="pages"></td>
+                    <td>${currentOriginalRefSelect}</td>
+                    <td><input type="text" value="${item.displayText.header}" class="inline-input" data-field="header"></td>
+                    <td><input type="text" value="${item.displayText.ref}" class="inline-input" data-field="ref"></td>
+                    <td><input type="text" value="${item.displayText.pcs}" class="inline-input" data-field="pcs"></td>
+                    <td><input type="text" value="${item.displayText.dim}" class="inline-input" data-field="dim"></td>
+                    <td class="actions-cell"><button class="remove-btn"><span class="material-icons">delete</span></button></td>
+                `;
+            } else { // type === 'blank'
+                row.className = 'blank-page-row';
+                row.innerHTML = `
+                    <td class="drag-handle"><span class="material-icons">drag_indicator</span></td>
+                    <td colspan="6"><input type="text" placeholder="اكتب محتوى الصفحة الفارغة هنا..." value="${item.blankPageText}" class="inline-input" data-field="blankPageText"></td>
+                    <td class="actions-cell"><button class="remove-btn"><span class="material-icons">delete</span></button></td>
+                `;
+            }
+            batchTableBody.appendChild(row);
+        });
+    }
+    function addModelToBatch() {
+        const selectedRef = document.getElementById('batchRefInput').value;
+        if (!selectedRef || !refData[selectedRef]) {
+            alert('الرجاء اختيار نوع صحيح من القائمة.');
+            return;
+        }
+        const data = refData[selectedRef];
+        const newItem = {
+            type: 'model',
+            originalRef: selectedRef,
+            pages: 1,
+            displayText: {
+                header: document.querySelector('.header-text').textContent.trim(),
+                ref: `Référence : ${selectedRef}`,
+                pcs: `PCS/Carton: ${data.pcs}`,
+                // *** تم التعديل هنا لاستخدام الطول فقط ***
+                dim: `Dimensions: ${document.getElementById('lengthInput').value} mm`,
+            }
+        };
+        printBatch.push(newItem);
+        document.getElementById('batchRefInput').value = '';
+        renderBatchTable();
+    }
+    function addBlankPageToBatch() {
+        printBatch.push({ type: 'blank', blankPageText: '' });
+        renderBatchTable();
+    }
+    async function generateAndPrintBatch() {
+    if (printBatch.length === 0) {
+        alert('الرجاء إضافة عنصر واحد على الأقل للطباعة.');
+        return;
+    }
+    const printOutput = document.getElementById('print-output');
+    printOutput.innerHTML = '';
+    const templatePage = document.getElementById('a4');
+    const lengthValue = document.getElementById('lengthInput').value.trim();
+    const showQr = document.getElementById('toggleQrCode').checked;
+    const showShapes = document.getElementById('toggleShapes').checked;
+
+    for (const item of printBatch) {
+        if (item.type === 'model') {
+            const { color, size } = getStyleAttributesFromRef(item.originalRef);
+            const rotation = getCornerRotation(item.originalRef);
+            const clipPath = getCornerShapeClipPath(item.originalRef);
+            const suffix = getLastSuffixNumber(item.originalRef);
+            const bubbleCount = suffix > 0 ? suffix : 0;
+            const shapeSize = Math.max(20, size * (suffix >= 2 ? 0.8 : 1));
+
+            for (let i = 0; i < item.pages; i++) {
+                const pageClone = templatePage.cloneNode(true);
+                pageClone.removeAttribute('id');
+                pageClone.querySelector('.header-text').textContent = item.displayText.header;
+                let rowCode = "";
+                pageClone.querySelectorAll('.label-box').forEach((label, index) => {
+                    label.querySelector('.ref').textContent = item.displayText.ref;
+                    label.querySelector('.pcs').textContent = item.displayText.pcs;
+                    label.querySelector('.dim').textContent = item.displayText.dim;
+                    label.classList.toggle('hide-qr', !showQr);
+                    label.classList.toggle('hide-shapes', !showShapes);
+                    const cornerShape = label.querySelector('.corner-shape');
+                    if (cornerShape) {
+                        cornerShape.style.backgroundColor = color;
+                        cornerShape.style.width = `${shapeSize}px`;
+                        cornerShape.style.height = `${shapeSize}px`;
+                        cornerShape.style.transform = `rotate(${rotation}deg)`;
+                        cornerShape.style.clipPath = clipPath;
+                    }
+                    const bubbleContainer = label.querySelector('.bubble-container');
+                    if (bubbleContainer) {
+                        bubbleContainer.innerHTML = '';
+                        for (let j = 0; j < bubbleCount; j++) {
+                            const bubble = document.createElement('div');
+                            bubble.className = 'bubble';
+                            bubble.style.backgroundColor = color;
+                            bubbleContainer.appendChild(bubble);
+                        }
+                    }
+                    if (index % 2 === 0) {
+                        rowCode = generateShortUniqueId();
+                    }
+                    updateLabelQR(label, rowCode, lengthValue);
+                });
+                printOutput.appendChild(pageClone);
+            }
+        } else if (item.type === 'blank') {
+            const blankPage = document.createElement('div');
+            blankPage.className = 'a4-container blank-page-content';
+            if (item.blankPageText) {
+                const p = document.createElement('p');
+                p.style.whiteSpace = 'pre-wrap';
+                p.textContent = item.blankPageText;
+                blankPage.appendChild(p);
+            }
+            printOutput.appendChild(blankPage);
+        }
+    }
+
+    // === التعديل هنا: تأخير الطباعة وتفريغ القائمة ===
+    setTimeout(() => {
+        window.print();
+        hideBatchPrintModal();
+    }, 500);
+}
+    document.addEventListener('DOMContentLoaded', () => {
+        const grid = document.querySelector('#editor-page .labels-grid');
+        const template = grid.querySelector('.label-box');
+        grid.innerHTML = '';
+        for (let i = 0; i < 8; i++) {
+            const clone = template.cloneNode(true);
+            grid.appendChild(clone);
+            const refEl = clone.querySelector('.ref');
+            refEl.setAttribute('contenteditable', 'true');
+            refEl.addEventListener('input', () => { refEl.dataset.manual = 'true'; updateLabels(); });
+            ['.pcs', '.dim'].forEach(selector => {
+                const el = clone.querySelector(selector);
+                el.setAttribute('contenteditable', 'true');
+                el.addEventListener('input', () => el.dataset.manual = 'true');
+            });
+        }
+        const hideContainer = document.getElementById('hide-container');
+        for (let i = 0; i < 8; i++) {
+            const lbl = document.createElement('label');
+            lbl.innerHTML = `<input type="checkbox" class="hide-checkbox" data-index="${i}" /> ${i + 1}`;
+            hideContainer.appendChild(lbl);
+        }
+        document.querySelectorAll('.hide-checkbox').forEach(cb => {
+            cb.addEventListener('change', function() {
+                document.querySelectorAll('#editor-page .label-box')[this.dataset.index].classList.toggle('hidden', this.checked);
+            });
+        });
+        document.querySelectorAll('.sidebar-button').forEach(attachButtonListeners);
+        refInput.addEventListener('input', () => {
+            document.querySelectorAll('.label-box [data-manual]').forEach(el => el.removeAttribute('data-manual'));
+            updateLabels();
+            updateURLHash();
+        });
+        document.querySelector('.header-text').addEventListener('input', updateURLHash);
+        pcsInput.addEventListener('input', updateLabels);
+        lengthInput.addEventListener('input', updateLabels);
+        widthInput.addEventListener('input', updateLabels);
+        thicknessInput.addEventListener('input', updateLabels);
+        document.getElementById('toggleQrCode').addEventListener('change', updateLabels);
+        document.getElementById('toggleShapes').addEventListener('change', updateLabels);
+        document.getElementById('toggleSameCodeInRow').addEventListener('change', updateLabels);
+        document.getElementById('codeTypeSelect').addEventListener('change', updateLabels);
+        document.getElementById('confirmPrintBtn').addEventListener('click', () => {
+            const pageCount = parseInt(document.getElementById('pageCountInput').value, 10);
+            if (pageCount > 0) {
+                hidePrintDialog();
+                generateAndPrintPages(pageCount);
+            } else {
+                console.error('الرجاء إدخال عدد صحيح أكبر من صفر.');
+            }
+        });
+        document.getElementById('cancelPrintBtn').addEventListener('click', hidePrintDialog);
+        headerLogoFileInput.addEventListener('change', () => {
+            const headerLogo = document.getElementById('headerLogo');
+            if (headerLogoFileInput.files && headerLogoFileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    headerLogo.src = e.target.result;
+                    headerLogo.style.display = 'block';
+                }
+                reader.readAsDataURL(headerLogoFileInput.files[0]);
+            } else {
+                headerLogo.src = '';
+                headerLogo.style.display = 'none';
+            }
+        });
+        const headerLogo = document.getElementById('headerLogo');
+        const tempContainer = document.getElementById('temp-render-container');
+        window.addEventListener('paste', async (e) => {
+            const activeElement = document.activeElement;
+            const isEditable = activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.isContentEditable;
+            if (isEditable) { return; }
+            e.preventDefault();
+            const clipboardItems = Array.from(e.clipboardData.items || []);
+            const clipboardFiles = Array.from(e.clipboardData.files || []);
+            const displayImage = (src) => { headerLogo.src = src; headerLogo.style.display = 'block'; headerLogoFileInput.value = ''; };
+            const imageFile = clipboardFiles.find(file => file.type.startsWith('image/'));
+            if (imageFile) { displayImage(URL.createObjectURL(imageFile)); return; }
+            const imageItem = clipboardItems.find(item => item.type.startsWith('image/'));
+            if (imageItem) { const blob = imageItem.getAsFile(); displayImage(URL.createObjectURL(blob)); return; }
+            const htmlItem = clipboardItems.find(item => item.type === 'text/html');
+            if (htmlItem) {
+                htmlItem.getAsString(async (html) => {
+                    tempContainer.innerHTML = html;
+                    try { const canvas = await html2canvas(tempContainer, { useCORS: true, backgroundColor: '#ffffff' }); displayImage(canvas.toDataURL('image/png')); }
+                    catch (err) { console.error('Error rendering HTML:', err); }
+                    finally { tempContainer.innerHTML = ''; }
+                });
+                return;
+            }
+        });
+        const toggleControlsBtn = document.getElementById('toggle-controls-btn');
+        const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
+        const controlsPanel = document.querySelector('.controls');
+        const sidebarPanel = document.querySelector('.sidebar');
+        const mobileOverlay = document.getElementById('mobile-overlay');
+        function closeSidebars() {
+            controlsPanel.classList.remove('open');
+            sidebarPanel.classList.remove('open');
+            mobileOverlay.classList.remove('visible');
+        }
+        toggleControlsBtn.addEventListener('click', (e) => { e.stopPropagation(); closeSidebars(); controlsPanel.classList.add('open'); mobileOverlay.classList.add('visible'); });
+        toggleSidebarBtn.addEventListener('click', (e) => { e.stopPropagation(); closeSidebars(); sidebarPanel.classList.add('open'); mobileOverlay.classList.add('visible'); });
+        mobileOverlay.addEventListener('click', closeSidebars);
+        function scaleA4Page() {
+            const a4Container = document.getElementById('a4');
+            const a4Viewport = document.querySelector('.a4-viewport');
+            if (window.innerWidth <= 1024) {
+                const availableWidth = a4Viewport.offsetWidth;
+                const a4PixelWidth = 794;
+                if (availableWidth < a4PixelWidth) {
+                    const scale = availableWidth / a4PixelWidth;
+                    a4Container.style.transform = `scale(${scale})`;
+                    a4Viewport.style.height = `${a4Container.getBoundingClientRect().height}px`;
+                } else { a4Container.style.transform = 'none'; a4Viewport.style.height = 'auto'; }
+            } else { a4Container.style.transform = 'none'; a4Viewport.style.height = 'auto'; }
+        }
+        const modelModal = document.getElementById('modelModal');
+        const modelModalTitle = document.getElementById('modelModalTitle');
+        const originalModelRefInput = document.getElementById('originalModelRef');
+        const modelCategorySelect = document.getElementById('modelCategory');
+        const modelNumberInput = document.getElementById('modelNumber');
+        const modelPcsInput = document.getElementById('modelPcs');
+        const modelWidthInput = document.getElementById('modelWidth');
+        const modelThicknessInput = document.getElementById('modelThickness');
+        const modelIsNewCheckbox = document.getElementById('modelIsNew');
+        function openModelModal(mode, ref = null) {
+            originalModelRefInput.value = '';
+            if (mode === 'add') {
+                modelModalTitle.textContent = 'إضافة مودال جديد';
+                modelModal.dataset.mode = 'add';
+                modelCategorySelect.value = 'CIMAISE';
+                modelNumberInput.value = '';
+                modelPcsInput.value = '';
+                modelWidthInput.value = '';
+                modelThicknessInput.value = '';
+                modelIsNewCheckbox.checked = false;
+            } else if (mode === 'edit' && ref && refData[ref]) {
+                modelModalTitle.textContent = 'تعديل المودال';
+                modelModal.dataset.mode = 'edit';
+                originalModelRefInput.value = ref;
+                const data = refData[ref];
+                const button = document.querySelector(`.sidebar-button[data-ref="${ref}"]`);
+                const categories = ['CIMAISE', 'PLINTHE', 'Wall-panel', 'CORNICHE', 'CORNIERE', 'CADRE'];
+                let category = 'CIMAISE';
+                let number = ref;
+                for (const cat of categories) {
+                    const prefix = cat === 'Wall-panel' ? 'Wall panel ' : cat.toUpperCase() + ' ';
+                    if (ref.toUpperCase().startsWith(prefix)) {
+                        category = cat;
+                        number = ref.substring(cat.length).trim();
+                        break;
+                    }
+                }
+                modelCategorySelect.value = category;
+                modelNumberInput.value = number;
+                modelPcsInput.value = data.pcs;
+                modelWidthInput.value = data.width;
+                modelThicknessInput.value = data.thickness;
+                modelIsNewCheckbox.checked = button ? button.classList.contains('is-new') : false;
+            } else {
+                return;
+            }
+            modelModal.classList.add('visible');
+        }
+        function hideModelModal() {
+            modelModal.classList.remove('visible');
+        }
+        function saveModel() {
+            const mode = modelModal.dataset.mode;
+            const originalRef = originalModelRefInput.value;
+            const category = modelCategorySelect.value;
+            const number = modelNumberInput.value.trim();
+            const pcs = modelPcsInput.value.trim();
+            const width = modelWidthInput.value.trim();
+            const thickness = modelThicknessInput.value.trim();
+            const isNew = modelIsNewCheckbox.checked;
+            if (!number || !pcs || !width || !thickness) {
+                alert('الرجاء تعبئة جميع الحقول.');
+                return;
+            }
+            const newFullRef = `${category} ${number}`;
+            if (mode === 'add' && refData[newFullRef]) {
+                alert('هذا المودال موجود بالفعل.');
+                return;
+            }
+            if (mode === 'edit' && originalRef && originalRef !== newFullRef) {
+                delete refData[originalRef];
+            }
+            refData[newFullRef] = { pcs, width, thickness };
+            if (mode === 'edit' && originalRef) {
+                const button = document.querySelector(`.sidebar-button[data-ref="${originalRef}"]`);
+                if (button) {
+                    const buttonToMove = button.cloneNode(true);
+                    button.remove();
+                    buttonToMove.className = `sidebar-button ${category}`;
+                    if (isNew) buttonToMove.classList.add('is-new');
+                    buttonToMove.dataset.ref = newFullRef;
+                    attachButtonListeners(buttonToMove);
+                    insertButtonInOrder(buttonToMove, category);
+                }
+                const option = document.querySelector(`#refOptions option[value="${originalRef}"]`);
+                if (option) {
+                    option.value = newFullRef;
+                }
+            } else {
+                const newButton = document.createElement('button');
+                newButton.className = `sidebar-button ${category}`;
+                if (isNew) newButton.classList.add('is-new');
+                newButton.dataset.ref = newFullRef;
+                attachButtonListeners(newButton);
+                insertButtonInOrder(newButton, category);
+                const newOption = document.createElement('option');
+                newOption.value = newFullRef;
+                document.getElementById('refOptions').appendChild(newOption);
+            }
+            sortedRefKeys = Object.keys(refData).sort();
+            hideModelModal();
+        }
+        function insertButtonInOrder(newButton, category) {
+            const sidebar = document.querySelector('.sidebar');
+            const categoryOrder = ['CIMAISE', 'PLINTHE', 'Wall-panel', 'CORNICHE', 'CORNIERE', 'CADRE'];
+            const sameCategoryButtons = document.querySelectorAll(`.sidebar-button.${category}`);
+            if (sameCategoryButtons.length > 0) {
+                const lastButton = sameCategoryButtons[sameCategoryButtons.length - 1];
+                lastButton.after(newButton);
+                return;
+            }
+            const categoryIndex = categoryOrder.indexOf(category);
+            for (let i = categoryIndex - 1; i >= 0; i--) {
+                const prevCategory = categoryOrder[i];
+                const precedingButtons = document.querySelectorAll(`.sidebar-button.${prevCategory}`);
+                if (precedingButtons.length > 0) {
+                    const lastButton = precedingButtons[precedingButtons.length - 1];
+                    lastButton.after(newButton);
+                    return;
+                }
+            }
+             for (let i = categoryIndex + 1; i < categoryOrder.length; i++) {
+                const nextCategory = categoryOrder[i];
+                const nextGroupButton = document.querySelector(`.sidebar-button.${nextCategory}`);
+                if (nextGroupButton) {
+                    nextGroupButton.before(newButton);
+                    return;
+                }
+            }
+            sidebar.appendChild(newButton);
+        }
+        function attachButtonListeners(button) {
+          button.addEventListener('click', (e) => {
+              if(e.target.classList.contains('edit-icon')) return;
+              document.querySelectorAll('.label-box [data-manual]').forEach(el => el.removeAttribute('data-manual'));
+              refInput.value = button.dataset.ref;
+              updateLabels();
+              updateURLHash();
+          });
+            const editIcon = document.createElement('span');
+            editIcon.className = 'material-icons edit-icon';
+            editIcon.textContent = 'edit';
+            editIcon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openModelModal('edit', button.dataset.ref);
+            });
+            button.appendChild(editIcon);
+        }
+        
+        
+        // --- منطق زر الرجوع ---
+    const backBtn = document.getElementById('go-back-btn');
+    if (backBtn) {
+        backBtn.addEventListener('click', () => {
+            // التحقق مما إذا كان هناك صفحات سابقة في السجل
+            // ملاحظة: history.length غالباً ما يكون 1 في علامة تبويب جديدة، لذا نتحقق إذا كان أكبر من 1
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                console.log("No history to go back to.");
+                // اختياري: يمكنك توجيهه للصفحة الرئيسية إذا لم يكن هناك سجل
+                // window.location.href = 'index.html'; 
+            }
+        });
+    }
+        function exportApplication() {
+            const updatedDataString = JSON.stringify(refData, null, 4);
+            const newRefDataDeclaration = `const refData = ${updatedDataString};`;
+            const currentHtml = document.documentElement.outerHTML;
+            const regex = /const refData = \{[^;]*\};/;
+            const updatedHtml = currentHtml.replace(regex, newRefDataDeclaration);
+            const blob = new Blob([updatedHtml], { type: 'text/html' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            const now = new Date();
+            const timestamp = `${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}`;
+            a.download = `etiquette-app-${timestamp}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+        }
+        document.getElementById('addModelBtn').addEventListener('click', () => openModelModal('add'));
+        document.getElementById('cancelModelBtn').addEventListener('click', hideModelModal);
+        document.getElementById('saveModelBtn').addEventListener('click', saveModel);
+        document.getElementById('exportAppBtn').addEventListener('click', exportApplication);
+        loadModelFromURL();
+        window.addEventListener('resize', scaleA4Page);
+        updateLabels();
+        scaleA4Page();
+        const batchTableBody = document.querySelector('#batchPrintTable tbody');
+        document.getElementById('batchPrintBtn').addEventListener('click', showBatchPrintModal);
+        document.getElementById('cancelBatchPrintBtn').addEventListener('click', hideBatchPrintModal);
+        document.getElementById('addToBatchBtn').addEventListener('click', addModelToBatch);
+        document.getElementById('addBlankPageBtn').addEventListener('click', addBlankPageToBatch);
+        document.getElementById('confirmBatchPrintBtn').addEventListener('click', generateAndPrintBatch);
+        batchTableBody.addEventListener('input', (e) => {
+            const target = e.target;
+            if (target.matches('.inline-input, .inline-select')) {
+                const row = target.closest('tr');
+                if (!row) return;
+                const index = parseInt(row.dataset.index, 10);
+                const field = target.dataset.field;
+                const item = printBatch[index];
+                if (!item) return;
+                if (item.type === 'model') {
+                    if (field === 'pages') {
+                        item.pages = parseInt(target.value, 10) || 1;
+                    } else if (field === 'originalRef') {
+                        const newRef = target.value;
+                        const newData = refData[newRef];
+                        if (newData) {
+                            item.originalRef = newRef;
+                            item.displayText.ref = `Référence : ${newRef}`;
+                            item.displayText.pcs = `PCS/Carton: ${newData.pcs}`;
+                            // *** تم التعديل هنا لضمان تحديث الطول بشكل صحيح عند تغيير المرجع في الجدول ***
+                            item.displayText.dim = `Dimensions: ${document.getElementById('lengthInput').value} mm`;
+                            renderBatchTable(); // Re-render to update all related fields
+                        }
+                    } else {
+                        item.displayText[field] = target.value;
+                    }
+                } else {
+                    item[field] = target.value;
+                }
+            }
+        });
+        batchTableBody.addEventListener('click', (e) => {
+            if (e.target.closest('.remove-btn')) {
+                const row = e.target.closest('tr');
+                const index = parseInt(row.dataset.index, 10);
+                printBatch.splice(index, 1);
+                renderBatchTable();
+            }
+        });
+        let draggedIndex = null;
+        batchTableBody.addEventListener('dragstart', (e) => {
+            const row = e.target.closest('tr');
+            if(!row) return;
+            draggedIndex = parseInt(row.dataset.index, 10);
+            e.dataTransfer.effectAllowed = 'move';
+            setTimeout(() => row.classList.add('dragging'), 0);
+        });
+        batchTableBody.addEventListener('dragend', () => {
+            document.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
+            document.querySelectorAll('.drag-over-indicator').forEach(el => el.classList.remove('drag-over-indicator'));
+        });
+        batchTableBody.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const targetRow = e.target.closest('tr');
+            if (targetRow && parseInt(targetRow.dataset.index, 10) !== draggedIndex) {
+                document.querySelectorAll('.drag-over-indicator').forEach(el => el.classList.remove('drag-over-indicator'));
+                targetRow.classList.add('drag-over-indicator');
+            }
+        });
+        batchTableBody.addEventListener('drop', (e) => {
+            e.preventDefault();
+            document.querySelectorAll('.drag-over-indicator').forEach(el => el.classList.remove('drag-over-indicator'));
+            const targetRow = e.target.closest('tr');
+            if (targetRow) {
+                const targetIndex = parseInt(targetRow.dataset.index, 10);
+                if (draggedIndex !== null && draggedIndex !== targetIndex) {
+                    const [draggedItem] = printBatch.splice(draggedIndex, 1);
+                    printBatch.splice(targetIndex, 0, draggedItem);
+                    renderBatchTable();
+                }
+            }
+            draggedIndex = null;
+        });
+    });
+function loadModelFromURL() {
+    const hash = window.location.hash.substring(1).trim();
+    if (!hash) return;
+    const parts = hash.split('+');
+    const modelHash = decodeURIComponent(parts[0]);
+    const headerText = parts.length > 1 ? decodeURIComponent(parts[1]) : null;
+    if (modelHash) {
+        const baseModelMatch = modelHash.match(/^\d+-\d+/);
+        if (baseModelMatch) {
+            const baseModelNumber = baseModelMatch[0].replace(/-\d+$/, '-1');
+            const fullBaseRef = Object.keys(refData).find(key => key.endsWith(' ' + baseModelNumber));
+            if (fullBaseRef) {
+                const prefix = fullBaseRef.substring(0, fullBaseRef.lastIndexOf(' '));
+                const newFullRef = `${prefix} ${modelHash}`;
+                refInput.value = newFullRef;
+                const baseData = refData[fullBaseRef];
+                if(baseData) {
+                    pcsInput.value = baseData.pcs;
+                    widthInput.value = baseData.width;
+                    thicknessInput.value = baseData.thickness;
+                }
+            }
+        }
+    }
+    if (headerText !== null) {
+        document.querySelector('.header-text').textContent = headerText;
+    }
+    updateLabels();
+}
+function updateURLHash() {
+    const headerText = document.querySelector('.header-text').textContent.trim();
+    const refValue = refInput.value.trim();
+    if (!refValue) {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        return;
+    }
+    let modelIdentifier = refValue;
+    const categories = ['Wall panel', 'CIMAISE', 'PLINTHE', 'CORNICHE', 'CORNIERE', 'CADRE'];
+    for (const cat of categories) {
+        if (refValue.startsWith(cat + ' ')) {
+            modelIdentifier = refValue.substring(cat.length + 1);
+            break;
+        }
+    }
+    let newHash = encodeURIComponent(modelIdentifier);
+    if (headerText) {
+        newHash += `+${encodeURIComponent(headerText)}`;
+    }
+    if ('#' + newHash !== window.location.hash) {
+     history.replaceState(null, '', '#' + newHash);
+    }
+}
+</script>
+</body></html>
