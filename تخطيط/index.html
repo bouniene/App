@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enterprise APS | Advanced Scheduler</title>
+    <title>APS Scheduler | Auto-Focus Today</title>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 
     <style>
         :root {
+            /* Dark Mode (Default Vars) */
             --bg-dark: #1e1e1e;
             --bg-panel: #252526;
             --bg-header: #333333;
@@ -19,14 +20,33 @@
             --accent: #007acc;
             --danger: #d9534f;
             --success: #5cb85c;
+            --warning: #f59e0b;
             
             --color-setup: #4daafc;
-            --color-run: #4caf50;
             --color-late: #ff5252;
-            --color-grid: #3a3a3a;
+            --color-grid-line: #444;
+            --card-bg: #333;
+            --card-hover: #3a3a3a;
             
-            --time-scale: 2px; 
             --row-height: 50px;
+        }
+
+        /* Light Mode Variables applied to body */
+        body.light-mode {
+            --bg-dark: #f0f2f5;
+            --bg-panel: #ffffff;
+            --bg-header: #e9ecef;
+            --border: #cbd5e1;
+            --text-main: #475569;
+            --text-highlight: #0f172a;
+            --accent: #2563eb;
+            --danger: #ef4444;
+            --success: #10b981;
+            
+            --color-setup: #3b82f6;
+            --color-grid-line: #e2e8f0;
+            --card-bg: #ffffff;
+            --card-hover: #f1f5f9;
         }
 
         * { box-sizing: border-box; }
@@ -39,14 +59,17 @@
             height: 100vh;
             overflow: hidden;
             font-size: 13px;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         /* --- Layout --- */
         #app {
             display: grid;
-            grid-template-rows: 100px 1fr; /* Increased header height for Tabs */
+            grid-template-rows: 110px 1fr; /* Increased header height slightly to prevent clipping */
             height: 100vh;
         }
+        
+        body.resizing { cursor: col-resize !important; user-select: none; }
 
         /* --- Header --- */
         header {
@@ -56,6 +79,8 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
+            transition: background-color 0.3s;
+            overflow: visible; /* Ensure content isn't clipped */
         }
 
         .header-top {
@@ -63,6 +88,14 @@
             align-items: center;
             justify-content: space-between;
             height: 50px;
+            flex-shrink: 0;
+        }
+
+        .logo-area {
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+            min-width: 200px; /* Prevent shrinking */
         }
 
         .kpi-container { display: flex; gap: 20px; }
@@ -73,6 +106,7 @@
             border-radius: 4px;
             display: flex;
             flex-direction: column;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
         .kpi-label { font-size: 0.8em; opacity: 0.7; }
         .kpi-value { font-size: 1.2em; font-weight: bold; color: var(--text-highlight); }
@@ -84,17 +118,34 @@
             color: white;
             border: none;
             padding: 8px 16px;
-            border-radius: 3px;
+            border-radius: 4px;
             cursor: pointer;
             font-weight: 600;
             display: flex;
             align-items: center;
             gap: 5px;
+            transition: filter 0.2s, background-color 0.3s;
         }
         button:hover { filter: brightness(1.1); }
-        button.secondary { background-color: #555; }
+        button.secondary { background-color: #64748b; }
         button.danger { background-color: var(--danger); }
         button.success { background-color: var(--success); }
+        button.outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
+        button.outline:hover { background: var(--bg-panel); color: var(--text-highlight); }
+        
+        button.status-btn {
+            background: transparent; padding: 5px; font-size: 1.3em; cursor: pointer; border:none;
+        }
+        button.status-btn:hover { transform: scale(1.1); }
+
+        button.load-prev-btn {
+            position: absolute; left: 0; top: 0; bottom: 0;
+            width: 30px; z-index: 20;
+            background: rgba(0,0,0,0.5); color: white;
+            border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        button.load-prev-btn:hover { background: var(--accent); }
 
         /* --- Navigation Tabs --- */
         .nav-tabs {
@@ -108,15 +159,19 @@
             border-bottom: none;
             border-radius: 5px 5px 0 0;
             cursor: pointer;
-            color: #aaa;
+            color: var(--text-main);
+            opacity: 0.7;
             transition: all 0.2s;
         }
-        .nav-tab:hover { background: #3e3e42; color: #fff; }
+        .nav-tab:hover { opacity: 1; }
         .nav-tab.active {
             background: var(--bg-dark);
             color: var(--accent);
-            border-top: 2px solid var(--accent);
+            border-top: 3px solid var(--accent);
             font-weight: bold;
+            opacity: 1;
+            margin-bottom: -1px;
+            z-index: 10;
         }
 
         /* --- View Containers --- */
@@ -125,6 +180,8 @@
             display: flex;
             flex-direction: column;
             height: 100%;
+            background: var(--bg-dark);
+            flex: 1;
         }
 
         /* --- Gantt Chart Specifics --- */
@@ -137,7 +194,7 @@
             display: grid;
             grid-template-columns: 220px 1fr;
             overflow: hidden;
-            border-bottom: 5px solid var(--bg-dark);
+            border-bottom: 5px solid var(--border);
             height: 100%;
         }
 
@@ -146,16 +203,18 @@
             border-right: 1px solid var(--border);
             z-index: 10;
             overflow-y: auto;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
         }
 
         .resource-header {
-            height: 40px;
+            height: 50px; 
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             padding-left: 10px;
             font-weight: bold;
             background: var(--bg-header);
+            color: var(--text-highlight);
         }
 
         .resource-row {
@@ -166,6 +225,7 @@
             padding-left: 10px;
             justify-content: space-between;
             padding-right: 10px;
+            color: var(--text-highlight);
         }
 
         .timeline-area {
@@ -177,36 +237,97 @@
         .grid-background {
             position: absolute;
             top: 0; left: 0; height: 100%;
-            width: 3000px;
-            background-image: linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
-            background-size: 60px 100%;
+            background-image: linear-gradient(90deg, var(--color-grid-line) 1px, transparent 1px);
             pointer-events: none;
+            opacity: 0.3;
+        }
+        
+        .grid-days {
+             position: absolute;
+            top: 0; left: 0; height: 100%;
+            background-image: linear-gradient(90deg, var(--border) 2px, transparent 2px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* New Week Line Style */
+        .week-line {
+            position: absolute;
+            top: 0; bottom: 0;
+            width: 2px;
+            background-color: var(--success);
+            opacity: 0.5;
+            z-index: 2;
+            pointer-events: none;
+        }
+        .week-line::after {
+            content: 'SAT';
+            position: absolute;
+            top: 55px; /* Below header */
+            left: 4px;
+            font-size: 9px;
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        /* Red Line for "Now" - Adjusted to span full height */
+        .now-marker {
+            position: absolute;
+            top: 0; bottom: 0; /* Full Height */
+            width: 0;
+            border-left: 2px dashed #ff0000;
+            z-index: 60; /* Higher Z-Index */
+            pointer-events: none;
+            opacity: 0.9;
+        }
+        .now-marker::after {
+            content: 'NOW';
+            position: absolute;
+            top: 5px; 
+            left: 2px;
+            background: #ff0000;
+            color: white;
+            font-size: 9px;
+            padding: 2px 4px;
+            border-radius: 2px;
         }
 
         .time-header {
-            height: 40px;
+            height: 50px;
             position: sticky;
             top: 0;
             background: var(--bg-header);
             border-bottom: 1px solid var(--border);
             display: flex;
-            z-index: 5;
-            width: 3000px;
+            z-index: 50; /* Ensure header stays on top of bars but below modals */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            padding-left: 0; 
         }
 
         .time-marker {
-            width: 120px;
             border-right: 1px solid var(--border);
-            padding: 5px;
-            font-size: 11px;
-            color: #888;
+            padding: 0 10px;
+            font-size: 12px;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 2px;
+            overflow: hidden;
+            white-space: nowrap;
         }
+        .time-marker b { color: var(--text-highlight); font-size: 1.1em; }
+        .time-marker span { font-size: 0.85em; opacity: 0.8; }
 
         .gantt-row {
             height: var(--row-height);
-            border-bottom: 1px solid #2a2a2a;
+            border-bottom: 1px solid var(--border);
             position: relative;
-            width: 3000px;
+            transition: background 0.2s;
+        }
+        .gantt-row.drag-hover {
+            background-color: rgba(var(--accent), 0.1);
         }
 
         /* --- Operations (Bars) --- */
@@ -214,18 +335,57 @@
             position: absolute;
             height: 36px;
             top: 7px;
-            border-radius: 3px;
+            border-radius: 4px;
             cursor: grab;
             display: flex;
-            overflow: hidden;
+            overflow: visible; 
             box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
             font-size: 11px;
             user-select: none;
             transition: transform 0.1s;
+            border: 1px solid rgba(0,0,0,0.2);
         }
-        .op-bar:active { cursor: grabbing; }
-        .op-bar:hover { z-index: 100; box-shadow: 0 0 0 2px white; }
-        .op-bar.late-delivery { border: 2px solid var(--color-late); }
+        .op-bar:active { cursor: grabbing; z-index: 100; }
+        .op-bar:hover { z-index: 90; }
+        
+        .op-bar.selected {
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+            z-index: 95;
+        }
+
+        .op-bar.late-delivery { border-color: var(--color-late); box-shadow: 0 0 5px var(--color-late); }
+
+        /* --- Resize Handles --- */
+        .resize-handle {
+            position: absolute;
+            top: 0; bottom: 0;
+            width: 10px;
+            cursor: ew-resize;
+            z-index: 110;
+            transition: background 0.2s;
+        }
+        .resize-handle.left { left: 0; }
+        .resize-handle.right { right: 0; }
+        .op-bar:hover .resize-handle { background: rgba(255,255,255,0.2); }
+        .op-bar:hover .resize-handle:hover { background: rgba(255,255,255,0.6); }
+
+        /* Ghost Bar */
+        .ghost-bar {
+            position: absolute;
+            height: 36px;
+            top: 7px;
+            background: rgba(128, 128, 128, 0.3);
+            border: 2px dashed var(--text-main);
+            border-radius: 4px;
+            pointer-events: none;
+            z-index: 80;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            color: var(--text-highlight);
+            font-weight: bold;
+        }
 
         .bar-setup {
             background-color: var(--color-setup);
@@ -235,6 +395,7 @@
             color: #fff;
             min-width: 5px;
             position: relative;
+            overflow: hidden;
         }
         .bar-setup::after {
             content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
@@ -251,6 +412,8 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
         }
 
         /* --- Bottom Pane --- */
@@ -263,95 +426,74 @@
         
         .orders-grid { display: flex; gap: 10px; flex-wrap: wrap; }
         .order-card {
-            background: #333;
-            border: 1px solid #555;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
             padding: 8px;
             width: 200px;
             border-radius: 4px;
             cursor: grab;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .order-card:hover { border-color: var(--accent); }
-
-        /* --- Table View --- */
-        .table-view {
-            padding: 20px;
-            overflow: auto;
-            height: 100%;
-        }
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-        .data-table th, .data-table td {
-            text-align: left;
-            padding: 10px;
-            border-bottom: 1px solid var(--border);
-        }
-        .data-table th {
-            background-color: var(--bg-header);
-            cursor: pointer;
-            user-select: none;
-        }
-        .data-table th:hover { background-color: #444; }
-        .data-table tr:hover { background-color: #2a2a2a; }
-        .status-badge {
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.9em;
+        .order-card:hover { 
+            border-color: var(--accent); 
+            background: var(--card-hover);
+            transform: translateY(-2px);
         }
 
         /* --- Kanban View --- */
-        .kanban-view {
-            display: flex;
-            gap: 15px;
-            padding: 20px;
+        .view-container.kanban-view {
+            flex-direction: row; /* Horizontal layout for columns */
             overflow-x: auto;
-            height: 100%;
-            align-items: flex-start;
+            padding: 15px;
+            gap: 15px;
         }
         .kanban-col {
+            min-width: 300px;
             background: var(--bg-panel);
-            min-width: 280px;
-            width: 280px;
-            border-radius: 6px;
             border: 1px solid var(--border);
+            border-radius: 6px;
             display: flex;
             flex-direction: column;
+            height: 100%;
             max-height: 100%;
         }
         .kanban-header {
             padding: 10px;
             background: var(--bg-header);
             border-bottom: 1px solid var(--border);
+            border-radius: 6px 6px 0 0;
             font-weight: bold;
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            color: var(--text-highlight);
         }
         .kanban-body {
             padding: 10px;
             overflow-y: auto;
-            flex-grow: 1;
+            flex: 1;
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
         .kanban-card {
-            background: #333;
+            background: var(--card-bg);
             border: 1px solid var(--border);
-            border-left: 4px solid var(--accent);
+            border-left-width: 4px;
             padding: 10px;
             border-radius: 4px;
             cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        .kanban-card:hover { background: #3a3a3a; }
+        .kanban-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        }
 
         /* --- Modals --- */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.7);
-            z-index: 999;
+            background: rgba(0,0,0,0.7); z-index: 999;
             display: flex; align-items: center; justify-content: center;
         }
         .modal-window {
@@ -361,38 +503,61 @@
             border-radius: 6px;
             padding: 20px;
             box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            color: var(--text-main);
+            position: relative;
         }
-        .modal-header { font-size: 1.2em; font-weight: bold; margin-bottom: 15px; color: var(--text-highlight); display: flex; justify-content: space-between; }
+        .modal-header { 
+            font-size: 1.2em; font-weight: bold; margin-bottom: 15px; 
+            color: var(--text-highlight); display: flex; justify-content: space-between; align-items: center; 
+        }
         .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; color: #aaa; }
+        .form-group label { display: block; margin-bottom: 5px; color: var(--text-main); opacity: 0.8; }
         .form-control {
             width: 100%; padding: 8px;
-            background: #111; border: 1px solid var(--border);
-            color: white; border-radius: 3px;
+            background: var(--bg-dark); border: 1px solid var(--border);
+            color: var(--text-highlight); border-radius: 3px;
         }
+        
         textarea.form-control { resize: vertical; min-height: 60px; }
         .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
         
-        .resource-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 8px; background: #333; margin-bottom: 5px; border-radius: 3px;
+        .drag-tooltip {
+            position: fixed;
+            background: var(--accent);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            pointer-events: none;
+            z-index: 1000;
+            transform: translate(10px, 10px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
+        
+        .close-icon-btn {
+            background: transparent; border: none; color: var(--text-main); cursor: pointer; font-size: 1.2em;
+        }
+        .close-icon-btn:hover { color: var(--danger); }
     </style>
 </head>
 <body>
 
 <div id="app">
+    <div v-if="dragState.isDragging" class="drag-tooltip" :style="{top: dragState.y + 'px', left: dragState.x + 'px'}">
+        {{ formatTimeTooltip(dragState.hoverTime) }}
+    </div>
+
     <header>
         <div class="header-top">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <i class="fa-solid fa-industry fa-lg"></i>
-                <h3>APS Scheduler <span style="font-weight:normal; opacity:0.6; font-size:0.8em;">Pro</span></h3>
+            <div class="logo-area">
+                <i class="fa-solid fa-industry fa-lg" :style="{color: 'var(--accent)'}"></i>
+                <h3 style="color:var(--text-highlight); margin:0;">APS Scheduler <span style="font-weight:normal; opacity:0.6; font-size:0.8em;">Auto-Focus</span></h3>
             </div>
 
             <div class="kpi-container">
                 <div class="kpi-card">
                     <span class="kpi-label">OTIF</span>
-                    <span class="kpi-value" :style="{color: kpis.otif > 90 ? '#4caf50' : '#ff5252'}">{{ kpis.otif }}%</span>
+                    <span class="kpi-value" :style="{color: kpis.otif > 90 ? 'var(--success)' : 'var(--danger)'}">{{ kpis.otif }}%</span>
                 </div>
                 <div class="kpi-card">
                     <span class="kpi-label">Utilization</span>
@@ -401,22 +566,28 @@
             </div>
 
             <div class="btn-group">
-                <button class="secondary" @click="openResourcesModal"><i class="fa-solid fa-gear"></i> Settings</button>
+                <button class="outline" @click="scrollToToday(true)" title="Go to Current Time">
+                    <i class="fa-solid fa-calendar-day"></i> Today
+                </button>
+                <button class="outline" @click="toggleTheme" title="Toggle Theme">
+                    <i class="fa-solid" :class="isDarkMode ? 'fa-sun' : 'fa-moon'"></i>
+                </button>
+                <button class="secondary" @click="openResourcesModal"><i class="fa-solid fa-gear"></i> Setup</button>
                 <button class="secondary" @click="resetData"><i class="fa-solid fa-rotate-left"></i> Reset</button>
                 <button @click="autoSchedule"><i class="fa-solid fa-magic"></i> Auto-Schedule</button>
-                <button class="success" @click="openAddOrderModal"><i class="fa-solid fa-plus"></i> Add Order</button>
+                <button class="success" @click="openAddOrderModal"><i class="fa-solid fa-plus"></i> Order</button>
             </div>
         </div>
 
         <div class="nav-tabs">
             <div class="nav-tab" :class="{active: currentView === 'gantt'}" @click="currentView = 'gantt'">
-                <i class="fa-solid fa-chart-gantt"></i> Gantt Chart
+                <i class="fa-solid fa-chart-gantt"></i> Gantt
             </div>
             <div class="nav-tab" :class="{active: currentView === 'table'}" @click="currentView = 'table'">
-                <i class="fa-solid fa-table"></i> Production List
+                <i class="fa-solid fa-table"></i> List
             </div>
             <div class="nav-tab" :class="{active: currentView === 'kanban'}" @click="currentView = 'kanban'">
-                <i class="fa-solid fa-border-all"></i> Kanban Board
+                <i class="fa-solid fa-border-all"></i> Kanban
             </div>
         </div>
     </header>
@@ -424,26 +595,54 @@
     <div v-if="currentView === 'gantt'" class="view-container gantt-wrapper">
         <div class="gantt-chart-area">
             <div class="resource-list">
-                <div class="resource-header">Resources</div>
+                <div class="resource-header">Machines</div>
                 <div class="resource-row" v-for="res in resources" :key="res.id">
                     <div>
-                        <div>{{ res.name }}</div>
+                        <div style="font-weight:bold;">{{ res.name }}</div>
                         <div style="font-size:0.8em; opacity:0.6;">{{ res.group }}</div>
                     </div>
-                    <i class="fa-solid fa-circle" :style="{color: '#4caf50', fontSize:'8px'}"></i>
+                    
+                    <button class="status-btn" @click="toggleResourceStatus(res)" :title="res.status">
+                        <i class="fa-solid" 
+                           :class="{
+                               'fa-circle-check': res.status === 'running',
+                               'fa-circle-xmark': res.status === 'stopped',
+                               'fa-screwdriver-wrench': res.status === 'maintenance'
+                           }"
+                           :style="{ color: getStatusColor(res.status) }">
+                        </i>
+                    </button>
                 </div>
             </div>
 
-            <div class="timeline-area" ref="timelineScroll">
-                <div class="time-header">
-                    <div class="time-marker" v-for="h in 48" :key="h">
-                        {{ formatTimeHeader(h-1) }}
+            <div class="timeline-area" ref="timelineScroll" @scroll="onScroll">
+                <div class="time-header" :style="{width: totalWidth + 'px'}">
+                    
+                    <div class="time-marker" 
+                         v-for="d in config.scheduleDays" 
+                         :key="d"
+                         :style="{width: dayWidth + 'px'}">
+                        <b>{{ getDayName(d-1) }}</b>
+                        <span>{{ getDayFullDate(d-1) }}</span>
                     </div>
                 </div>
 
-                <div class="grid-background"></div>
+                <div class="grid-background" 
+                     :style="{width: totalWidth + 'px', backgroundSize: hourWidth + 'px 100%'}">
+                </div>
+                <div class="grid-days" 
+                     :style="{width: totalWidth + 'px', backgroundSize: dayWidth + 'px 100%'}">
+                </div>
 
-                <svg style="position:absolute; top:0; left:0; width:3000px; height:100%; pointer-events:none; z-index:2;">
+                <div class="week-line"
+                     v-for="(wPos, idx) in weekLines"
+                     :key="'wk-'+idx"
+                     :style="{left: wPos + 'px'}">
+                </div>
+
+                <div class="now-marker" :style="{left: nowMarkerPos + 'px'}"></div>
+
+                <svg :style="{position:'absolute', top:0, left:0, width: totalWidth + 'px', height:'100%', pointerEvents:'none', zIndex:2}">
                     <path v-for="line in peggingLines" :d="line.path" 
                           style="fill:none; stroke:#ffd700; stroke-width:2; stroke-dasharray:5,5; opacity:0.8;"></path>
                 </svg>
@@ -451,24 +650,44 @@
                 <div class="gantt-row" 
                      v-for="res in resources" 
                      :key="res.id"
-                     @dragover.prevent
+                     :style="{width: totalWidth + 'px'}"
+                     :class="{'drag-hover': dragState.hoverResId === res.id}"
+                     @dragover.prevent="onDragOver($event, res.id)"
+                     @dragleave="onDragLeave"
                      @drop="onDrop($event, res.id)">
                     
+                    <div v-if="dragState.isDragging && dragState.hoverResId === res.id" 
+                         class="ghost-bar"
+                         :style="{
+                             left: (dragState.ghostStartTime * config.pixelsPerMin) + 'px', 
+                             width: ((dragState.ghostDuration) * config.pixelsPerMin) + 'px'
+                         }">
+                         {{ formatTimeTooltip(dragState.ghostStartTime) }}
+                    </div>
+
                     <div v-for="op in getOpsForResource(res.id)" 
                          :key="op.id"
                          class="op-bar"
                          draggable="true"
-                         :class="{'late-delivery': isLate(op)}"
+                         :class="{'late-delivery': isLate(op), 'selected': selectedOpId === op.id}"
                          :style="getBarStyle(op)"
                          @dragstart="startDrag($event, op)"
-                         @click="openEditOpModal(op)">
+                         @click.stop="selectOp(op)"
+                         @dblclick.stop="openEditOpModal(op)"
+                         :title="op.product + ' (' + op.qty + ')'">
                         
-                        <div class="bar-setup" v-if="op.setupDuration > 0" :style="{width: (op.setupDuration * pixelsPerMin) + 'px'}">
-                            <i class="fa-solid fa-wrench" style="font-size:0.8em;"></i>
+                        <div class="resize-handle left" @mousedown.stop="startResize($event, op, 'left')"></div>
+                        <div class="resize-handle right" @mousedown.stop="startResize($event, op, 'right')"></div>
+
+                        <div class="bar-setup" v-if="op.setupDuration > 0" :style="{width: (op.setupDuration * config.pixelsPerMin) + 'px'}">
+                            <i class="fa-solid fa-cogs" style="font-size:0.8em;"></i>
                         </div>
                         <div class="bar-run" :style="{backgroundColor: op.color}">
                             <strong>{{ op.orderId }}</strong>
-                            <span>{{ op.product }}</span>
+                            <div style="display:flex; justify-content:space-between; width:100%;">
+                                <span>{{ op.product }}</span>
+                                <span style="font-size:0.9em; opacity:0.9;">{{ op.qty }}kg</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -476,9 +695,9 @@
         </div>
 
         <div class="orders-panel">
-            <h4 style="margin-top:0; margin-bottom:10px; display:flex; justify-content:space-between;">
-                <span>Unscheduled Operations ({{ unscheduledOps.length }})</span>
-                <span style="font-size:0.8em; opacity:0.6;">Drag card to chart to schedule</span>
+            <h4 style="margin-top:0; margin-bottom:10px; display:flex; justify-content:space-between; color:var(--text-highlight);">
+                <span>Unscheduled Orders ({{ unscheduledOps.length }})</span>
+                <span style="font-size:0.8em; opacity:0.6;">Drag to Extruder Row</span>
             </h4>
             <div class="orders-grid">
                 <div class="order-card" 
@@ -486,19 +705,19 @@
                      :key="op.id"
                      draggable="true"
                      @dragstart="startDrag($event, op)"
-                     @click="openEditOpModal(op)">
+                     @dblclick="openEditOpModal(op)">
                      
                     <div style="display:flex; justify-content:space-between;">
-                        <strong>{{ op.orderId }}</strong>
-                        <span style="background:#444; padding:2px 4px; border-radius:3px; font-size:10px;">{{ op.product }}</span>
+                        <strong style="color:var(--text-highlight);">{{ op.orderId }}</strong>
+                        <span style="background:var(--bg-dark); color:var(--text-main); padding:2px 4px; border-radius:3px; font-size:10px;">{{ op.product }}</span>
                     </div>
-                    <div style="font-size:0.9em; margin-top:5px; color:#aaa;">
-                        Run: {{ op.runDuration }}m | Due: {{ formatTime(op.dueDate) }}
+                    <div style="font-size:0.9em; margin-top:5px; color:var(--text-main);">
+                        Run: {{ op.runDuration }}m | Qty: {{ op.qty }}<br>
+                        Due: <span :style="{color: isLateUnscheduled(op) ? 'var(--danger)' : 'inherit'}">{{ formatAlgerianDateTime(op.dueDate) }}</span>
                     </div>
                     <div style="margin-top:5px; font-size:0.8em; color: var(--accent);">
-                        <i class="fa-solid fa-arrow-up"></i> Needs: {{ op.requiredGroup }}
+                        <i class="fa-solid fa-arrow-up"></i> {{ op.requiredGroup }}
                     </div>
-                    <div v-if="op.batchGroup" style="font-size:0.8em; color:#888;">Group: {{op.batchGroup}}</div>
                 </div>
             </div>
         </div>
@@ -514,28 +733,24 @@
                     <th @click="sort('status')">Status <i class="fa-solid fa-sort"></i></th>
                     <th @click="sort('resourceId')">Machine <i class="fa-solid fa-sort"></i></th>
                     <th @click="sort('qty')">Qty <i class="fa-solid fa-sort"></i></th>
-                    <th @click="sort('dueDate')">Due Date <i class="fa-solid fa-sort"></i></th>
-                    <th>Notes</th>
+                    <th @click="sort('dueDate')">Due Date (DZ) <i class="fa-solid fa-sort"></i></th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <tr v-for="op in sortedOps" :key="op.id">
                     <td><strong>{{ op.orderId }}</strong></td>
-                    <td>{{ op.product }} <span style="font-size:0.8em; color:#888;">({{op.color}})</span></td>
+                    <td>{{ op.product }} <span style="font-size:0.8em; opacity:0.7;">({{op.color}})</span></td>
                     <td>{{ op.batchGroup || '-' }}</td>
                     <td>
                         <span class="status-badge" 
-                              :style="{background: op.status === 'scheduled' ? 'var(--success)' : '#555'}">
+                              :style="{background: op.status === 'scheduled' ? 'var(--success)' : '#777'}">
                             {{ op.status }}
                         </span>
                     </td>
                     <td>{{ getResourceName(op.resourceId) }}</td>
                     <td>{{ op.qty }}</td>
-                    <td>{{ formatTimeDay(op.dueDate) }}</td>
-                    <td style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                        {{ op.notes }}
-                    </td>
+                    <td>{{ formatAlgerianDateTime(op.dueDate) }}</td>
                     <td>
                         <button class="secondary" style="padding:2px 6px; font-size:0.9em;" @click="openEditOpModal(op)">
                             <i class="fa-solid fa-pen"></i>
@@ -557,54 +772,69 @@
                      :key="op.id" 
                      class="kanban-card"
                      :style="{borderLeftColor: op.color}"
-                     @click="openEditOpModal(op)">
+                     @dblclick="openEditOpModal(op)">
                      
-                    <div style="font-weight:bold; display:flex; justify-content:space-between;">
+                    <div style="font-weight:bold; display:flex; justify-content:space-between; color:var(--text-highlight);">
                         <span>{{ op.orderId }}</span>
-                        <span style="font-size:0.8em; opacity:0.7;">{{ formatTime(op.startTime) }}</span>
+                        <span style="font-size:0.8em; opacity:0.7;">{{ formatTimeTooltip(op.startTime) }}</span>
                     </div>
-                    <div>{{ op.product }}</div>
-                    <div style="font-size:0.8em; margin-top:5px; display:flex; gap:10px;">
-                        <span><i class="fa-solid fa-cubes"></i> {{ op.qty }}</span>
+                    <div style="color:var(--text-main);">{{ op.product }}</div>
+                    <div style="font-size:0.8em; margin-top:5px; display:flex; gap:10px; color:var(--text-main);">
+                        <span><i class="fa-solid fa-cubes"></i> {{ op.qty }} kg</span>
                         <span v-if="op.batchGroup"><i class="fa-solid fa-layer-group"></i> {{ op.batchGroup }}</span>
-                    </div>
-                    <div v-if="op.notes" style="margin-top:5px; font-size:0.8em; font-style:italic; color:#aaa; border-top:1px solid #444; padding-top:2px;">
-                        "{{ op.notes }}"
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="modal-overlay" v-if="modals.resources">
+    <div class="modal-overlay" v-if="modals.resources" @click.self="modals.resources = false">
         <div class="modal-window">
             <div class="modal-header">
-                <span>Manage Resources</span>
-                <button class="secondary" @click="modals.resources = false">X</button>
+                <span>Setup & Configuration</span>
+                <button class="close-icon-btn" @click="modals.resources = false"><i class="fa-solid fa-times"></i></button>
             </div>
-            <div style="max-height: 300px; overflow-y:auto; margin-bottom:15px;">
+            
+            <div style="background:var(--bg-dark); padding:10px; border-radius:4px; margin-bottom:15px; border:1px solid var(--border);">
+                <h6 style="margin:0 0 10px 0; color:var(--text-highlight);">Schedule Settings</h6>
+                <div class="form-group">
+                    <label>Visible Days (Buffer)</label>
+                    <input type="number" v-model.number="config.scheduleDays" min="1" max="100" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Zoom Level (Pixels per Minute)</label>
+                    <input type="range" v-model.number="config.pixelsPerMin" min="0.05" max="1" step="0.05" style="width:100%">
+                    <div style="text-align:right; font-size:0.8em; color:var(--text-highlight);">{{ config.pixelsPerMin }}x</div>
+                </div>
+            </div>
+
+            <hr style="border-color:var(--border);">
+            
+            <h6 style="margin:10px 0; color:var(--text-highlight);">Machine Resources</h6>
+            <div style="max-height: 200px; overflow-y:auto; margin-bottom:15px;">
                 <div class="resource-item" v-for="(res, idx) in resources" :key="res.id">
                     <span><b>{{ res.name }}</b> ({{ res.group }})</span>
                     <button class="danger" style="padding:4px 8px;" @click="removeResource(idx)"> <i class="fa-solid fa-trash"></i></button>
                 </div>
             </div>
-            <hr style="border-color:#444;">
-            <h5>Add New Resource</h5>
+            
             <div style="display:flex; gap:10px;">
-                <input v-model="newRes.name" placeholder="Name (e.g. PS 100)" class="form-control">
-                <select v-model="newRes.group" class="form-control">
+                <input v-model="newRes.name" placeholder="Name (e.g. EX-05)" class="form-control">
+                <select v-model="newRes.group" class="form-control" style="width:120px;">
                     <option value="Extrusion">Extrusion</option>
                     <option value="Assembly">Assembly</option>
-                    <option value="Packaging">Packaging</option>
                 </select>
                 <button class="success" @click="addResource">Add</button>
             </div>
         </div>
     </div>
 
-    <div class="modal-overlay" v-if="modals.addOrder">
+    <div class="modal-overlay" v-if="modals.addOrder" @click.self="modals.addOrder = false">
         <div class="modal-window">
-            <div class="modal-header">Add New Order</div>
+            <div class="modal-header">
+                <span>Add Production Order</span>
+                <button class="close-icon-btn" @click="modals.addOrder = false"><i class="fa-solid fa-times"></i></button>
+            </div>
             
             <div class="form-group">
                 <label>Order ID</label>
@@ -622,33 +852,37 @@
                         <option value="White">White</option>
                         <option value="Red">Red</option>
                         <option value="Blue">Blue</option>
+                        <option value="#eab308">Yellow</option>
+                        <option value="#a855f7">Purple</option>
                     </select>
                 </div>
                 <div class="form-group" style="flex:1;">
-                    <label>Qty</label>
+                    <label>Qty (kg)</label>
                     <input type="number" v-model="newOrder.qty" class="form-control">
                 </div>
             </div>
+
             <div class="form-group">
-                <label>Batch / Group (Optional)</label>
-                <input v-model="newOrder.batchGroup" placeholder="e.g. Batch-001" class="form-control">
+                <label>Run Duration</label>
+                <div style="display:flex; gap:10px;">
+                    <input type="number" v-model.number="modalState.customDurationVal" class="form-control" placeholder="Value">
+                    <select v-model="modalState.customDurationUnit" class="form-control" style="width:120px;">
+                        <option value="minutes">Minutes</option>
+                        <option value="hours">Hours</option>
+                        <option value="days">Days</option>
+                    </select>
+                </div>
+                <small style="color:#888;">Result: {{ calculatedNewDuration }} minutes</small>
             </div>
+
             <div class="form-group">
-                <label>Due Time (Minutes from 8:00)</label>
-                <input type="number" v-model="newOrder.due" class="form-control">
-                <small style="color:#666">Example: 1440 = Day 2 08:00</small>
+                <label>Due (Hours from now)</label>
+                <input type="number" v-model="newOrder.dueHours" class="form-control" placeholder="e.g. 24 for tomorrow">
             </div>
+
             <div class="form-group">
                 <label>Notes</label>
-                <textarea v-model="newOrder.notes" class="form-control" placeholder="Production instructions..."></textarea>
-            </div>
-            <div class="form-group">
-                <label>Routing (Select Stages)</label>
-                <div style="display:flex; gap:10px;">
-                    <label><input type="checkbox" v-model="newOrder.ops" value="Extrusion"> Extrusion</label>
-                    <label><input type="checkbox" v-model="newOrder.ops" value="Assembly"> Assembly</label>
-                    <label><input type="checkbox" v-model="newOrder.ops" value="Packaging"> Packaging</label>
-                </div>
+                <textarea v-model="newOrder.notes" class="form-control" placeholder="Add notes..."></textarea>
             </div>
 
             <div class="modal-footer">
@@ -658,11 +892,14 @@
         </div>
     </div>
 
-    <div class="modal-overlay" v-if="modals.editOp && selectedOp">
+    <div class="modal-overlay" v-if="modals.editOp && selectedOp" @click.self="modals.editOp = false">
         <div class="modal-window">
             <div class="modal-header">
-                <span>Edit Operation: {{ selectedOp.orderId }}</span>
-                <span style="font-size:0.6em; background:var(--accent); padding:3px 6px; border-radius:4px;">{{ selectedOp.status }}</span>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span>Edit Job: {{ selectedOp.orderId }}</span>
+                    <span style="font-size:0.6em; background:var(--accent); padding:3px 6px; border-radius:4px; color:white;">{{ selectedOp.status }}</span>
+                </div>
+                <button class="close-icon-btn" @click="modals.editOp = false"><i class="fa-solid fa-times"></i></button>
             </div>
             
             <div class="form-group">
@@ -670,19 +907,35 @@
                 <input v-model="selectedOp.product" class="form-control">
             </div>
 
-            <div class="form-group">
-                <label>Required Group</label>
-                <input v-model="selectedOp.requiredGroup" disabled class="form-control" style="opacity:0.5;">
-            </div>
-            
-            <div class="form-group">
-                <label>Quantity</label>
-                <input type="number" v-model.number="selectedOp.qty" @change="updateRunTime(selectedOp)" class="form-control">
+            <div style="display:flex; gap:10px;">
+                <div class="form-group" style="flex:1;">
+                    <label>Color (Job Color)</label>
+                    <select v-model="selectedOp.color" class="form-control">
+                        <option value="Black">Black</option>
+                        <option value="White">White</option>
+                        <option value="Red">Red</option>
+                        <option value="Blue">Blue</option>
+                        <option value="#eab308">Yellow</option>
+                        <option value="#a855f7">Purple</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Quantity (kg)</label>
+                    <input type="number" v-model.number="selectedOp.qty" class="form-control">
+                </div>
             </div>
 
             <div class="form-group">
-                <label>Run Duration (Minutes)</label>
-                <input type="number" v-model.number="selectedOp.runDuration" class="form-control">
+                <label>Run Duration</label>
+                <div style="display:flex; gap:10px;">
+                    <input type="number" v-model.number="modalState.editDurationVal" class="form-control">
+                    <select v-model="modalState.editDurationUnit" class="form-control" style="width:120px;">
+                        <option value="minutes">Minutes</option>
+                        <option value="hours">Hours</option>
+                        <option value="days">Days</option>
+                    </select>
+                </div>
+                <small style="color:#888;">Update: {{ calculatedEditDuration }} minutes</small>
             </div>
 
             <div class="form-group">
@@ -692,13 +945,13 @@
 
             <div class="form-group">
                 <label>Notes</label>
-                <textarea v-model="selectedOp.notes" class="form-control"></textarea>
+                <textarea v-model="selectedOp.notes" class="form-control" placeholder="Production notes..."></textarea>
             </div>
 
             <div class="modal-footer">
                 <button class="danger" @click="deleteOp">Delete</button>
                 <button v-if="selectedOp.status === 'scheduled'" class="secondary" @click="unscheduleOp">Unschedule</button>
-                <button class="success" @click="modals.editOp = false">Save & Close</button>
+                <button class="success" @click="saveEditOp">Save & Close</button>
             </div>
         </div>
     </div>
@@ -706,77 +959,135 @@
 </div>
 
 <script>
-    const { createApp, reactive, computed, ref, onMounted } = Vue;
+    const { createApp, reactive, computed, ref, onMounted, watch, nextTick } = Vue;
 
     createApp({
         setup() {
-            // --- CONSTANTS ---
-            const pixelsPerMin = ref(2); 
-            const ROW_HEIGHT = 50;
+            // --- CONFIGURATION ---
+            const config = reactive({
+                pixelsPerMin: 0.1, 
+                scheduleDays: 40 // Initial buffer
+            });
             
+            const ROW_HEIGHT = 50;
+            const isDarkMode = ref(false);
+            const baseDate = ref(new Date()); 
+            const timelineScroll = ref(null);
+            const nowMarkerPos = ref(0);
+
+            // Watcher for Body Class
+            watch(isDarkMode, (newVal) => {
+                if(!newVal) document.body.classList.add('light-mode');
+                else document.body.classList.remove('light-mode');
+            }, { immediate: true });
+
             // --- VIEW STATE ---
-            const currentView = ref('gantt'); // 'gantt', 'table', 'kanban'
+            const currentView = ref('gantt'); 
             const sortKey = ref('orderId');
             const sortAsc = ref(true);
-
+            const selectedOpId = ref(null);
+            
             // --- DATA STATE ---
-            // Updated Machine names as requested
             const resources = reactive([
-                { id: 'r1', name: 'PS 100', group: 'Extrusion' },
-                { id: 'r2', name: 'PS 75', group: 'Extrusion' },
-                { id: 'r3', name: 'PS 75-1', group: 'Extrusion' },
-                { id: 'r4', name: 'Assembly Line 1', group: 'Assembly' },
-                { id: 'r5', name: 'Pack & Ship', group: 'Packaging' }
+                { id: 'm1', name: 'PS 100', group: 'Extrusion', status: 'running' },
+                { id: 'm2', name: 'pS 75', group: 'Extrusion', status: 'running' },
+                { id: 'm3', name: 'PS 75-1', group: 'Extrusion', status: 'running' },
             ]);
 
             const scheduledOps = reactive([]);
             const unscheduledOps = reactive([]);
 
             // Modals State
-            const modals = reactive({
-                resources: false,
-                addOrder: false,
-                editOp: false
+            const modals = reactive({ resources: false, addOrder: false, editOp: false });
+            const newRes = reactive({ name: '', group: 'Extrusion' });
+            
+            const modalState = reactive({
+                customDurationVal: 8,
+                customDurationUnit: 'hours',
+                editDurationVal: 0,
+                editDurationUnit: 'minutes'
             });
 
-            // Forms Data
-            const newRes = reactive({ name: '', group: 'Extrusion' });
-            // Added notes and batchGroup to newOrder
-            const newOrder = reactive({ id: 'ORD-NEW', product: 'Box-A1', color: 'Black', qty: 100, due: 600, ops: ['Extrusion'], notes: '', batchGroup: '' });
+            const newOrder = reactive({ 
+                id: 'ORD-NEW', 
+                product: 'Pipe-110', 
+                color: 'Black', 
+                qty: 500, 
+                dueHours: 48, 
+                ops: ['Extrusion'], 
+                notes: '', 
+                batchGroup: ''
+            });
+            
             const selectedOp = ref(null);
-            const draggingOp = ref(null);
+
+            // --- DRAG & DROP STATE ---
+            const dragState = reactive({
+                isDragging: false,
+                op: null,
+                x: 0,
+                y: 0,
+                hoverTime: 0,
+                hoverResId: null,
+                ghostStartTime: 0,
+                ghostDuration: 0,
+                dragOffset: 0
+            });
+
+            // --- RESIZE STATE ---
+            const resizeState = reactive({
+                isResizing: false,
+                op: null,
+                side: null, // 'left' or 'right'
+                startX: 0,
+                initialStart: 0,
+                initialDur: 0
+            });
 
             // Matrix Setup
             const setupMatrix = {
-                'Black': { 'Black': 0, 'White': 60, 'Red': 30, 'Blue': 30 },
-                'White': { 'Black': 45, 'White': 0, 'Red': 30, 'Blue': 30 },
-                'Red':   { 'Black': 30, 'White': 30, 'Red': 0, 'Blue': 30 },
-                'Blue':  { 'Black': 30, 'White': 30, 'Red': 30, 'Blue': 0 }
+                'Black': { 'Black': 0, 'White': 120, 'Red': 60, 'Blue': 60 },
+                'White': { 'Black': 60, 'White': 0, 'Red': 60, 'Blue': 60 },
+                'Red':   { 'Black': 60, 'White': 60, 'Red': 0, 'Blue': 60 },
+                'Blue':  { 'Black': 60, 'White': 60, 'Red': 60, 'Blue': 0 }
             };
 
             // --- INITIALIZATION ---
             const initData = () => {
                 scheduledOps.length = 0;
                 unscheduledOps.length = 0;
-                // Add some initial orders with new structure
-                createOrder('ORD-101', 'PS-Container', 'Black', 500, 600, ['Extrusion', 'Assembly'], '', 'Batch-A');
-                createOrder('ORD-102', 'Lid-Standard', 'White', 300, 1500, ['Extrusion', 'Assembly'], 'Check quality', 'Batch-A');
-                createOrder('ORD-103', 'Gear-Box',     'Red',    1000, 800, ['Extrusion', 'Packaging'], '', 'Batch-B');
+                
+                // IMPORTANT: Start baseDate 15 days in the PAST so "Today" is in the middle
+                const today = new Date();
+                baseDate.value = new Date(today.getTime() - (15 * 24 * 60 * 60000));
+
+                createOrder('ORD-101', 'HDPE Pipe 50mm', 'Black', 1000, 48, ['Extrusion'], 1440); // 1 Day
+                createOrder('ORD-102', 'PVC Tube', 'White', 500, 24, ['Extrusion'], 480); // 8 Hours
+                createOrder('ORD-103', 'Profile A', 'Red', 800, 72, ['Extrusion'], 2880); // 2 Days
+                
+                // Start Timer for Red Line
+                setInterval(updateNowMarker, 60000); // Update every minute
+                updateNowMarker();
             };
 
-            const createOrder = (id, prod, color, qty, due, route, notes = '', batchGroup = '') => {
+            const createOrder = (id, prod, color, qty, dueHours, route, durationMins = null, notes = '', batchGroup = '') => {
+                const today = new Date(); // Due date relative to now
+                const dueMinutesFromBase = ((today.getTime() + (dueHours*60*60000)) - baseDate.value.getTime()) / 60000;
+                
+                const calcDuration = durationMins || Math.ceil(qty * 0.5); 
+
                 route.forEach((stage, idx) => {
                     unscheduledOps.push({
-                        id: `${id}-${idx}-${Date.now()}`,
+                        id: `${id}-${idx}-${Date.now()}-${Math.random()}`,
                         orderId: id,
                         product: prod,
                         color: color,
                         qty: qty,
                         stageIndex: idx,
                         requiredGroup: stage,
-                        runDuration: Math.ceil(qty * 0.2),
+                        runDuration: calcDuration,
                         setupDuration: 0,
-                        dueDate: due,
+                        dueDate: dueMinutesFromBase, 
                         startTime: 0,
                         resourceId: null,
                         status: 'unscheduled',
@@ -786,9 +1097,176 @@
                 });
             };
 
-            onMounted(initData);
+            onMounted(async () => {
+                initData();
+                
+                // WAIT for DOM
+                await nextTick();
+                
+                // ATTEMPT 1: Immediate Jump
+                scrollToToday(false);
+                
+                // ATTEMPT 2: Delayed Correction (Force centering after painting)
+                setTimeout(() => {
+                    scrollToToday(true);
+                }, 500);
+            });
 
-            // --- LOGIC: CALCULATION ---
+            // --- RED LINE MARKER LOGIC ---
+            const updateNowMarker = () => {
+                const now = new Date();
+                const diffMins = (now.getTime() - baseDate.value.getTime()) / 60000;
+                nowMarkerPos.value = diffMins * config.pixelsPerMin;
+            };
+            
+            // Re-calculate when zoom changes
+            watch(() => config.pixelsPerMin, updateNowMarker);
+
+            const scrollToToday = (smooth = true) => {
+                updateNowMarker(); // Ensure pos is fresh
+                if(timelineScroll.value) {
+                    const screenCenter = timelineScroll.value.clientWidth / 2;
+                    const scrollTarget = nowMarkerPos.value - screenCenter;
+                    timelineScroll.value.scrollTo({
+                        left: scrollTarget > 0 ? scrollTarget : 0,
+                        behavior: smooth ? 'smooth' : 'auto'
+                    });
+                }
+            };
+
+            // --- MACHINE STATUS LOGIC ---
+            const toggleResourceStatus = (res) => {
+                const states = ['running', 'stopped', 'maintenance'];
+                const currentIndex = states.indexOf(res.status);
+                const nextIndex = (currentIndex + 1) % states.length;
+                res.status = states[nextIndex];
+            };
+
+            const getStatusColor = (status) => {
+                switch(status) {
+                    case 'running': return 'var(--success)';
+                    case 'stopped': return 'var(--danger)';
+                    case 'maintenance': return 'var(--warning)';
+                    default: return 'gray';
+                }
+            };
+
+            // --- INFINITE SCROLL LOGIC (BIDIRECTIONAL) ---
+            const onScroll = (e) => {
+                const el = e.target;
+                const scrollRight = el.scrollLeft + el.clientWidth;
+                
+                // Forward (Right)
+                if (scrollRight >= el.scrollWidth - 100) {
+                    config.scheduleDays += 7;
+                }
+
+                // Backward (Left) - Infinite Past
+                if (el.scrollLeft < 100) {
+                    loadPreviousWeek();
+                }
+            };
+
+            const loadPreviousWeek = () => {
+                const minsInWeek = 7 * 24 * 60;
+                // Shift Base Date Back
+                baseDate.value = new Date(baseDate.value.getTime() - (minsInWeek * 60000));
+                
+                // Add buffer days to config so width increases
+                config.scheduleDays += 7;
+
+                // Shift all existing ops FORWARD because 0-point moved back
+                scheduledOps.forEach(op => {
+                    op.startTime += minsInWeek;
+                    if(op.dueDate) op.dueDate += minsInWeek;
+                });
+                
+                // Also shift unscheduled ops due dates
+                unscheduledOps.forEach(op => {
+                      if(op.dueDate) op.dueDate += minsInWeek;
+                });
+
+                // Adjust Scroll Position to prevent jump
+                if(timelineScroll.value) {
+                    const pixelShift = minsInWeek * config.pixelsPerMin;
+                    timelineScroll.value.scrollLeft += pixelShift;
+                }
+                
+                updateNowMarker();
+            };
+
+            // --- HELPER: CORRECT X POSITION ---
+            const getXInTimeline = (clientX) => {
+                if (!timelineScroll.value) return 0;
+                const container = timelineScroll.value;
+                const rect = container.getBoundingClientRect();
+                const scrollLeft = container.scrollLeft;
+                return (clientX - rect.left) + scrollLeft; 
+            };
+
+            // --- GENERAL HELPERS ---
+            const getAlgerianDateObj = (minutesToAdd) => {
+                const d = new Date(baseDate.value.getTime() + minutesToAdd * 60000);
+                return d;
+            };
+
+            const formatAlgerianDateTime = (minutesToAdd) => {
+                const date = getAlgerianDateObj(minutesToAdd);
+                return new Intl.DateTimeFormat('fr-DZ', {
+                    timeZone: 'Africa/Algiers',
+                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                }).format(date);
+            };
+
+            const getDayName = (dayIndex) => {
+                const date = getAlgerianDateObj(dayIndex * 24 * 60);
+                return new Intl.DateTimeFormat('fr-DZ', {
+                    timeZone: 'Africa/Algiers',
+                    weekday: 'short'
+                }).format(date);
+            };
+            
+            // Check if day is Saturday for styling
+            const isSaturday = (dayIndex) => {
+                const date = getAlgerianDateObj(dayIndex * 24 * 60);
+                return date.getDay() === 6; // 6 is Saturday
+            };
+
+            const getDayFullDate = (dayIndex) => {
+                const date = getAlgerianDateObj(dayIndex * 24 * 60);
+                return new Intl.DateTimeFormat('fr-DZ', {
+                    timeZone: 'Africa/Algiers',
+                    day: 'numeric', month: 'numeric'
+                }).format(date);
+            };
+
+            const formatTimeTooltip = (minutes) => formatAlgerianDateTime(minutes);
+
+            const totalWidth = computed(() => config.scheduleDays * 24 * 60 * config.pixelsPerMin);
+            const dayWidth = computed(() => 24 * 60 * config.pixelsPerMin);
+            const hourWidth = computed(() => 60 * config.pixelsPerMin);
+            
+            // Compute lines for Saturdays
+            const weekLines = computed(() => {
+                const lines = [];
+                for(let i=0; i<config.scheduleDays; i++) {
+                    if(isSaturday(i)) {
+                        lines.push(i * 24 * 60 * config.pixelsPerMin);
+                    }
+                }
+                return lines;
+            });
+
+            // --- DURATION CALCS ---
+            const convertToMins = (val, unit) => {
+                if(unit === 'days') return val * 1440;
+                if(unit === 'hours') return val * 60;
+                return val;
+            };
+
+            const calculatedNewDuration = computed(() => convertToMins(modalState.customDurationVal, modalState.customDurationUnit));
+            const calculatedEditDuration = computed(() => convertToMins(modalState.editDurationVal, modalState.editDurationUnit));
+
             const calculateSetup = (op, resId, startTime) => {
                 const sorted = scheduledOps
                     .filter(o => o.resourceId === resId && o.id !== op.id)
@@ -800,9 +1278,9 @@
                     else break;
                 }
 
-                if(!prev) return 15; // Startup
+                if(!prev) return 30;
                 const map = setupMatrix[prev.color];
-                return (map && map[op.color] !== undefined) ? map[op.color] : 15;
+                return (map && map[op.color] !== undefined) ? map[op.color] : 30;
             };
 
             const hasCollision = (op, start, resId) => {
@@ -815,95 +1293,136 @@
                 });
             };
 
-            // --- ACTIONS: RESOURCES ---
-            const openResourcesModal = () => modals.resources = true;
-            const addResource = () => {
-                if(!newRes.name) return;
-                resources.push({ 
-                    id: `r-${Date.now()}`, 
-                    name: newRes.name, 
-                    group: newRes.group 
-                });
-                newRes.name = '';
-            };
-            const removeResource = (idx) => {
-                const res = resources[idx];
-                const toRemove = scheduledOps.filter(o => o.resourceId === res.id);
-                toRemove.forEach(o => {
-                    o.resourceId = null;
-                    o.startTime = 0;
-                    o.setupDuration = 0;
-                    o.status = 'unscheduled';
-                    unscheduledOps.push(o);
-                });
-                for (let i = scheduledOps.length - 1; i >= 0; i--) {
-                    if (scheduledOps[i].resourceId === res.id) scheduledOps.splice(i, 1);
-                }
-                resources.splice(idx, 1);
+            // --- CLICK / SELECT LOGIC ---
+            const selectOp = (op) => {
+                selectedOpId.value = op.id;
             };
 
-            // --- ACTIONS: ORDERS ---
-            const openAddOrderModal = () => modals.addOrder = true;
-            const saveNewOrder = () => {
-                createOrder(newOrder.id, newOrder.product, newOrder.color, newOrder.qty, newOrder.due, newOrder.ops, newOrder.notes, newOrder.batchGroup);
-                modals.addOrder = false;
-            };
-            
-            const openEditOpModal = (op) => {
-                selectedOp.value = op;
-                modals.editOp = true;
-            };
-
-            const updateRunTime = (op) => {
-                op.runDuration = Math.ceil(op.qty * 0.2);
-            };
-
-            const unscheduleOp = () => {
-                const idx = scheduledOps.indexOf(selectedOp.value);
-                if(idx > -1) {
-                    const op = scheduledOps.splice(idx, 1)[0];
-                    op.status = 'unscheduled';
-                    op.startTime = 0;
-                    op.resourceId = null;
-                    op.setupDuration = 0;
-                    unscheduledOps.push(op);
-                    modals.editOp = false;
-                }
-            };
-
-            const deleteOp = () => {
-                let idx = scheduledOps.indexOf(selectedOp.value);
-                if(idx > -1) scheduledOps.splice(idx, 1);
+            // --- RESIZE LOGIC (WITH MAGNETIC SNAP) ---
+            const startResize = (e, op, side) => {
+                resizeState.isResizing = true;
+                resizeState.op = op;
+                resizeState.side = side;
+                resizeState.startX = e.clientX;
+                resizeState.initialStart = op.startTime;
+                resizeState.initialDur = op.runDuration;
                 
-                idx = unscheduledOps.indexOf(selectedOp.value);
-                if(idx > -1) unscheduledOps.splice(idx, 1);
+                document.body.classList.add('resizing');
+                window.addEventListener('mousemove', handleResize);
+                window.addEventListener('mouseup', stopResize);
+            };
+
+            const handleResize = (e) => {
+                if (!resizeState.isResizing) return;
                 
-                modals.editOp = false;
+                const dx = e.clientX - resizeState.startX;
+                const dt = dx / config.pixelsPerMin; 
+                const SNAP_THRESHOLD_MINS = 60; // 1 Hour Threshold for snapping
+                const DAY_MINS = 1440;
+
+                if (resizeState.side === 'right') {
+                    let newDur = resizeState.initialDur + dt;
+                    if (newDur < 15) newDur = 15; 
+                    
+                    // Magnetic Snap Logic for End Time
+                    const potentialEnd = resizeState.initialStart + resizeState.op.setupDuration + newDur;
+                    const remainder = potentialEnd % DAY_MINS;
+                    
+                    // Snap to end of day if close
+                    if (remainder < SNAP_THRESHOLD_MINS || remainder > (DAY_MINS - SNAP_THRESHOLD_MINS)) {
+                         const snappedEnd = Math.round(potentialEnd / DAY_MINS) * DAY_MINS;
+                         newDur = snappedEnd - (resizeState.initialStart + resizeState.op.setupDuration);
+                         if (newDur < 15) newDur = 15; // Re-check min duration
+                    }
+
+                    resizeState.op.runDuration = Math.round(newDur);
+                } else {
+                    let newStart = resizeState.initialStart + dt;
+                    let newDur = resizeState.initialDur - dt;
+                    
+                    // Magnetic Snap Logic for Start Time
+                    const remainder = newStart % DAY_MINS;
+                    if (remainder < SNAP_THRESHOLD_MINS || remainder > (DAY_MINS - SNAP_THRESHOLD_MINS)) {
+                        const snappedStart = Math.round(newStart / DAY_MINS) * DAY_MINS;
+                        const diff = snappedStart - newStart;
+                        newStart = snappedStart;
+                        newDur = newDur - diff;
+                    }
+
+                    if (newDur >= 15 && newStart >= 0) {
+                        resizeState.op.startTime = Math.round(newStart);
+                        resizeState.op.runDuration = Math.round(newDur);
+                    }
+                }
+            };
+
+            const stopResize = () => {
+                resizeState.isResizing = false;
+                resizeState.op = null;
+                document.body.classList.remove('resizing');
+                window.removeEventListener('mousemove', handleResize);
+                window.removeEventListener('mouseup', stopResize);
             };
 
             // --- DRAG & DROP ENGINE ---
             const startDrag = (e, op) => {
-                draggingOp.value = op;
-                e.dataTransfer.effectAllowed = 'move'; 
+                if (resizeState.isResizing) {
+                    e.preventDefault();
+                    return;
+                }
+                selectOp(op); 
+
+                const rect = e.currentTarget.getBoundingClientRect();
+                const offsetXPixels = e.clientX - rect.left;
+                dragState.dragOffset = offsetXPixels / config.pixelsPerMin; 
+
+                dragState.isDragging = true;
+                dragState.op = op;
+                dragState.ghostDuration = op.runDuration + (op.setupDuration || 30);
+                e.dataTransfer.effectAllowed = 'move';
                 e.dataTransfer.dropEffect = 'move';
                 e.dataTransfer.setData('text/plain', JSON.stringify(op));
             };
 
+            const onDragOver = (e, resId) => {
+                const xPos = getXInTimeline(e.clientX);
+                
+                dragState.x = e.clientX;
+                dragState.y = e.clientY;
+                dragState.hoverResId = resId;
+                
+                let rawMins = xPos / config.pixelsPerMin;
+                let startMins = rawMins - dragState.dragOffset;
+                
+                let snappedMins = Math.round(startMins / 15) * 15;
+                if(snappedMins < 0) snappedMins = 0;
+
+                dragState.hoverTime = snappedMins;
+                dragState.ghostStartTime = snappedMins;
+
+                if(dragState.op) {
+                      const estimatedSetup = calculateSetup(dragState.op, resId, snappedMins);
+                      dragState.ghostDuration = dragState.op.runDuration + estimatedSetup;
+                }
+            };
+
+            const onDragLeave = () => {};
+
             const onDrop = (e, resId) => {
-                const op = draggingOp.value;
+                const op = dragState.op;
+                dragState.isDragging = false;
+                dragState.op = null;
+                dragState.hoverResId = null;
+
                 if(!op) return;
 
                 const res = resources.find(r => r.id === resId);
                 if(res.group !== op.requiredGroup) {
-                    alert(`Machine group mismatch. Needs ${op.requiredGroup}`);
+                    alert(`Machine group mismatch. Job needs ${op.requiredGroup}`);
                     return;
                 }
 
-                const rect = e.currentTarget.getBoundingClientRect();
-                const scrollX = e.currentTarget.parentElement.scrollLeft;
-                const clickX = e.clientX - rect.left + scrollX;
-                let time = Math.round((clickX / pixelsPerMin.value) / 5) * 5;
-                if(time < 0) time = 0;
+                let time = dragState.hoverTime; 
 
                 if(op.stageIndex > 0) {
                     let prev = scheduledOps.find(o => o.orderId === op.orderId && o.stageIndex === op.stageIndex - 1);
@@ -924,9 +1443,8 @@
                 if(hasCollision(op, time, resId)) {
                     alert("Collision detected. Please drop in an empty space.");
                     if(op.status === 'scheduled') {
-                         op.setupDuration = calculateSetup(op, oldRes, oldTime);
+                          op.setupDuration = calculateSetup(op, oldRes, oldTime);
                     }
-                    draggingOp.value = null;
                     return;
                 }
 
@@ -939,10 +1457,82 @@
                     unscheduledOps.splice(uIdx, 1);
                     scheduledOps.push(op);
                 }
+            };
 
-                draggingOp.value = null;
+            // --- ACTIONS ---
+            const toggleTheme = () => isDarkMode.value = !isDarkMode.value;
+            
+            const openResourcesModal = () => modals.resources = true;
+            const addResource = () => {
+                if(!newRes.name) return;
+                resources.push({ id: `r-${Date.now()}`, name: newRes.name, group: newRes.group, status: 'running' });
+                newRes.name = '';
+            };
+            const removeResource = (idx) => {
+                const res = resources[idx];
+                const toRemove = scheduledOps.filter(o => o.resourceId === res.id);
+                toRemove.forEach(o => {
+                    o.resourceId = null; o.startTime = 0; o.setupDuration = 0; o.status = 'unscheduled';
+                    unscheduledOps.push(o);
+                });
+                for (let i = scheduledOps.length - 1; i >= 0; i--) {
+                    if (scheduledOps[i].resourceId === res.id) scheduledOps.splice(i, 1);
+                }
+                resources.splice(idx, 1);
+            };
+
+            const openAddOrderModal = () => {
+                modalState.customDurationVal = 8;
+                modalState.customDurationUnit = 'hours';
+                modals.addOrder = true;
+            };
+
+            const saveNewOrder = () => {
+                createOrder(
+                    newOrder.id, 
+                    newOrder.product, 
+                    newOrder.color, 
+                    newOrder.qty, 
+                    newOrder.dueHours, 
+                    newOrder.ops,
+                    calculatedNewDuration.value,
+                    newOrder.notes // Pass notes
+                );
+                modals.addOrder = false;
+            };
+
+            const openEditOpModal = (op) => { 
+                selectedOpId.value = op.id; 
+                selectedOp.value = op; 
+                modalState.editDurationVal = op.runDuration;
+                modalState.editDurationUnit = 'minutes'; 
+                modals.editOp = true; 
+            };
+
+            const saveEditOp = () => {
+                if(selectedOp.value) {
+                    selectedOp.value.runDuration = calculatedEditDuration.value;
+                }
+                modals.editOp = false;
             };
             
+            const unscheduleOp = () => {
+                const idx = scheduledOps.indexOf(selectedOp.value);
+                if(idx > -1) {
+                    const op = scheduledOps.splice(idx, 1)[0];
+                    op.status = 'unscheduled'; op.startTime = 0; op.resourceId = null; op.setupDuration = 0;
+                    unscheduledOps.push(op);
+                    modals.editOp = false;
+                }
+            };
+            const deleteOp = () => {
+                let idx = scheduledOps.indexOf(selectedOp.value);
+                if(idx > -1) scheduledOps.splice(idx, 1);
+                idx = unscheduledOps.indexOf(selectedOp.value);
+                if(idx > -1) unscheduledOps.splice(idx, 1);
+                modals.editOp = false;
+            };
+
             const autoSchedule = () => {
                 unscheduledOps.sort((a,b) => a.dueDate - b.dueDate);
                 const list = [...unscheduledOps];
@@ -957,19 +1547,19 @@
                              if(prev) t = prev.startTime + prev.setupDuration + prev.runDuration;
                              else return; 
                         }
-
+                        
                         let safe = false;
-                        while(!safe && t < 3000) {
+                        const maxTime = config.scheduleDays * 24 * 60;
+                        while(!safe && t < maxTime) {
                              op.setupDuration = calculateSetup(op, r.id, t);
                              if(!hasCollision(op, t, r.id)) safe = true;
-                             else t += 5;
+                             else t += 15;
                         }
                         if(safe && t < bestT) { bestT = t; bestR = r.id; }
                     });
 
                     if(bestR) {
-                        op.resourceId = bestR;
-                        op.startTime = bestT;
+                        op.resourceId = bestR; op.startTime = bestT;
                         op.setupDuration = calculateSetup(op, bestR, bestT);
                         op.status = 'scheduled';
                         scheduledOps.push(op);
@@ -978,82 +1568,37 @@
                 });
             };
 
-            // --- SORTING LOGIC FOR TABLE VIEW ---
+            // --- COMPUTED ---
             const sort = (key) => {
-                if (sortKey.value === key) {
-                    sortAsc.value = !sortAsc.value;
-                } else {
-                    sortKey.value = key;
-                    sortAsc.value = true;
-                }
+                if (sortKey.value === key) sortAsc.value = !sortAsc.value;
+                else { sortKey.value = key; sortAsc.value = true; }
             };
 
             const sortedOps = computed(() => {
-                // Combine lists for the table view
                 const all = [...scheduledOps, ...unscheduledOps];
                 return all.sort((a, b) => {
-                    let valA = a[sortKey.value];
-                    let valB = b[sortKey.value];
-                    
-                    if (typeof valA === 'string') valA = valA.toLowerCase();
-                    if (typeof valB === 'string') valB = valB.toLowerCase();
-
+                    let valA = a[sortKey.value], valB = b[sortKey.value];
+                    if (typeof valA === 'string') { valA = valA.toLowerCase(); valB = valB.toLowerCase(); }
                     if (valA < valB) return sortAsc.value ? -1 : 1;
                     if (valA > valB) return sortAsc.value ? 1 : -1;
                     return 0;
                 });
             });
 
-            // --- HELPERS ---
             const getOpsForResource = (rid) => scheduledOps.filter(o => o.resourceId === rid);
+            const getSortedOpsForResource = (rid) => scheduledOps.filter(o => o.resourceId === rid).sort((a,b) => a.startTime - b.startTime);
+            const getResourceName = (rid) => { const r = resources.find(x => x.id === rid); return r ? r.name : 'Unassigned'; };
+            const getBarStyle = (op) => ({ left: (op.startTime * config.pixelsPerMin) + 'px', width: ((op.setupDuration + op.runDuration) * config.pixelsPerMin) + 'px' });
             
-            const getSortedOpsForResource = (rid) => {
-                return scheduledOps.filter(o => o.resourceId === rid).sort((a,b) => a.startTime - b.startTime);
-            }
-
-            const getResourceName = (rid) => {
-                const r = resources.find(x => x.id === rid);
-                return r ? r.name : 'Unassigned';
-            };
-
-            const getBarStyle = (op) => ({
-                left: (op.startTime * pixelsPerMin.value) + 'px',
-                width: ((op.setupDuration + op.runDuration) * pixelsPerMin.value) + 'px'
-            });
-
-            // Format HH:MM
-            const formatTime = (m) => {
-                const totalMinutes = m + 480; // Start at 8:00
-                const h = Math.floor(totalMinutes / 60) % 24;
-                const min = Math.floor(totalMinutes % 60);
-                return `${h}:${min.toString().padStart(2,'0')}`;
-            };
-
-            // Header Format: Day 1 08:00
-            const formatTimeHeader = (hIndex) => {
-                const hourOfDay = (hIndex + 8) % 24;
-                const day = Math.floor((hIndex + 8) / 24) + 1;
-                return `Day ${day} ${hourOfDay}:00`;
-            };
-
-            // Full Date format for Table
-            const formatTimeDay = (m) => {
-                const totalMinutes = m + 480;
-                const days = Math.floor(totalMinutes / 1440) + 1;
-                const h = Math.floor((totalMinutes % 1440) / 60);
-                const min = Math.floor(totalMinutes % 60);
-                return `Day ${days} - ${h}:${min.toString().padStart(2,'0')}`;
-            };
-
             const isLate = (op) => (op.startTime + op.setupDuration + op.runDuration) > op.dueDate;
+            const isLateUnscheduled = (op) => op.dueDate < 0; 
 
-            // --- COMPUTED ---
             const kpis = computed(() => {
                 if(!scheduledOps.length) return { otif: 100, utilization: 0 };
                 const late = scheduledOps.filter(isLate).length;
                 const otif = Math.round(((scheduledOps.length - late)/scheduledOps.length)*100);
                 const totalRun = scheduledOps.reduce((a,c) => a+c.runDuration, 0);
-                const capacity = resources.length * 24 * 60; 
+                const capacity = resources.length * config.scheduleDays * 24 * 60; 
                 return { otif, utilization: Math.round((totalRun/capacity)*100) };
             });
 
@@ -1061,37 +1606,37 @@
                 const lines = [];
                 const orders = [...new Set(scheduledOps.map(o => o.orderId))];
                 orders.forEach(oid => {
-                     const ops = scheduledOps.filter(o => o.orderId === oid).sort((a,b) => a.stageIndex - b.stageIndex);
-                     for(let i=0; i<ops.length-1; i++) {
-                         const curr = ops[i];
-                         const next = ops[i+1];
-                         
-                         const r1 = resources.findIndex(r => r.id === curr.resourceId);
-                         const r2 = resources.findIndex(r => r.id === next.resourceId);
-                         if(r1<0 || r2<0) continue;
-
-                         const x1 = (curr.startTime + curr.setupDuration + curr.runDuration) * pixelsPerMin.value;
-                         const y1 = (r1 * ROW_HEIGHT) + (ROW_HEIGHT/2);
-                         const x2 = next.startTime * pixelsPerMin.value;
-                         const y2 = (r2 * ROW_HEIGHT) + (ROW_HEIGHT/2);
-                         
-                         lines.push({ path: `M ${x1} ${y1} C ${x1+50} ${y1}, ${x2-50} ${y2}, ${x2} ${y2}` });
-                     }
+                      const ops = scheduledOps.filter(o => o.orderId === oid).sort((a,b) => a.stageIndex - b.stageIndex);
+                      for(let i=0; i<ops.length-1; i++) {
+                          const curr = ops[i]; const next = ops[i+1];
+                          const r1 = resources.findIndex(r => r.id === curr.resourceId);
+                          const r2 = resources.findIndex(r => r.id === next.resourceId);
+                          if(r1<0 || r2<0) continue;
+                          const x1 = (curr.startTime + curr.setupDuration + curr.runDuration) * config.pixelsPerMin;
+                          const y1 = (r1 * ROW_HEIGHT) + (ROW_HEIGHT/2);
+                          const x2 = next.startTime * config.pixelsPerMin;
+                          const y2 = (r2 * ROW_HEIGHT) + (ROW_HEIGHT/2);
+                          lines.push({ path: `M ${x1} ${y1} C ${x1+50} ${y1}, ${x2-50} ${y2}, ${x2} ${y2}` });
+                      }
                 });
                 return lines;
             });
 
             return {
-                resources, scheduledOps, unscheduledOps, modals, newRes, newOrder, selectedOp,
-                kpis, peggingLines, pixelsPerMin, currentView, sortKey, sortedOps,
-                // Methods
+                config, resources, scheduledOps, unscheduledOps, modals, newRes, newOrder, selectedOp,
+                kpis, peggingLines, currentView, sortKey, sortedOps, modalState,
+                isDarkMode, toggleTheme, dragState, resizeState, timelineScroll, nowMarkerPos, weekLines,
                 initData, resetData: initData,
                 openResourcesModal, addResource, removeResource,
                 openAddOrderModal, saveNewOrder,
-                openEditOpModal, updateRunTime, unscheduleOp, deleteOp,
-                startDrag, onDrop, autoSchedule,
-                getOpsForResource, getBarStyle, formatTime, formatTimeHeader, formatTimeDay, isLate,
-                getSortedOpsForResource, sort, getResourceName
+                openEditOpModal, saveEditOp, unscheduleOp, deleteOp,
+                startDrag, onDrop, onDragOver, onDragLeave, autoSchedule,
+                startResize, selectOp, selectedOpId,
+                getOpsForResource, getBarStyle, formatAlgerianDateTime, getDayName, getDayFullDate, isLate, isLateUnscheduled,
+                getSortedOpsForResource, sort, getResourceName, formatTimeTooltip,
+                totalWidth, dayWidth, hourWidth,
+                calculatedNewDuration, calculatedEditDuration, onScroll, loadPreviousWeek, getXInTimeline, scrollToToday,
+                toggleResourceStatus, getStatusColor
             };
         }
     }).mount('#app');
