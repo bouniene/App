@@ -961,7 +961,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
             <div class="text-area">
               <div class="ref" contenteditable="true">Référence : CORNIERE 353-1</div>
               <div class="pcs" contenteditable="true">PCS/Carton: 108</div>
-              <div class="dim" contenteditable="true">Dimensions: 30 x 30 mm</div>
+              <div class="dim" contenteditable="true">Dimensions: 30 x 30 cm</div>
             </div>
           </div><div class="label-box hide-shapes">
             <div class="qr-code-container" title="353-1-29,741d82t043"><div class="qr-unique-id">d82t043</div></div>
@@ -1312,7 +1312,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
             v.dataset.manual||(v.textContent="PCS/Carton: "+(a||"N/A"));
             const w=f.querySelector(".dim");
             // *** تم التعديل هنا لعرض الطول فقط ***
-            w.dataset.manual||(w.textContent=`Dimensions: ${e||"N/A"} mm`); 
+            w.dataset.manual||(w.textContent=`Dimensions: ${e||"N/A"} Cm`); 
             f.classList.toggle("hide-qr",!s),
             f.classList.toggle("hide-shapes",!r);
             const L=f.querySelector(".corner-shape");
@@ -1430,7 +1430,7 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
                 ref: `Référence : ${selectedRef}`,
                 pcs: `PCS/Carton: ${data.pcs}`,
                 // *** تم التعديل هنا لاستخدام الطول فقط ***
-                dim: `Dimensions: ${document.getElementById('lengthInput').value} mm`,
+                dim: `Dimensions: ${document.getElementById('lengthInput').value} cm`,
             }
         };
         printBatch.push(newItem);

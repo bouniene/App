@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fiche Produit - Moulure avec Data Matrix</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #e67e22;
+            --bg-light: #f9f9f9;
+            --border-color: #ddd;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color);
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .container {
+            max-width: 210mm;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            border-top: 5px solid var(--primary-color);
+        }
+
+        /* Header Section */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            margin: 0;
+            color: var(--primary-color);
+            font-size: 24px;
+            text-transform: uppercase;
+        }
+
+        .doc-info {
+            text-align: right;
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* Product Main Info */
+        .product-hero {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .product-images {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .main-img {
+            width: 100%;
+            height: 250px;
+            background-color: #eee;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .main-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .tech-drawing {
+            height: 100px;
+            background-color: #fff;
+            border: 1px dashed var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .product-details {
+            flex: 1;
+        }
+
+        .product-title {
+            font-size: 28px;
+            color: var(--primary-color);
+            margin: 0 0 10px 0;
+            font-weight: 700;
+        }
+
+        .sku-badge {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 14px;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .description {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: #555;
+        }
+
+        /* Data Matrix Section (New) */
+        .datamatrix-panel {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+            background-color: #f4f6f7;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e1e4e8;
+        }
+
+        .dm-box {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            background: white;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .dm-code {
+            width: 60px;
+            height: 60px;
+            margin-right: 15px;
+            /* Placeholder for the actual DataMatrix image */
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/d/d6/Data_Matrix_encoding_ASCII_Wikipedia.svg'); 
+            background-size: contain;
+            background-repeat: no-repeat;
+            image-rendering: pixelated;
+        }
+
+        .dm-info h4 {
+            margin: 0 0 5px 0;
+            font-size: 14px;
+            color: var(--primary-color);
+            text-transform: uppercase;
+        }
+
+        .dm-info span {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #555;
+            display: block;
+        }
+
+        /* Tables Section */
+        .specs-section {
+            margin-top: 30px;
+        }
+
+        h2 {
+            font-size: 18px;
+            color: var(--primary-color);
+            border-left: 4px solid var(--accent-color);
+            padding-left: 10px;
+            margin-bottom: 15px;
+            background-color: var(--bg-light);
+            padding: 5px 5px 5px 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+            width: 35%;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 40px;
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+            text-align: center;
+            font-size: 11px;
+            color: #777;
+        }
+
+        @media print {
+            body { background-color: white; padding: 0; }
+            .container { box-shadow: none; margin: 0; width: 100%; max-width: 100%; border-top: none; }
+            .btn-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <button class="btn-print" onclick="window.print()" style="position:fixed; bottom:20px; right:20px; padding:15px 30px; background:#2c3e50; color:white; border:none; border-radius:50px; cursor:pointer;">🖨️ طباعة</button>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+                <h1>Moulure Factory</h1>
+                <span style="font-size: 12px; color: #888;">Systèmes Décoratifs Professionnels</span>
+            </div>
+            <div class="doc-info">
+                <strong>FICHE PRODUIT</strong><br>
+                Date: 26/01/2026<br>
+                Ref: FP-205L
+            </div>
+        </header>
+
+        <div class="product-hero">
+            <div class="product-images">
+                <div class="main-img">
+                    <img src="https://placehold.co/400x300/e0e0e0/555?text=Photo+Produit" alt="Moulure">
+                </div>
+                <div class="tech-drawing">
+                    <img src="https://placehold.co/300x80/fff/333?text=Section+Profil" alt="Schéma" style="height: 100%;">
+                </div>
+            </div>
+
+            <div class="product-details">
+                <span class="sku-badge">REF: CR-205-L</span>
+                <h1 class="product-title">Corniche Classique Luxe 12cm</h1>
+                
+                <table style="margin-bottom: 10px;">
+                    <tr><th>Matière</th><td>Polystyrène (XPS)</td></tr>
+                    <tr><th>Densité</th><td>Haute Densité (40kg/m³)</td></tr>
+                    <tr><th>Surface</th><td>Lisse, Prête à peindre</td></tr>
+                </table>
+
+                <div class="datamatrix-panel">
+                    <div class="dm-box">
+                        <div class="dm-code"></div> <div class="dm-info">
+                            <h4>Unité (Pièce)</h4>
+                            <span>GTIN: 613001</span>
+                            <span>SN: 0029384</span>
+                        </div>
+                    </div>
+                    <div class="dm-box">
+                        <div class="dm-code"></div> <div class="dm-info">
+                            <h4>Carton (Boîte)</h4>
+                            <span>GTIN: 161300</span>
+                            <span>Qty: 24 Pcs</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 30px;">
+            <div style="flex: 1;">
+                <h2>📏 Dimensions</h2>
+                <table>
+                    <tr><th>Longueur</th><td>2000 mm</td></tr>
+                    <tr><th>Hauteur / Projection</th><td>120 mm x 65 mm</td></tr>
+                    <tr><th>Tolérance</th><td>+/- 1%</td></tr>
+                </table>
+            </div>
+            <div style="flex: 1;">
+                <h2>📦 Logistique</h2>
+                <table>
+                    <tr><th>Pièces / Carton</th><td>24 Pièces</td></tr>
+                    <tr><th>Métrage / Carton</th><td>48 Mètres Linéaires</td></tr>
+                    <tr><th>Poids Carton</th><td>9.2 Kg</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="specs-section">
+            <h2>🛠️ Instructions de Pose</h2>
+            <div style="display: flex; gap: 20px; font-size: 13px; color: #444;">
+                <div style="flex: 1; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                    <strong>1. Préparation:</strong> Surfaces propres et sèches.
+                </div>
+                <div style="flex: 1; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                    <strong>2. Coupe:</strong> Utilisez une boîte à onglets pour les angles.
+                </div>
+                <div style="flex: 1; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                    <strong>3. Collage:</strong> Appliquez la colle au dos et pressez fermement.
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Fabriqué en Algérie par Moulure Factory SARL - www.moulurefactory.dz</p>
+        </footer>
+    </div>
+</body>
+</html>

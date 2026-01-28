@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مصمم مخططات UML الاحترافي</title>
+    <title>مصمم مخططات UML الاحترافي المطور</title>
     <style>
         :root {
             --primary-color: #2c7be5;
-            --header-bg: #1a5c9e;
+            --header-text: #ffffff;
             --bg-grid: #f4f6f8;
-            --border-color: #d1d9e6;
+            --border-color: #cbd5e0;
             --node-width: 220px;
         }
 
@@ -28,38 +28,42 @@
             background-color: var(--bg-grid);
         }
 
-        /* Print Styles - تم التعديل لإصلاح اختفاء المحتوى */
+        /* --- Print Styles Improved --- */
         @media print {
-            @page { size: auto; margin: 5mm; }
-            body, html, #workspace-container { 
-                width: 100%; 
-                height: 100%; 
-                overflow: visible !important; 
-                position: static !important; 
-                background: white !important;
+            @page { size: auto; margin: 0mm; }
+            body, html { 
+                background: white !important; 
+                -webkit-print-color-adjust: exact !important; 
+                print-color-adjust: exact !important;
+                width: 100%;
+                height: 100%;
+                overflow: visible !important;
             }
-            #toolbar, #zoom-controls, .add-field-btn, .action-icon, .port, .resize-handle, .node-actions {
+            #toolbar, #zoom-controls, .add-field-btn, .action-icon, .port, .resize-handle, .node-actions, #line-settings-popup {
                 display: none !important;
             }
+            #workspace-container {
+                overflow: visible !important;
+                position: static !important;
+                height: auto !important;
+                background: none !important;
+            }
             #workspace {
-                transform: scale(1) !important; /* إلغاء التكبير عند الطباعة */
+                transform: scale(1) !important; /* Reset zoom for print */
                 position: static !important;
                 width: 100%;
                 height: auto;
                 overflow: visible !important;
             }
             .node {
-                box-shadow: none;
-                border: 1px solid #000;
                 page-break-inside: avoid;
+                box-shadow: none;
+                border: 1px solid #ccc;
             }
-            svg { 
-                z-index: 0; 
-                position: absolute; 
-                top: 0; 
-                left: 0;
-                width: 100%;
-                height: 100%;
+            /* Force background colors */
+            .node-header {
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact;
             }
         }
 
@@ -82,37 +86,41 @@
             left: 0;
         }
 
-        /* Toolbar */
+        /* --- Toolbar Compact Style --- */
         #toolbar {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            height: 60px;
+            height: 45px; /* Reduced height */
             background: white;
-            padding: 0 20px;
+            padding: 0 15px;
             border-bottom: 1px solid #ddd;
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 10px;
             z-index: 1000;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            overflow-x: auto;
+            overflow-x: auto; /* Allow scroll if screen is very small */
+            overflow-y: hidden;
+            scrollbar-width: none; /* Hide scrollbar Firefox */
         }
+        
+        #toolbar::-webkit-scrollbar { display: none; /* Hide scrollbar Chrome/Safari */ }
 
         #toolbar h3 {
-            margin: 0 0 0 20px;
-            font-size: 16px;
+            margin: 0 0 0 10px;
+            font-size: 14px; /* Smaller font */
             color: #2d3748;
             white-space: nowrap;
         }
 
         .toolbar-group {
             display: flex;
-            gap: 8px;
+            gap: 5px; /* Reduced gap */
             align-items: center;
             border-left: 1px solid #eee;
-            padding-left: 15px;
+            padding-left: 10px;
             flex-shrink: 0;
         }
 
@@ -120,19 +128,19 @@
             background: var(--primary-color);
             color: white;
             border: none;
-            padding: 6px 12px;
+            padding: 4px 8px; /* Compact padding */
             border-radius: 4px;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 12px; /* Smaller font */
             font-weight: 600;
             transition: all 0.2s;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
             white-space: nowrap;
         }
 
-        .btn:hover { background: #1a5c9e; transform: translateY(-1px); }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
         .btn.secondary { background: #e2e8f0; color: #2d3748; }
         .btn.secondary:hover { background: #cbd5e0; }
         
@@ -143,16 +151,16 @@
             left: 50%;
             transform: translateX(-50%);
             background: white;
-            padding: 8px 20px;
+            padding: 5px 15px;
             border-radius: 30px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             z-index: 1000;
         }
         
-        input[type="range"] { width: 150px; cursor: pointer; }
+        input[type="range"] { width: 100px; cursor: pointer; }
 
         /* SVG Layer */
         #svg-layer {
@@ -165,55 +173,73 @@
             overflow: visible;
         }
 
+        /* --- Connection Lines Styling --- */
         path {
             fill: none;
             stroke: #94a3b8;
             stroke-width: 2px;
-            pointer-events: auto;
+            pointer-events: auto; /* Important for clicking */
             transition: stroke 0.3s;
             cursor: pointer;
-            marker-end: url(#arrowhead); /* Default UML Arrow */
+            stroke-linejoin: round;
+            stroke-linecap: round;
         }
         
-        path:hover, path.selected {
-            stroke: var(--primary-color);
-            stroke-width: 3px;
+        /* Transparent wider path for easier clicking */
+        path.hit-area {
+            stroke: transparent;
+            stroke-width: 15px;
+            cursor: pointer;
+            pointer-events: stroke;
         }
 
-        /* Nodes (Tables & Shapes) */
+        path:hover, path.selected-path {
+            stroke: var(--primary-color);
+            filter: drop-shadow(0 0 2px rgba(44, 123, 229, 0.5));
+        }
+        
+        /* Animation Keyframes */
+        @keyframes dash-animation {
+            to { stroke-dashoffset: -20; }
+        }
+        
+        .animated-line {
+            animation: dash-animation 1s linear infinite;
+        }
+
+        /* Nodes General Style */
         .node {
             position: absolute;
             width: var(--node-width);
             background: white;
             border: 1px solid var(--border-color);
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             z-index: 1;
             transition: box-shadow 0.2s, border 0.2s;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* Selected State for Deletion */
         .node.selected-node {
-            border: 2px solid #e74c3c;
-            box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.2);
+            border: 2px solid #e74c3c !important;
+            box-shadow: 0 0 0 4px rgba(231, 76, 60, 0.1);
             z-index: 10;
         }
 
         .node:hover {
-            box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
             z-index: 5;
         }
 
-        /* Resize Handle (Top Right) */
+        /* Resize Handle */
         .resize-handle {
             position: absolute;
-            top: -6px;
-            right: -6px;
-            width: 12px;
-            height: 12px;
+            top: -5px; right: -5px;
+            width: 10px; height: 10px;
             background: white;
-            border: 2px solid #333;
-            cursor: nesw-resize; /* Diagonal cursor */
+            border: 1px solid #333;
+            cursor: nesw-resize;
             z-index: 20;
             display: none;
         }
@@ -222,249 +248,194 @@
             display: block;
         }
 
-        /* UML Class */
-        .node.shape-class {
-            border: 1px solid #333;
-            border-radius: 0;
+        /* --- Shape Specific Styles --- */
+        .node.shape-class, .node.shape-table {
+            border: 1px solid #a0aec0;
+            overflow: hidden;
         }
-        .node.shape-class .node-header {
-            background: #fff;
-            color: #000;
-            border-bottom: 1px solid #333;
-            border-radius: 0;
+        .node.shape-class .node-header, .node.shape-table .node-header {
+            background: var(--primary-color);
+            color: var(--header-text);
+            padding: 6px 10px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
             justify-content: center;
         }
-        .node.shape-class .node-title {
+        .node.shape-class .node-title, .node.shape-table .node-title {
             text-align: center;
-            font-weight: bold;
+            font-weight: 700;
+            font-size: 13px;
         }
+        .node.shape-class .node-body { background: #fff; }
 
-        /* Use Case (Oval) */
         .node.shape-usecase {
             border-radius: 50%;
-            width: 180px;
-            height: 100px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 160px; height: 100px;
+            display: flex; align-items: center; justify-content: center;
             text-align: center;
-            border: 2px solid #2c7be5;
+            border: 2px solid var(--primary-color);
+            background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
         }
         .node.shape-usecase .node-header {
-            background: transparent;
-            color: #333;
-            width: 80%;
-            padding: 0;
+            background: transparent !important; color: #2d3748 !important; width: 90%; padding: 0; justify-content: center;
         }
         .node.shape-usecase .node-body, .node.shape-usecase .add-field-btn { display: none; }
 
-        /* Actor (Stickman) */
-        .node.shape-actor {
-            background: transparent;
-            border: none;
-            box-shadow: none;
-            width: 80px;
-            height: 120px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .node.shape-actor .node-header {
-            background: transparent;
-            color: #333;
-            padding: 0;
-            text-align: center;
-            margin-top: 5px;
-        }
-        .node.shape-actor .node-body { display: none; }
-        .node.shape-actor img { width: 50px; height: auto; pointer-events: none; }
-
-        /* Activity/Start/End */
-        .node.shape-activity {
-            border-radius: 20px;
-            border: 2px solid #2c7be5;
-            text-align: center;
-            min-height: 60px;
-        }
-        .node.shape-start, .node.shape-end {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #333;
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .node.shape-end {
-            border: 4px solid white;
-            box-shadow: 0 0 0 2px #333;
-        }
-        .node.shape-start .node-header, .node.shape-end .node-header { display: none; }
-
-        /* Decision (Diamond) */
         .node.shape-decision {
-            width: 100px;
-            height: 100px;
-            background: transparent;
-            border: none;
-            box-shadow: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 100px; height: 100px;
+            background: transparent; border: none; box-shadow: none;
+            display: flex; align-items: center; justify-content: center;
         }
         .diamond-inner {
-            width: 100%;
-            height: 100%;
-            background: white;
-            border: 2px solid #2c7be5;
-            transform: rotate(45deg);
-            position: absolute;
-            z-index: 0;
+            width: 70%; height: 70%;
+            background: white; border: 2px solid var(--primary-color);
+            transform: rotate(45deg); position: absolute; z-index: 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
         .node.shape-decision .node-header {
-            background: transparent;
-            color: #333;
-            z-index: 1;
-            padding: 0;
-            width: 100%;
-            text-align: center;
-            transform: translateY(0);
+            background: transparent !important; color: #2d3748 !important; z-index: 1; padding: 0; width: 100%; text-align: center;
+        }
+        .node.shape-decision .node-actions {
+            position: absolute; top: -25px; right: -10px;
+            background: rgba(255,255,255,0.9); border-radius: 4px; padding: 2px; border: 1px solid #ccc;
         }
 
-        /* Original & Note */
+        .node.shape-activity {
+            border-radius: 20px; border: 2px solid var(--primary-color);
+            text-align: center; min-height: 50px; overflow: hidden;
+        }
+        
         .node.shape-note {
-            background: #fff9c4;
-            border: 1px solid #fbc02d;
-            width: 180px;
-            min-height: 150px;
+            background: #fff9c4; border: 1px solid #fbc02d; border-bottom-right-radius: 0;
+        }
+        .node.shape-note::after {
+            content: ''; position: absolute; bottom: 0; right: 0; width: 0; height: 0;
+            border-style: solid; border-width: 0 0 15px 15px;
+            border-color: transparent transparent #f4f6f8 transparent;
+            box-shadow: -1px -1px 2px rgba(0,0,0,0.1);
         }
         .node.shape-note .node-header { background: #fbc02d; color: #555; }
-        
-        /* General Node Header */
+
+        .node.shape-form { border-top: 4px solid var(--primary-color); }
+
+        /* --- IMPROVED IMAGE & CHOICE NODES --- */
+        /* 7. Image Node (Better Style) */
+        .node.shape-image {
+            padding: 0;
+            background: #fff;
+            border: 1px solid #dcdcdc;
+            border-radius: 8px;
+            overflow: hidden; /* Clips image at corners */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        }
+        .node.shape-image .node-header {
+            background: #f8f9fa;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .img-placeholder {
+            width: 100%; height: 100px;
+            background: #edf2f7;
+            display: flex; align-items: center; justify-content: center;
+            color: #a0aec0; font-size: 24px;
+            cursor: pointer; overflow: hidden;
+        }
+        .img-placeholder img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* 9. Choice Node (Better Style) */
+        .node.shape-choice {
+            border: 2px solid #a0aec0; /* Solid border instead of dashed */
+            border-radius: 8px;
+            background-color: #fdfdfd;
+        }
+        .node.shape-choice .node-header {
+            background: #4a5568;
+            color: white;
+            border-radius: 6px 6px 0 0;
+        }
+
+        .node.shape-datetime { border-left: 4px solid var(--primary-color); }
+
+        /* Common Header & Body */
         .node-header {
             background: var(--primary-color);
             color: white;
-            padding: 10px;
-            font-weight: bold;
+            padding: 6px 10px;
+            font-weight: 600;
             cursor: grab;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top-left-radius: 7px;
-            border-top-right-radius: 7px;
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 13px;
         }
 
         .node-header:active { cursor: grabbing; }
 
         .node-title {
-            flex-grow: 1;
-            outline: none;
-            margin-left: 5px;
+            flex-grow: 1; outline: none; margin-left: 5px;
         }
 
-        .node-actions {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-        }
+        .node-actions { display: flex; gap: 4px; align-items: center; }
 
         .action-icon {
-            cursor: pointer;
-            opacity: 0.8;
-            font-size: 14px;
-            padding: 2px;
-            border-radius: 3px;
+            cursor: pointer; opacity: 0.8; font-size: 12px;
+            padding: 2px; border-radius: 3px;
         }
-        .action-icon:hover { opacity: 1; background: rgba(255,255,255,0.2); }
+        .action-icon:hover { opacity: 1; background: rgba(0,0,0,0.1); }
 
         .color-picker-wrapper {
-            position: relative;
-            width: 16px;
-            height: 16px;
-            overflow: hidden;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            border-radius: 50%;
-            border: 1px solid white;
-            font-size: 10px;
-            font-weight: bold;
-            color: white;
+            position: relative; width: 12px; height: 12px;
+            overflow: hidden; display: inline-flex; align-items: center; justify-content: center;
+            cursor: pointer; border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.8);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
         
         .color-picker-input {
-            position: absolute;
-            left: -50%;
-            top: -50%;
-            width: 200%;
-            height: 200%;
-            cursor: pointer;
-            opacity: 0;
+            position: absolute; left: -50%; top: -50%; width: 200%; height: 200%;
+            cursor: pointer; opacity: 0;
         }
 
-        .node-body { padding: 5px 0; min-height: 50px; width: 100%; }
+        .node-body { padding: 5px 0; width: 100%; }
 
-        /* Fields/Attributes Style */
         .field-row {
-            padding: 6px 10px;
-            display: flex;
-            justify-content: space-between;
+            padding: 4px 10px;
+            display: flex; justify-content: space-between; align-items: center;
             border-bottom: 1px solid #f1f1f1;
-            font-size: 14px;
-            color: #4a5568;
+            font-size: 12px; color: #4a5568;
         }
         
         .field-input {
-            border: none;
-            width: 100%;
-            outline: none;
-            background: transparent;
+            border: none; width: 100%; outline: none; background: transparent;
+            font-family: 'Consolas', monospace; font-size: 12px;
+        }
+        
+        .field-checkbox-row {
+            display: flex; align-items: center; gap: 5px; padding: 4px 10px;
         }
 
         .add-field-btn {
-            width: 100%;
-            padding: 5px;
-            background: #f8fafc;
-            border: none;
-            border-top: 1px solid #eee;
-            color: #718096;
-            cursor: pointer;
-            font-size: 12px;
-            border-bottom-left-radius: 8px;
-            border-bottom-right-radius: 8px;
+            width: 100%; padding: 4px;
+            background: #f8fafc; border: none; border-top: 1px solid #eee;
+            color: #718096; cursor: pointer;
+            font-size: 10px; font-weight: 600; text-transform: uppercase;
         }
         .add-field-btn:hover { background: #edf2f7; color: var(--primary-color); }
 
-        /* Separator for Class Diagram */
         .section-separator {
-            border-bottom: 1px solid #333;
-            margin: 5px 0;
-            height: 1px;
-            background: #eee;
+            border-bottom: 1px solid #cbd5e0; margin: 0; height: 1px;
         }
 
-        /* Connection Ports */
+        /* Ports */
         .port {
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            background: white;
-            border: 2px solid #94a3b8;
-            border-radius: 50%;
-            z-index: 10;
-            cursor: crosshair;
-            transition: all 0.2s;
-            opacity: 0; /* Hidden by default for cleaner UML look */
+            position: absolute; width: 12px; height: 12px;
+            background: white; border: 2px solid #94a3b8; border-radius: 50%;
+            z-index: 10; cursor: crosshair; transition: all 0.2s; opacity: 0; 
         }
         
-        .node:hover .port { opacity: 1; } /* Show on hover */
+        .node:hover .port { opacity: 1; }
         .port:hover {
-            background: var(--primary-color);
-            border-color: var(--primary-color);
-            transform: scale(1.2);
-            opacity: 1;
+            background: var(--primary-color); border-color: var(--primary-color);
+            transform: scale(1.2); opacity: 1;
         }
 
         .port-top { top: -6px; left: 50%; transform: translateX(-50%); }
@@ -473,72 +444,77 @@
         .port-left { left: -6px; top: 50%; transform: translateY(-50%); }
 
         .port.active-port {
-            background: #e74c3c;
-            border-color: #e74c3c;
-            box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.3);
-            opacity: 1;
+            background: #e74c3c; border-color: #e74c3c; opacity: 1;
         }
+
+        #temp-line { pointer-events: none; }
+
+        /* --- Line Settings Popup --- */
+        #line-settings-popup {
+            position: fixed;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            z-index: 2000;
+            display: none;
+            width: 220px;
+            font-size: 12px;
+            direction: rtl;
+        }
+        
+        #line-settings-popup h4 { margin: 0 0 8px 0; color: #333; font-size: 13px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+        
+        .line-setting-row {
+            display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
+        }
+        .line-setting-row label { color: #666; }
+        
+        .popup-btn-group { display: flex; gap: 5px; margin-top: 5px; }
+        .popup-btn { 
+            flex: 1; padding: 4px; border: 1px solid #ddd; background: #f8f8f8; cursor: pointer; border-radius: 3px; 
+            font-size: 11px;
+        }
+        .popup-btn:hover { background: #eee; }
 
     </style>
 </head>
 <body>
 
     <div id="toolbar">
-        <h3>UML Designer</h3>
+        <h3>UML Pro</h3>
         
         <div class="toolbar-group">
-            <button class="btn" onclick="addNode('class')">
-                <span>⬜</span> Class
-            </button>
-            <button class="btn secondary" onclick="addNode('table')">
-                <span>📅</span> DB Table
-            </button>
+            <button class="btn" onclick="addNode('class')"><span>⬜</span> Class</button>
+            <button class="btn secondary" onclick="addNode('table')"><span>📅</span> Table</button>
+            <button class="btn secondary" onclick="addNode('form')"><span>📋</span> Form</button>
         </div>
 
         <div class="toolbar-group">
-            <button class="btn secondary" onclick="addNode('usecase')">
-                <span>🥚</span> Use Case
-            </button>
-            <button class="btn secondary" onclick="addNode('actor')">
-                <span>👤</span> Actor
-            </button>
+            <button class="btn secondary" onclick="addNode('usecase')"><span>🥚</span> Use Case</button>
+            <button class="btn secondary" onclick="addNode('decision')"><span>◇</span> Decision</button>
+            <button class="btn secondary" onclick="addNode('activity')"><span>🔄</span> Activity</button>
         </div>
 
         <div class="toolbar-group">
-            <button class="btn secondary" onclick="addNode('activity')">
-                <span>🔄</span> Activity
-            </button>
-            <button class="btn secondary" onclick="addNode('decision')">
-                <span>◇</span> Decision
-            </button>
-            <button class="btn secondary" onclick="addNode('start')">
-                <span>●</span> Start
-            </button>
-            <button class="btn secondary" onclick="addNode('end')">
-                <span>⦿</span> End
-            </button>
+            <button class="btn secondary" onclick="addNode('image')"><span>🖼️</span> Image</button>
+            <button class="btn secondary" onclick="addNode('datetime')"><span>🕒</span> Date</button>
+            <button class="btn secondary" onclick="addNode('choice')"><span>☑️</span> Choice</button>
         </div>
 
         <div class="toolbar-group">
-            <button class="btn secondary" onclick="addNode('note')">
-                <span>📝</span> Note
-            </button>
+            <button class="btn secondary" onclick="addNode('note')"><span>📝</span> Note</button>
         </div>
 
         <div class="toolbar-group" style="margin-right: auto;">
-            <button class="btn secondary" onclick="deleteSelectedNode()" title="Delete Selected (Del)">
-                 <span>❌</span> حذف المحدد
-            </button>
-            <button class="btn secondary" onclick="clearCanvas()">
-                <span>🗑️</span> مسح الكل
-            </button>
-            <button class="btn secondary" onclick="printCanvas()">
-                <span>🖨️</span> طباعة
-            </button>
+            <button class="btn secondary" onclick="deleteSelectedNode()" title="Delete Selected (Del)"><span>❌</span> حذف</button>
+            <button class="btn secondary" onclick="clearCanvas()"><span>🗑️</span> مسح</button>
+            <button class="btn secondary" onclick="printCanvas()"><span>🖨️</span> طباعة</button>
         </div>
         
-        <div style="font-size: 12px; color: #888; margin-right: 15px;">
-            <span id="save-status">تم الحفظ تلقائياً</span>
+        <div style="font-size: 11px; color: #888; margin-right: 15px;">
+            <span id="save-status">تم الحفظ</span>
         </div>
     </div>
 
@@ -547,10 +523,10 @@
             <svg id="svg-layer">
                 <defs>
                     <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                        <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8" />
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8" class="arrow-shape" />
                     </marker>
-                    <marker id="inheritance" markerWidth="12" markerHeight="12" refX="11" refY="6" orient="auto">
-                        <path d="M0,0 L12,6 L0,12 z" fill="white" stroke="#94a3b8" stroke-width="1.5"/>
+                    <marker id="arrowhead-start" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                        <polygon points="10 0, 0 3.5, 10 7" fill="#94a3b8" class="arrow-shape" />
                     </marker>
                 </defs>
             </svg>
@@ -558,12 +534,50 @@
         </div>
     </div>
 
+    <div id="line-settings-popup">
+        <h4>خصائص الرابط</h4>
+        
+        <div class="line-setting-row">
+            <label>اللون:</label>
+            <input type="color" id="line-color" onchange="updateLineStyle('color', this.value)">
+        </div>
+        
+        <div class="line-setting-row">
+            <label>السمك:</label>
+            <input type="range" id="line-width" min="1" max="6" value="2" oninput="updateLineStyle('width', this.value)">
+        </div>
+        
+        <div class="line-setting-row">
+            <label>متقطع:</label>
+            <input type="checkbox" id="line-dashed" onchange="updateLineStyle('dashed', this.checked)">
+        </div>
+
+        <div class="line-setting-row">
+            <label>حركة (Animation):</label>
+            <input type="checkbox" id="line-animated" onchange="updateLineStyle('animated', this.checked)">
+        </div>
+
+        <div class="line-setting-row">
+            <label>اتجاه السهم:</label>
+            <select id="line-arrows" onchange="updateLineStyle('arrow', this.value)" style="width: 100px;">
+                <option value="end">نهاية →</option>
+                <option value="start">بداية ←</option>
+                <option value="both">كلاهما ↔</option>
+                <option value="none">بدون —</option>
+            </select>
+        </div>
+        
+        <div class="popup-btn-group">
+            <button class="popup-btn" onclick="deleteSelectedLine()" style="color:red;">حذف الرابط</button>
+        </div>
+    </div>
+
     <div id="zoom-controls">
-        <span style="font-size: 12px; color: #666;">تكبير/تصغير</span>
-        <button class="btn secondary" style="padding: 2px 8px;" onclick="adjustZoom(-0.1)">-</button>
+        <span style="font-size: 11px; color: #666;">تكبير/تصغير</span>
+        <button class="btn secondary" style="padding: 2px 6px;" onclick="adjustZoom(-0.1)">-</button>
         <input type="range" id="zoomRange" min="0.5" max="2" step="0.1" value="1" oninput="setZoom(this.value)">
-        <button class="btn secondary" style="padding: 2px 8px;" onclick="adjustZoom(0.1)">+</button>
-        <span id="zoomValue" style="font-size: 12px; min-width: 40px; text-align: center;">100%</span>
+        <button class="btn secondary" style="padding: 2px 6px;" onclick="adjustZoom(0.1)">+</button>
+        <span id="zoomValue" style="font-size: 11px; min-width: 30px; text-align: center;">100%</span>
     </div>
 
     <script>
@@ -574,47 +588,54 @@
         let sourcePort = null;
         let startPortElem = null;
         let selectedNodeId = null;
+        let selectedLine = null; // Store currently selected line object
 
         const canvas = document.getElementById('canvas');
         const svgLayer = document.getElementById('svg-layer');
         const workspace = document.getElementById('workspace');
         const saveStatus = document.getElementById('save-status');
+        const linePopup = document.getElementById('line-settings-popup');
 
         // --- Initialization ---
         window.onload = () => {
             loadData();
-            
-            // Demo data if empty
             if (nodeCount === 0) {
-                const classNode = addNode('class', 150, 150, false);
-                classNode.querySelector('.node-title').innerText = "User";
-                
-                const actorNode = addNode('actor', 500, 150, false);
-                actorNode.querySelector('.node-title').innerText = "Admin";
-                
+                // Demo Data
+                addNode('class', 150, 150, false);
+                addNode('decision', 450, 250, false);
                 saveToLocal();
             }
             updateLines();
         };
 
-        // --- Selection & Keyboard Delete ---
+        // --- Interactions ---
         document.addEventListener('mousedown', (e) => {
-            // Deselect if clicking on workspace empty area
+            // Close line popup if clicked outside
+            if (!e.target.closest('#line-settings-popup') && e.target.tagName !== 'path') {
+                linePopup.style.display = 'none';
+                if(selectedLine) {
+                    selectedLine.path.classList.remove('selected-path');
+                    selectedLine = null;
+                }
+            }
+
             if (e.target.id === 'workspace-container' || e.target.id === 'workspace' || e.target.id === 'canvas' || e.target.tagName === 'svg') {
                 deselectNodes();
             }
         });
 
         document.addEventListener('keydown', (e) => {
-            // Check for Delete or Backspace key
             if (e.key === 'Delete' || e.key === 'Backspace') {
-                // Ignore if user is typing in an input or editable content
                 const active = document.activeElement;
                 const isInput = active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable;
-                
-                if (!isInput && selectedNodeId) {
-                    deleteNode(selectedNodeId);
-                    e.preventDefault(); // Prevent browser back navigation on Backspace
+                if (!isInput) {
+                    if (selectedNodeId) {
+                        deleteNode(selectedNodeId);
+                        e.preventDefault();
+                    } else if (selectedLine) {
+                        deleteSelectedLine();
+                        e.preventDefault();
+                    }
                 }
             }
         });
@@ -635,14 +656,11 @@
         }
 
         function deleteSelectedNode() {
-            if(selectedNodeId) {
-                deleteNode(selectedNodeId);
-            } else {
-                alert('الرجاء تحديد شكل أولاً للحذف');
-            }
+            if(selectedNodeId) deleteNode(selectedNodeId);
+            else alert('الرجاء تحديد شكل أولاً للحذف');
         }
 
-        // --- Node Creation Logic ---
+        // --- Node Creation ---
         function addNode(type = 'class', x = 350, y = 150, save = true) {
             nodeCount++;
             const node = document.createElement('div');
@@ -653,58 +671,74 @@
             node.style.left = `${x}px`;
             node.style.top = `${y}px`;
 
-            // Default Color
-            let headerColor = '#2c7be5';
-            if (type === 'note') headerColor = '#fbc02d';
-            
-            node.style.setProperty('--primary-color', headerColor);
+            // Default Colors
+            let primaryColor = '#2c7be5';
+            let headerText = '#ffffff';
 
-            // Add selection listener
+            if (type === 'note') { primaryColor = '#fbc02d'; headerText = '#333333'; }
+            if (type === 'decision') { primaryColor = '#2c7be5'; }
+            if (type === 'usecase') { primaryColor = '#2c7be5'; }
+            if (type === 'image' || type === 'choice') { primaryColor = '#718096'; }
+
+            node.style.setProperty('--primary-color', primaryColor);
+            node.style.setProperty('--header-text', headerText);
+
             node.onmousedown = (e) => {
                 if(!e.target.closest('.action-icon') && !e.target.closest('.color-picker-input') && !e.target.closest('.field-input') && !e.target.closest('.resize-handle')) {
                     selectNode(nodeId);
                 }
             };
 
-            // Handle Drag Trigger
             const dragTrigger = `onmousedown="startDrag(event, this.closest('.node'))"`;
 
-            let content = '';
+            // Action Buttons
             let headerActions = `
                 <div class="node-actions">
-                    <div class="color-picker-wrapper" title="لون الخلفية">
-                        <input type="color" class="color-picker-input" onchange="changeColor(this, '${nodeId}')" value="${headerColor}">
+                    <div class="color-picker-wrapper" title="لون الخلفية/الحدود">
+                        <input type="color" class="color-picker-input" onchange="changeColor(this, '${nodeId}')" value="${primaryColor}">
                         <div style="width:100%;height:100%;background:inherit;"></div>
                     </div>
-                     <div class="color-picker-wrapper" title="لون النص" style="background: transparent; border: 1px solid rgba(255,255,255,0.7);">
-                        <input type="color" class="color-picker-input" onchange="changeTextColor(this, '${nodeId}')" value="#ffffff">
-                        <div style="width:100%;height:100%; display:flex; align-items:center; justify-content:center;">T</div>
+                    <div class="color-picker-wrapper" title="لون النص" style="background:transparent; border:1px solid #ddd;">
+                        <input type="color" class="color-picker-input" onchange="changeTextColor(this, '${nodeId}')" value="${headerText}">
+                        <div style="width:100%;height:100%; display:flex; align-items:center; justify-content:center; color:#555; font-size:10px;">T</div>
                     </div>
-                    <span class="action-icon" onclick="deleteNode('${nodeId}')">✖</span>
+                    <span class="action-icon" onclick="deleteNode('${nodeId}')" style="color:${type === 'decision' || type === 'usecase' ? '#333' : 'inherit'}">✖</span>
                 </div>`;
-            
-            // Standard Editable Header
+
             const standardHeader = (title) => `
-                <div class="node-header" style="background-color: ${headerColor}" ${dragTrigger}>
+                <div class="node-header" ${dragTrigger}>
                     <span class="node-title" contenteditable="true" spellcheck="false" oninput="saveToLocal()">${title}</span>
                     ${headerActions}
                 </div>`;
 
-            // Shape Specific HTML
+            let content = '';
+
+            // --- Content Generation Based on Type ---
             if (type === 'class' || type === 'table') {
                 content = `
-                    ${standardHeader(type === 'class' ? 'ClassName' : 'TableName')}
+                    ${standardHeader(type === 'class' ? 'Class Name' : 'Table Name')}
                     <div class="node-body">
-                        <div class="field-row"><input class="field-input" value="${type === 'class' ? '- id: int' : 'id: int (PK)'}" oninput="saveToLocal()"></div>
+                        <div class="field-row"><input class="field-input" value="${type === 'class' ? '- id: int' : 'id (PK)'}" oninput="saveToLocal()"></div>
                     </div>
-                    <button class="add-field-btn" onclick="addField(this, 'attribute')">+ ${type === 'class' ? 'Attribute' : 'Field'}</button>
+                    <button class="add-field-btn" onclick="addField(this, 'attribute')">+ ${type === 'class' ? 'Attribute' : 'Column'}</button>
                     ${type === 'class' ? `
                         <div class="section-separator"></div>
                         <div class="node-body methods-body">
-                             <div class="field-row"><input class="field-input" value="+ save(): void" oninput="saveToLocal()"></div>
+                             <div class="field-row"><input class="field-input" value="+ method(): void" oninput="saveToLocal()"></div>
                         </div>
                         <button class="add-field-btn" onclick="addField(this, 'method')">+ Method</button>
                     ` : ''}
+                `;
+            } else if (type === 'form') {
+                 content = `
+                    ${standardHeader('Form Title')}
+                    <div class="node-body">
+                        <div class="field-row">
+                            <input class="field-input" value="Label:" style="width:40%; font-weight:bold;">
+                            <input class="field-input" placeholder="Input..." style="border:1px solid #ddd; padding:2px; border-radius:3px;">
+                        </div>
+                    </div>
+                    <button class="add-field-btn" onclick="addFormField(this)">+ Input Field</button>
                 `;
             } else if (type === 'usecase') {
                 content = `
@@ -713,23 +747,10 @@
                         ${headerActions}
                     </div>
                 `;
-            } else if (type === 'actor') {
-                content = `
-                    <div ${dragTrigger} style="cursor: grab;">
-                        <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="7" r="4"></circle>
-                            <path d="M12 11v12M8 15h8M8 23h8"></path>
-                        </svg>
-                    </div>
-                    <div class="node-header" style="background:transparent; color:#000;">
-                        <span class="node-title" contenteditable="true" spellcheck="false" oninput="saveToLocal()">Actor</span>
-                         ${headerActions}
-                    </div>
-                `;
             } else if (type === 'activity') {
                  content = `
-                    ${standardHeader('Activity Name')}
-                    <div class="node-body" contenteditable="true" oninput="saveToLocal()" style="padding:10px;">Description</div>
+                    ${standardHeader('Activity')}
+                    <div class="node-body" contenteditable="true" oninput="saveToLocal()" style="padding:10px; text-align:center;">Action...</div>
                 `;
             } else if (type === 'decision') {
                 content = `
@@ -742,14 +763,37 @@
             } else if (type === 'note') {
                 content = `
                     ${standardHeader('Note')}
-                    <div class="node-body" contenteditable="true" oninput="saveToLocal()" style="padding:10px; min-height:100px;">Write here...</div>
+                    <div class="node-body" contenteditable="true" oninput="saveToLocal()" style="padding:10px; min-height:60px; font-family: 'Comic Sans MS', cursive, sans-serif;">Add note...</div>
                 `;
-            } else if (type === 'start' || type === 'end') {
-                content = `<div ${dragTrigger} style="width:100%;height:100%; border-radius:50%; display:flex; justify-content:center; align-items:center; color:white; cursor:grab;"></div>`;
-                 content += `<div style="position:absolute; top:-10px; right:-10px; background:white; border-radius:50%; width:15px; height:15px; font-size:10px; text-align:center; cursor:pointer; border:1px solid #ccc; color:red;" onclick="deleteNode('${nodeId}')">x</div>`;
+            } else if (type === 'image') {
+                content = `
+                    ${standardHeader('Image Node')}
+                    <div class="node-body" style="padding:0;">
+                        <div class="img-placeholder" onclick="updateImage(this)">
+                            <span>📷 Click</span>
+                            <img src="" style="display:none;" />
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'datetime') {
+                content = `
+                    ${standardHeader('Date/Time')}
+                    <div class="node-body" style="padding:10px;">
+                        <input type="datetime-local" class="field-input" onchange="saveToLocal()" style="border:1px solid #ddd; padding:5px; border-radius:4px;">
+                    </div>
+                `;
+            } else if (type === 'choice') {
+                content = `
+                    ${standardHeader('Options List')}
+                    <div class="node-body">
+                        <div class="field-checkbox-row">
+                            <input type="checkbox"> <input class="field-input" value="Option 1" oninput="saveToLocal()">
+                        </div>
+                    </div>
+                    <button class="add-field-btn" onclick="addChoiceField(this)">+ Option</button>
+                `;
             }
 
-            // Ports and Resize Handle
             node.innerHTML = `
                 <div class="resize-handle" onmousedown="startResize(event, '${nodeId}')"></div>
                 <div class="port port-top" onmousedown="startConnection(event, '${nodeId}', 'top')"></div>
@@ -764,27 +808,58 @@
             return node;
         }
 
+        // --- Helpers for New Nodes ---
         function addField(btn, type) {
             const body = btn.previousElementSibling;
-            let val = "new_field";
-            if(type === 'method') val = "+ method(): void";
-            else if(type === 'attribute') val = "- attribute: type";
-            
-            addFieldToNode(body, val);
+            let val = type === 'method' ? "+ newMethod(): void" : "- newAttribute: type";
+            const row = document.createElement('div');
+            row.className = 'field-row';
+            row.innerHTML = `<input class="field-input" value="${val}" oninput="saveToLocal()"><span style="cursor:pointer;color:#e53e3e;" onclick="this.parentNode.remove(); saveToLocal()">×</span>`;
+            body.appendChild(row);
             saveToLocal();
         }
 
-        function addFieldToNode(container, text) {
+        function addFormField(btn) {
+            const body = btn.previousElementSibling;
             const row = document.createElement('div');
             row.className = 'field-row';
-            row.innerHTML = `<input class="field-input" value="${text}" oninput="saveToLocal()"><span style="cursor:pointer;color:#e53e3e;" onclick="this.parentNode.remove(); saveToLocal()">×</span>`;
-            container.appendChild(row);
+            row.innerHTML = `
+                <input class="field-input" value="Label:" style="width:40%; font-weight:bold;" oninput="saveToLocal()">
+                <input class="field-input" placeholder="Input..." style="border:1px solid #ddd; padding:2px; border-radius:3px;">
+                <span style="cursor:pointer;color:#e53e3e;" onclick="this.parentNode.remove(); saveToLocal()">×</span>
+            `;
+            body.appendChild(row);
+            saveToLocal();
+        }
+
+        function addChoiceField(btn) {
+            const body = btn.previousElementSibling;
+            const row = document.createElement('div');
+            row.className = 'field-checkbox-row';
+            row.innerHTML = `
+                <input type="checkbox"> <input class="field-input" value="Option" oninput="saveToLocal()">
+                <span style="cursor:pointer;color:#e53e3e; margin-left:auto;" onclick="this.parentNode.remove(); saveToLocal()">×</span>
+            `;
+            body.appendChild(row);
+            saveToLocal();
+        }
+
+        function updateImage(placeholder) {
+            const url = prompt("Enter Image URL:", "https://via.placeholder.com/150");
+            if (url) {
+                const img = placeholder.querySelector('img');
+                const span = placeholder.querySelector('span');
+                img.src = url;
+                img.style.display = 'block';
+                span.style.display = 'none';
+                saveToLocal();
+            }
         }
 
         function deleteNode(id) {
-            // No confirmation needed for delete key usually, but let's keep it safe or remove confirm for better UX as requested by "keypress"
-            if(confirm('حذف هذا العنصر؟')) {
+            if(confirm('حذف العنصر؟')) {
                 const node = document.getElementById(id);
+                // Remove connections attached to this node
                 connections = connections.filter(conn => {
                     if (conn.from === id || conn.to === id) {
                         conn.path.remove();
@@ -798,70 +873,51 @@
             }
         }
 
+        // --- Styles & Colors ---
         function changeColor(input, nodeId) {
             const node = document.getElementById(nodeId);
-            const color = input.value;
-            node.style.setProperty('--primary-color', color);
-            const header = node.querySelector('.node-header');
-            if (header && !node.classList.contains('shape-actor') && !node.classList.contains('shape-usecase') && !node.classList.contains('shape-decision') && !node.classList.contains('shape-class')) {
-                header.style.backgroundColor = color;
-            }
+            node.style.setProperty('--primary-color', input.value);
             saveToLocal();
         }
 
         function changeTextColor(input, nodeId) {
             const node = document.getElementById(nodeId);
-            const color = input.value;
+            node.style.setProperty('--header-text', input.value);
+            // Force update inline styles if needed
             const header = node.querySelector('.node-header');
-            if (header) {
-                header.style.color = color;
-                // Try to find the title inside
-                const title = header.querySelector('.node-title');
-                if(title) title.style.color = color;
-            }
+            if (header) header.style.color = input.value;
             saveToLocal();
         }
 
-        // --- Resize Logic (Top Right) ---
+        // --- Resize Logic ---
         let resizingNode = null;
-        let resizeStart = { x: 0, y: 0, w: 0, h: 0, top: 0 };
+        let resizeStart = {};
 
         function startResize(e, nodeId) {
             e.stopPropagation();
             e.preventDefault();
             resizingNode = document.getElementById(nodeId);
-            resizeStart.x = e.clientX;
-            resizeStart.y = e.clientY;
-            resizeStart.w = resizingNode.offsetWidth;
-            resizeStart.h = resizingNode.offsetHeight;
-            resizeStart.top = resizingNode.offsetTop;
-            
+            resizeStart = {
+                x: e.clientX, y: e.clientY,
+                w: resizingNode.offsetWidth, h: resizingNode.offsetHeight,
+                top: resizingNode.offsetTop
+            };
             document.addEventListener('mousemove', doResize);
             document.addEventListener('mouseup', stopResize);
         }
 
         function doResize(e) {
             if (!resizingNode) return;
-            
             const dx = (e.clientX - resizeStart.x) / currentZoom;
             const dy = (e.clientY - resizeStart.y) / currentZoom;
-
-            // Top Right Resize:
-            // Width increases with dx
-            // Height increases with -dy (since we pull UP to increase size at the top)
-            // Top position moves with dy
             
-            const newWidth = Math.max(100, resizeStart.w + dx); // Min width 100
-            const newHeight = Math.max(60, resizeStart.h - dy); // Min height 60
-            
-            // Only update top if height changed effectively (above min height)
+            resizingNode.style.width = Math.max(100, resizeStart.w + dx) + 'px';
+            const newHeight = Math.max(60, resizeStart.h - dy);
+            // Only move top if height effectively changed
             if (resizeStart.h - dy > 60) {
                  resizingNode.style.top = (resizeStart.top + dy) + 'px';
             }
-
-            resizingNode.style.width = newWidth + 'px';
-            resizingNode.style.height = newHeight + 'px'; // Enforce height
-            
+            resizingNode.style.height = newHeight + 'px';
             updateLines();
         }
 
@@ -872,20 +928,18 @@
             document.removeEventListener('mouseup', stopResize);
         }
 
-        // --- Dragging Logic ---
+        // --- Drag Logic ---
         let draggedNode = null;
-        let dragStartPos = { x: 0, y: 0 };
-        let nodeStartPos = { x: 0, y: 0 };
+        let dragStartPos = {};
+        let nodeStartPos = {};
 
         function startDrag(e, node) {
-            if(e.target.closest('.resize-handle')) return; // Don't drag if resizing
+            if(e.target.closest('.resize-handle')) return;
             e.stopPropagation();
             draggedNode = node;
-            selectNode(node.id); // Select on drag start
-            dragStartPos.x = e.clientX;
-            dragStartPos.y = e.clientY;
-            nodeStartPos.x = parseInt(node.style.left || 0);
-            nodeStartPos.y = parseInt(node.style.top || 0);
+            selectNode(node.id);
+            dragStartPos = { x: e.clientX, y: e.clientY };
+            nodeStartPos = { x: parseInt(node.style.left || 0), y: parseInt(node.style.top || 0) };
             document.addEventListener('mousemove', onDrag);
             document.addEventListener('mouseup', stopDrag);
         }
@@ -906,18 +960,16 @@
             document.removeEventListener('mouseup', stopDrag);
         }
 
-        // --- Panning ---
+        // --- Pan Logic ---
         let isPanning = false;
-        let panStart = { x: 0, y: 0 };
-        let scrollStart = { x: 0, y: 0 };
+        let panStart = {};
+        let scrollStart = {};
 
         function startPan(e) {
             if (e.target.closest('.node') || e.target.closest('.port')) return;
             isPanning = true;
-            panStart.x = e.clientX;
-            panStart.y = e.clientY;
-            scrollStart.x = document.getElementById('workspace-container').scrollLeft;
-            scrollStart.y = document.getElementById('workspace-container').scrollTop;
+            panStart = { x: e.clientX, y: e.clientY };
+            scrollStart = { x: document.getElementById('workspace-container').scrollLeft, y: document.getElementById('workspace-container').scrollTop };
             document.getElementById('workspace-container').style.cursor = 'grabbing';
             document.addEventListener('mousemove', onPan);
             document.addEventListener('mouseup', stopPan);
@@ -938,7 +990,7 @@
             document.removeEventListener('mouseup', stopPan);
         }
 
-        // --- Connections ---
+        // --- Smart Connection Logic ---
         function startConnection(e, nodeId, portSide) {
             e.stopPropagation();
             isConnecting = true;
@@ -946,7 +998,6 @@
             startPortElem = e.target;
             startPortElem.classList.add('active-port');
             
-            // Temporary line
             const tempLine = document.createElementNS("http://www.w3.org/2000/svg", "path");
             tempLine.setAttribute("id", "temp-line");
             tempLine.setAttribute("stroke", "#2c7be5");
@@ -963,10 +1014,12 @@
             const tempLine = document.getElementById("temp-line");
             const startRect = startPortElem.getBoundingClientRect();
             const workspaceRect = workspace.getBoundingClientRect();
+            
             const x1 = (startRect.left + startRect.width / 2 - workspaceRect.left) / currentZoom;
             const y1 = (startRect.top + startRect.height / 2 - workspaceRect.top) / currentZoom;
             const x2 = (e.clientX - workspaceRect.left) / currentZoom;
             const y2 = (e.clientY - workspaceRect.top) / currentZoom;
+            
             tempLine.setAttribute("d", `M ${x1} ${y1} L ${x2} ${y2}`);
         }
 
@@ -978,28 +1031,119 @@
             if (tempLine) tempLine.remove();
             if (startPortElem) startPortElem.classList.remove('active-port');
 
-            const targetPort = e.target;
-            if (targetPort.classList.contains('port')) {
-                const targetNodeId = targetPort.parentNode.id;
-                if (sourcePort.nodeId !== targetNodeId) {
-                    createConnectionObj(sourcePort.nodeId, targetNodeId);
+            const targetNode = e.target.closest('.node');
+            
+            if (targetNode) {
+                const targetId = targetNode.id;
+                if (sourcePort.nodeId !== targetId) {
+                    createConnectionObj(sourcePort.nodeId, targetId);
                     saveToLocal();
                 }
             }
         }
 
-        function createConnectionObj(id1, id2) {
+        function createConnectionObj(id1, id2, props = {}) {
+            // Check for existing
+            const exists = connections.some(c => (c.from === id1 && c.to === id2) || (c.from === id2 && c.to === id1));
+            if (exists) return;
+
             const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
             svgLayer.appendChild(path);
-            path.addEventListener('dblclick', function() {
-                if(confirm('حذف الرابط؟')) {
-                    this.remove();
-                    connections = connections.filter(c => c.path !== this);
-                    saveToLocal();
-                }
+            
+            // Connection Object
+            const connObj = { 
+                from: id1, 
+                to: id2, 
+                path: path,
+                // Default Properties
+                color: props.color || '#94a3b8',
+                width: props.width || 2,
+                dashed: props.dashed || false,
+                animated: props.animated || false,
+                arrow: props.arrow || 'end' // start, end, both, none
+            };
+
+            // Apply Styles
+            applyLineStyles(connObj);
+
+            // Click Handler for Settings Popup
+            path.addEventListener('click', function(e) {
+                e.stopPropagation();
+                openLineSettings(e, connObj);
             });
-            connections.push({ from: id1, to: id2, path: path });
+
+            connections.push(connObj);
             updateLines();
+        }
+
+        // --- Line Settings & Popups ---
+        function applyLineStyles(conn) {
+            const p = conn.path;
+            p.setAttribute('stroke', conn.color);
+            p.setAttribute('stroke-width', conn.width);
+            
+            // Dashed
+            if (conn.dashed) p.setAttribute('stroke-dasharray', '8,5');
+            else p.removeAttribute('stroke-dasharray');
+
+            // Animated (Needs dasharray to work)
+            if (conn.animated) {
+                p.classList.add('animated-line');
+                // Ensure there is a dash pattern for animation
+                if(!conn.dashed) p.setAttribute('stroke-dasharray', '10,5');
+            } else {
+                p.classList.remove('animated-line');
+                if(!conn.dashed) p.removeAttribute('stroke-dasharray');
+            }
+
+            // Arrows
+            p.removeAttribute('marker-end');
+            p.removeAttribute('marker-start');
+
+            if (conn.arrow === 'end' || conn.arrow === 'both') {
+                p.setAttribute('marker-end', 'url(#arrowhead)');
+            }
+            if (conn.arrow === 'start' || conn.arrow === 'both') {
+                p.setAttribute('marker-start', 'url(#arrowhead-start)');
+            }
+        }
+
+        function openLineSettings(e, connObj) {
+            selectedLine = connObj;
+            
+            // Remove selection class from others
+            document.querySelectorAll('path').forEach(p => p.classList.remove('selected-path'));
+            connObj.path.classList.add('selected-path');
+
+            // Set Form Values
+            document.getElementById('line-color').value = connObj.color;
+            document.getElementById('line-width').value = connObj.width;
+            document.getElementById('line-dashed').checked = connObj.dashed;
+            document.getElementById('line-animated').checked = connObj.animated;
+            document.getElementById('line-arrows').value = connObj.arrow;
+
+            // Position Popup
+            linePopup.style.display = 'block';
+            linePopup.style.left = e.clientX + 'px';
+            linePopup.style.top = e.clientY + 'px';
+        }
+
+        function updateLineStyle(key, value) {
+            if (!selectedLine) return;
+            selectedLine[key] = value;
+            applyLineStyles(selectedLine);
+            saveToLocal();
+        }
+
+        function deleteSelectedLine() {
+            if (!selectedLine) return;
+            if(confirm('هل تريد حذف الرابط؟')) {
+                selectedLine.path.remove();
+                connections = connections.filter(c => c !== selectedLine);
+                selectedLine = null;
+                linePopup.style.display = 'none';
+                saveToLocal();
+            }
         }
 
         function updateLines() {
@@ -1017,10 +1161,10 @@
                 const x2 = (rectB.left + rectB.width / 2 - workspaceRect.left) / currentZoom;
                 const y2 = (rectB.top + rectB.height / 2 - workspaceRect.top) / currentZoom;
 
-                // Bezier
                 const dx = Math.abs(x1 - x2);
                 const dy = Math.abs(y1 - y2);
                 let d = "";
+                
                 if (dx > dy) {
                     const c1x = x1 + (x2 - x1) / 2;
                     d = `M ${x1} ${y1} C ${c1x} ${y1}, ${c1x} ${y2}, ${x2} ${y2}`;
@@ -1033,12 +1177,13 @@
             });
         }
 
-        // --- Zooming & Helpers ---
+        // --- Zoom & Utils ---
         function setZoom(val) {
             currentZoom = parseFloat(val);
             document.getElementById('zoomRange').value = currentZoom;
             document.getElementById('zoomValue').innerText = Math.round(currentZoom * 100) + '%';
             workspace.style.transform = `scale(${currentZoom})`;
+            setTimeout(updateLines, 10);
         }
 
         function adjustZoom(delta) {
@@ -1051,9 +1196,7 @@
         function clearCanvas() {
             if(confirm("هل تريد مسح كل شيء؟")) {
                 canvas.innerHTML = '';
-                // Keep defs
-                const defs = svgLayer.querySelector('defs').outerHTML;
-                svgLayer.innerHTML = defs;
+                connections.forEach(c => c.path.remove());
                 connections = [];
                 nodeCount = 0;
                 localStorage.removeItem('dbDesignerData');
@@ -1062,23 +1205,33 @@
         
         function printCanvas() { window.print(); }
 
-        // --- Storage ---
+        // --- LocalStorage ---
         function saveToLocal() {
             const nodes = [];
             document.querySelectorAll('.node').forEach(n => {
                 const title = n.querySelector('.node-title') ? n.querySelector('.node-title').innerText : '';
-                const color = n.style.getPropertyValue('--primary-color');
-                const headerColor = n.querySelector('.node-header') ? n.querySelector('.node-header').style.color : '';
+                const primaryColor = n.style.getPropertyValue('--primary-color');
+                const headerText = n.style.getPropertyValue('--header-text');
                 const type = n.dataset.type;
-                const w = n.style.width;
-                const h = n.style.height;
                 
                 const inputs = [];
-                n.querySelectorAll('input.field-input').forEach(inp => inputs.push(inp.value));
+                n.querySelectorAll('input.field-input:not([type="datetime-local"])').forEach(inp => inputs.push(inp.value));
+                
+                let extraData = {};
+                
+                if (type === 'image') {
+                     const img = n.querySelector('img');
+                     extraData.src = img.src;
+                     extraData.visible = img.style.display !== 'none';
+                }
+                if (type === 'datetime') {
+                    const dateInput = n.querySelector('input[type="datetime-local"]');
+                    if(dateInput) extraData.date = dateInput.value;
+                }
                 
                 let bodyContent = '';
                 const bodyDiv = n.querySelector('.node-body');
-                if (bodyDiv && type !== 'class' && type !== 'table') {
+                if (bodyDiv && ['note', 'activity'].includes(type)) {
                     bodyContent = bodyDiv.innerText;
                 }
 
@@ -1086,18 +1239,23 @@
                     id: n.id,
                     left: n.style.left,
                     top: n.style.top,
-                    width: w,
-                    height: h,
-                    title: title,
-                    color: color,
-                    headerColor: headerColor,
-                    inputs: inputs,
-                    type: type,
-                    bodyContent: bodyContent
+                    width: n.style.width,
+                    height: n.style.height,
+                    title, type, primaryColor, headerText, inputs, bodyContent, extraData
                 });
             });
 
-            const connData = connections.map(c => ({ from: c.from, to: c.to }));
+            // Save Connection Props
+            const connData = connections.map(c => ({ 
+                from: c.from, 
+                to: c.to,
+                color: c.color,
+                width: c.width,
+                dashed: c.dashed,
+                animated: c.animated,
+                arrow: c.arrow
+            }));
+
             localStorage.setItem('dbDesignerData', JSON.stringify({ nodes, connections: connData, nodeCount }));
             
             saveStatus.innerText = "جاري الحفظ...";
@@ -1115,51 +1273,92 @@
                 const node = addNode(n.type, parseInt(n.left), parseInt(n.top), false);
                 node.id = n.id;
                 
-                // Restore Size
                 if(n.width) node.style.width = n.width;
                 if(n.height) node.style.height = n.height;
 
                 const titleElem = node.querySelector('.node-title');
                 if (titleElem) titleElem.innerText = n.title;
                 
-                node.style.setProperty('--primary-color', n.color);
-                
-                // Restore Colors
-                const header = node.querySelector('.node-header');
-                if (header) {
-                     if(!['actor', 'usecase', 'decision', 'class'].includes(n.type)) {
-                        header.style.backgroundColor = n.color;
-                     }
-                     if(n.headerColor) {
-                         header.style.color = n.headerColor;
-                         if(titleElem) titleElem.style.color = n.headerColor;
-                     }
+                if (n.primaryColor) {
+                    node.style.setProperty('--primary-color', n.primaryColor);
+                    const cp = node.querySelector('.color-picker-input');
+                    if(cp) cp.value = n.primaryColor;
                 }
-                const picker = node.querySelector('.color-picker-input');
-                if (picker) picker.value = n.color;
+                if (n.headerText) node.style.setProperty('--header-text', n.headerText);
 
                 // Restore Content
-                if (n.type === 'class' || n.type === 'table') {
+                if (['class', 'table', 'form', 'choice'].includes(n.type)) {
                     const bodies = node.querySelectorAll('.node-body');
                     bodies.forEach(b => b.innerHTML = '');
-                    
                     const mainBody = node.querySelector('.node-body'); 
                     const methodsBody = node.querySelector('.methods-body');
                     
-                    n.inputs.forEach(val => {
-                        if (val.includes('(') && methodsBody) {
-                             addFieldToNode(methodsBody, val);
-                        } else {
-                             addFieldToNode(mainBody, val);
-                        }
-                    });
+                    if (n.type === 'form') {
+                         n.inputs.forEach((val, i) => {
+                             if(i % 2 === 0) {
+                                 const row = document.createElement('div');
+                                 row.className = 'field-row';
+                                 row.innerHTML = `
+                                    <input class="field-input" value="${val}" style="width:40%; font-weight:bold;" oninput="saveToLocal()">
+                                    <input class="field-input" value="${n.inputs[i+1] || ''}" style="border:1px solid #ddd; padding:2px; border-radius:3px;">
+                                    <span style="cursor:pointer;color:#e53e3e;" onclick="this.parentNode.remove(); saveToLocal()">×</span>
+                                `;
+                                mainBody.appendChild(row);
+                             }
+                         });
+                    } else if (n.type === 'choice') {
+                        n.inputs.forEach(val => {
+                             const row = document.createElement('div');
+                             row.className = 'field-checkbox-row';
+                             row.innerHTML = `<input type="checkbox"> <input class="field-input" value="${val}" oninput="saveToLocal()"><span style="cursor:pointer;color:#e53e3e; margin-left:auto;" onclick="this.parentNode.remove(); saveToLocal()">×</span>`;
+                             mainBody.appendChild(row);
+                        });
+                    } else {
+                        n.inputs.forEach(val => {
+                            if (val.includes('(') && methodsBody) {
+                                addFieldToNode(methodsBody, val);
+                            } else {
+                                addFieldToNode(mainBody, val);
+                            }
+                        });
+                    }
+                } else if (n.type === 'image') {
+                    if (n.extraData && n.extraData.visible) {
+                        const img = node.querySelector('img');
+                        const span = node.querySelector('.img-placeholder span');
+                        img.src = n.extraData.src;
+                        img.style.display = 'block';
+                        span.style.display = 'none';
+                    }
+                } else if (n.type === 'datetime') {
+                    if (n.extraData && n.extraData.date) {
+                        node.querySelector('input').value = n.extraData.date;
+                    }
                 } else {
                     const body = node.querySelector('.node-body');
                     if (body) body.innerText = n.bodyContent;
                 }
             });
 
-            data.connections.forEach(c => createConnectionObj(c.from, c.to));
+            // Restore Connections with props
+            if(data.connections) {
+                data.connections.forEach(c => {
+                    createConnectionObj(c.from, c.to, {
+                        color: c.color,
+                        width: c.width,
+                        dashed: c.dashed,
+                        animated: c.animated,
+                        arrow: c.arrow
+                    });
+                });
+            }
+        }
+
+        function addFieldToNode(container, text) {
+            const row = document.createElement('div');
+            row.className = 'field-row';
+            row.innerHTML = `<input class="field-input" value="${text}" oninput="saveToLocal()"><span style="cursor:pointer;color:#e53e3e;" onclick="this.parentNode.remove(); saveToLocal()">×</span>`;
+            container.appendChild(row);
         }
 
     </script>

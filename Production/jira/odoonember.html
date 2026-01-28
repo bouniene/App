@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Odoo Relicat Analyzer</title>
+    <style>
+        :root {
+            --primary: #714B67;
+            --secondary: #2c3e50;
+            --accent: #3498db;
+            --header-bg: #f1f3f5;
+            --border: #ced4da;
+            --sidebar-width: 250px;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            font-size: 13px;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Layout */
+        .app-layout {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--secondary);
+            color: #ecf0f1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #ddd;
+        }
+        .sidebar-header {
+            padding: 15px;
+            background-color: #1a252f;
+            text-align: center;
+        }
+        .sidebar-header h3 { margin: 0; font-size: 16px; color: white; }
+        .sidebar-actions {
+            padding: 10px;
+            border-bottom: 1px solid #34495e;
+            display: flex;
+            gap: 5px;
+        }
+        .sidebar-actions button {
+            flex: 1;
+            background: var(--accent);
+            color: white;
+            padding: 5px;
+            font-size: 11px;
+        }
+        .page-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        .page-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #34495e;
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .page-item:hover { background-color: #34495e; }
+        .page-item.active { background-color: var(--primary); border-left: 4px solid white; }
+        .folder-label {
+            padding: 5px 10px;
+            background: #1a252f;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #bdc3c7;
+            font-weight: bold;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex-grow: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: white;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 100%;
+            background: white;
+            padding: 0;
+            border-radius: 0;
+            box-shadow: none;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: flex-start;
+        }
+        textarea {
+            flex-grow: 1;
+            height: 60px;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .btn-group { display: flex; flex-direction: column; gap: 5px; }
+        button {
+            padding: 6px 15px; border: none; border-radius: 4px;
+            cursor: pointer; font-size: 12px; font-weight: bold; white-space: nowrap;
+        }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-success { background-color: #28a745; color: white; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        .btn-secondary { background-color: #6c757d; color: white; }
+
+        .table-wrapper { overflow-x: auto; border: 1px solid var(--border); border-radius: 4px; height: 65vh; position: relative; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td {
+            border: 1px solid var(--border);
+            padding: 4px 6px;
+            text-align: center;
+            white-space: nowrap;
+        }
+        th {
+            background-color: var(--header-bg);
+            position: sticky; top: 0; z-index: 10;
+        }
+        
+        /* Footer Styling */
+        tfoot th, tfoot td {
+            position: sticky;
+            bottom: 0;
+            background-color: #fff3cd; /* Light yellow for visibility */
+            font-weight: bold;
+            z-index: 10;
+            border-top: 2px solid #666;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* Product Name */
+        td:first-child, tfoot td:first-child {
+            text-align: left; font-weight: bold; color: var(--primary);
+            max-width: 300px; white-space: normal;
+        }
+
+        /* Editable */
+        [contenteditable="true"] { background-color: #fff; cursor: text; }
+        [contenteditable="true"]:focus { background-color: #fff3cd; outline: 2px solid var(--primary); }
+
+        /* Columns Colors */
+        .col-production { background-color: #e3f2fd; font-weight: bold; color: #0d47a1; }
+        .col-consumption { background-color: #fff0f0; border-left: 2px solid #333; }
+        .col-balance { background-color: #e8f5e9; font-weight: bold; color: #1b5e20; cursor: copy; }
+        .col-balance:hover { background-color: #c8e6c9; }
+        .negative { color: #c62828; }
+
+        .mode-badge {
+            font-size: 10px; padding: 1px 4px; border-radius: 3px; margin-left: 3px; cursor: pointer;
+        }
+        .mode-plus { background: #d4edda; color: #155724; }
+        .mode-minus { background: #f8d7da; color: #721c24; }
+        .mode-ignore { background: #e2e3e5; color: #6c757d; text-decoration: line-through; }
+        
+        .copy-icon {
+            cursor: pointer; font-size: 10px; margin-left: 5px; color: #555; border: 1px solid #999; padding: 0 4px; border-radius: 3px;
+        }
+        .copy-icon:hover { background: #333; color: #fff; }
+
+        /* Toast Notification */
+        #toast {
+            visibility: hidden;
+            min-width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 4px;
+            padding: 10px;
+            position: fixed;
+            z-index: 100;
+            right: 30px;
+            bottom: 30px;
+            font-size: 12px;
+        }
+        #toast.show {
+            visibility: visible;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+    </style>
+</head>
+<body>
+
+<div class="app-layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h3>Relicat Analyzer</h3>
+        </div>
+        <div class="sidebar-actions">
+            <button onclick="addNewPage()">+ New Page</button>
+            <button class="btn-danger" onclick="deleteCurrentPage()">Del</button>
+        </div>
+        <ul class="page-list" id="pageList">
+            </ul>
+    </aside>
+
+    <main class="main-content">
+        <div class="container">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3 style="margin:0; color:var(--primary);" id="pageTitleDisplay">Relicat vs Consumption</h3>
+                <span style="font-size:11px; color:#666;">Note: Paste "Total Consumption" from Excel into the first cell of the Consumption column.</span>
+            </div>
+            
+            <div class="input-group">
+                <textarea id="rawData" placeholder="Paste Odoo Relicat data here..."></textarea>
+                <div class="btn-group">
+                    <button class="btn-primary" onclick="processData()">+ Add Relicat Data</button>
+                    <button class="btn-success" onclick="copyTable()">Export to Excel</button>
+                    <button class="btn-danger" onclick="clearTableData()">Clear Data</button>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table id="dataTable">
+                    <thead>
+                        <tr id="headerRow"></tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                    <tfoot id="tableFooter">
+                        </tfoot>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<div id="toast">Copied to clipboard!</div>
+
+<script>
+    // --- State Management for Multi-Page ---
+    let pages = [];
+    let currentPageId = null;
+
+    // Core Data Variables (Reset per page load)
+    let globalData = {}; 
+    let importColumns = []; 
+    let colCounter = 0;
+    let orderedKeys = []; 
+
+    // --- Initialization ---
+    window.onload = function() {
+        // Create default page if none exists
+        if (pages.length === 0) {
+            createNewPageObj("General", "Sheet 1");
+        }
+        renderPageList();
+    };
+
+    function createNewPageObj(folder, name) {
+        const id = Date.now().toString();
+        const newPage = {
+            id: id,
+            folder: folder,
+            name: name,
+            data: {
+                globalData: {},
+                importColumns: [],
+                colCounter: 0,
+                orderedKeys: []
+            }
+        };
+        pages.push(newPage);
+        loadPage(id);
+    }
+
+    function addNewPage() {
+        const folder = prompt("Folder Name (e.g. Month, Client):", "General");
+        if(folder === null) return;
+        const name = prompt("Page Name:", "New Sheet");
+        if(name === null) return;
+        createNewPageObj(folder, name);
+        renderPageList();
+    }
+
+    function deleteCurrentPage() {
+        if(pages.length <= 1) {
+            alert("Cannot delete the last page.");
+            return;
+        }
+        if(confirm("Are you sure you want to delete this page?")) {
+            const idx = pages.findIndex(p => p.id === currentPageId);
+            pages.splice(idx, 1);
+            loadPage(pages[0].id);
+            renderPageList();
+        }
+    }
+
+    function saveCurrentState() {
+        if (!currentPageId) return;
+        const page = pages.find(p => p.id === currentPageId);
+        if (page) {
+            page.data.globalData = JSON.parse(JSON.stringify(globalData));
+            page.data.importColumns = JSON.parse(JSON.stringify(importColumns));
+            page.data.colCounter = colCounter;
+            page.data.orderedKeys = JSON.parse(JSON.stringify(orderedKeys));
+        }
+    }
+
+    function loadPage(id) {
+        // Save old page first
+        if (currentPageId) saveCurrentState();
+
+        currentPageId = id;
+        const page = pages.find(p => p.id === id);
+        
+        // Load data into global variables
+        globalData = JSON.parse(JSON.stringify(page.data.globalData));
+        importColumns = JSON.parse(JSON.stringify(page.data.importColumns));
+        colCounter = page.data.colCounter;
+        orderedKeys = JSON.parse(JSON.stringify(page.data.orderedKeys));
+
+        // Update UI
+        document.getElementById('pageTitleDisplay').innerText = `${page.folder} / ${page.name}`;
+        document.getElementById('rawData').value = '';
+        renderPageList();
+        renderTable();
+    }
+
+    function renderPageList() {
+        const listEl = document.getElementById('pageList');
+        listEl.innerHTML = '';
+        
+        // Group by folder
+        const folders = {};
+        pages.forEach(p => {
+            if(!folders[p.folder]) folders[p.folder] = [];
+            folders[p.folder].push(p);
+        });
+
+        for (const [folderName, pageArr] of Object.entries(folders)) {
+            const folderDiv = document.createElement('li');
+            folderDiv.className = 'folder-label';
+            folderDiv.innerText = folderName;
+            listEl.appendChild(folderDiv);
+
+            pageArr.forEach(p => {
+                const li = document.createElement('li');
+                li.className = `page-item ${p.id === currentPageId ? 'active' : ''}`;
+                li.innerText = p.name;
+                li.onclick = () => loadPage(p.id);
+                listEl.appendChild(li);
+            });
+        }
+    }
+
+
+    // --- Core Logic ---
+
+    function parseNumber(str) {
+        if (!str) return 0;
+        let clean = str.toString().replace(/,/g, ''); 
+        clean = clean.replace(/[^\d.-]/g, '');
+        return parseFloat(clean) || 0;
+    }
+
+    function formatNumber(num) {
+        return num.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 3});
+    }
+
+    // --- Peeling Algorithm ---
+    function parseLine(line) {
+        line = line.trim();
+        if (!line) return null;
+
+        // 1. Remove text units
+        let cleanLine = line.replace(/\s*(kg|Unité\(s\)|Unit|Units|L|m)\s*$/i, '');
+
+        let finalValue = 0;
+        let foundValue = false;
+        
+        // 2. Loop to remove numbers from end
+        for (let i = 0; i < 4; i++) {
+            let match = cleanLine.match(/(\d[\d,.]*)$/);
+            
+            if (match) {
+                let numStr = match[1];
+                let val = parseNumber(numStr);
+
+                if (!foundValue) {
+                    finalValue = val;
+                    foundValue = true;
+                }
+
+                cleanLine = cleanLine.substring(0, cleanLine.length - numStr.length).trim();
+            } else {
+                break;
+            }
+        }
+
+        let name = cleanLine.trim();
+        if (name.length < 2) return null;
+
+        return { name: name, value: finalValue };
+    }
+
+    function processData() {
+        const text = document.getElementById('rawData').value;
+        const lines = text.split('\n');
+        const newData = {};
+
+        lines.forEach(line => {
+            const parsed = parseLine(line);
+            if (parsed) {
+                if (newData[parsed.name]) newData[parsed.name] += parsed.value;
+                else newData[parsed.name] = parsed.value;
+            }
+        });
+
+        if (Object.keys(newData).length === 0) {
+            alert("Check data, no numbers extracted.");
+            return;
+        }
+
+        colCounter++;
+        const colId = `col_${colCounter}`;
+        importColumns.push({ id: colId, mode: 'plus', label: `Relicat ${colCounter}` });
+
+        for (const [name, val] of Object.entries(newData)) {
+            if (!globalData[name]) {
+                globalData[name] = { name: name, values: {}, consumption: 0 };
+                orderedKeys.push(name);
+            }
+            globalData[name].values[colId] = val;
+        }
+        
+        orderedKeys.sort();
+        saveCurrentState(); // Auto save
+        document.getElementById('rawData').value = ''; 
+        renderTable();
+    }
+
+    function renderTable() {
+        const thead = document.getElementById('headerRow');
+        const tbody = document.getElementById('tableBody');
+        const tfoot = document.getElementById('tableFooter');
+        
+        // --- Header ---
+        let headerHTML = `<th>Product Name</th>`;
+        importColumns.forEach((col, index) => {
+            let badgeClass = col.mode === 'plus' ? 'mode-plus' : (col.mode === 'minus' ? 'mode-minus' : 'mode-ignore');
+            let sign = col.mode === 'plus' ? '+' : (col.mode === 'minus' ? '-' : 'x');
+            headerHTML += `<th onclick="toggleColMode(${index})">${col.label} <span class="mode-badge ${badgeClass}">${sign}</span></th>`;
+        });
+        // Renamed to Total Relicat as per user workflow
+        headerHTML += `<th class="col-production">Total Relicat</th>`;
+        headerHTML += `<th class="col-consumption">Total Cons. <span class="copy-icon" onclick="copyConsumptionColumn(event)" title="Copy entire column">Copy</span></th>`;
+        headerHTML += `<th class="col-balance">Diff (Cons - Relicat)</th>`;
+        thead.innerHTML = headerHTML;
+
+        // --- Body & Totals Calculation ---
+        let rowsHTML = '';
+        
+        let grandTotalRelicat = 0;
+        let grandTotalConsumption = 0;
+        let grandTotalBalance = 0;
+        // Object to hold column totals for imports
+        let importTotals = {};
+        importColumns.forEach(col => importTotals[col.id] = 0);
+
+        orderedKeys.forEach((name, index) => {
+            let rowData = globalData[name];
+            let relicatSum = 0;
+            let colsHTML = '';
+            
+            importColumns.forEach(col => {
+                let val = rowData.values[col.id] || 0;
+                
+                // Add to column total
+                importTotals[col.id] += val;
+
+                if (col.mode === 'plus') relicatSum += val;
+                else if (col.mode === 'minus') relicatSum -= val;
+                
+                colsHTML += `<td contenteditable="true" onblur="updateImportValue('${name}', '${col.id}', this)">${val === 0 ? '-' : formatNumber(val)}</td>`;
+            });
+
+            let consumption = rowData.consumption || 0;
+            
+            // --- CALCULATION: Consumption - Relicat Sum ---
+            let balance = consumption - relicatSum;
+
+            // Add to grand totals
+            grandTotalRelicat += relicatSum;
+            grandTotalConsumption += consumption;
+            grandTotalBalance += balance;
+
+            rowsHTML += `<tr>
+                <td style="text-align:left;">${name}</td>
+                ${colsHTML}
+                <td class="col-production">${formatNumber(relicatSum)}</td>
+                <td class="col-consumption" 
+                    contenteditable="true" 
+                    onblur="updateConsumption('${name}', this)"
+                    onpaste="handlePaste(event, ${index})">${consumption === 0 ? '' : formatNumber(consumption)}</td>
+                <td class="col-balance ${balance < 0 ? 'negative' : ''}" 
+                    title="Click to copy value"
+                    onclick="copyToClipboard('${balance}')">${formatNumber(balance)}</td>
+            </tr>`;
+        });
+
+        tbody.innerHTML = rowsHTML;
+
+        // --- Footer (Totals at bottom) ---
+        let footerHTML = `<tr>
+            <td>TOTALS</td>`;
+        
+        importColumns.forEach(col => {
+            footerHTML += `<td>${formatNumber(importTotals[col.id])}</td>`;
+        });
+
+        footerHTML += `<td class="col-production">${formatNumber(grandTotalRelicat)}</td>`;
+        footerHTML += `<td class="col-consumption">${formatNumber(grandTotalConsumption)}</td>`;
+        footerHTML += `<td class="col-balance ${grandTotalBalance < 0 ? 'negative' : ''}">${formatNumber(grandTotalBalance)}</td>`;
+        footerHTML += `</tr>`;
+
+        tfoot.innerHTML = footerHTML;
+    }
+
+    // --- Helper Features ---
+
+    function copyToClipboard(text) {
+        let val = text.toString().replace(/,/g, ''); 
+        navigator.clipboard.writeText(val).then(() => {
+            showToast();
+        });
+    }
+
+    function copyConsumptionColumn(e) {
+        e.stopPropagation(); 
+        let textToCopy = "";
+        orderedKeys.forEach(name => {
+            let val = globalData[name].consumption || 0;
+            textToCopy += val + "\n";
+        });
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            showToast("Consumption column copied!");
+        });
+    }
+
+    function showToast(msg = "Copied to clipboard!") {
+        const x = document.getElementById("toast");
+        x.innerText = msg;
+        x.className = "show";
+        setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+    }
+
+
+    // --- Existing Functionality ---
+
+    function handlePaste(e, startIndex) {
+        e.preventDefault(); 
+        let clipboardData = (e.clipboardData || window.clipboardData).getData('text');
+        let rows = clipboardData.split(/\r\n|\n|\r/);
+        rows = rows.filter(r => r.trim() !== '');
+
+        let currentIndex = startIndex;
+
+        rows.forEach((rowValue) => {
+            if (currentIndex >= orderedKeys.length) return;
+            let name = orderedKeys[currentIndex];
+            let val = parseNumber(rowValue);
+            if (globalData[name]) {
+                globalData[name].consumption = val;
+            }
+            currentIndex++;
+        });
+
+        saveCurrentState();
+        renderTable(); 
+    }
+
+    function updateImportValue(name, colId, element) {
+        let newVal = parseNumber(element.innerText);
+        if (globalData[name]) {
+            globalData[name].values[colId] = newVal;
+            saveCurrentState();
+            renderTable();
+        }
+    }
+
+    function updateConsumption(name, element) {
+        let newVal = parseNumber(element.innerText);
+        if (globalData[name]) {
+            globalData[name].consumption = newVal;
+            saveCurrentState();
+            renderTable();
+        }
+    }
+
+    function toggleColMode(index) {
+        const modes = ['plus', 'minus', 'ignore'];
+        const currentMode = importColumns[index].mode;
+        const nextMode = modes[(modes.indexOf(currentMode) + 1) % modes.length];
+        importColumns[index].mode = nextMode;
+        saveCurrentState();
+        renderTable();
+    }
+
+    function clearTableData() {
+        if(confirm('Are you sure? This will delete all data on the CURRENT page.')) {
+            globalData = {};
+            importColumns = [];
+            orderedKeys = [];
+            colCounter = 0;
+            saveCurrentState();
+            renderTable();
+        }
+    }
+
+    function copyTable() {
+        const table = document.getElementById('dataTable');
+        const copyIcon = document.querySelector('.copy-icon');
+        if(copyIcon) copyIcon.style.display = 'none';
+
+        const range = document.createRange();
+        range.selectNode(table);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        document.execCommand('copy');
+        window.getSelection().removeAllRanges();
+        
+        if(copyIcon) copyIcon.style.display = 'inline';
+        showToast('Table copied to Excel!');
+    }
+</script>
+
+</body>
+</html>
