@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APS Pro | Production Scheduler</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Professional Palette matching the image */
+            --header-bg: #2b303b; /* Dark Navy/Grey */
+            --header-text: #ffffff;
+            --body-bg: #eef1f5; /* Light grey background */
+            --panel-bg: #ffffff;
+            --border-color: #d1d5db;
+            --grid-line: #e5e7eb;
+            
+            --primary: #2563eb;     /* Blue */
+            --action-orange: #f97316; /* Professional Orange for primary actions */
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            
+            --text-main: #374151;
+            --text-secondary: #6b7280;
+            
+            --row-height: 50px;
+            --header-height: 55px;
+        }
+
+        /* Dark Mode Override (Optional) */
+        body.dark-mode {
+            --header-bg: #1f2937;
+            --body-bg: #111827;
+            --panel-bg: #1f2937;
+            --border-color: #374151;
+            --grid-line: #374151;
+            --text-main: #e5e7eb;
+            --text-secondary: #9ca3af;
+        }
+
+        * { box-sizing: border-box; outline: none; }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--body-bg);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            font-size: 13px;
+        }
+
+        /* --- Layout --- */
+        #app {
+            display: grid;
+            grid-template-rows: var(--header-height) 1fr;
+            height: 100vh;
+        }
+
+        /* --- Top Navigation Bar (Professional Look) --- */
+        header {
+            background-color: var(--header-bg);
+            color: var(--header-text);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 50;
+        }
+
+        .brand {
+            display: flex; align-items: center; gap: 10px;
+            font-weight: 600; font-size: 16px; min-width: 200px;
+        }
+
+        .top-toolbar {
+            display: flex; align-items: center; gap: 15px; flex: 1; justify-content: flex-end;
+        }
+
+        /* Search Bar simulation */
+        .search-box {
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            padding: 6px 12px;
+            display: flex; align-items: center; gap: 8px;
+            width: 300px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .search-box input {
+            background: transparent; border: none; color: white; width: 100%; font-size: 13px;
+        }
+        .search-box input::placeholder { color: rgba(255,255,255,0.5); }
+
+        /* Buttons */
+        .btn {
+            border: none; padding: 0 16px; height: 32px; border-radius: 4px;
+            cursor: pointer; font-weight: 500; font-size: 12px;
+            display: flex; align-items: center; gap: 6px;
+            transition: all 0.2s;
+        }
+        .btn-orange { background-color: var(--action-orange); color: white; }
+        .btn-orange:hover { background-color: #e66000; }
+        
+        .btn-blue { background-color: var(--primary); color: white; }
+        .btn-blue:hover { filter: brightness(1.1); }
+
+        .btn-ghost { background: transparent; color: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.2); }
+        .btn-ghost:hover { background: rgba(255,255,255,0.1); color: white; }
+
+        .btn-icon { width: 32px; padding: 0; justify-content: center; }
+
+        /* --- Main Content Area --- */
+        .main-wrapper {
+            display: grid;
+            grid-template-rows: 40px 1fr 250px; /* Tabs, Gantt, Bottom Panel */
+            overflow: hidden;
+            background: var(--panel-bg);
+        }
+
+        /* Sub-Header / Filters */
+        .sub-header {
+            display: flex; align-items: center; gap: 20px;
+            padding: 0 15px; border-bottom: 1px solid var(--border-color);
+            background: #f9fafb;
+        }
+        .view-tab {
+            padding: 10px 0; border-bottom: 2px solid transparent; cursor: pointer; color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .view-tab.active { border-bottom-color: var(--action-orange); color: var(--action-orange); }
+
+        /* --- Gantt Layout --- */
+        .gantt-container {
+            display: grid;
+            grid-template-columns: 200px 1fr; /* Fixed Resource Width */
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Resource Column (Spreadsheet style) */
+        .resource-col {
+            border-right: 1px solid var(--border-color);
+            background: #ffffff;
+            z-index: 20;
+            display: flex; flex-direction: column;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+        }
+        .res-header-cell {
+            height: var(--row-height); border-bottom: 1px solid var(--border-color);
+            background: #f3f4f6; color: var(--text-secondary); font-weight: 600;
+            display: flex; align-items: center; padding-left: 15px; text-transform: uppercase; font-size: 11px;
+        }
+        .res-row-cell {
+            height: var(--row-height); border-bottom: 1px solid var(--border-color);
+            display: flex; align-items: center; padding: 0 15px; justify-content: space-between;
+            font-weight: 500; color: var(--text-main);
+            background: white;
+        }
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+        }
+
+        /* Timeline Area */
+        .timeline-wrapper {
+            overflow: auto;
+            position: relative;
+            background: #ffffff;
+        }
+        
+        .time-scale {
+            position: sticky; top: 0; z-index: 10;
+            height: var(--row-height);
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+        }
+        
+        .time-cell {
+            border-right: 1px solid var(--grid-line);
+            padding: 5px 8px;
+            display: flex; flex-direction: column; justify-content: center;
+            font-size: 11px; color: var(--text-secondary);
+            box-sizing: border-box;
+            background: #ffffff;
+        }
+        .time-cell b { color: var(--text-main); font-size: 12px; }
+
+        /* Grid & Bars */
+        .grid-bg {
+            position: absolute; top: var(--row-height); left: 0; right: 0; bottom: 0;
+            background-image: linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 50px 100%; /* Will be dynamic */
+            z-index: 0;
+        }
+
+        .gantt-row {
+            height: var(--row-height);
+            border-bottom: 1px solid var(--grid-line);
+            position: relative;
+            width: 100%;
+        }
+        .gantt-row.hovered { background-color: rgba(243, 244, 246, 0.5); }
+
+        /* The Operation Bar (Refined) */
+        .op-bar {
+            position: absolute; top: 6px; height: 38px;
+            border-radius: 3px;
+            font-size: 11px;
+            display: flex; flex-direction: column; justify-content: center;
+            padding: 0 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+            cursor: grab;
+            color: white;
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.1);
+            z-index: 5;
+            transition: box-shadow 0.2s;
+        }
+        .op-bar:hover { z-index: 30; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .op-bar.selected { border: 2px solid white; outline: 2px solid var(--primary); z-index: 31; }
+        
+        .op-bar-header { font-weight: bold; display: flex; justify-content: space-between; margin-bottom: 2px; }
+        .op-bar-sub { opacity: 0.9; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* Connectors (Pegging) */
+        .connector-svg {
+            position: absolute; top: var(--row-height); left: 0; height: 100%; width: 100%;
+            pointer-events: none; z-index: 4;
+        }
+        .connector-path {
+            fill: none;
+            stroke: var(--action-orange);
+            stroke-width: 2px;
+            opacity: 0.6;
+        }
+
+        /* Now Marker */
+        .now-marker {
+            position: absolute; top: 0; bottom: 0; width: 2px; background: var(--danger);
+            z-index: 40; pointer-events: none;
+        }
+        .now-tag {
+            position: absolute; top: 0; left: 0; background: var(--danger); color: white;
+            font-size: 9px; padding: 2px 4px; border-radius: 0 0 4px 0;
+        }
+
+        /* --- Bottom Panel (Data Grid Style) --- */
+        .bottom-panel {
+            border-top: 1px solid var(--border-color);
+            background: white;
+            display: flex; flex-direction: column;
+        }
+        .panel-header {
+            padding: 8px 15px; background: #f9fafb; border-bottom: 1px solid var(--border-color);
+            font-weight: 600; color: var(--text-main); display: flex; justify-content: space-between;
+        }
+        
+        /* Table Grid for Unscheduled Items */
+        .data-grid {
+            display: flex; flex-direction: column; overflow-y: auto; flex: 1;
+        }
+        .grid-row {
+            display: grid;
+            grid-template-columns: 80px 150px 100px 100px 150px 1fr;
+            padding: 8px 15px; border-bottom: 1px solid var(--grid-line);
+            align-items: center; font-size: 12px; cursor: grab;
+            background: white;
+        }
+        .grid-row:hover { background: #f0f9ff; }
+        .grid-header {
+            background: #f3f4f6; color: var(--text-secondary); font-weight: 600; cursor: default;
+        }
+        
+        .tag { padding: 2px 6px; border-radius: 4px; font-size: 10px; background: #e5e7eb; color: #374151; }
+        .tag.blue { background: #dbeafe; color: #1e40af; }
+        .tag.orange { background: #ffedd5; color: #9a3412; }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 100;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .modal-card {
+            background: white; width: 450px; border-radius: 6px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15); padding: 20px;
+        }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 12px; color: var(--text-secondary); }
+        .form-input { width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; }
+        .form-input:focus { border-color: var(--primary); }
+
+        /* Drag Ghost */
+        .ghost-preview {
+            position: absolute; height: 38px; border: 2px dashed var(--action-orange);
+            background: rgba(249, 115, 22, 0.1); border-radius: 3px; pointer-events: none; z-index: 50;
+            display: flex; align-items: center; justify-content: center; color: var(--action-orange); font-weight: bold;
+        }
+    </style>
+</head>
+<body :class="{'dark-mode': isDarkMode}">
+
+<div id="app">
+    <header>
+        <div class="brand">
+            <i class="fa-solid fa-layer-group" style="color:var(--action-orange);"></i>
+            <span>APS Scheduler Pro</span>
+        </div>
+
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass" style="color:rgba(255,255,255,0.5);"></i>
+            <input type="text" placeholder="Search orders, jobs or materials...">
+        </div>
+
+        <div class="top-toolbar">
+            <button class="btn btn-ghost" @click="toggleTheme" title="Toggle Theme">
+                <i class="fa-solid" :class="isDarkMode ? 'fa-sun' : 'fa-moon'"></i>
+            </button>
+            <button class="btn btn-ghost"><i class="fa-solid fa-filter"></i> Filters</button>
+            <button class="btn btn-ghost"><i class="fa-solid fa-gear"></i> Settings</button>
+            <div style="width:1px; height:20px; background:rgba(255,255,255,0.2); margin:0 5px;"></div>
+            <button class="btn btn-blue" @click="autoSchedule"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Plan</button>
+            <button class="btn btn-orange" @click="openAddOrderModal"><i class="fa-solid fa-plus"></i> New Order</button>
+        </div>
+    </header>
+
+    <div class="main-wrapper">
+        
+        <div class="sub-header">
+            <div class="view-tab" :class="{active: currentView==='gantt'}" @click="currentView='gantt'">Gantt Planning</div>
+            <div class="view-tab" :class="{active: currentView==='list'}" @click="currentView='list'">Order List</div>
+            <div class="view-tab" :class="{active: currentView==='capacity'}" @click="currentView='capacity'">Capacity</div>
+            
+            <div style="margin-left:auto; font-size:12px; display:flex; gap:15px; color:var(--text-secondary);">
+                <span><b style="color:var(--text-main);">{{kpis.otif}}%</b> OTIF</span>
+                <span><b style="color:var(--text-main);">{{kpis.utilization}}%</b> Efficiency</span>
+            </div>
+            
+            <button class="btn btn-ghost" style="color:var(--text-main); border-color:var(--border-color);" @click="scrollToToday">
+                Today
+            </button>
+        </div>
+
+        <div v-show="currentView === 'gantt'" class="gantt-container">
+            
+            <div class="resource-col">
+                <div class="res-header-cell">Resources</div>
+                <div class="res-row-cell" v-for="res in resources" :key="res.id">
+                    <div style="display:flex; flex-direction:column;">
+                        <span>{{res.name}}</span>
+                        <span style="font-size:10px; color:var(--text-secondary);">{{res.group}}</span>
+                    </div>
+                    <div class="status-dot" :style="{background: res.status === 'running' ? 'var(--success)' : 'var(--danger)'}" :title="res.status"></div>
+                </div>
+            </div>
+
+            <div class="timeline-wrapper" ref="timelineScroll" @scroll="onScroll" @mousemove="onMouseMove">
+                
+                <div class="time-scale" :style="{width: totalWidth + 'px'}">
+                    <div v-for="d in config.scheduleDays" :key="d" 
+                         class="time-cell" :style="{width: dayWidth + 'px'}">
+                        <b>{{ getDayName(d-1) }}</b>
+                        <span>{{ getDayFullDate(d-1) }}</span>
+                    </div>
+                </div>
+
+                <div class="grid-bg" :style="{width: totalWidth + 'px', backgroundSize: hourWidth + 'px 100%'}"></div>
+                
+                <div class="now-marker" :style="{left: nowMarkerPos + 'px'}">
+                    <div class="now-tag">NOW</div>
+                </div>
+
+                <svg class="connector-svg" :style="{width: totalWidth + 'px'}">
+                    <path v-for="(line, idx) in peggingLines" :key="idx" :d="line.path" class="connector-path"></path>
+                </svg>
+
+                <div v-for="res in resources" :key="res.id" 
+                     class="gantt-row"
+                     :class="{'hovered': dragState.hoverResId === res.id}"
+                     :style="{width: totalWidth + 'px'}"
+                     @dragover.prevent="onDragOver($event, res.id)"
+                     @drop="onDrop($event, res.id)">
+                     
+                     <div v-for="op in getOpsForResource(res.id)" :key="op.id"
+                          class="op-bar"
+                          draggable="true"
+                          :class="{'selected': selectedOpId === op.id}"
+                          :style="{
+                              left: (op.startTime * config.pixelsPerMin) + 'px',
+                              width: ((op.setupDuration + op.runDuration) * config.pixelsPerMin) + 'px',
+                              backgroundColor: getOpColor(op.color)
+                          }"
+                          @dragstart="startDrag($event, op)"
+                          @click.stop="selectOp(op)"
+                          @dblclick="openEditOpModal(op)">
+                          
+                          <div class="op-bar-header">
+                              <span>{{op.orderId}}</span>
+                          </div>
+                          <div class="op-bar-sub">{{op.product}} ({{op.qty}}kg)</div>
+                     </div>
+                </div>
+
+                <div v-if="dragState.isDragging && dragState.hoverResId" 
+                     class="ghost-preview"
+                     :style="{
+                         left: (dragState.ghostStartTime * config.pixelsPerMin) + 'px',
+                         width: (dragState.ghostDuration * config.pixelsPerMin) + 'px',
+                         top: getGhostTop() + 'px'
+                     }">
+                     {{ formatTimeTooltip(dragState.ghostStartTime) }}
+                </div>
+
+            </div>
+        </div>
+
+        <div class="bottom-panel">
+            <div class="panel-header">
+                <span><i class="fa-solid fa-list-ul"></i> Production Queue / Unscheduled Orders</span>
+                <span class="tag orange">{{ unscheduledOps.length }} Pending</span>
+            </div>
+            
+            <div class="data-grid">
+                <div class="grid-row grid-header">
+                    <div>Order ID</div>
+                    <div>Product</div>
+                    <div>Due Date</div>
+                    <div>Qty (kg)</div>
+                    <div>Required Resource</div>
+                    <div>Notes</div>
+                </div>
+                
+                <div class="grid-row" v-for="op in unscheduledOps" :key="op.id"
+                     draggable="true"
+                     @dragstart="startDrag($event, op)"
+                     @dblclick="openEditOpModal(op)">
+                     
+                    <div style="font-weight:bold; color:var(--primary);">{{op.orderId}}</div>
+                    <div>{{op.product}}</div>
+                    <div :style="{color: isLateUnscheduled(op) ? 'var(--danger)' : 'inherit'}">
+                        {{ formatAlgerianDateTime(op.dueDate) }}
+                    </div>
+                    <div>{{op.qty}}</div>
+                    <div><span class="tag blue">{{op.requiredGroup}}</span></div>
+                    <div style="color:var(--text-secondary); font-style:italic;">Drag to schedule...</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="modal-overlay" v-if="modals.addOrder" @click.self="modals.addOrder=false">
+        <div class="modal-card">
+            <h3 style="margin-top:0;">Create New Order</h3>
+            <div class="form-group">
+                <label>Order ID</label>
+                <input v-model="newOrder.id" class="form-input">
+            </div>
+            <div class="form-group">
+                <label>Product</label>
+                <input v-model="newOrder.product" class="form-input">
+            </div>
+            <div style="display:flex; gap:10px;">
+                <div class="form-group" style="flex:1">
+                    <label>Color</label>
+                    <select v-model="newOrder.color" class="form-input">
+                         <option value="Black">Black</option>
+                         <option value="White">White</option>
+                         <option value="Red">Red</option>
+                         <option value="Blue">Blue</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex:1">
+                    <label>Qty (kg)</label>
+                    <input type="number" v-model="newOrder.qty" class="form-input">
+                </div>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+                <button class="btn btn-ghost" style="color:var(--text-main); border:1px solid var(--border-color);" @click="modals.addOrder=false">Cancel</button>
+                <button class="btn btn-orange" @click="saveNewOrder">Create</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const { createApp, reactive, computed, ref, onMounted, nextTick, watch } = Vue;
+
+    createApp({
+        setup() {
+            // Configuration & State
+            const config = reactive({ pixelsPerMin: 0.2, scheduleDays: 14 }); // Zoomed in slightly
+            const isDarkMode = ref(false);
+            const currentView = ref('gantt');
+            const baseDate = ref(new Date());
+            const resources = reactive([
+                { id: 'm1', name: 'EXT-01', group: 'Extrusion', status: 'running' },
+                { id: 'm2', name: 'EXT-02', group: 'Extrusion', status: 'running' },
+                { id: 'm3', name: 'EXT-03', group: 'Extrusion', status: 'maintenance' },
+                { id: 'm4', name: 'ASM-01', group: 'Assembly', status: 'running' },
+            ]);
+            
+            const scheduledOps = reactive([]);
+            const unscheduledOps = reactive([]);
+            const modals = reactive({ addOrder: false });
+            
+            // Drag State
+            const dragState = reactive({ isDragging: false, op: null, hoverResId: null, ghostStartTime: 0, ghostDuration: 0 });
+            const timelineScroll = ref(null);
+            const nowMarkerPos = ref(0);
+            const selectedOpId = ref(null);
+
+            const newOrder = reactive({ id: 'WO-2026-001', product: 'PVC Tube 50mm', color: 'Blue', qty: 1200, dueHours: 48, ops: ['Extrusion'] });
+
+            // Initialization
+            const initData = () => {
+                const today = new Date();
+                baseDate.value = new Date(today.getTime() - (3 * 24 * 60 * 60000)); // Start 3 days ago
+                
+                // Add some dummy data
+                addOp('WO-101', 'HDPE Pipe', 'Black', 500, 'Extrusion', 'm1', 200, 300);
+                addOp('WO-102', 'Profile X', 'White', 300, 'Extrusion', 'm2', 400, 250);
+                
+                // Unscheduled
+                unscheduledOps.push({
+                    id: 'u1', orderId: 'WO-105', product: 'Custom Tube', color: 'Red', qty: 1000, 
+                    requiredGroup: 'Extrusion', runDuration: 400, setupDuration: 30, dueDate: 2000
+                });
+                 unscheduledOps.push({
+                    id: 'u2', orderId: 'WO-106', product: 'Flex Hose', color: 'Blue', qty: 800, 
+                    requiredGroup: 'Extrusion', runDuration: 320, setupDuration: 30, dueDate: 2400
+                });
+
+                updateNowMarker();
+                setInterval(updateNowMarker, 60000);
+            };
+
+            const addOp = (oid, prod, col, qty, grp, rid, start, dur) => {
+                scheduledOps.push({
+                    id: oid + '-op', orderId: oid, product: prod, color: col, qty: qty,
+                    requiredGroup: grp, resourceId: rid, startTime: start, runDuration: dur, setupDuration: 30,
+                    status: 'scheduled'
+                });
+            };
+
+            // Time Helpers
+            const updateNowMarker = () => {
+                const now = new Date();
+                const diffMins = (now.getTime() - baseDate.value.getTime()) / 60000;
+                nowMarkerPos.value = diffMins * config.pixelsPerMin;
+            };
+
+            const getDayName = (dayIndex) => {
+                const d = new Date(baseDate.value.getTime() + dayIndex * 24 * 60 * 60000);
+                return d.toLocaleDateString('en-US', { weekday: 'short' });
+            };
+            const getDayFullDate = (dayIndex) => {
+                const d = new Date(baseDate.value.getTime() + dayIndex * 24 * 60 * 60000);
+                return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+            };
+            
+            const formatTimeTooltip = (mins) => {
+                 const d = new Date(baseDate.value.getTime() + mins * 60000);
+                 return d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            };
+            const formatAlgerianDateTime = (mins) => {
+                 if(mins < 0) return 'Overdue';
+                 const d = new Date(baseDate.value.getTime() + mins * 60000);
+                 return d.toLocaleString('fr-DZ', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            };
+
+            // Layout Computed
+            const totalWidth = computed(() => config.scheduleDays * 24 * 60 * config.pixelsPerMin);
+            const dayWidth = computed(() => 24 * 60 * config.pixelsPerMin);
+            const hourWidth = computed(() => 60 * config.pixelsPerMin);
+
+            // Ops Logic
+            const getOpsForResource = (rid) => scheduledOps.filter(o => o.resourceId === rid);
+            
+            const getOpColor = (colorName) => {
+                const map = {
+                    'Black': '#374151', 'White': '#9ca3af', 'Red': '#ef4444', 
+                    'Blue': '#3b82f6', '#eab308': '#eab308'
+                };
+                return map[colorName] || '#6366f1';
+            };
+
+            // Connectors (Pegging) - Simplified for demo
+            const peggingLines = computed(() => {
+                // Logic to draw lines between operations of same order
+                // Just dummy placeholder for now as logic is complex for this snippet
+                return []; 
+            });
+            
+            const kpis = computed(() => ({ otif: 98, utilization: 85 }));
+
+            // Drag & Drop
+            const startDrag = (e, op) => {
+                dragState.isDragging = true;
+                dragState.op = op;
+                dragState.ghostDuration = op.runDuration + (op.setupDuration || 0);
+                e.dataTransfer.effectAllowed = 'copyMove';
+                e.dataTransfer.dropEffect = 'copy';
+            };
+
+            const onDragOver = (e, resId) => {
+                dragState.hoverResId = resId;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left; // x inside the row
+                const rawMins = x / config.pixelsPerMin;
+                dragState.ghostStartTime = Math.round(rawMins / 15) * 15; // Snap 15m
+            };
+
+            const onDrop = (e, resId) => {
+                const op = dragState.op;
+                if(!op) return;
+                
+                // Remove from Unscheduled if there
+                const uIdx = unscheduledOps.findIndex(u => u.id === op.id);
+                if(uIdx > -1) unscheduledOps.splice(uIdx, 1);
+                
+                // Update Op
+                op.resourceId = resId;
+                op.startTime = dragState.ghostStartTime;
+                op.status = 'scheduled';
+                
+                // Add to Scheduled if not there
+                if(!scheduledOps.find(s => s.id === op.id)) {
+                    scheduledOps.push(op);
+                }
+                
+                dragState.isDragging = false;
+                dragState.op = null;
+                dragState.hoverResId = null;
+            };
+
+            const getGhostTop = () => {
+                // Calculate top based on hovered resource index relative to scroll parent
+                // Simplified: css takes care of it mostly inside the row
+                return 0; 
+            };
+            
+            const openAddOrderModal = () => modals.addOrder = true;
+            const saveNewOrder = () => {
+                unscheduledOps.push({
+                    id: 'u-'+Date.now(), orderId: newOrder.id, product: newOrder.product, 
+                    color: newOrder.color, qty: newOrder.qty, requiredGroup: 'Extrusion',
+                    runDuration: Math.ceil(newOrder.qty * 0.5), setupDuration: 30, dueDate: 3000
+                });
+                modals.addOrder = false;
+            };
+            
+            const autoSchedule = () => alert("Auto-scheduling started...");
+            const scrollToToday = () => {
+                 if(timelineScroll.value) timelineScroll.value.scrollLeft = nowMarkerPos.value - 200;
+            };
+            
+            const selectOp = (op) => selectedOpId.value = op.id;
+            const openEditOpModal = (op) => { alert("Edit " + op.orderId); };
+            
+            // Watchers
+            watch(isDarkMode, val => {
+                document.body.classList.toggle('dark-mode', val);
+            });
+
+            onMounted(() => {
+                initData();
+                nextTick(() => scrollToToday());
+            });
+
+            return {
+                config, resources, scheduledOps, unscheduledOps, modals, isDarkMode, 
+                currentView, baseDate, dragState, timelineScroll, nowMarkerPos, selectedOpId,
+                newOrder, kpis, peggingLines,
+                totalWidth, dayWidth, hourWidth,
+                getDayName, getDayFullDate, getOpsForResource, getOpColor, formatTimeTooltip, formatAlgerianDateTime,
+                startDrag, onDragOver, onDrop, getGhostTop,
+                openAddOrderModal, saveNewOrder, autoSchedule, scrollToToday, selectOp, openEditOpModal,
+                toggleTheme: () => isDarkMode.value = !isDarkMode.value, onScroll: () => {}, onMouseMove: () => {},
+                isLateUnscheduled: () => false
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

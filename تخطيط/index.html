@@ -3,607 +3,454 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APS Scheduler | Auto-Focus Today</title>
+    <title>APS Scheduler Pro | Production Planning</title>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            /* Dark Mode (Default Vars) */
-            --bg-dark: #1e1e1e;
-            --bg-panel: #252526;
-            --bg-header: #333333;
-            --border: #454545;
-            --text-main: #cccccc;
-            --text-highlight: #ffffff;
-            --accent: #007acc;
-            --danger: #d9534f;
-            --success: #5cb85c;
+            /* --- Professional Palette (App B) --- */
+            --header-bg: #2b303b;
+            --header-text: #ffffff;
+            --body-bg: #eef1f5;
+            --panel-bg: #ffffff;
+            --border-color: #d1d5db;
+            --grid-line: #e5e7eb;
+            
+            --primary: #2563eb;       /* Blue */
+            --action-orange: #f97316; /* Professional Orange */
+            --success: #10b981;
+            --danger: #ef4444;
             --warning: #f59e0b;
             
-            --color-setup: #4daafc;
-            --color-late: #ff5252;
-            --color-grid-line: #444;
-            --card-bg: #333;
-            --card-hover: #3a3a3a;
+            --text-main: #374151;
+            --text-secondary: #6b7280;
             
             --row-height: 50px;
-        }
+            --header-height: 55px;
 
-        /* Light Mode Variables applied to body */
-        body.light-mode {
-            --bg-dark: #f0f2f5;
-            --bg-panel: #ffffff;
-            --bg-header: #e9ecef;
-            --border: #cbd5e1;
-            --text-main: #475569;
-            --text-highlight: #0f172a;
-            --accent: #2563eb;
-            --danger: #ef4444;
-            --success: #10b981;
-            
+            /* --- Functional Vars (App A Legacy) --- */
             --color-setup: #3b82f6;
-            --color-grid-line: #e2e8f0;
-            --card-bg: #ffffff;
-            --card-hover: #f1f5f9;
+            --color-late: #ef4444;
         }
 
-        * { box-sizing: border-box; }
+        /* Dark Mode Override */
+        body.dark-mode {
+            --header-bg: #1f2937;
+            --body-bg: #111827;
+            --panel-bg: #1f2937;
+            --border-color: #374151;
+            --grid-line: #374151;
+            --text-main: #e5e7eb;
+            --text-secondary: #9ca3af;
+        }
+
+        * { box-sizing: border-box; outline: none; }
 
         body {
             margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-dark);
+            font-family: 'Inter', sans-serif;
+            background-color: var(--body-bg);
             color: var(--text-main);
             height: 100vh;
             overflow: hidden;
             font-size: 13px;
-            transition: background-color 0.3s, color 0.3s;
         }
 
         /* --- Layout --- */
         #app {
             display: grid;
-            grid-template-rows: 110px 1fr; /* Increased header height slightly to prevent clipping */
+            grid-template-rows: var(--header-height) 1fr;
             height: 100vh;
         }
-        
+
         body.resizing { cursor: col-resize !important; user-select: none; }
 
         /* --- Header --- */
         header {
-            background-color: var(--bg-header);
-            border-bottom: 1px solid var(--border);
-            padding: 10px 20px 0 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            transition: background-color 0.3s;
-            overflow: visible; /* Ensure content isn't clipped */
-        }
-
-        .header-top {
+            background-color: var(--header-bg);
+            color: var(--header-text);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            height: 50px;
-            flex-shrink: 0;
+            padding: 0 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 50;
         }
 
-        .logo-area {
-            display: flex; 
-            align-items: center; 
-            gap: 10px;
-            min-width: 200px; /* Prevent shrinking */
+        .brand {
+            display: flex; align-items: center; gap: 10px;
+            font-weight: 600; font-size: 16px; min-width: 200px;
         }
 
-        .kpi-container { display: flex; gap: 20px; }
-        .kpi-card {
-            background: var(--bg-panel);
-            padding: 5px 15px;
-            border: 1px solid var(--border);
+        .top-toolbar {
+            display: flex; align-items: center; gap: 15px; flex: 1; justify-content: flex-end;
+        }
+
+        .search-box {
+            background: rgba(255,255,255,0.1);
             border-radius: 4px;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            padding: 6px 12px;
+            display: flex; align-items: center; gap: 8px;
+            width: 300px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
-        .kpi-label { font-size: 0.8em; opacity: 0.7; }
-        .kpi-value { font-size: 1.2em; font-weight: bold; color: var(--text-highlight); }
+        .search-box input {
+            background: transparent; border: none; color: white; width: 100%; font-size: 13px;
+        }
+        .search-box input::placeholder { color: rgba(255,255,255,0.5); }
 
-        .btn-group { display: flex; gap: 10px; }
-        
-        button {
-            background-color: var(--accent);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: filter 0.2s, background-color 0.3s;
-        }
-        button:hover { filter: brightness(1.1); }
-        button.secondary { background-color: #64748b; }
-        button.danger { background-color: var(--danger); }
-        button.success { background-color: var(--success); }
-        button.outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
-        button.outline:hover { background: var(--bg-panel); color: var(--text-highlight); }
-        
-        button.status-btn {
-            background: transparent; padding: 5px; font-size: 1.3em; cursor: pointer; border:none;
-        }
-        button.status-btn:hover { transform: scale(1.1); }
-
-        button.load-prev-btn {
-            position: absolute; left: 0; top: 0; bottom: 0;
-            width: 30px; z-index: 20;
-            background: rgba(0,0,0,0.5); color: white;
-            border: none; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-        }
-        button.load-prev-btn:hover { background: var(--accent); }
-
-        /* --- Navigation Tabs --- */
-        .nav-tabs {
-            display: flex;
-            gap: 5px;
-        }
-        .nav-tab {
-            padding: 8px 20px;
-            background: var(--bg-panel);
-            border: 1px solid var(--border);
-            border-bottom: none;
-            border-radius: 5px 5px 0 0;
-            cursor: pointer;
-            color: var(--text-main);
-            opacity: 0.7;
+        /* Buttons */
+        .btn {
+            border: none; padding: 0 16px; height: 32px; border-radius: 4px;
+            cursor: pointer; font-weight: 500; font-size: 12px;
+            display: flex; align-items: center; gap: 6px;
             transition: all 0.2s;
         }
-        .nav-tab:hover { opacity: 1; }
-        .nav-tab.active {
-            background: var(--bg-dark);
-            color: var(--accent);
-            border-top: 3px solid var(--accent);
-            font-weight: bold;
-            opacity: 1;
-            margin-bottom: -1px;
-            z-index: 10;
-        }
-
-        /* --- View Containers --- */
-        .view-container {
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            background: var(--bg-dark);
-            flex: 1;
-        }
-
-        /* --- Gantt Chart Specifics --- */
-        .gantt-wrapper {
-            display: grid;
-            grid-template-rows: 1fr 200px;
-            height: 100%;
-        }
-        .gantt-chart-area {
-            display: grid;
-            grid-template-columns: 220px 1fr;
-            overflow: hidden;
-            border-bottom: 5px solid var(--border);
-            height: 100%;
-        }
-
-        .resource-list {
-            background-color: var(--bg-panel);
-            border-right: 1px solid var(--border);
-            z-index: 10;
-            overflow-y: auto;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
-        }
-
-        .resource-header {
-            height: 50px; 
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            padding-left: 10px;
-            font-weight: bold;
-            background: var(--bg-header);
-            color: var(--text-highlight);
-        }
-
-        .resource-row {
-            height: var(--row-height);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            padding-left: 10px;
-            justify-content: space-between;
-            padding-right: 10px;
-            color: var(--text-highlight);
-        }
-
-        .timeline-area {
-            position: relative;
-            overflow: auto;
-            background: var(--bg-dark);
-        }
-
-        .grid-background {
-            position: absolute;
-            top: 0; left: 0; height: 100%;
-            background-image: linear-gradient(90deg, var(--color-grid-line) 1px, transparent 1px);
-            pointer-events: none;
-            opacity: 0.3;
-        }
+        .btn-orange { background-color: var(--action-orange); color: white; }
+        .btn-orange:hover { background-color: #e66000; }
         
-        .grid-days {
-             position: absolute;
-            top: 0; left: 0; height: 100%;
-            background-image: linear-gradient(90deg, var(--border) 2px, transparent 2px);
-            pointer-events: none;
-            z-index: 1;
-        }
+        .btn-blue { background-color: var(--primary); color: white; }
+        .btn-blue:hover { filter: brightness(1.1); }
 
-        /* New Week Line Style */
-        .week-line {
-            position: absolute;
-            top: 0; bottom: 0;
-            width: 2px;
-            background-color: var(--success);
-            opacity: 0.5;
-            z-index: 2;
-            pointer-events: none;
-        }
-        .week-line::after {
-            content: 'SAT';
-            position: absolute;
-            top: 55px; /* Below header */
-            left: 4px;
-            font-size: 9px;
-            color: var(--success);
-            font-weight: bold;
-        }
+        .btn-ghost { background: transparent; color: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.2); }
+        .btn-ghost:hover { background: rgba(255,255,255,0.1); color: white; }
+        
+        .btn-ghost-dark { background: transparent; color: var(--text-main); border: 1px solid var(--border-color); }
+        .btn-ghost-dark:hover { background: var(--grid-line); }
 
-        /* Red Line for "Now" - Adjusted to span full height */
-        .now-marker {
-            position: absolute;
-            top: 0; bottom: 0; /* Full Height */
-            width: 0;
-            border-left: 2px dashed #ff0000;
-            z-index: 60; /* Higher Z-Index */
-            pointer-events: none;
-            opacity: 0.9;
-        }
-        .now-marker::after {
-            content: 'NOW';
-            position: absolute;
-            top: 5px; 
-            left: 2px;
-            background: #ff0000;
-            color: white;
-            font-size: 9px;
-            padding: 2px 4px;
-            border-radius: 2px;
-        }
-
-        .time-header {
-            height: 50px;
-            position: sticky;
-            top: 0;
-            background: var(--bg-header);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            z-index: 50; /* Ensure header stays on top of bars but below modals */
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            padding-left: 0; 
-        }
-
-        .time-marker {
-            border-right: 1px solid var(--border);
-            padding: 0 10px;
-            font-size: 12px;
-            color: var(--text-main);
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            justify-content: center;
-            gap: 2px;
+        /* --- Main Content --- */
+        .main-wrapper {
+            display: grid;
+            grid-template-rows: 45px 1fr 220px; /* SubHeader, Gantt, BottomPanel */
             overflow: hidden;
-            white-space: nowrap;
+            background: var(--panel-bg);
         }
-        .time-marker b { color: var(--text-highlight); font-size: 1.1em; }
-        .time-marker span { font-size: 0.85em; opacity: 0.8; }
 
+        /* Sub Header */
+        .sub-header {
+            display: flex; align-items: center; gap: 20px;
+            padding: 0 15px; border-bottom: 1px solid var(--border-color);
+            background: var(--panel-bg); /* Match panel bg for clean look */
+        }
+        .view-tab {
+            padding: 13px 0; border-bottom: 2px solid transparent; cursor: pointer; color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .view-tab.active { border-bottom-color: var(--action-orange); color: var(--action-orange); }
+
+        /* --- Gantt Chart Area --- */
+        .gantt-container {
+            display: grid;
+            grid-template-columns: 220px 1fr; /* Fixed Resource Width matches App A logic */
+            overflow: hidden;
+            position: relative;
+            background: var(--body-bg);
+        }
+
+        /* Resource Column */
+        .resource-col {
+            border-right: 1px solid var(--border-color);
+            background: var(--panel-bg);
+            z-index: 20;
+            display: flex; flex-direction: column;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+            overflow-y: hidden; /* Syncs via scroll event usually, but here fixed height headers */
+        }
+        .res-header-cell {
+            height: var(--row-height); border-bottom: 1px solid var(--border-color);
+            background: #f3f4f6; color: var(--text-secondary); font-weight: 600;
+            display: flex; align-items: center; padding-left: 15px; text-transform: uppercase; font-size: 11px;
+        }
+        /* Dark mode fix for header cell */
+        body.dark-mode .res-header-cell { background: #374151; color: #e5e7eb; }
+
+        .res-row-cell {
+            height: var(--row-height); border-bottom: 1px solid var(--border-color);
+            display: flex; align-items: center; padding: 0 15px; justify-content: space-between;
+            font-weight: 500; color: var(--text-main);
+            background: var(--panel-bg);
+        }
+
+        /* Timeline Area */
+        .timeline-wrapper {
+            overflow: auto;
+            position: relative;
+            background: var(--panel-bg);
+        }
+
+        .time-scale {
+            position: sticky; top: 0; z-index: 10;
+            height: var(--row-height);
+            background: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+        }
+
+        .time-cell {
+            border-right: 1px solid var(--grid-line);
+            padding: 5px 8px;
+            display: flex; flex-direction: column; justify-content: center;
+            font-size: 11px; color: var(--text-secondary);
+            box-sizing: border-box;
+            background: var(--panel-bg);
+        }
+        .time-cell b { color: var(--text-main); font-size: 12px; }
+
+        /* Grid Backgrounds */
+        .grid-bg {
+            position: absolute; top: var(--row-height); left: 0; right: 0; bottom: 0;
+            background-image: linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            z-index: 0; pointer-events: none;
+        }
+        .week-line {
+            position: absolute; top: 0; bottom: 0; width: 2px;
+            background-color: var(--success); opacity: 0.3; z-index: 2; pointer-events: none;
+        }
+
+        /* Gantt Rows */
         .gantt-row {
             height: var(--row-height);
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid var(--grid-line);
             position: relative;
-            transition: background 0.2s;
+            width: 100%;
         }
-        .gantt-row.drag-hover {
-            background-color: rgba(var(--accent), 0.1);
-        }
+        .gantt-row.hovered { background-color: rgba(37, 99, 235, 0.05); }
 
-        /* --- Operations (Bars) --- */
+        /* --- Operation Bars (Visuals from App B, Functionality from App A) --- */
         .op-bar {
-            position: absolute;
-            height: 36px;
-            top: 7px;
-            border-radius: 4px;
-            cursor: grab;
-            display: flex;
-            overflow: visible; 
-            box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            position: absolute; top: 6px; height: 38px;
+            border-radius: 3px;
             font-size: 11px;
-            user-select: none;
-            transition: transform 0.1s;
-            border: 1px solid rgba(0,0,0,0.2);
+            display: flex; flex-direction: column; justify-content: center;
+            padding: 0; /* Changed to 0 to handle inner layout */
+            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+            cursor: grab;
+            color: white;
+            overflow: visible; /* Important for resize handles */
+            border: 1px solid rgba(0,0,0,0.1);
+            z-index: 5;
+            transition: box-shadow 0.2s, transform 0.1s;
         }
         .op-bar:active { cursor: grabbing; z-index: 100; }
-        .op-bar:hover { z-index: 90; }
-        
-        .op-bar.selected {
-            border: 2px solid #ffffff;
-            box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
-            z-index: 95;
+        .op-bar:hover { z-index: 30; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .op-bar.selected { border: 2px solid white; outline: 2px solid var(--primary); z-index: 31; }
+        .op-bar.late-delivery { border: 2px solid var(--danger); }
+
+        .op-content {
+            padding: 0 8px;
+            width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center;
+            overflow: hidden;
         }
 
-        .op-bar.late-delivery { border-color: var(--color-late); box-shadow: 0 0 5px var(--color-late); }
+        /* Setup Phase Visual */
+        .bar-setup {
+            position: absolute; left: 0; top: 0; bottom: 0;
+            background-color: rgba(0,0,0,0.2);
+            display: flex; align-items: center; justify-content: center;
+            border-right: 1px solid rgba(255,255,255,0.3);
+            background-image: linear-gradient(45deg, rgba(255,255,255,.1) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.1) 50%, rgba(255,255,255,.1) 75%, transparent 75%, transparent);
+            background-size: 10px 10px;
+        }
 
-        /* --- Resize Handles --- */
+        /* Resize Handles (From App A) */
         .resize-handle {
-            position: absolute;
-            top: 0; bottom: 0;
-            width: 10px;
-            cursor: ew-resize;
-            z-index: 110;
-            transition: background 0.2s;
+            position: absolute; top: 0; bottom: 0; width: 10px;
+            cursor: ew-resize; z-index: 110;
         }
         .resize-handle.left { left: 0; }
         .resize-handle.right { right: 0; }
         .op-bar:hover .resize-handle { background: rgba(255,255,255,0.2); }
-        .op-bar:hover .resize-handle:hover { background: rgba(255,255,255,0.6); }
 
-        /* Ghost Bar */
-        .ghost-bar {
-            position: absolute;
-            height: 36px;
-            top: 7px;
-            background: rgba(128, 128, 128, 0.3);
-            border: 2px dashed var(--text-main);
-            border-radius: 4px;
-            pointer-events: none;
-            z-index: 80;
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            color: var(--text-highlight);
-            font-weight: bold;
+        /* Pegging Lines */
+        .connector-svg {
+            position: absolute; top: var(--row-height); left: 0; height: 100%; pointer-events: none; z-index: 4;
         }
 
-        .bar-setup {
-            background-color: var(--color-setup);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            min-width: 5px;
-            position: relative;
-            overflow: hidden;
+        /* Now Marker */
+        .now-marker {
+            position: absolute; top: 0; bottom: 0; width: 2px; background: var(--danger);
+            z-index: 40; pointer-events: none;
         }
-        .bar-setup::after {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(45deg, rgba(255,255,255,.2) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.2) 50%, rgba(255,255,255,.2) 75%, transparent 75%, transparent);
-            background-size: 10px 10px;
+        .now-tag {
+            position: absolute; top: 40px; left: 2px; background: var(--danger); color: white;
+            font-size: 9px; padding: 2px 4px; border-radius: 2px;
         }
 
-        .bar-run {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 0 5px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            color: #fff;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        /* --- Bottom Panel --- */
+        .bottom-panel {
+            border-top: 1px solid var(--border-color);
+            background: var(--panel-bg);
+            display: flex; flex-direction: column;
+            z-index: 60;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
         }
-
-        /* --- Bottom Pane --- */
-        .orders-panel {
-            background: var(--bg-panel);
-            border-top: 1px solid var(--border);
-            padding: 10px;
-            overflow-y: auto;
+        .panel-header {
+            padding: 8px 15px; background: var(--body-bg); border-bottom: 1px solid var(--border-color);
+            font-weight: 600; color: var(--text-main); display: flex; justify-content: space-between; align-items: center;
+            height: 40px;
         }
         
-        .orders-grid { display: flex; gap: 10px; flex-wrap: wrap; }
-        .order-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            padding: 8px;
-            width: 200px;
-            border-radius: 4px;
-            cursor: grab;
-            transition: all 0.2s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        .data-grid {
+            display: flex; flex-direction: column; overflow-y: auto; flex: 1;
         }
-        .order-card:hover { 
-            border-color: var(--accent); 
-            background: var(--card-hover);
-            transform: translateY(-2px);
+        .grid-row {
+            display: grid;
+            grid-template-columns: 100px 180px 120px 100px 150px 1fr;
+            padding: 8px 15px; border-bottom: 1px solid var(--grid-line);
+            align-items: center; font-size: 12px; cursor: grab;
+            background: var(--panel-bg);
+            color: var(--text-main);
         }
+        .grid-row:hover { background: var(--body-bg); }
+        .grid-header {
+            background: var(--body-bg); color: var(--text-secondary); font-weight: 600; cursor: default;
+        }
+        
+        .tag { padding: 2px 6px; border-radius: 4px; font-size: 10px; background: #e5e7eb; color: #374151; }
+        .tag.blue { background: #dbeafe; color: #1e40af; }
+        .tag.orange { background: #ffedd5; color: #9a3412; }
+        .tag.red { background: #fee2e2; color: #991b1b; }
 
-        /* --- Kanban View --- */
-        .view-container.kanban-view {
-            flex-direction: row; /* Horizontal layout for columns */
-            overflow-x: auto;
-            padding: 15px;
-            gap: 15px;
+        /* --- View Containers (Table/Kanban) --- */
+        .view-wrapper { padding: 20px; overflow-y: auto; height: 100%; background: var(--body-bg); }
+        
+        /* Table View */
+        .std-table { width: 100%; border-collapse: collapse; background: var(--panel-bg); border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .std-table th { background: var(--header-bg); color: white; padding: 10px; text-align: left; font-weight: 500; cursor: pointer; }
+        .std-table td { padding: 10px; border-bottom: 1px solid var(--border-color); color: var(--text-main); }
+        .std-table tr:hover { background: var(--body-bg); }
+
+        /* Kanban View */
+        .kanban-board { display: flex; gap: 15px; height: 100%; overflow-x: auto; }
+        .kanban-col { 
+            min-width: 280px; background: var(--panel-bg); border-radius: 6px; border: 1px solid var(--border-color); 
+            display: flex; flex-direction: column; max-height: 100%;
         }
-        .kanban-col {
-            min-width: 300px;
-            background: var(--bg-panel);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            max-height: 100%;
-        }
-        .kanban-header {
-            padding: 10px;
-            background: var(--bg-header);
-            border-bottom: 1px solid var(--border);
-            border-radius: 6px 6px 0 0;
-            font-weight: bold;
-            display: flex;
-            justify-content: space-between;
-            color: var(--text-highlight);
-        }
-        .kanban-body {
-            padding: 10px;
-            overflow-y: auto;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+        .kanban-col-header { padding: 10px; border-bottom: 1px solid var(--border-color); font-weight: bold; background: var(--body-bg); }
+        .kanban-col-body { padding: 10px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; }
         .kanban-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-left-width: 4px;
-            padding: 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            background: var(--panel-bg); border: 1px solid var(--border-color); border-left-width: 4px;
+            padding: 10px; border-radius: 4px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
-        .kanban-card:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
-        }
+        .kanban-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
 
-        /* --- Modals --- */
+        /* --- Modals & Ghosts --- */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.7); z-index: 999;
+            background: rgba(0,0,0,0.6); z-index: 999;
             display: flex; align-items: center; justify-content: center;
         }
-        .modal-window {
-            background: var(--bg-panel);
-            width: 500px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 20px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-            color: var(--text-main);
-            position: relative;
-        }
-        .modal-header { 
-            font-size: 1.2em; font-weight: bold; margin-bottom: 15px; 
-            color: var(--text-highlight); display: flex; justify-content: space-between; align-items: center; 
+        .modal-card {
+            background: var(--panel-bg); width: 450px; border-radius: 6px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); padding: 20px;
+            color: var(--text-main); border: 1px solid var(--border-color);
         }
         .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; color: var(--text-main); opacity: 0.8; }
-        .form-control {
-            width: 100%; padding: 8px;
-            background: var(--bg-dark); border: 1px solid var(--border);
-            color: var(--text-highlight); border-radius: 3px;
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 12px; color: var(--text-secondary); }
+        .form-input { 
+            width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; 
+            background: var(--body-bg); color: var(--text-main);
         }
-        
-        textarea.form-control { resize: vertical; min-height: 60px; }
-        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .form-input:focus { border-color: var(--primary); }
+
+        .ghost-preview {
+            position: absolute; height: 38px; border: 2px dashed var(--action-orange);
+            background: rgba(249, 115, 22, 0.1); border-radius: 3px; pointer-events: none; z-index: 50;
+            display: flex; align-items: center; justify-content: center; color: var(--action-orange); font-weight: bold;
+            font-size: 11px;
+        }
         
         .drag-tooltip {
-            position: fixed;
-            background: var(--accent);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            pointer-events: none;
-            z-index: 1000;
-            transform: translate(10px, 10px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            position: fixed; background: var(--header-bg); color: white; padding: 4px 8px; border-radius: 4px;
+            font-size: 11px; pointer-events: none; z-index: 1000; transform: translate(15px, 15px);
         }
-        
-        .close-icon-btn {
-            background: transparent; border: none; color: var(--text-main); cursor: pointer; font-size: 1.2em;
-        }
-        .close-icon-btn:hover { color: var(--danger); }
     </style>
 </head>
-<body>
+<body :class="{'dark-mode': isDarkMode}">
 
 <div id="app">
+    <!-- Drag Tooltip (from App A logic) -->
     <div v-if="dragState.isDragging" class="drag-tooltip" :style="{top: dragState.y + 'px', left: dragState.x + 'px'}">
         {{ formatTimeTooltip(dragState.hoverTime) }}
     </div>
 
+    <!-- Header (App B Layout) -->
     <header>
-        <div class="header-top">
-            <div class="logo-area">
-                <i class="fa-solid fa-industry fa-lg" :style="{color: 'var(--accent)'}"></i>
-                <h3 style="color:var(--text-highlight); margin:0;">APS Scheduler <span style="font-weight:normal; opacity:0.6; font-size:0.8em;">Auto-Focus</span></h3>
-            </div>
-
-            <div class="kpi-container">
-                <div class="kpi-card">
-                    <span class="kpi-label">OTIF</span>
-                    <span class="kpi-value" :style="{color: kpis.otif > 90 ? 'var(--success)' : 'var(--danger)'}">{{ kpis.otif }}%</span>
-                </div>
-                <div class="kpi-card">
-                    <span class="kpi-label">Utilization</span>
-                    <span class="kpi-value">{{ kpis.utilization }}%</span>
-                </div>
-            </div>
-
-            <div class="btn-group">
-                <button class="outline" @click="scrollToToday(true)" title="Go to Current Time">
-                    <i class="fa-solid fa-calendar-day"></i> Today
-                </button>
-                <button class="outline" @click="toggleTheme" title="Toggle Theme">
-                    <i class="fa-solid" :class="isDarkMode ? 'fa-sun' : 'fa-moon'"></i>
-                </button>
-                <button class="secondary" @click="openResourcesModal"><i class="fa-solid fa-gear"></i> Setup</button>
-                <button class="secondary" @click="resetData"><i class="fa-solid fa-rotate-left"></i> Reset</button>
-                <button @click="autoSchedule"><i class="fa-solid fa-magic"></i> Auto-Schedule</button>
-                <button class="success" @click="openAddOrderModal"><i class="fa-solid fa-plus"></i> Order</button>
-            </div>
+        <div class="brand">
+            <i class="fa-solid fa-layer-group" style="color:var(--action-orange);"></i>
+            <span>APS Scheduler Pro</span>
         </div>
 
-        <div class="nav-tabs">
-            <div class="nav-tab" :class="{active: currentView === 'gantt'}" @click="currentView = 'gantt'">
-                <i class="fa-solid fa-chart-gantt"></i> Gantt
-            </div>
-            <div class="nav-tab" :class="{active: currentView === 'table'}" @click="currentView = 'table'">
-                <i class="fa-solid fa-table"></i> List
-            </div>
-            <div class="nav-tab" :class="{active: currentView === 'kanban'}" @click="currentView = 'kanban'">
-                <i class="fa-solid fa-border-all"></i> Kanban
-            </div>
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass" style="color:rgba(255,255,255,0.5);"></i>
+            <input type="text" placeholder="Search orders, jobs or materials...">
+        </div>
+
+        <div class="top-toolbar">
+            <button class="btn btn-ghost" @click="toggleTheme" title="Toggle Theme">
+                <i class="fa-solid" :class="isDarkMode ? 'fa-sun' : 'fa-moon'"></i>
+            </button>
+            <button class="btn btn-ghost" @click="openResourcesModal"><i class="fa-solid fa-gear"></i> Setup</button>
+            <button class="btn btn-ghost" @click="resetData"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+            
+            <div style="width:1px; height:20px; background:rgba(255,255,255,0.2); margin:0 5px;"></div>
+            
+            <button class="btn btn-blue" @click="autoSchedule"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Plan</button>
+            <button class="btn btn-orange" @click="openAddOrderModal"><i class="fa-solid fa-plus"></i> New Order</button>
         </div>
     </header>
 
-    <div v-if="currentView === 'gantt'" class="view-container gantt-wrapper">
-        <div class="gantt-chart-area">
-            <div class="resource-list">
-                <div class="resource-header">Machines</div>
-                <div class="resource-row" v-for="res in resources" :key="res.id">
-                    <div>
-                        <div style="font-weight:bold;">{{ res.name }}</div>
-                        <div style="font-size:0.8em; opacity:0.6;">{{ res.group }}</div>
+    <div class="main-wrapper">
+        
+        <!-- Sub Header / Tabs -->
+        <div class="sub-header">
+            <div class="view-tab" :class="{active: currentView==='gantt'}" @click="currentView='gantt'">
+                <i class="fa-solid fa-chart-gantt"></i> Gantt Planning
+            </div>
+            <div class="view-tab" :class="{active: currentView==='table'}" @click="currentView='table'">
+                <i class="fa-solid fa-list"></i> Order List
+            </div>
+            <div class="view-tab" :class="{active: currentView==='kanban'}" @click="currentView='kanban'">
+                <i class="fa-solid fa-border-all"></i> Kanban Board
+            </div>
+            
+            <div style="margin-left:auto; font-size:12px; display:flex; gap:15px; color:var(--text-secondary);">
+                <span><b style="color:var(--text-main);">{{kpis.otif}}%</b> OTIF</span>
+                <span><b style="color:var(--text-main);">{{kpis.utilization}}%</b> Efficiency</span>
+            </div>
+            
+            <div style="width:1px; height:20px; background:var(--border-color); margin:0 10px;"></div>
+
+            <!-- Zoom Control -->
+            <div style="display:flex; align-items:center; gap:5px;">
+                <i class="fa-solid fa-magnifying-glass-minus" style="font-size:10px; color:var(--text-secondary)"></i>
+                <input type="range" v-model.number="config.pixelsPerMin" min="0.05" max="0.5" step="0.05" style="width:80px">
+                <i class="fa-solid fa-magnifying-glass-plus" style="font-size:10px; color:var(--text-secondary)"></i>
+            </div>
+            
+            <button class="btn btn-ghost-dark" @click="scrollToToday(true)">
+                Today
+            </button>
+        </div>
+
+        <!-- GANTT VIEW -->
+        <div v-show="currentView === 'gantt'" class="gantt-container">
+            
+            <!-- Resource Column -->
+            <div class="resource-col">
+                <div class="res-header-cell">Resources</div>
+                <div class="res-row-cell" v-for="res in resources" :key="res.id">
+                    <div style="display:flex; flex-direction:column;">
+                        <span>{{res.name}}</span>
+                        <span style="font-size:10px; color:var(--text-secondary);">{{res.group}}</span>
                     </div>
-                    
-                    <button class="status-btn" @click="toggleResourceStatus(res)" :title="res.status">
-                        <i class="fa-solid" 
+                    <!-- Using App A Logic for Status Toggle -->
+                    <button style="background:none; border:none; cursor:pointer;" @click="toggleResourceStatus(res)">
+                         <i class="fa-solid" 
                            :class="{
                                'fa-circle-check': res.status === 'running',
                                'fa-circle-xmark': res.status === 'stopped',
@@ -615,344 +462,276 @@
                 </div>
             </div>
 
-            <div class="timeline-area" ref="timelineScroll" @scroll="onScroll">
-                <div class="time-header" :style="{width: totalWidth + 'px'}">
-                    
-                    <div class="time-marker" 
-                         v-for="d in config.scheduleDays" 
-                         :key="d"
-                         :style="{width: dayWidth + 'px'}">
+            <!-- Timeline Area -->
+            <div class="timeline-wrapper" ref="timelineScroll" @scroll="onScroll">
+                
+                <div class="time-scale" :style="{width: totalWidth + 'px'}">
+                    <div v-for="d in config.scheduleDays" :key="d" 
+                         class="time-cell" :style="{width: dayWidth + 'px'}">
                         <b>{{ getDayName(d-1) }}</b>
                         <span>{{ getDayFullDate(d-1) }}</span>
                     </div>
                 </div>
 
-                <div class="grid-background" 
-                     :style="{width: totalWidth + 'px', backgroundSize: hourWidth + 'px 100%'}">
-                </div>
-                <div class="grid-days" 
-                     :style="{width: totalWidth + 'px', backgroundSize: dayWidth + 'px 100%'}">
-                </div>
+                <div class="grid-bg" :style="{width: totalWidth + 'px', backgroundSize: hourWidth + 'px 100%'}"></div>
+                
+                <!-- Saturday Lines (App A Logic) -->
+                <div class="week-line" v-for="(wPos, idx) in weekLines" :key="'wk-'+idx" :style="{left: wPos + 'px'}"></div>
 
-                <div class="week-line"
-                     v-for="(wPos, idx) in weekLines"
-                     :key="'wk-'+idx"
-                     :style="{left: wPos + 'px'}">
+                <div class="now-marker" :style="{left: nowMarkerPos + 'px'}">
+                    <div class="now-tag">NOW</div>
                 </div>
 
-                <div class="now-marker" :style="{left: nowMarkerPos + 'px'}"></div>
-
-                <svg :style="{position:'absolute', top:0, left:0, width: totalWidth + 'px', height:'100%', pointerEvents:'none', zIndex:2}">
+                <svg class="connector-svg" :style="{width: totalWidth + 'px'}">
                     <path v-for="line in peggingLines" :d="line.path" 
-                          style="fill:none; stroke:#ffd700; stroke-width:2; stroke-dasharray:5,5; opacity:0.8;"></path>
+                          style="fill:none; stroke:var(--action-orange); stroke-width:2; stroke-dasharray:5,5; opacity:0.6;"></path>
                 </svg>
 
-                <div class="gantt-row" 
-                     v-for="res in resources" 
-                     :key="res.id"
+                <!-- Gantt Rows -->
+                <div v-for="res in resources" :key="res.id" 
+                     class="gantt-row"
+                     :class="{'hovered': dragState.hoverResId === res.id}"
                      :style="{width: totalWidth + 'px'}"
-                     :class="{'drag-hover': dragState.hoverResId === res.id}"
                      @dragover.prevent="onDragOver($event, res.id)"
                      @dragleave="onDragLeave"
                      @drop="onDrop($event, res.id)">
-                    
-                    <div v-if="dragState.isDragging && dragState.hoverResId === res.id" 
-                         class="ghost-bar"
-                         :style="{
-                             left: (dragState.ghostStartTime * config.pixelsPerMin) + 'px', 
-                             width: ((dragState.ghostDuration) * config.pixelsPerMin) + 'px'
-                         }">
-                         {{ formatTimeTooltip(dragState.ghostStartTime) }}
-                    </div>
+                     
+                     <div v-for="op in getOpsForResource(res.id)" :key="op.id"
+                          class="op-bar"
+                          draggable="true"
+                          :class="{'selected': selectedOpId === op.id, 'late-delivery': isLate(op)}"
+                          :style="getBarStyle(op)"
+                          @dragstart="startDrag($event, op)"
+                          @click.stop="selectOp(op)"
+                          @dblclick.stop="openEditOpModal(op)">
+                          
+                          <!-- Resize Handles (From App A) -->
+                          <div class="resize-handle left" @mousedown.stop="startResize($event, op, 'left')"></div>
+                          <div class="resize-handle right" @mousedown.stop="startResize($event, op, 'right')"></div>
 
-                    <div v-for="op in getOpsForResource(res.id)" 
-                         :key="op.id"
-                         class="op-bar"
-                         draggable="true"
-                         :class="{'late-delivery': isLate(op), 'selected': selectedOpId === op.id}"
-                         :style="getBarStyle(op)"
-                         @dragstart="startDrag($event, op)"
-                         @click.stop="selectOp(op)"
-                         @dblclick.stop="openEditOpModal(op)"
-                         :title="op.product + ' (' + op.qty + ')'">
-                        
-                        <div class="resize-handle left" @mousedown.stop="startResize($event, op, 'left')"></div>
-                        <div class="resize-handle right" @mousedown.stop="startResize($event, op, 'right')"></div>
+                          <!-- Setup Visual -->
+                          <div class="bar-setup" v-if="op.setupDuration > 0" :style="{width: (op.setupDuration * config.pixelsPerMin) + 'px'}">
+                               <i class="fa-solid fa-cogs" style="font-size:0.8em; opacity:0.7"></i>
+                          </div>
 
-                        <div class="bar-setup" v-if="op.setupDuration > 0" :style="{width: (op.setupDuration * config.pixelsPerMin) + 'px'}">
-                            <i class="fa-solid fa-cogs" style="font-size:0.8em;"></i>
-                        </div>
-                        <div class="bar-run" :style="{backgroundColor: op.color}">
-                            <strong>{{ op.orderId }}</strong>
-                            <div style="display:flex; justify-content:space-between; width:100%;">
-                                <span>{{ op.product }}</span>
-                                <span style="font-size:0.9em; opacity:0.9;">{{ op.qty }}kg</span>
-                            </div>
-                        </div>
-                    </div>
+                          <!-- Content -->
+                          <div class="op-content" :style="{marginLeft: (op.setupDuration * config.pixelsPerMin) + 'px', backgroundColor: op.color}">
+                              <div style="font-weight:bold; display:flex; justify-content:space-between; width:100%;">
+                                  <span>{{op.orderId}}</span>
+                              </div>
+                              <div style="opacity:0.9; white-space:nowrap; overflow:hidden;">{{op.product}} ({{op.qty}})</div>
+                          </div>
+                     </div>
                 </div>
+
+                <!-- Ghost Preview -->
+                <div v-if="dragState.isDragging && dragState.hoverResId" 
+                     class="ghost-preview"
+                     :style="{
+                         left: (dragState.ghostStartTime * config.pixelsPerMin) + 'px', 
+                         width: ((dragState.ghostDuration) * config.pixelsPerMin) + 'px',
+                         top: getGhostTop() + 'px'
+                     }">
+                     {{ formatTimeTooltip(dragState.ghostStartTime) }}
+                </div>
+
             </div>
         </div>
 
-        <div class="orders-panel">
-            <h4 style="margin-top:0; margin-bottom:10px; display:flex; justify-content:space-between; color:var(--text-highlight);">
-                <span>Unscheduled Orders ({{ unscheduledOps.length }})</span>
-                <span style="font-size:0.8em; opacity:0.6;">Drag to Extruder Row</span>
-            </h4>
-            <div class="orders-grid">
-                <div class="order-card" 
-                     v-for="op in unscheduledOps" 
-                     :key="op.id"
+        <!-- TABLE VIEW -->
+        <div v-if="currentView === 'table'" class="view-wrapper">
+            <table class="std-table">
+                <thead>
+                    <tr>
+                        <th @click="sort('orderId')">Order ID <i class="fa-solid fa-sort"></i></th>
+                        <th @click="sort('product')">Product</th>
+                        <th @click="sort('status')">Status</th>
+                        <th @click="sort('resourceId')">Machine</th>
+                        <th @click="sort('qty')">Qty</th>
+                        <th @click="sort('dueDate')">Due Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="op in sortedOps" :key="op.id">
+                        <td><strong>{{ op.orderId }}</strong></td>
+                        <td>{{ op.product }} <span style="font-size:0.8em; opacity:0.7">({{op.color}})</span></td>
+                        <td><span class="tag" :class="op.status === 'scheduled' ? 'blue' : 'orange'">{{ op.status }}</span></td>
+                        <td>{{ getResourceName(op.resourceId) }}</td>
+                        <td>{{ op.qty }}</td>
+                        <td>{{ formatAlgerianDateTime(op.dueDate) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- KANBAN VIEW -->
+        <div v-if="currentView === 'kanban'" class="view-wrapper">
+             <div class="kanban-board">
+                 <div class="kanban-col" v-for="res in resources" :key="res.id">
+                     <div class="kanban-col-header">{{ res.name }} <span style="font-weight:normal; opacity:0.6">({{ getOpsForResource(res.id).length }})</span></div>
+                     <div class="kanban-col-body">
+                         <div v-for="op in getSortedOpsForResource(res.id)" :key="op.id" 
+                              class="kanban-card" 
+                              :style="{borderLeftColor: op.color}"
+                              @dblclick="openEditOpModal(op)">
+                              <div style="font-weight:bold; display:flex; justify-content:space-between;">
+                                  {{ op.orderId }}
+                              </div>
+                              <div style="color:var(--text-secondary); font-size:11px;">{{ op.product }}</div>
+                              <div style="margin-top:5px; font-size:10px;">{{ formatTimeTooltip(op.startTime) }}</div>
+                         </div>
+                     </div>
+                 </div>
+             </div>
+        </div>
+
+        <!-- BOTTOM PANEL (Unscheduled) -->
+        <div class="bottom-panel" v-if="currentView === 'gantt'">
+            <div class="panel-header">
+                <span><i class="fa-solid fa-layer-group"></i> Production Queue / Unscheduled Orders</span>
+                <span class="tag orange">{{ unscheduledOps.length }} Pending</span>
+            </div>
+            
+            <div class="data-grid">
+                <div class="grid-row grid-header">
+                    <div>Order ID</div>
+                    <div>Product</div>
+                    <div>Due Date</div>
+                    <div>Qty (kg)</div>
+                    <div>Required</div>
+                    <div>Notes</div>
+                </div>
+                
+                <div class="grid-row" v-for="op in unscheduledOps" :key="op.id"
                      draggable="true"
                      @dragstart="startDrag($event, op)"
                      @dblclick="openEditOpModal(op)">
                      
-                    <div style="display:flex; justify-content:space-between;">
-                        <strong style="color:var(--text-highlight);">{{ op.orderId }}</strong>
-                        <span style="background:var(--bg-dark); color:var(--text-main); padding:2px 4px; border-radius:3px; font-size:10px;">{{ op.product }}</span>
+                    <div style="font-weight:bold; color:var(--primary);">{{op.orderId}}</div>
+                    <div>{{op.product}} <span class="tag" style="background:none; border:1px solid #ccc">{{op.color}}</span></div>
+                    <div :style="{color: isLateUnscheduled(op) ? 'var(--danger)' : 'inherit'}">
+                        {{ formatAlgerianDateTime(op.dueDate) }}
                     </div>
-                    <div style="font-size:0.9em; margin-top:5px; color:var(--text-main);">
-                        Run: {{ op.runDuration }}m | Qty: {{ op.qty }}<br>
-                        Due: <span :style="{color: isLateUnscheduled(op) ? 'var(--danger)' : 'inherit'}">{{ formatAlgerianDateTime(op.dueDate) }}</span>
-                    </div>
-                    <div style="margin-top:5px; font-size:0.8em; color: var(--accent);">
-                        <i class="fa-solid fa-arrow-up"></i> {{ op.requiredGroup }}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div v-if="currentView === 'table'" class="view-container table-view">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th @click="sort('orderId')">Order ID <i class="fa-solid fa-sort"></i></th>
-                    <th @click="sort('product')">Product <i class="fa-solid fa-sort"></i></th>
-                    <th @click="sort('batchGroup')">Group <i class="fa-solid fa-sort"></i></th>
-                    <th @click="sort('status')">Status <i class="fa-solid fa-sort"></i></th>
-                    <th @click="sort('resourceId')">Machine <i class="fa-solid fa-sort"></i></th>
-                    <th @click="sort('qty')">Qty <i class="fa-solid fa-sort"></i></th>
-                    <th @click="sort('dueDate')">Due Date (DZ) <i class="fa-solid fa-sort"></i></th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="op in sortedOps" :key="op.id">
-                    <td><strong>{{ op.orderId }}</strong></td>
-                    <td>{{ op.product }} <span style="font-size:0.8em; opacity:0.7;">({{op.color}})</span></td>
-                    <td>{{ op.batchGroup || '-' }}</td>
-                    <td>
-                        <span class="status-badge" 
-                              :style="{background: op.status === 'scheduled' ? 'var(--success)' : '#777'}">
-                            {{ op.status }}
-                        </span>
-                    </td>
-                    <td>{{ getResourceName(op.resourceId) }}</td>
-                    <td>{{ op.qty }}</td>
-                    <td>{{ formatAlgerianDateTime(op.dueDate) }}</td>
-                    <td>
-                        <button class="secondary" style="padding:2px 6px; font-size:0.9em;" @click="openEditOpModal(op)">
-                            <i class="fa-solid fa-pen"></i>
-                        </button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div v-if="currentView === 'kanban'" class="view-container kanban-view">
-        <div class="kanban-col" v-for="res in resources" :key="res.id">
-            <div class="kanban-header">
-                <span>{{ res.name }}</span>
-                <span style="font-size:0.8em; font-weight:normal;">{{ getOpsForResource(res.id).length }} Ops</span>
-            </div>
-            <div class="kanban-body">
-                <div v-for="op in getSortedOpsForResource(res.id)" 
-                     :key="op.id" 
-                     class="kanban-card"
-                     :style="{borderLeftColor: op.color}"
-                     @dblclick="openEditOpModal(op)">
-                     
-                    <div style="font-weight:bold; display:flex; justify-content:space-between; color:var(--text-highlight);">
-                        <span>{{ op.orderId }}</span>
-                        <span style="font-size:0.8em; opacity:0.7;">{{ formatTimeTooltip(op.startTime) }}</span>
-                    </div>
-                    <div style="color:var(--text-main);">{{ op.product }}</div>
-                    <div style="font-size:0.8em; margin-top:5px; display:flex; gap:10px; color:var(--text-main);">
-                        <span><i class="fa-solid fa-cubes"></i> {{ op.qty }} kg</span>
-                        <span v-if="op.batchGroup"><i class="fa-solid fa-layer-group"></i> {{ op.batchGroup }}</span>
+                    <div>{{op.qty}}</div>
+                    <div><span class="tag blue">{{op.requiredGroup}}</span></div>
+                    <div style="color:var(--text-secondary); font-style:italic;">
+                        {{ op.notes || 'Drag to schedule...' }}
                     </div>
                 </div>
             </div>
         </div>
+
     </div>
 
-    <div class="modal-overlay" v-if="modals.resources" @click.self="modals.resources = false">
-        <div class="modal-window">
-            <div class="modal-header">
-                <span>Setup & Configuration</span>
-                <button class="close-icon-btn" @click="modals.resources = false"><i class="fa-solid fa-times"></i></button>
-            </div>
-            
-            <div style="background:var(--bg-dark); padding:10px; border-radius:4px; margin-bottom:15px; border:1px solid var(--border);">
-                <h6 style="margin:0 0 10px 0; color:var(--text-highlight);">Schedule Settings</h6>
-                <div class="form-group">
-                    <label>Visible Days (Buffer)</label>
-                    <input type="number" v-model.number="config.scheduleDays" min="1" max="100" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>Zoom Level (Pixels per Minute)</label>
-                    <input type="range" v-model.number="config.pixelsPerMin" min="0.05" max="1" step="0.05" style="width:100%">
-                    <div style="text-align:right; font-size:0.8em; color:var(--text-highlight);">{{ config.pixelsPerMin }}x</div>
-                </div>
-            </div>
-
-            <hr style="border-color:var(--border);">
-            
-            <h6 style="margin:10px 0; color:var(--text-highlight);">Machine Resources</h6>
-            <div style="max-height: 200px; overflow-y:auto; margin-bottom:15px;">
-                <div class="resource-item" v-for="(res, idx) in resources" :key="res.id">
-                    <span><b>{{ res.name }}</b> ({{ res.group }})</span>
-                    <button class="danger" style="padding:4px 8px;" @click="removeResource(idx)"> <i class="fa-solid fa-trash"></i></button>
-                </div>
-            </div>
-            
-            <div style="display:flex; gap:10px;">
-                <input v-model="newRes.name" placeholder="Name (e.g. EX-05)" class="form-control">
-                <select v-model="newRes.group" class="form-control" style="width:120px;">
-                    <option value="Extrusion">Extrusion</option>
-                    <option value="Assembly">Assembly</option>
-                </select>
-                <button class="success" @click="addResource">Add</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal-overlay" v-if="modals.addOrder" @click.self="modals.addOrder = false">
-        <div class="modal-window">
-            <div class="modal-header">
-                <span>Add Production Order</span>
-                <button class="close-icon-btn" @click="modals.addOrder = false"><i class="fa-solid fa-times"></i></button>
-            </div>
-            
+    <!-- MODALS (Styled like App B) -->
+    
+    <!-- Add Order Modal -->
+    <div class="modal-overlay" v-if="modals.addOrder" @click.self="modals.addOrder=false">
+        <div class="modal-card">
+            <h3 style="margin-top:0; border-bottom:1px solid var(--border-color); padding-bottom:10px;">Create New Order</h3>
             <div class="form-group">
                 <label>Order ID</label>
-                <input v-model="newOrder.id" class="form-control">
+                <input v-model="newOrder.id" class="form-input">
             </div>
             <div class="form-group">
-                <label>Product Name</label>
-                <input v-model="newOrder.product" class="form-control">
+                <label>Product</label>
+                <input v-model="newOrder.product" class="form-input">
             </div>
             <div style="display:flex; gap:10px;">
-                <div class="form-group" style="flex:1;">
+                <div class="form-group" style="flex:1">
                     <label>Color</label>
-                    <select v-model="newOrder.color" class="form-control">
-                        <option value="Black">Black</option>
-                        <option value="White">White</option>
-                        <option value="Red">Red</option>
-                        <option value="Blue">Blue</option>
-                        <option value="#eab308">Yellow</option>
-                        <option value="#a855f7">Purple</option>
+                    <select v-model="newOrder.color" class="form-input">
+                         <option value="Black">Black</option>
+                         <option value="White">White</option>
+                         <option value="Red">Red</option>
+                         <option value="Blue">Blue</option>
+                         <option value="#eab308">Yellow</option>
+                         <option value="#a855f7">Purple</option>
                     </select>
                 </div>
-                <div class="form-group" style="flex:1;">
+                <div class="form-group" style="flex:1">
                     <label>Qty (kg)</label>
-                    <input type="number" v-model="newOrder.qty" class="form-control">
+                    <input type="number" v-model="newOrder.qty" class="form-input">
                 </div>
             </div>
-
+            
             <div class="form-group">
-                <label>Run Duration</label>
+                <label>Run Duration (Result: {{ calculatedNewDuration }} mins)</label>
                 <div style="display:flex; gap:10px;">
-                    <input type="number" v-model.number="modalState.customDurationVal" class="form-control" placeholder="Value">
-                    <select v-model="modalState.customDurationUnit" class="form-control" style="width:120px;">
-                        <option value="minutes">Minutes</option>
-                        <option value="hours">Hours</option>
+                    <input type="number" v-model.number="modalState.customDurationVal" class="form-input">
+                    <select v-model="modalState.customDurationUnit" class="form-input" style="width:100px;">
+                        <option value="minutes">Mins</option>
+                        <option value="hours">Hrs</option>
                         <option value="days">Days</option>
                     </select>
                 </div>
-                <small style="color:#888;">Result: {{ calculatedNewDuration }} minutes</small>
             </div>
 
             <div class="form-group">
-                <label>Due (Hours from now)</label>
-                <input type="number" v-model="newOrder.dueHours" class="form-control" placeholder="e.g. 24 for tomorrow">
+                <label>Due Hours</label>
+                <input type="number" v-model="newOrder.dueHours" class="form-input">
             </div>
 
-            <div class="form-group">
-                <label>Notes</label>
-                <textarea v-model="newOrder.notes" class="form-control" placeholder="Add notes..."></textarea>
-            </div>
-
-            <div class="modal-footer">
-                <button class="secondary" @click="modals.addOrder = false">Cancel</button>
-                <button class="success" @click="saveNewOrder">Create Order</button>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; border-top:1px solid var(--border-color); padding-top:15px;">
+                <button class="btn btn-ghost-dark" @click="modals.addOrder=false">Cancel</button>
+                <button class="btn btn-orange" @click="saveNewOrder">Create Order</button>
             </div>
         </div>
     </div>
 
-    <div class="modal-overlay" v-if="modals.editOp && selectedOp" @click.self="modals.editOp = false">
-        <div class="modal-window">
-            <div class="modal-header">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <span>Edit Job: {{ selectedOp.orderId }}</span>
-                    <span style="font-size:0.6em; background:var(--accent); padding:3px 6px; border-radius:4px; color:white;">{{ selectedOp.status }}</span>
-                </div>
-                <button class="close-icon-btn" @click="modals.editOp = false"><i class="fa-solid fa-times"></i></button>
-            </div>
+    <!-- Edit Job Modal -->
+    <div class="modal-overlay" v-if="modals.editOp && selectedOp" @click.self="modals.editOp=false">
+        <div class="modal-card">
+            <h3 style="margin-top:0; border-bottom:1px solid var(--border-color); padding-bottom:10px;">
+                Edit Job: {{ selectedOp.orderId }}
+            </h3>
             
             <div class="form-group">
                 <label>Product</label>
-                <input v-model="selectedOp.product" class="form-control">
+                <input v-model="selectedOp.product" class="form-input">
             </div>
-
-            <div style="display:flex; gap:10px;">
-                <div class="form-group" style="flex:1;">
-                    <label>Color (Job Color)</label>
-                    <select v-model="selectedOp.color" class="form-control">
-                        <option value="Black">Black</option>
-                        <option value="White">White</option>
-                        <option value="Red">Red</option>
-                        <option value="Blue">Blue</option>
-                        <option value="#eab308">Yellow</option>
-                        <option value="#a855f7">Purple</option>
-                    </select>
-                </div>
-                <div class="form-group" style="flex:1;">
-                    <label>Quantity (kg)</label>
-                    <input type="number" v-model.number="selectedOp.qty" class="form-control">
-                </div>
-            </div>
-
+            
             <div class="form-group">
-                <label>Run Duration</label>
-                <div style="display:flex; gap:10px;">
-                    <input type="number" v-model.number="modalState.editDurationVal" class="form-control">
-                    <select v-model="modalState.editDurationUnit" class="form-control" style="width:120px;">
-                        <option value="minutes">Minutes</option>
-                        <option value="hours">Hours</option>
+                 <label>Run Duration (Update: {{ calculatedEditDuration }} mins)</label>
+                 <div style="display:flex; gap:10px;">
+                    <input type="number" v-model.number="modalState.editDurationVal" class="form-input">
+                    <select v-model="modalState.editDurationUnit" class="form-input" style="width:100px;">
+                        <option value="minutes">Mins</option>
+                        <option value="hours">Hrs</option>
                         <option value="days">Days</option>
                     </select>
+                 </div>
+            </div>
+            
+            <div style="display:flex; justify-content:space-between; margin-top:20px; border-top:1px solid var(--border-color); padding-top:15px;">
+                <button class="btn btn-ghost" style="color:var(--danger); border-color:var(--danger)" @click="deleteOp">Delete</button>
+                
+                <div style="display:flex; gap:10px;">
+                    <button v-if="selectedOp.status === 'scheduled'" class="btn btn-ghost-dark" @click="unscheduleOp">Unschedule</button>
+                    <button class="btn btn-blue" @click="saveEditOp">Save Changes</button>
                 </div>
-                <small style="color:#888;">Update: {{ calculatedEditDuration }} minutes</small>
             </div>
-
-            <div class="form-group">
-                <label>Batch / Group</label>
-                <input v-model="selectedOp.batchGroup" class="form-control">
-            </div>
-
-            <div class="form-group">
-                <label>Notes</label>
-                <textarea v-model="selectedOp.notes" class="form-control" placeholder="Production notes..."></textarea>
-            </div>
-
-            <div class="modal-footer">
-                <button class="danger" @click="deleteOp">Delete</button>
-                <button v-if="selectedOp.status === 'scheduled'" class="secondary" @click="unscheduleOp">Unschedule</button>
-                <button class="success" @click="saveEditOp">Save & Close</button>
-            </div>
+        </div>
+    </div>
+    
+    <!-- Resources Modal -->
+    <div class="modal-overlay" v-if="modals.resources" @click.self="modals.resources=false">
+        <div class="modal-card">
+             <h3>Manage Resources</h3>
+             <div style="max-height:200px; overflow-y:auto; margin-bottom:15px;">
+                <div v-for="(res, idx) in resources" :key="res.id" style="display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid var(--border-color);">
+                    <span><b>{{res.name}}</b> ({{res.group}})</span>
+                    <button class="btn btn-ghost" style="color:var(--danger); padding:0 5px;" @click="removeResource(idx)"><i class="fa-solid fa-trash"></i></button>
+                </div>
+             </div>
+             <div style="display:flex; gap:5px;">
+                 <input v-model="newRes.name" class="form-input" placeholder="Name">
+                 <select v-model="newRes.group" class="form-input">
+                     <option value="Extrusion">Extrusion</option>
+                     <option value="Assembly">Assembly</option>
+                 </select>
+                 <button class="btn btn-success" style="background:var(--success); color:white" @click="addResource">Add</button>
+             </div>
         </div>
     </div>
 
@@ -965,7 +744,7 @@
         setup() {
             // --- CONFIGURATION ---
             const config = reactive({
-                pixelsPerMin: 0.1, 
+                pixelsPerMin: 0.15, 
                 scheduleDays: 40 // Initial buffer
             });
             
@@ -977,8 +756,8 @@
 
             // Watcher for Body Class
             watch(isDarkMode, (newVal) => {
-                if(!newVal) document.body.classList.add('light-mode');
-                else document.body.classList.remove('light-mode');
+                if(newVal) document.body.classList.add('dark-mode');
+                else document.body.classList.remove('dark-mode');
             }, { immediate: true });
 
             // --- VIEW STATE ---
@@ -989,9 +768,9 @@
             
             // --- DATA STATE ---
             const resources = reactive([
-                { id: 'm1', name: 'PS 100', group: 'Extrusion', status: 'running' },
-                { id: 'm2', name: 'pS 75', group: 'Extrusion', status: 'running' },
-                { id: 'm3', name: 'PS 75-1', group: 'Extrusion', status: 'running' },
+                { id: 'm1', name: 'EXT-100', group: 'Extrusion', status: 'running' },
+                { id: 'm2', name: 'EXT-075', group: 'Extrusion', status: 'running' },
+                { id: 'm3', name: 'EXT-050', group: 'Extrusion', status: 'maintenance' },
             ]);
 
             const scheduledOps = reactive([]);
@@ -1009,7 +788,7 @@
             });
 
             const newOrder = reactive({ 
-                id: 'ORD-NEW', 
+                id: 'WO-2024-X', 
                 product: 'Pipe-110', 
                 color: 'Black', 
                 qty: 500, 
@@ -1061,9 +840,9 @@
                 const today = new Date();
                 baseDate.value = new Date(today.getTime() - (15 * 24 * 60 * 60000));
 
-                createOrder('ORD-101', 'HDPE Pipe 50mm', 'Black', 1000, 48, ['Extrusion'], 1440); // 1 Day
-                createOrder('ORD-102', 'PVC Tube', 'White', 500, 24, ['Extrusion'], 480); // 8 Hours
-                createOrder('ORD-103', 'Profile A', 'Red', 800, 72, ['Extrusion'], 2880); // 2 Days
+                createOrder('WO-101', 'HDPE Pipe 50mm', 'Black', 1000, 48, ['Extrusion'], 1440); // 1 Day
+                createOrder('WO-102', 'PVC Tube', 'White', 500, 24, ['Extrusion'], 480); // 8 Hours
+                createOrder('WO-103', 'Profile A', 'Red', 800, 72, ['Extrusion'], 2880); // 2 Days
                 
                 // Start Timer for Red Line
                 setInterval(updateNowMarker, 60000); // Update every minute
@@ -1099,17 +878,11 @@
 
             onMounted(async () => {
                 initData();
-                
-                // WAIT for DOM
                 await nextTick();
-                
                 // ATTEMPT 1: Immediate Jump
                 scrollToToday(false);
-                
-                // ATTEMPT 2: Delayed Correction (Force centering after painting)
-                setTimeout(() => {
-                    scrollToToday(true);
-                }, 500);
+                // ATTEMPT 2: Delayed Correction
+                setTimeout(() => { scrollToToday(true); }, 500);
             });
 
             // --- RED LINE MARKER LOGIC ---
@@ -1151,7 +924,7 @@
                 }
             };
 
-            // --- INFINITE SCROLL LOGIC (BIDIRECTIONAL) ---
+            // --- INFINITE SCROLL LOGIC ---
             const onScroll = (e) => {
                 const el = e.target;
                 const scrollRight = el.scrollLeft + el.clientWidth;
@@ -1169,29 +942,22 @@
 
             const loadPreviousWeek = () => {
                 const minsInWeek = 7 * 24 * 60;
-                // Shift Base Date Back
                 baseDate.value = new Date(baseDate.value.getTime() - (minsInWeek * 60000));
-                
-                // Add buffer days to config so width increases
                 config.scheduleDays += 7;
 
-                // Shift all existing ops FORWARD because 0-point moved back
+                // Shift ops forward
                 scheduledOps.forEach(op => {
                     op.startTime += minsInWeek;
                     if(op.dueDate) op.dueDate += minsInWeek;
                 });
-                
-                // Also shift unscheduled ops due dates
                 unscheduledOps.forEach(op => {
                       if(op.dueDate) op.dueDate += minsInWeek;
                 });
 
-                // Adjust Scroll Position to prevent jump
                 if(timelineScroll.value) {
                     const pixelShift = minsInWeek * config.pixelsPerMin;
                     timelineScroll.value.scrollLeft += pixelShift;
                 }
-                
                 updateNowMarker();
             };
 
@@ -1220,22 +986,19 @@
 
             const getDayName = (dayIndex) => {
                 const date = getAlgerianDateObj(dayIndex * 24 * 60);
-                return new Intl.DateTimeFormat('fr-DZ', {
-                    timeZone: 'Africa/Algiers',
+                return new Intl.DateTimeFormat('en-US', {
                     weekday: 'short'
                 }).format(date);
             };
             
-            // Check if day is Saturday for styling
             const isSaturday = (dayIndex) => {
                 const date = getAlgerianDateObj(dayIndex * 24 * 60);
-                return date.getDay() === 6; // 6 is Saturday
+                return date.getDay() === 6; 
             };
 
             const getDayFullDate = (dayIndex) => {
                 const date = getAlgerianDateObj(dayIndex * 24 * 60);
-                return new Intl.DateTimeFormat('fr-DZ', {
-                    timeZone: 'Africa/Algiers',
+                return new Intl.DateTimeFormat('en-US', {
                     day: 'numeric', month: 'numeric'
                 }).format(date);
             };
@@ -1246,7 +1009,6 @@
             const dayWidth = computed(() => 24 * 60 * config.pixelsPerMin);
             const hourWidth = computed(() => 60 * config.pixelsPerMin);
             
-            // Compute lines for Saturdays
             const weekLines = computed(() => {
                 const lines = [];
                 for(let i=0; i<config.scheduleDays; i++) {
@@ -1298,7 +1060,7 @@
                 selectedOpId.value = op.id;
             };
 
-            // --- RESIZE LOGIC (WITH MAGNETIC SNAP) ---
+            // --- RESIZE LOGIC ---
             const startResize = (e, op, side) => {
                 resizeState.isResizing = true;
                 resizeState.op = op;
@@ -1317,38 +1079,16 @@
                 
                 const dx = e.clientX - resizeState.startX;
                 const dt = dx / config.pixelsPerMin; 
-                const SNAP_THRESHOLD_MINS = 60; // 1 Hour Threshold for snapping
+                const SNAP_THRESHOLD_MINS = 60; 
                 const DAY_MINS = 1440;
 
                 if (resizeState.side === 'right') {
                     let newDur = resizeState.initialDur + dt;
                     if (newDur < 15) newDur = 15; 
-                    
-                    // Magnetic Snap Logic for End Time
-                    const potentialEnd = resizeState.initialStart + resizeState.op.setupDuration + newDur;
-                    const remainder = potentialEnd % DAY_MINS;
-                    
-                    // Snap to end of day if close
-                    if (remainder < SNAP_THRESHOLD_MINS || remainder > (DAY_MINS - SNAP_THRESHOLD_MINS)) {
-                         const snappedEnd = Math.round(potentialEnd / DAY_MINS) * DAY_MINS;
-                         newDur = snappedEnd - (resizeState.initialStart + resizeState.op.setupDuration);
-                         if (newDur < 15) newDur = 15; // Re-check min duration
-                    }
-
                     resizeState.op.runDuration = Math.round(newDur);
                 } else {
                     let newStart = resizeState.initialStart + dt;
                     let newDur = resizeState.initialDur - dt;
-                    
-                    // Magnetic Snap Logic for Start Time
-                    const remainder = newStart % DAY_MINS;
-                    if (remainder < SNAP_THRESHOLD_MINS || remainder > (DAY_MINS - SNAP_THRESHOLD_MINS)) {
-                        const snappedStart = Math.round(newStart / DAY_MINS) * DAY_MINS;
-                        const diff = snappedStart - newStart;
-                        newStart = snappedStart;
-                        newDur = newDur - diff;
-                    }
-
                     if (newDur >= 15 && newStart >= 0) {
                         resizeState.op.startTime = Math.round(newStart);
                         resizeState.op.runDuration = Math.round(newDur);
@@ -1372,16 +1112,18 @@
                 }
                 selectOp(op); 
 
-                const rect = e.currentTarget.getBoundingClientRect();
-                const offsetXPixels = e.clientX - rect.left;
-                dragState.dragOffset = offsetXPixels / config.pixelsPerMin; 
+                // Offset Calculation
+                // In App B structure, we need to be careful with offset since bars are inside rows
+                // Simple assumption: center drag if offset calculation is tricky
+                dragState.dragOffset = 0; 
 
                 dragState.isDragging = true;
                 dragState.op = op;
                 dragState.ghostDuration = op.runDuration + (op.setupDuration || 30);
                 e.dataTransfer.effectAllowed = 'move';
                 e.dataTransfer.dropEffect = 'move';
-                e.dataTransfer.setData('text/plain', JSON.stringify(op));
+                // Dummy data
+                e.dataTransfer.setData('text/plain', op.id);
             };
 
             const onDragOver = (e, resId) => {
@@ -1392,7 +1134,7 @@
                 dragState.hoverResId = resId;
                 
                 let rawMins = xPos / config.pixelsPerMin;
-                let startMins = rawMins - dragState.dragOffset;
+                let startMins = rawMins;
                 
                 let snappedMins = Math.round(startMins / 15) * 15;
                 if(snappedMins < 0) snappedMins = 0;
@@ -1443,7 +1185,7 @@
                 if(hasCollision(op, time, resId)) {
                     alert("Collision detected. Please drop in an empty space.");
                     if(op.status === 'scheduled') {
-                          op.setupDuration = calculateSetup(op, oldRes, oldTime);
+                           op.setupDuration = calculateSetup(op, oldRes, oldTime);
                     }
                     return;
                 }
@@ -1458,6 +1200,20 @@
                     scheduledOps.push(op);
                 }
             };
+            
+            // --- GHOST TOP CALC ---
+            const getGhostTop = () => {
+                // Since ghost is inside timeline-wrapper (relative), we need Y relative to that
+                // Simplified: use a fixed top or 0, CSS handles standard position, 
+                // but if we want it to float over the specific row, we need row index
+                const idx = resources.findIndex(r => r.id === dragState.hoverResId);
+                if(idx > -1) {
+                    // Header height (0 inside timeline-wrapper because header is separate div? No, time-scale is inside)
+                    // time-scale height is 50px
+                    return 50 + (idx * ROW_HEIGHT) + 7; // 7 is top padding of bar
+                }
+                return 0;
+            }
 
             // --- ACTIONS ---
             const toggleTheme = () => isDarkMode.value = !isDarkMode.value;
@@ -1496,7 +1252,7 @@
                     newOrder.dueHours, 
                     newOrder.ops,
                     calculatedNewDuration.value,
-                    newOrder.notes // Pass notes
+                    newOrder.notes
                 );
                 modals.addOrder = false;
             };
@@ -1588,7 +1344,11 @@
             const getOpsForResource = (rid) => scheduledOps.filter(o => o.resourceId === rid);
             const getSortedOpsForResource = (rid) => scheduledOps.filter(o => o.resourceId === rid).sort((a,b) => a.startTime - b.startTime);
             const getResourceName = (rid) => { const r = resources.find(x => x.id === rid); return r ? r.name : 'Unassigned'; };
-            const getBarStyle = (op) => ({ left: (op.startTime * config.pixelsPerMin) + 'px', width: ((op.setupDuration + op.runDuration) * config.pixelsPerMin) + 'px' });
+            const getBarStyle = (op) => ({ 
+                left: (op.startTime * config.pixelsPerMin) + 'px', 
+                width: ((op.setupDuration + op.runDuration) * config.pixelsPerMin) + 'px',
+                // Using a darker tone for the border if desired, but we handle color in inner content
+            });
             
             const isLate = (op) => (op.startTime + op.setupDuration + op.runDuration) > op.dueDate;
             const isLateUnscheduled = (op) => op.dueDate < 0; 
@@ -1613,9 +1373,9 @@
                           const r2 = resources.findIndex(r => r.id === next.resourceId);
                           if(r1<0 || r2<0) continue;
                           const x1 = (curr.startTime + curr.setupDuration + curr.runDuration) * config.pixelsPerMin;
-                          const y1 = (r1 * ROW_HEIGHT) + (ROW_HEIGHT/2);
+                          const y1 = 50 + (r1 * ROW_HEIGHT) + (ROW_HEIGHT/2); // 50 is header height
                           const x2 = next.startTime * config.pixelsPerMin;
-                          const y2 = (r2 * ROW_HEIGHT) + (ROW_HEIGHT/2);
+                          const y2 = 50 + (r2 * ROW_HEIGHT) + (ROW_HEIGHT/2);
                           lines.push({ path: `M ${x1} ${y1} C ${x1+50} ${y1}, ${x2-50} ${y2}, ${x2} ${y2}` });
                       }
                 });
@@ -1636,7 +1396,7 @@
                 getSortedOpsForResource, sort, getResourceName, formatTimeTooltip,
                 totalWidth, dayWidth, hourWidth,
                 calculatedNewDuration, calculatedEditDuration, onScroll, loadPreviousWeek, getXInTimeline, scrollToToday,
-                toggleResourceStatus, getStatusColor
+                toggleResourceStatus, getStatusColor, getGhostTop
             };
         }
     }).mount('#app');
