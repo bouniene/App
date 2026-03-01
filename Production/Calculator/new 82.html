@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محلل جداول Odoo الذكي</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --odoo-purple: #714B67;
+            --odoo-teal: #00A09D;
+            --odoo-red: #d9534f;
+            --odoo-green: #28a745;
+            --bg-color: #f1f3f6;
+            --border-color: #dee2e6;
+            --text-dark: #212529;
+            --text-muted: #666;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 20px;
+            font-size: 13px;
+        }
+
+        /* --- واجهة المستخدم (الشاشة) --- */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+            border: 1px solid #cfd7df;
+        }
+
+        .card-header {
+            padding: 15px 20px;
+            background: white;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h2 {
+            margin: 0;
+            font-size: 18px;
+            color: var(--odoo-purple);
+            font-weight: 500;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn-mini {
+            padding: 4px 8px;
+            font-size: 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-mini.add { background: #e6f4ea; color: #1e7e34; border-color: #c3e6cb; }
+        .btn-mini.sub { background: #fbecec; color: #bd2130; border-color: #f5c6cb; }
+        .btn-mini:hover { opacity: 0.8; }
+
+        .input-section { padding: 20px; }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            padding: 10px;
+            font-family: monospace;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        textarea:focus { outline: 1px solid var(--odoo-purple); border-color: var(--odoo-purple); }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary { background-color: var(--odoo-purple); color: white; }
+        .btn-primary:hover { background-color: #5a3b52; }
+
+        .btn-outline { background: white; border: 1px solid #ccc; color: #444; }
+        .btn-outline:hover { background: #f8f9fa; border-color: #bbb; }
+
+        .print-controls {
+            display: none; /* مخفي حتى التحليل */
+            margin-bottom: 20px;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .mo-badge {
+            background: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: bold;
+            color: var(--text-dark);
+            font-size: 14px;
+        }
+
+        /* --- تنسيق الجداول (مشترك) --- */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            table-layout: fixed; /* هام جداً للتحكم في العرض */
+        }
+
+        thead th {
+            text-align: right;
+            padding: 12px;
+            color: #4c4c4c;
+            border-bottom: 2px solid #e6e6e6;
+            font-weight: 600;
+            background: white;
+            white-space: nowrap; /* منع التفاف النص في العنوان */
+        }
+
+        tbody td {
+            padding: 8px 5px;
+            border-bottom: 1px solid #eee;
+            vertical-align: middle;
+            color: #4c4c4c;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .td-product { font-weight: 500; color: #212529; width: auto; }
+        
+        .td-qty { 
+            font-weight: bold; 
+            text-align: left; 
+            direction: ltr; 
+        }
+
+        /* تنسيق أعمدة الحساب المصغرة */
+        .calc-th {
+            width: 50px !important; /* عرض ثابت وصغير جداً للعنوان */
+            padding: 5px 0 !important;
+            text-align: center !important;
+        }
+        
+        .calc-td {
+            width: 50px !important; /* عرض ثابت وصغير جداً للخلية */
+            padding: 2px !important;
+            text-align: center !important;
+        }
+
+        /* حقول الإدخال داخل الجدول */
+        .calc-input {
+            width: 40px; /* تصغير عرض حقل الإدخال */
+            padding: 2px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .calc-input:focus { border-color: var(--odoo-teal); outline: none; }
+
+        /* عمود النتيجة */
+        .td-total {
+            font-weight: bold;
+            color: #212529;
+            background-color: #f8f9fa;
+            text-align: left;
+            direction: ltr;
+        }
+        
+        .qty-consumed { color: #d9534f; }
+        .qty-produced { color: #008784; }
+
+        .status-badge {
+            background-color: #00A09D;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        /* قسم النتائج */
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .results-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        /* --- إعدادات الطباعة (CSS Print) --- */
+        @media print {
+            body { background: white; padding: 0; margin: 0; }
+            .no-print, .input-section, .card-header button, .print-controls, .header-controls { display: none !important; }
+            .card { border: none; box-shadow: none; margin-bottom: 30px; }
+            .card-header { border-bottom: 2px solid #000; padding-left: 0; padding-right: 0; }
+            .container { max-width: 100%; width: 100%; }
+            
+            body.print-consumed-only #section-produced { display: none; }
+            body.print-consumed-only .results-grid { display: block; }
+            
+            body.print-produced-only #section-consumed { display: none; }
+            body.print-produced-only .results-grid { display: block; }
+            
+            body.print-all .results-grid { display: block; }
+
+            table { font-size: 11pt; }
+            thead th { border-bottom: 1px solid #000; color: #000; }
+            tbody td { border-bottom: 1px solid #ddd; }
+            
+            /* إظهار قيم المدخلات عند الطباعة */
+            input { border: none; background: transparent; padding: 0; width: auto; text-align: center; font-size: 10pt; }
+            
+            .status-badge { 
+                background-color: #00A09D !important; 
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact; 
+            }
+            .td-total { background-color: #eee !important; -webkit-print-color-adjust: exact; }
+            
+            /* تأكيد العرض الصغير عند الطباعة أيضاً */
+            .calc-th, .calc-td { width: 40px !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card no-print">
+        <div class="card-header">
+            <h2><i class="fa-brands fa-odoo"></i> Odoo Table Parser</h2>
+            <div class="mo-badge" id="moBadge" style="display:none;"></div>
+        </div>
+        <div class="input-section">
+            <textarea id="inputArea" placeholder="انسخ الجدول من Odoo أو Excel والصقه هنا..."></textarea>
+            <div class="btn-group">
+                <button class="btn-primary" onclick="processData()">
+                    <i class="fa fa-bolt"></i> تحليل البيانات
+                </button>
+                <button class="btn-outline" onclick="resetApp()">
+                    <i class="fa fa-trash"></i> مسح
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="printControls" class="print-controls">
+        <button class="btn-outline" onclick="printSection('all')">
+            <i class="fa fa-print"></i> طباعة الكل
+        </button>
+        <button class="btn-outline" onclick="printSection('consumed')">
+            <i class="fa fa-arrow-down" style="color:#d9534f"></i> طباعة المواد الأولية
+        </button>
+        <button class="btn-outline" onclick="printSection('produced')">
+            <i class="fa fa-arrow-up" style="color:#008784"></i> طباعة المنتج النهائي
+        </button>
+    </div>
+
+    <div id="resultArea" style="display:none;">
+        <div class="results-grid">
+            
+            <div class="card" id="section-consumed">
+                <div class="card-header">
+                    <span style="color:#d9534f; font-weight:bold;">
+                        <i class="fa fa-cubes"></i> المواد المستهلكة
+                    </span>
+                    <div class="header-controls no-print">
+                        <button class="btn-mini add" onclick="addColumn('consumed', 'add')" title="إضافة عمود جمع">
+                            <i class="fa fa-plus"></i>
+                        </button>
+                        <button class="btn-mini sub" onclick="addColumn('consumed', 'sub')" title="إضافة عمود طرح">
+                            <i class="fa fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <table id="tableConsumed">
+                    <thead>
+                        <tr id="theadConsumed"></tr>
+                    </thead>
+                    <tbody id="tbodyConsumed"></tbody>
+                </table>
+            </div>
+
+            <div class="card" id="section-produced">
+                <div class="card-header">
+                    <span style="color:#008784; font-weight:bold;">
+                        <i class="fa fa-check-circle"></i> المنتجات النهائية
+                    </span>
+                    <div class="header-controls no-print">
+                        <button class="btn-mini add" onclick="addColumn('produced', 'add')" title="إضافة عمود جمع">
+                            <i class="fa fa-plus"></i>
+                        </button>
+                        <button class="btn-mini sub" onclick="addColumn('produced', 'sub')" title="إضافة عمود طرح">
+                            <i class="fa fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <table id="tableProduced">
+                    <thead>
+                        <tr id="theadProduced"></tr>
+                    </thead>
+                    <tbody id="tbodyProduced"></tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    function parseNumber(str) {
+        if (!str) return 0;
+        str = str.replace(/[^\d.,]/g, '').trim(); 
+        str = str.replace(/,/g, '.');
+        return parseFloat(str) || 0;
+    }
+
+    let globalData = {
+        consumed: [],
+        produced: []
+    };
+    
+    let customCols = {
+        consumed: [],
+        produced: []
+    };
+
+    let globalMoRef = "";
+
+    function resetApp() {
+        document.getElementById('inputArea').value = '';
+        customCols = { consumed: [], produced: [] };
+        globalData = { consumed: [], produced: [] };
+        document.getElementById('resultArea').style.display = 'none';
+        document.getElementById('printControls').style.display = 'none';
+        document.getElementById('moBadge').style.display = 'none';
+    }
+
+    function processData() {
+        const text = document.getElementById('inputArea').value;
+        const lines = text.split(/\r?\n/);
+        
+        let consumed = [];
+        let produced = [];
+        globalMoRef = "مسودة";
+
+        lines.forEach(line => {
+            if (!line.trim()) return;
+
+            let product = "";
+            let qty = 0;
+            let unit = "";
+            let type = "consumed"; 
+            let ref = "";
+
+            const parts = line.split('\t');
+            
+            if (parts.length >= 3) {
+                let refIndex = -1, prodIndex = -1, fromIndex = -1, toIndex = -1, qtyIndex = -1, unitIndex = -1;
+
+                parts.forEach((part, index) => {
+                    const p = part.trim();
+                    if (!p) return;
+                    if (p.includes('/MO/') || p.includes('WH/MO/')) refIndex = index;
+                    else if (p.includes('Stock') || p.includes('Virtual') || p.includes('Partners')) {
+                        if (fromIndex === -1) fromIndex = index; else toIndex = index;
+                    }
+                    else if (p.match(/^[\d\s,.]+$/) || p.match(/^[\d\s,.]+[a-zA-Z()]+$/)) qtyIndex = index;
+                    else if (!p.match(/\d{2}:\d{2}/) && p.length > 2) { 
+                        if (prodIndex === -1) prodIndex = index; 
+                    }
+                    else if (['kg', 'Unit', 'Units', 'Unité(s)', 'Liter', 'L'].includes(p)) {
+                         if (index > qtyIndex) unitIndex = index;
+                    }
+                });
+
+                if (prodIndex === -1 && parts.length > 2) prodIndex = 2;
+                
+                if (refIndex !== -1) {
+                    ref = parts[refIndex].trim();
+                    const moMatch = ref.match(/MO\/\d+/);
+                    if(moMatch) globalMoRef = ref; 
+                }
+
+                if (prodIndex !== -1 && parts[prodIndex]) product = parts[prodIndex].trim();
+
+                if (qtyIndex !== -1) {
+                    const qtyRaw = parts[qtyIndex].trim();
+                    const qMatch = qtyRaw.match(/([\d\s,.]+)\s*([a-zA-Z()]*)/);
+                    if (qMatch) {
+                        qty = parseNumber(qMatch[1]);
+                        unit = qMatch[2] || (unitIndex !== -1 ? parts[unitIndex].trim() : "");
+                    }
+                }
+
+                if (fromIndex !== -1 && toIndex !== -1) {
+                    const fromLoc = parts[fromIndex];
+                    if (fromLoc.includes('Virtual') || fromLoc.includes('Production')) type = 'produced';
+                    else type = 'consumed';
+                }
+
+            } else {
+                const moMatch = line.match(/([A-Z0-9_\-]+\/MO\/\d+)/);
+                if (!moMatch) return;
+                ref = moMatch[1];
+                globalMoRef = ref;
+
+                const qtyMatch = line.match(/([\d\s,.]+)\s*([a-zA-Z()]+)$/);
+                if (!qtyMatch) return;
+                qty = parseNumber(qtyMatch[1]);
+                unit = qtyMatch[2];
+
+                const content = line.substring(line.indexOf(ref) + ref.length);
+                const cutIndex = content.search(/(D25ZG\/Stock|WH\/Stock|Virtual Locations|Stock\/|Partners\/)/i);
+                
+                if (cutIndex !== -1) {
+                    const cleanContent = content.substring(0, content.lastIndexOf(qtyMatch[1])); 
+                    product = cleanContent.substring(0, cutIndex).trim();
+                    
+                    const locPart = content.substring(cutIndex);
+                    const vIndex = locPart.indexOf("Virtual");
+                    const sIndex = locPart.search(/Stock/i);
+                    if (vIndex !== -1 && sIndex !== -1 && vIndex < sIndex) type = 'produced';
+                    else type = 'consumed';
+                }
+            }
+
+            if (product && qty > 0) {
+                const item = { ref: ref, name: product, qty: qty, unit: unit };
+                if (type === 'consumed') consumed.push(item);
+                else produced.push(item);
+            }
+        });
+
+        globalData.consumed = aggregateItems(consumed);
+        globalData.produced = aggregateItems(produced);
+
+        document.getElementById('resultArea').style.display = 'block';
+        document.getElementById('printControls').style.display = 'flex';
+        
+        if(globalMoRef) {
+            const badge = document.getElementById('moBadge');
+            badge.innerText = globalMoRef;
+            badge.style.display = 'block';
+        }
+
+        renderTable('consumed');
+        renderTable('produced');
+    }
+
+    function aggregateItems(items) {
+        const result = {};
+        items.forEach(item => {
+            const key = item.name + "|" + item.unit;
+            if (result[key]) {
+                result[key].qty += item.qty;
+            } else {
+                result[key] = item;
+            }
+        });
+        return Object.values(result);
+    }
+
+    function addColumn(type, operation) {
+        if(globalData[type].length === 0) return;
+        customCols[type].push({
+            id: Date.now(),
+            op: operation
+        });
+        renderTable(type);
+    }
+
+    function renderTable(type) {
+        const data = globalData[type];
+        const cols = customCols[type];
+        
+        const theadId = type === 'consumed' ? 'theadConsumed' : 'theadProduced';
+        const tbodyId = type === 'consumed' ? 'tbodyConsumed' : 'tbodyProduced';
+        const trHead = document.getElementById(theadId);
+        const tbody = document.getElementById(tbodyId);
+
+        let headerHTML = `
+            <th>المنتج</th>
+            <th style="width:15%; text-align:left">الكمية</th>
+            <th style="width:12%; text-align:center">الحالة</th>
+        `;
+
+        cols.forEach(col => {
+            const icon = col.op === 'add' ? 'plus' : 'minus';
+            const color = col.op === 'add' ? 'green' : 'red';
+            // استخدام كلاس calc-th لضمان صغر الحجم
+            headerHTML += `<th class="calc-th" style="color:${color}"><i class="fa fa-${icon}"></i></th>`;
+        });
+
+        if (cols.length > 0) {
+            headerHTML += `<th style="width:15%; text-align:left">الصافي</th>`;
+        }
+
+        trHead.innerHTML = headerHTML;
+
+        tbody.innerHTML = "";
+        
+        if (data.length === 0) {
+            const colSpan = 3 + cols.length + (cols.length > 0 ? 1 : 0);
+            tbody.innerHTML = `<tr><td colspan='${colSpan}' style='text-align:center; color:#ccc'>لا توجد بيانات</td></tr>`;
+            return;
+        }
+
+        data.forEach((item, rowIndex) => {
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-base-qty', item.qty);
+            
+            const qtyClass = type === 'consumed' ? 'qty-consumed' : 'qty-produced';
+            const qtyFormatted = item.qty.toLocaleString('fr-FR', {minimumFractionDigits: 0, maximumFractionDigits: 3});
+
+            let rowHTML = `
+                <td class="td-product">${item.name}</td>
+                <td class="td-qty ${qtyClass}">
+                    ${qtyFormatted} <span style="font-size:0.8em; color:#999;">${item.unit}</span>
+                </td>
+                <td style="text-align:center">
+                    <span class="status-badge">Disponible</span>
+                </td>
+            `;
+
+            cols.forEach((col, colIndex) => {
+                // استخدام كلاس calc-td لضمان صغر الخلية
+                rowHTML += `
+                    <td class="calc-td">
+                        <input type="number" step="0.01" class="calc-input" 
+                            data-op="${col.op}" 
+                            oninput="calculateRow(this)" 
+                            placeholder="0">
+                    </td>
+                `;
+            });
+
+            if (cols.length > 0) {
+                rowHTML += `
+                    <td class="td-total">
+                        <span class="row-total">${qtyFormatted}</span> 
+                        <span style="font-size:0.8em; color:#999;">${item.unit}</span>
+                    </td>
+                `;
+            }
+
+            tr.innerHTML = rowHTML;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function calculateRow(inputElement) {
+        const tr = inputElement.closest('tr');
+        const baseQty = parseFloat(tr.getAttribute('data-base-qty')) || 0;
+        const inputs = tr.querySelectorAll('.calc-input');
+        const totalDisplay = tr.querySelector('.row-total');
+        
+        let total = baseQty;
+
+        inputs.forEach(inp => {
+            const val = parseFloat(inp.value) || 0;
+            const op = inp.getAttribute('data-op');
+            
+            if (op === 'add') {
+                total += val;
+            } else if (op === 'sub') {
+                total -= val;
+            }
+        });
+
+        totalDisplay.innerText = total.toLocaleString('fr-FR', {minimumFractionDigits: 0, maximumFractionDigits: 3});
+    }
+
+    function printSection(mode) {
+        document.body.classList.remove('print-all', 'print-consumed-only', 'print-produced-only');
+        
+        if (mode === 'all') document.body.classList.add('print-all');
+        else if (mode === 'consumed') document.body.classList.add('print-consumed-only');
+        else if (mode === 'produced') document.body.classList.add('print-produced-only');
+
+        window.print();
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Production System Pro V14 - Enhanced Tree</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    corePlugins: {
+      preflight: false, // هذا يمنع اختفاء العناوين وتغيير خطوط Bootstrap
+    },
+    blocklist: [
+      'collapse', // هذا يمنع Tailwind من تدمير القوائم الجانبية
+    ]
+  }
+</script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<style>
+/* --- Core Styles --- */
+:root { --primary-color: #2563eb; --bg-color: #f8fafc; --sidebar-width: 260px; --right-panel-width: 320px; }
+body { background-color: var(--bg-color); font-family: 'Roboto', sans-serif; color: #1e293b; overflow: hidden; }
+
+/* --- Layout --- */
+.main-container { display: flex; height: 100vh; overflow: hidden; }
+#sidebar { width: var(--sidebar-width); min-width: var(--sidebar-width); background-color: #fff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; z-index: 20; height: 100vh; overflow-y: auto; }
+#main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+/* --- Sidebar Menu Tree Style --- */
+.sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #f1f5f9; background: #f8fafc; }
+
+/* Tree Buttons */
+.tree-btn {
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 12px 20px;
+    font-weight: 600;
+    color: #475569;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-bottom: 1px solid #f1f5f9;
+}
+.tree-btn:hover { background-color: #f8fafc; color: var(--primary-color); }
+.tree-btn i.fa-chevron-down { transition: transform 0.3s ease; font-size: 0.8rem; }
+.tree-btn[aria-expanded="true"] i.fa-chevron-down { transform: rotate(180deg); }
+.tree-btn[aria-expanded="true"] { color: var(--primary-color); background-color: #eff6ff; }
+
+/* Tree Submenu */
+.tree-submenu { background-color: #fcfcfc; list-style: none; padding: 0; margin: 0; border-bottom: 1px solid #e2e8f0; }
+.nav-link-sub {
+    display: flex;
+    align-items: center;
+    padding: 8px 20px 8px 45px;
+    color: #64748b;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+    position: relative;
+}
+.nav-link-sub:before {
+    content: ''; position: absolute; left: 28px; top: 50%;
+    width: 5px; height: 5px; border-radius: 50%; background: #cbd5e1; transform: translateY(-50%);
+}
+.nav-link-sub:hover { background-color: #f1f5f9; color: var(--primary-color); }
+.nav-link-sub.active { background-color: #e0e7ff; color: var(--primary-color); border-left-color: var(--primary-color); font-weight: 500; }
+.nav-link-sub.active:before { background: var(--primary-color); }
+
+/* --- Content Views --- */
+#top-nav { height: 60px; background-color: #fff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; padding: 0 25px; flex-shrink: 0; }
+#content-area { flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; }
+
+/* --- Tables & Calc --- */
+.table-compact thead th { background-color: #f1f5f9; color: #475569; padding: 6px 10px; font-size: 0.75rem; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
+.table-compact tbody td { padding: 4px 10px; vertical-align: middle; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; height: 35px; }
+/* --- Fix Tailwind/Bootstrap Conflict --- */
+.collapse {
+    visibility: visible !important;
+}
+.collapse:not(.show) {
+    display: none !important;
+}
+.calc-compact-box { background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px 15px; }
+.calc-label-sm { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; display: block; }
+.calc-view-container { display: flex; height: 100%; gap: 20px; }
+.calc-center-panel { flex-grow: 1; overflow-y: auto; padding-right: 10px; }
+.calc-right-panel { width: var(--right-panel-width); min-width: var(--right-panel-width); background: white; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; flex-direction: column; height: 100%; }
+
+/* Inputs within Tables */
+.adj-input { width: 60px; padding: 2px 5px; font-size: 0.85rem; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center; }
+.adj-positive { color: #166534; border-color: #86efac; background-color: #f0fdf4; font-weight: bold; }
+.adj-negative { color: #991b1b; border-color: #fca5a5; background-color: #fef2f2; font-weight: bold; }
+.custom-name-input { width: 100%; border: none; background: transparent; border-bottom: 1px dashed #cbd5e1; padding: 2px; font-size: 0.85rem; color: #334155; }
+.custom-name-input:focus { outline: none; border-bottom: 1px solid var(--primary-color); }
+.custom-base-input { width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; padding: 2px 5px; text-align: right; font-size: 0.85rem; color: #64748b; }
+.ing-tag { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; background-color: #f1f5f9; border: 1px solid #e2e8f0; color: #475569; margin-right: 4px; display: inline-block; margin-bottom: 2px; }
+
+/* History View Styles */
+.history-card { transition: transform 0.2s, box-shadow 0.2s; cursor: default; }
+.history-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+
+/* --- PRINT STYLES --- */
+@media print {
+    @page { size: A4; margin: 10mm; }
+    body { background-color: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; height: auto; overflow: visible; }
+    #sidebar, #top-nav, .no-print, .calc-right-panel, .btn-close-row { display: none !important; }
+    .main-container { display: block; height: auto; overflow: visible; }
+    #main-wrapper { display: block; height: auto; overflow: visible; }
+    #content-area { padding: 0; overflow: visible; display: block; height: auto; }
+    .calc-view-container { display: block; height: auto; }
+    .calc-center-panel { width: 100%; padding: 0; overflow: visible; height: auto; }
+    #print-section { display: block !important; width: 100%; }
+    .table { width: 100% !important; border-collapse: collapse; }
+    .table th, .table td { border: 1px solid #dee2e6 !important; padding: 8px !important; font-size: 10pt; }
+    .table thead th { background-color: #f8f9fa !important; color: black !important; }
+    .adj-input, .custom-base-input, .custom-name-input { border: none !important; background: transparent !important; padding: 0; width: auto; font-weight: bold; }
+    .adj-input, .custom-base-input { text-align: right; }
+    input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    #print-header-info { display: block !important; font-size: 14pt; margin-bottom: 20px; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<div class="main-container">
+    <aside id="sidebar">
+        <div class="sidebar-header">
+            <div class="font-bold text-xl text-blue-600">
+                <i class="fas fa-industry me-2"></i> SYSTEM PRO
+            </div>
+            <small class="text-xs text-gray-400 d-block mt-1">v14.0 Enhanced Tree</small>
+        </div>
+
+        <div class="flex-grow-1 overflow-auto" id="sidebarAccordion">
+    
+    <div>
+        <button class="tree-btn collapsed" data-bs-toggle="collapse" data-bs-target="#menu-products" aria-expanded="false">
+            <span><i class="fas fa-boxes me-2 text-primary"></i> Products Catalog</span>
+            <i class="fas fa-chevron-down"></i>
+        </button>
+        <div class="collapse tree-submenu" id="menu-products" data-bs-parent="#sidebarAccordion">
+            <a class="nav-link-sub active" onclick="switchView('products', this)">
+                Manage Catalog
+            </a>
+            <a class="nav-link-sub" onclick="alert('Feature coming soon')">
+                Categories (Soon)
+            </a>
+        </div>
+    </div>
+
+    <div>
+        <button class="tree-btn collapsed" data-bs-toggle="collapse" data-bs-target="#menu-tools" aria-expanded="false">
+            <span><i class="fas fa-calculator me-2 text-success"></i> Production Tools</span>
+            <i class="fas fa-chevron-down"></i>
+        </button>
+        <div class="collapse tree-submenu" id="menu-tools" data-bs-parent="#sidebarAccordion">
+            <a class="nav-link-sub" onclick="switchView('calculator', this)">
+                Production Calculator
+            </a>
+            <a class="nav-link-sub" onclick="switchView('history', this)">
+                Saved History
+            </a>
+        </div>
+    </div>
+
+</div>
+
+        <div class="p-3 border-t bg-gray-50 text-center">
+             <small class="text-xs text-gray-400">&copy; 2026 Production App</small>
+        </div>
+    </aside>
+
+    <div id="main-wrapper">
+<nav id="top-nav">
+    <h5 class="mb-0 fw-bold text-gray-700" id="page-title">Products Catalog</h5>
+    <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-sm btn-outline-dark rounded-pill px-3 d-flex align-items-center" onclick="openDevSchemaModal()">
+            <i class="fas fa-database me-2"></i> Schema JSON
+        </button>
+
+        <div class="d-flex align-items-center bg-gray-50 px-3 py-1 rounded-pill border">
+            <span id="connection-status" style="width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:8px;background-color:red;"></span>
+            <span id="status-text" class="small fw-bold text-secondary">Offline</span>
+        </div>
+    </div>
+</nav>
+
+        <div id="content-area">
+            
+            <div id="view-products">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="position-relative" style="max-width: 300px; width:100%;">
+                        <i class="fas fa-search position-absolute text-muted" style="left: 10px; top: 50%; transform: translateY(-50%);"></i>
+                        <input type="text" id="product-search" class="form-control rounded-pill ps-5" placeholder="Search products...">
+                    </div>
+                    <div class="d-flex gap-2 ms-3">
+                        <button class="btn btn-sm btn-primary" onclick="openCreateProductModal()">New Product</button>
+                    </div>
+                </div>
+                <div class="bg-white rounded border shadow-sm overflow-hidden">
+                    <table class="table table-compact mb-0 w-100">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">Reference / Name</th>
+                                <th>Category</th>
+                                <th class="text-center">Count</th>
+                                <th class="text-center">Recipes</th>
+                                <th class="text-end pe-3">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="view-product-details" class="d-none h-100">
+                <div class="d-flex items-center mb-3">
+                    <button class="btn btn-outline-secondary btn-sm me-3" onclick="closeProductDetails()">Back</button>
+                    <h4 class="fw-bold m-0" id="detail-product-title">Product</h4>
+                </div>
+                <div class="row h-[calc(100%-50px)]">
+                    <div class="col-md-4">
+                        <div class="card h-100 p-3 shadow-sm">
+                            <h6 class="fw-bold text-primary mb-3">Settings</h6>
+                            <input type="hidden" id="edit-prod-id">
+                            <div class="mb-2"><label class="small text-muted">Name</label><input id="edit-prod-name" class="form-control"></div>
+                            <div class="mb-3"><label class="small text-muted">Pcs/Carton</label><input type="number" id="edit-prod-count" class="form-control"></div>
+                            <button class="btn btn-primary w-100" onclick="updateProductDetails()">Save Changes</button>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-header bg-white d-flex justify-content-between">
+                                <span class="fw-bold">Recipes Configuration</span>
+                                <button class="btn btn-sm btn-success" onclick="openAddRecipeModal()">+ Add New</button>
+                            </div>
+                            <div class="card-body p-0 overflow-auto">
+                                <table class="table table-hover mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th class="ps-3 w-25">Recipe Name</th>
+                                            <th>Ingredients (Tags)</th>
+                                            <th class="text-end pe-3" style="width: 120px;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="product-recipes-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-calculator" class="d-none h-100">
+                <div class="calc-view-container">
+                    <div class="calc-center-panel">
+                        <div class="bg-white p-4 rounded shadow-sm border mb-4">
+                            <div class="d-flex align-items-center mb-3 no-print">
+    <button id="btn-back-history" class="btn btn-outline-secondary btn-sm me-3 d-none" onclick="goBackToHistory()">
+        <i class="fas fa-arrow-left me-1"></i> Back to History
+    </button>
+    
+    <h4 class="fw-bold text-primary m-0">
+        <i class="fas fa-calculator me-2"></i>Production Calculator
+    </h4>
+</div>
+                            
+                            <div class="row g-2 mb-3 align-items-end no-print">
+                                <div class="col-md-6"><label class="calc-label-sm text-secondary">Product</label><select id="calc-product-select" class="form-select select2-basic w-100"><option value="">-- Search --</option></select></div>
+                                <div class="col-md-6"><label class="calc-label-sm text-secondary">Recipe Variant</label><select id="calc-recipe-select" class="form-select select2-basic w-100" disabled><option value="">-- Search --</option></select></div>
+                            </div>
+
+                            <div class="calc-compact-box mb-3 no-print">
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-md-5"><label class="calc-label-sm text-primary">Mixes</label><input type="number" id="calc-mix-count" class="form-control form-control-sm fw-bold" placeholder="0" step="0.1"></div>
+                                    <div class="col-md-2 text-center text-muted"><span id="yield-display-badge" class="badge bg-white text-dark border shadow-sm">Yield: 0</span></div>
+                                    <div class="col-md-5"><label class="calc-label-sm text-success">Target Pieces</label><input type="number" id="calc-target-pcs" class="form-control form-control-sm fw-bold" placeholder="0" step="1"></div>
+                                </div>
+                            </div>
+
+                            <div id="print-section">
+                                <div class="d-none d-print-block mb-4 text-center">
+                                    <h2 class="fw-bold">Production Order Report</h2>
+                                    <div id="print-header-info" class="text-muted"></div>
+                                </div>
+
+                                <div class="row g-3">
+                                    <div class="col-md-8">
+                                        <div class="d-flex justify-content-between align-items-center border-bottom pb-1 mb-2">
+                                            <h6 class="fw-bold text-secondary small mb-0 text-uppercase">Raw Materials Bill</h6>
+                                            <div class="d-flex gap-1 no-print">
+                                                <button class="btn btn-xs btn-outline-danger" onclick="removeAdjColumn()" style="font-size: 0.7rem;"><i class="fas fa-minus me-1"></i> Del Adj</button>
+                                                <button class="btn btn-xs btn-outline-primary" onclick="addAdjColumn()" style="font-size: 0.7rem;"><i class="fas fa-plus me-1"></i> Add Adj</button>
+                                            </div>
+                                        </div>
+                                        
+                                        <table class="table table-bordered table-sm mb-2" id="calc-main-table">
+                                            <thead class="table-light">
+                                                <tr id="table-header-row">
+                                                    <th>Material</th>
+                                                    <th class="text-end bg-gray-50" style="width: 80px;">Base</th>
+                                                    <th class="text-end bg-blue-50">Final (Kg)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="calc-materials-body">
+                                                <tr><td colspan="3" class="text-center text-muted small py-3">Select a recipe...</td></tr>
+                                            </tbody>
+                                        </table>
+                                        
+                                        <div class="text-center no-print">
+                                             <button class="btn btn-sm btn-light border w-100 text-muted" onclick="addCustomRow()"><i class="fas fa-plus-circle me-1"></i> Add Custom Row</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4">
+                                        <div class="bg-gray-50 p-3 rounded border h-100 d-flex flex-column justify-content-center">
+                                            <div class="text-center">
+                                                <small class="d-block text-muted">Total Cartons</small>
+                                                <span class="fs-2 fw-bold text-dark" id="est-total-cartons">--</span>
+                                                <small class="text-muted d-block">(<span id="est-total-pcs">0</span> Pcs)</small>
+                                            </div>
+                                            <div class="mt-auto d-grid gap-2 no-print">
+                                                <button class="btn btn-success btn-sm w-100" onclick="saveCalculationToHistory()"><i class="fas fa-save me-2"></i> Save to History</button>
+                                                <button class="btn btn-dark btn-sm w-100" onclick="window.print()"><i class="fas fa-print me-2"></i> Print A4</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="calc-right-panel no-print">
+                        <div class="p-3 border-bottom bg-gray-50 d-flex justify-content-between align-items-center">
+                            <h6 class="fw-bold m-0 text-primary"><i class="fas fa-tools me-2"></i>Recipe Builder</h6>
+                        </div>
+                        <div class="p-3 flex-grow-1 overflow-auto">
+                            <div id="quick-edit-content" class="d-none">
+                                <input type="hidden" id="qe-recipe-id">
+                                <div class="mb-3"><label class="small fw-bold text-muted">Yield (Pcs/Mix)</label><input type="number" id="qe-yield" class="form-control form-control-sm" oninput="quickEditUpdate()"></div>
+                                <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-1">
+                                    <label class="small fw-bold text-muted mb-0">Ingredients</label>
+                                    <button class="btn btn-xs btn-outline-success py-0" onclick="addQuickEditRow()">+ New Row</button>
+                                </div>
+                                <div id="qe-ingredients-list"></div>
+                            </div>
+                            <div id="quick-edit-empty" class="text-center text-muted mt-5">
+                                <i class="fas fa-arrow-left me-2"></i> Select a recipe to edit.
+                            </div>
+                        </div>
+                        <div class="p-3 border-top bg-gray-50">
+                            <button class="btn btn-primary w-100 btn-sm" onclick="saveQuickEdit()">Update Database</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-history" class="d-none h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                     <h4 class="fw-bold text-gray-700 m-0"><i class="fas fa-history me-2 text-warning"></i>Saved Production Calculations</h4>
+                     <button class="btn btn-outline-secondary btn-sm" onclick="fetchHistoryData()"><i class="fas fa-sync-alt me-1"></i> Refresh</button>
+                </div>
+                
+                <div class="bg-white rounded border shadow-sm">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-3 py-3">Date</th>
+                                <th>Product Name</th>
+                                <th>Recipe Used</th>
+                                <th>Total Pcs</th>
+                                <th class="text-end pe-3">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body">
+                            <tr><td colspan="5" class="text-center p-5 text-muted">Loading history...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="create-product-modal" tabindex="-1"><div class="modal-dialog modal-sm"><div class="modal-content"><div class="modal-body"><input id="new-prod-name" class="form-control mb-2" placeholder="Product Name"><input id="new-prod-count" class="form-control mb-2" type="number" placeholder="Pcs/Carton"><button class="btn btn-primary w-100" onclick="createNewProduct()">Create</button></div></div></div></div>
+
+<div class="modal fade" id="recipe-modal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold">Recipe Configuration</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-5 border-end">
+                        <input type="hidden" id="recipe-id"><input type="hidden" id="recipe-product-id">
+                        <div class="mb-3"><label class="small fw-bold">Name</label><input id="recipe-name" class="form-control"></div>
+                        <div class="mb-3"><label class="small fw-bold">Yield</label><input id="recipe-yield" type="number" class="form-control"></div>
+                        <div class="mb-3"><label class="small fw-bold">Notes</label><textarea id="recipe-desc" class="form-control" rows="3"></textarea></div>
+                        <div class="mb-3"><label class="small fw-bold">Image URL</label><input id="recipe-img" class="form-control"></div>
+                    </div>
+                    <div class="col-md-7 ps-4">
+                        <div class="d-flex justify-content-between mb-2"><h6>Ingredients</h6><button class="btn btn-sm btn-outline-success" onclick="addMaterialRow()">+ Add</button></div>
+                        <div id="materials-rows" style="max-height: 400px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-primary" onclick="saveRecipe()">Save Recipe</button></div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="dev-schema-modal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title font-monospace"><i class="fas fa-database me-2"></i>App Data Structure (JSON)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <p class="small text-muted mb-2">
+                    استخدم هذه البيانات لربط أي تطبيق خارجي بقاعدة بيانات Firebase الخاصة بهذا النظام. 
+                    يحتوي هذا الملف على إعدادات الاتصال، أسماء الجداول (Paths)، ونماذج حية عن البيانات الحالية.
+                </p>
+                <div class="position-relative">
+                    <button class="btn btn-sm btn-primary position-absolute top-0 end-0 m-2" onclick="copySchemaToClipboard()">
+                        <i class="fas fa-copy"></i> Copy JSON
+                    </button>
+                    <pre id="schema-output" class="p-3 border rounded bg-white text-dark shadow-sm" style="font-size: 0.8rem; max-height: 600px; overflow: auto;"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="dev-schema-modal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title font-monospace"><i class="fas fa-lock me-2"></i>Secure Data Schema (JSON)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <div class="alert alert-info small">
+                    <i class="fas fa-info-circle me-1"></i>
+
+                </div>
+                <div class="position-relative">
+                    <button class="btn btn-sm btn-primary position-absolute top-0 end-0 m-2" onclick="copySchemaToClipboard()">
+                        <i class="fas fa-copy me-1"></i> Copy
+                    </button>
+                    <pre id="schema-output" class="p-3 border rounded bg-white text-dark shadow-sm" style="font-size: 0.8rem; max-height: 600px; overflow: auto;direction: ltr; text-align: left;"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+const firebaseConfig = { apiKey: "AIzaSyCaBkl26zD1jR7-P9MWv7d4uD0T0QXUrnQ", authDomain: "appd-326a4.firebaseapp.com", databaseURL: "https://appd-326a4-default-rtdb.firebaseio.com", projectId: "appd-326a4", appId: "1:1001287247517:web:4c6e2a3b1cbada09821674" };
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const productsRef = db.ref('products_database');
+const bomRef = db.ref('bom_database');
+const savedRef = db.ref('saved_calculations');
+
+let products = [], recipes = [], adjColCount = 1, currentQuickRecipe = null, activeProductId = null;
+let customRows = []; 
+let isLoadingHistory = false;
+let historyDataCache = {}; // Cache to store retrieved history
+
+$(document).ready(function() { $('.select2-basic').select2({ theme: 'bootstrap-5', width: '100%' }); });
+// --- Sidebar Memory & Accordion State ---
+// --- Restore Last Active View ---
+const lastView = localStorage.getItem('current_active_view') || 'products'; // الافتراضي products
+
+// 1. البحث عن الزر الخاص بهذه الصفحة في القائمة الجانبية
+// نبحث عن الرابط الذي يحتوي في الـ onclick على اسم الصفحة المحفوظة
+const activeLink = $(`.nav-link-sub[onclick*="'${lastView}'"]`);
+
+// 2. تشغيل الدالة لفتح الصفحة وتفعيل الزر
+if (activeLink.length > 0) {
+    // نمرر اسم الصفحة وعنصر الرابط ليتم تلوينه
+    switchView(lastView, activeLink[0]); 
+    
+    // (إضافي) التأكد من أن القائمة المنسدلة التي تحتوي هذا الزر مفتوحة
+    const parentMenu = activeLink.closest('.collapse');
+    if (parentMenu.length > 0) {
+        parentMenu.addClass('show');
+        // تعديل سهم القائمة الرئيسية
+        const parentBtn = $(`button[data-bs-target="#${parentMenu.attr('id')}"]`);
+        parentBtn.removeClass('collapsed').attr('aria-expanded', 'true');
+    }
+} else {
+    // إذا لم نجد شيئاً، نفتح الافتراضي
+    switchView('products');
+}
+// 1. استرجاع آخر قائمة كانت مفتوحة من الذاكرة
+var lastOpenedMenu = localStorage.getItem('sidebar_active_menu');
+
+if (lastOpenedMenu) {
+    // إذا وجدنا قائمة محفوظة، نقوم بفتحها
+    $(lastOpenedMenu).addClass('show');
+    // نقوم بتعديل الزر الخاص بها ليظهر السهم مفتوحاً
+    $('button[data-bs-target="' + lastOpenedMenu + '"]').removeClass('collapsed').attr('aria-expanded', 'true');
+}
+
+// 2. الاستماع لحدث فتح أي قائمة لحفظها
+$('.tree-submenu').on('shown.bs.collapse', function () {
+    // عند فتح أي قائمة، نحفظ الـ ID الخاص بها
+    localStorage.setItem('sidebar_active_menu', '#' + $(this).attr('id'));
+});
+
+// 3. (اختياري) إذا قام المستخدم بإغلاق القائمة يدوياً، نحذفها من الذاكرة
+$('.tree-submenu').on('hidden.bs.collapse', function () {
+    // ملاحظة: هذا الحدث ينطلق أيضاً عند فتح قائمة أخرى (لأن الأولى تغلق)، 
+    // لذلك نتحقق أولاً مما إذا كان الإغلاق بسبب فتح قائمة جديدة أم لا.
+    // الطريقة الأبسط: لا نحذف الذاكرة هنا لأن 'shown' للقائمة الجديدة سيقوم بالتحديث.
+    // لكن إذا أردت أنه لو أغلق كل شيء يدوياً لا يفتح شيء:
+    var currentOpen = $('.tree-submenu.show');
+    if (currentOpen.length === 0) {
+        localStorage.removeItem('sidebar_active_menu');
+    }
+});
+// --- Realtime Sync ---
+db.ref(".info/connected").on("value", (snap) => {
+    if (snap.val()) { $('#connection-status').css('background-color', '#22c55e'); $('#status-text').text('Online').addClass('text-success'); } 
+    else { $('#connection-status').css('background-color', 'red'); $('#status-text').text('Offline').removeClass('text-success'); }
+});
+
+productsRef.on('value', snap => {
+    products = []; if (snap.val()) Object.keys(snap.val()).forEach(k => products.push({ id: k, ...snap.val()[k] }));
+    renderProductsTable(); populateSelects();
+});
+
+bomRef.on('value', snap => {
+    recipes = []; if (snap.val()) Object.keys(snap.val()).forEach(k => recipes.push({ id: k, ...snap.val()[k] }));
+    if(activeProductId) renderProductRecipes(activeProductId);
+    if($('#calc-recipe-select').val() && !isLoadingHistory) {
+        const currentId = $('#calc-recipe-select').val();
+        loadQuickEditData(currentId);
+        updateCalculations();
+    }
+});
+
+// Listener for Saved History (Populates the new Table View)
+savedRef.on('value', snap => {
+    historyDataCache = snap.val() || {};
+    renderHistoryTable();
+});
+
+function renderHistoryTable() {
+    const tbody = $('#history-table-body').empty();
+    if(Object.keys(historyDataCache).length === 0) {
+        tbody.html('<tr><td colspan="5" class="text-center p-5 text-muted">No saved history found.</td></tr>');
+        return;
+    }
+
+    Object.keys(historyDataCache).reverse().forEach(key => {
+        const item = historyDataCache[key];
+        const dateObj = new Date(item.date);
+        const dateStr = dateObj.toLocaleDateString() + ' <span class="text-muted small">' + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + '</span>';
+
+        tbody.append(`
+            <tr class="history-card">
+                <td class="ps-3">${dateStr}</td>
+                <td class="fw-bold text-primary">${item.productName || 'Unknown'}</td>
+                <td><span class="badge bg-light text-dark border">${item.recipeName || 'Custom'}</span></td>
+                <td class="fw-bold">${item.totalPcs || 0}</td>
+                <td class="text-end pe-3">
+                    <button class="btn btn-sm btn-outline-primary me-2" onclick='loadSavedCalculation(${JSON.stringify({key, ...item})})'>
+                        <i class="fas fa-folder-open me-1"></i> Load
+                    </button>
+                     <button class="btn btn-sm btn-outline-danger" onclick="deleteHistoryItem('${key}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `);
+    });
+}
+
+function fetchHistoryData() {
+    // Manually trigger a read if needed, though .on() handles updates
+    savedRef.once('value').then(snap => {
+        historyDataCache = snap.val() || {};
+        renderHistoryTable();
+        alert('History refreshed');
+    });
+}
+
+function deleteHistoryItem(key) {
+    if(confirm('Are you sure you want to delete this saved calculation?')) {
+        savedRef.child(key).remove();
+    }
+}
+
+// --- Navigation Handling (Updated for Tree View) ---
+function switchView(v, el) {
+if (v === 'calculator' && !isLoadingHistory) {
+        $('#btn-back-history').addClass('d-none');
+    }
+localStorage.setItem('current_active_view', v);
+    // Visual Active State for Sidebar
+    if(el) {
+        $('.nav-link-sub').removeClass('active');
+        $(el).addClass('active');
+    }
+
+    // Hide all views
+    $('#view-products, #view-product-details, #view-calculator, #view-history').addClass('d-none');
+    
+    // Show selected view
+    $('#view-' + v).removeClass('d-none');
+    
+    // Update Title
+    let title = "Production System";
+    if(v === 'products') title = "Products Catalog";
+    if(v === 'calculator') title = "Production Calculator";
+    if(v === 'history') {
+        title = "Saved History";
+        renderHistoryTable(); // Ensure table is up to date when viewing
+    }
+    $('#page-title').text(title);
+}
+
+// --- Calculation Functions ---
+function getAdjustmentState() {
+    const currentState = {};
+    $('.adj-input').each(function() {
+        const mat = $(this).data('mat'), col = $(this).data('col'), val = $(this).val();
+        if(!currentState[mat]) currentState[mat] = {}; currentState[mat][col] = val;
+    });
+    const customData = {};
+    $('.custom-row').each(function() {
+        const id = $(this).data('id');
+        customData[id] = {
+            name: $(this).find('.custom-name-input').val(),
+            base: $(this).find('.custom-base-input').val()
+        };
+    });
+    return { adj: currentState, custom: customData };
+}
+
+function restoreState(state) {
+    for(const [mat, cols] of Object.entries(state.adj)) {
+        for(const [col, val] of Object.entries(cols)) {
+            if(parseInt(col) <= adjColCount) {
+                const input = $(`.adj-input[data-mat="${mat}"][data-col="${col}"]`);
+                input.val(val);
+            }
+        }
+    }
+    for(const [id, data] of Object.entries(state.custom)) {
+        const row = $(`.custom-row[data-id="${id}"]`);
+        row.find('.custom-name-input').val(data.name);
+        row.find('.custom-base-input').val(data.base);
+    }
+}
+
+function addAdjColumn() {
+    const state = getAdjustmentState();
+    adjColCount++; renderCalcTableStructure(); restoreState(state); updateCalculations();
+}
+
+function removeAdjColumn() {
+    if(adjColCount <= 1) return alert("Minimum 1 Adjustment column required.");
+    const state = getAdjustmentState();
+    adjColCount--; renderCalcTableStructure(); restoreState(state); updateCalculations();
+}
+
+function addCustomRow() {
+    const state = getAdjustmentState();
+    const newId = 'cust_' + Date.now();
+    customRows.push({ id: newId });
+    renderCalcTableStructure(); restoreState(state);
+}
+
+function removeCustomRow(id) {
+    const state = getAdjustmentState();
+    customRows = customRows.filter(r => r.id !== id);
+    renderCalcTableStructure(); restoreState(state); updateCalculations();
+}
+
+function renderCalcTableStructure() {
+    let headerHtml = `<th>Material</th><th class="text-end bg-gray-50" style="width: 80px;">Base</th>`;
+    for(let i=1; i<=adjColCount; i++) headerHtml += `<th class="text-center no-print" style="width: 70px;">Adj ${i}</th>`;
+    headerHtml += `<th class="text-end bg-blue-50">Final (Kg)</th>`;
+    $('#table-header-row').html(headerHtml);
+
+    const tbody = $('#calc-materials-body').empty();
+    const r = currentQuickRecipe || recipes.find(x => x.id === $('#calc-recipe-select').val());
+    if(!r || !r.materials) { tbody.html('<tr><td colspan="10" class="text-center text-muted py-3">Select recipe...</td></tr>'); return; }
+    
+    // Standard Rows
+    r.materials.forEach(m => {
+        let adjs = '';
+        for(let i=1; i<=adjColCount; i++) adjs += `<td class="text-center no-print"><input type="number" class="adj-input" data-mat="${m.name}" data-col="${i}" placeholder="+/-" step="0.1"></td>`;
+        tbody.append(`<tr class="calc-row">
+            <td class="fw-bold text-secondary">${m.name}</td>
+            <td class="text-end text-muted base-qty" data-base-per-mix="${m.qty}">0.00</td>
+            ${adjs}
+            <td class="text-end fw-bold bg-blue-50 final-qty">0.00</td>
+        </tr>`);
+    });
+
+    // Custom Rows
+    customRows.forEach(row => {
+        let adjs = '';
+        for(let i=1; i<=adjColCount; i++) adjs += `<td class="text-center no-print"><input type="number" class="adj-input" data-mat="${row.id}" data-col="${i}" placeholder="+/-" step="0.1"></td>`;
+        tbody.append(`<tr class="custom-row" data-id="${row.id}">
+            <td class="p-1"><div class="d-flex"><button class="btn btn-sm text-danger no-print me-1 btn-close-row" onclick="removeCustomRow('${row.id}')">×</button><input class="custom-name-input" placeholder="Material Name"></div></td>
+            <td class="p-1"><input type="number" class="custom-base-input" placeholder="0.00" step="0.01" oninput="updateCalculations()"></td>
+            ${adjs}
+            <td class="text-end fw-bold bg-blue-50 final-qty">0.00</td>
+        </tr>`);
+    });
+}
+
+function updateCalculations() {
+    const mixes = parseFloat($('#calc-mix-count').val()) || 0;
+    const pcs = parseFloat($('#calc-target-pcs').val()) || 0;
+    const pid = $('#calc-product-select').val();
+
+    if(pid) {
+        const prodName = $("#calc-product-select option:selected").text();
+        const recName = $("#calc-recipe-select option:selected").text();
+        const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString();
+        $('#print-header-info').html(`<div class="fs-5">${prodName}</div><div class="small">${recName} | ${mixes} Mixes | ${dateStr}</div>`);
+    }
+    
+    $('#est-total-pcs').text(pcs.toLocaleString());
+    const p = products.find(x => x.id === pid);
+    $('#est-total-cartons').text(p && p.cartonCount > 0 && pcs > 0 ? (pcs / p.cartonCount).toFixed(1) : "--");
+
+    $('.calc-row').each(function() {
+        const base = (parseFloat($(this).find('.base-qty').data('base-per-mix')) || 0) * mixes;
+        $(this).find('.base-qty').text(base.toFixed(2));
+        let adjSum = 0;
+        $(this).find('.adj-input').each(function() { adjSum += parseFloat($(this).val()) || 0; });
+        $(this).find('.final-qty').text((base + adjSum).toFixed(2));
+    });
+
+    $('.custom-row').each(function() {
+        const base = parseFloat($(this).find('.custom-base-input').val()) || 0;
+        let adjSum = 0;
+        $(this).find('.adj-input').each(function() { adjSum += parseFloat($(this).val()) || 0; });
+        $(this).find('.final-qty').text((base + adjSum).toFixed(2));
+    });
+}
+
+function saveCalculationToHistory() {
+    const rid = $('#calc-recipe-select').val();
+    if(!rid) return alert("Select recipe first");
+    
+    const adjs = {};
+    $('.adj-input').each(function() {
+        const mat = $(this).data('mat'), col = $(this).data('col'), val = parseFloat($(this).val());
+        if(val) { if(!adjs[mat]) adjs[mat] = {}; adjs[mat][col] = val; }
+    });
+
+    const savedCustomRows = [];
+    $('.custom-row').each(function() {
+        savedCustomRows.push({
+            id: $(this).data('id'),
+            name: $(this).find('.custom-name-input').val(),
+            base: $(this).find('.custom-base-input').val()
+        });
+    });
+
+    savedRef.push({
+        productId: $('#calc-product-select').val(),
+        recipeId: rid,
+        productName: $("#calc-product-select option:selected").text(),
+        recipeName: $("#calc-recipe-select option:selected").text(),
+        mixes: $('#calc-mix-count').val(),
+        targetPcs: $('#calc-target-pcs').val(),
+        totalPcs: $('#est-total-pcs').text(),
+        adjColCount: adjColCount,
+        adjustments: adjs,
+        customRowsData: savedCustomRows,
+        date: new Date().toString()
+    });
+    alert("Saved successfully! Check History.");
+}
+
+function loadSavedCalculation(data) {
+    if(typeof data === 'string') data = JSON.parse(data); // Safety check
+    isLoadingHistory = true; 
+   $('#btn-back-history').removeClass('d-none'); 
+    // Switch View via function to handle UI states
+    switchView('calculator');
+    
+    // Set Product manually
+    $('#calc-product-select').val(data.productId).trigger('change.select2');
+    
+    // Build Recipe List Manually
+    const rs = $('#calc-recipe-select').empty().append('<option>-- Select --</option>');
+    recipes.filter(r => r.productId === data.productId).forEach(r => {
+        rs.append(`<option value="${r.id}">${r.name}</option>`);
+    });
+    
+    rs.prop('disabled', false);
+    $('#calc-recipe-select').val(data.recipeId).trigger('change.select2');
+    
+    loadQuickEditData(data.recipeId);
+    
+    $('#calc-mix-count').val(data.mixes);
+    $('#calc-target-pcs').val(data.targetPcs);
+    
+    customRows = [];
+    if(data.customRowsData) data.customRowsData.forEach(row => customRows.push({ id: row.id }));
+
+    adjColCount = data.adjColCount || 1;
+    renderCalcTableStructure();
+    
+    if(data.adjustments) restoreAdjustments(data.adjustments);
+    
+    if(data.customRowsData) {
+        data.customRowsData.forEach(row => {
+            const tr = $(`.custom-row[data-id="${row.id}"]`);
+            if(tr.length) {
+                tr.find('.custom-name-input').val(row.name);
+                tr.find('.custom-base-input').val(row.base);
+            }
+        });
+    }
+    
+    updateCalculations();
+    setTimeout(() => { isLoadingHistory = false; }, 200);
+}
+
+function restoreAdjustments(adjData) {
+    for(const [mat, cols] of Object.entries(adjData)) {
+        for(const [col, val] of Object.entries(cols)) {
+            const input = $(`.adj-input[data-mat="${mat}"][data-col="${col}"]`);
+            if(input.length) {
+                input.val(val); 
+                if(val > 0) input.addClass('adj-positive'); 
+                else if(val < 0) input.addClass('adj-negative');
+            }
+        }
+    }
+}
+
+// --- Event Listeners ---
+$(document).on('input', '.adj-input', function() {
+    $(this).removeClass('adj-positive adj-negative');
+    const v = parseFloat($(this).val());
+    if(v > 0) $(this).addClass('adj-positive'); else if(v < 0) $(this).addClass('adj-negative');
+    updateCalculations();
+});
+
+$('#calc-product-select').on('change', function() {
+    if (isLoadingHistory) return;
+    const pid = $(this).val();
+    const rs = $('#calc-recipe-select').empty().append('<option>-- Select --</option>').prop('disabled', !pid);
+    if(pid) recipes.filter(r => r.productId === pid).forEach(r => rs.append(`<option value="${r.id}">${r.name}</option>`));
+    $('#calc-mix-count, #calc-target-pcs').val('');
+    customRows = []; renderCalcTableStructure();
+});
+
+$('#calc-recipe-select').on('change', function() { 
+    if(!isLoadingHistory) {
+        loadQuickEditData($(this).val()); 
+        renderCalcTableStructure(); 
+    }
+});
+
+$('#calc-mix-count').on('input', function() {
+    const y = currentQuickRecipe ? currentQuickRecipe.yieldPerMix : 0;
+    if(y) $('#calc-target-pcs').val(($(this).val() * y).toFixed(0));
+    updateCalculations();
+});
+
+$('#calc-target-pcs').on('input', function() {
+    const y = currentQuickRecipe ? currentQuickRecipe.yieldPerMix : 0;
+    if(y) $('#calc-mix-count').val(($(this).val() / y).toFixed(2));
+    updateCalculations();
+});
+
+// --- Quick Edit & Helpers ---
+function loadQuickEditData(rid) {
+    const r = recipes.find(x => x.id === rid);
+    if(!r) { $('#quick-edit-empty').removeClass('d-none'); $('#quick-edit-content').addClass('d-none'); return; }
+    currentQuickRecipe = JSON.parse(JSON.stringify(r));
+    $('#quick-edit-empty').addClass('d-none'); $('#quick-edit-content').removeClass('d-none');
+    $('#qe-recipe-id').val(r.id); $('#qe-yield').val(r.yieldPerMix || 0);
+    $('#yield-display-badge').text(`Yield: ${r.yieldPerMix || 0}`);
+    renderQuickEditRows();
+}
+
+function renderQuickEditRows() {
+    const list = $('#qe-ingredients-list').empty();
+    if(currentQuickRecipe.materials) currentQuickRecipe.materials.forEach((m, i) => {
+        list.append(`<div class="input-group input-group-sm mb-1"><input class="form-control qe-name" value="${m.name}" oninput="quickEditUpdate()"><input type="number" class="form-control qe-qty" value="${m.qty}" step="0.01" oninput="quickEditUpdate()" style="max-width:70px;"><button class="btn btn-outline-danger" onclick="removeQuickEditRow(${i})">×</button></div>`);
+    });
+}
+
+function quickEditUpdate() {
+    const mats = [];
+    $('#qe-ingredients-list .input-group').each(function() { mats.push({ name: $(this).find('.qe-name').val(), qty: parseFloat($(this).find('.qe-qty').val()) || 0 }); });
+    currentQuickRecipe.materials = mats;
+    const newYield = parseFloat($('#qe-yield').val()) || 0;
+    currentQuickRecipe.yieldPerMix = newYield;
+    $('#yield-display-badge').text(`Yield: ${newYield}`);
+    const currentMixes = parseFloat($('#calc-mix-count').val());
+    if (currentMixes) { $('#calc-target-pcs').val((currentMixes * newYield).toFixed(0)); }
+    renderCalcTableStructure(); updateCalculations();
+}
+
+function saveQuickEdit() {
+    if(!currentQuickRecipe) return;
+    bomRef.child($('#qe-recipe-id').val()).update({ yieldPerMix: currentQuickRecipe.yieldPerMix, materials: currentQuickRecipe.materials });
+    alert("Database Updated!");
+}
+function addQuickEditRow() { if(!currentQuickRecipe.materials) currentQuickRecipe.materials = []; currentQuickRecipe.materials.push({name:"", qty:0}); renderQuickEditRows(); }
+function removeQuickEditRow(i) { currentQuickRecipe.materials.splice(i,1); renderQuickEditRows(); quickEditUpdate(); }
+
+function renderProductsTable() {
+    const tbody = $('#products-table-body').empty();
+    const filter = $('#product-search').val().toLowerCase();
+    products.filter(p => p.name.toLowerCase().includes(filter)).forEach(p => {
+        tbody.append(`<tr onclick="openProductDetails('${p.id}')" style="cursor:pointer;"><td class="ps-3 fw-bold">${p.name}</td><td>OTHER</td><td class="text-center">${p.cartonCount || 0}</td><td class="text-center">${recipes.filter(x => x.productId === p.id).length}</td><td class="text-end pe-3 text-primary"><i class="fas fa-eye"></i></td></tr>`);
+    });
+}
+$('#product-search').on('input', renderProductsTable);
+
+function openProductDetails(id) {
+    activeProductId = id; const p = products.find(x => x.id === id);
+    $('#detail-product-title').text(p.name); $('#edit-prod-id').val(p.id); $('#edit-prod-name').val(p.name); $('#edit-prod-count').val(p.cartonCount);
+    switchView('product-details'); renderProductRecipes(id);
+}
+function updateProductDetails() { productsRef.child($('#edit-prod-id').val()).update({ name: $('#edit-prod-name').val(), cartonCount: parseInt($('#edit-prod-count').val()) || 0 }); alert("Updated"); }
+function closeProductDetails() { activeProductId = null; switchView('products'); }
+function renderProductRecipes(pid) {
+    const t = $('#product-recipes-body').empty();
+    recipes.filter(r => r.productId === pid).forEach(r => {
+        let tagsHtml = (r.materials && r.materials.length > 0) ? r.materials.map(m => `<span class="ing-tag">${m.name}: <b>${m.qty}</b></span>`).join('') : '<span class="text-muted small">No ingredients</span>';
+        t.append(`<tr><td class="fw-bold ps-3">${r.name}</td><td>${tagsHtml}</td><td class="text-end"><button class="btn btn-sm btn-link" onclick="editRecipeFromList('${r.id}')">Edit</button><button class="btn btn-sm btn-link text-danger" onclick="deleteRecipe('${r.id}')">Delete</button></td></tr>`);
+    });
+}
+
+function openAddRecipeModal() {
+    $('#recipe-id').val(''); $('#recipe-product-id').val(activeProductId); $('#recipe-name, #recipe-yield, #recipe-desc, #recipe-img').val(''); $('#materials-rows').empty();
+    addMaterialRow(); addMaterialRow(); new bootstrap.Modal(document.getElementById('recipe-modal')).show();
+}
+function addMaterialRow(n='', q='') { $('#materials-rows').append(`<div class="row g-2 mb-2 align-items-center"><div class="col-7"><input class="form-control form-control-sm mat-name" placeholder="Name" value="${n}"></div><div class="col-4"><input type="number" class="form-control form-control-sm mat-qty" placeholder="Qty" value="${q}" step="0.01"></div><div class="col-1"><button class="btn btn-sm text-danger" onclick="$(this).closest('.row').remove()"><i class="fas fa-times"></i></button></div></div>`); }
+function saveRecipe() {
+    const mats = []; $('#materials-rows .row').each(function() { const n = $(this).find('.mat-name').val(), q = $(this).find('.mat-qty').val(); if(n && q) mats.push({ name: n, qty: parseFloat(q) }); });
+    const data = { productId: $('#recipe-product-id').val(), name: $('#recipe-name').val(), yieldPerMix: parseFloat($('#recipe-yield').val()) || 0, description: $('#recipe-desc').val() || "", imageUrl: $('#recipe-img').val() || "", materials: mats };
+    if($('#recipe-id').val()) bomRef.child($('#recipe-id').val()).update(data); else bomRef.push(data);
+    bootstrap.Modal.getInstance(document.getElementById('recipe-modal')).hide();
+}
+function editRecipeFromList(id) {
+    const r = recipes.find(x => x.id === id); $('#recipe-id').val(r.id); $('#recipe-name').val(r.name); $('#recipe-yield').val(r.yieldPerMix); $('#recipe-desc').val(r.description || ""); $('#recipe-img').val(r.imageUrl || "");
+    $('#materials-rows').empty(); if(r.materials) r.materials.forEach(m => addMaterialRow(m.name, m.qty));
+    new bootstrap.Modal(document.getElementById('recipe-modal')).show();
+}
+function deleteRecipe(id) { if(confirm("Delete?")) bomRef.child(id).remove(); }
+function openCreateProductModal() { new bootstrap.Modal(document.getElementById('create-product-modal')).show(); }
+function createNewProduct() { productsRef.push({ name: $('#new-prod-name').val(), cartonCount: parseInt($('#new-prod-count').val()) || 0 }); bootstrap.Modal.getInstance(document.getElementById('create-product-modal')).hide(); }
+function populateSelects() { const s = $('#calc-product-select'); const v = s.val(); s.empty().append('<option value="">-- Search Product --</option>'); products.forEach(p => s.append(`<option value="${p.id}">${p.name}</option>`)); if(v) s.val(v).trigger('change.select2'); }
+
+
+function goBackToHistory() {
+    // 1. إخفاء زر الرجوع
+    $('#btn-back-history').addClass('d-none');
+    
+    // 2. العودة لصفحة السجل
+    switchView('history');
+    
+    // 3. (اختياري) تنظيف الحاسبة لتكون جاهزة لعملية جديدة
+    // $('#calc-product-select').val('').trigger('change'); 
+}
+
+// --- Developer Tools: Schema Generator ---
+
+function openDevSchemaModal() {
+    // 1. تجميع إعدادات الاتصال
+    const connectionInfo = {
+        platform: "Firebase Realtime Database",
+        config: firebaseConfig, // يأخذ الإعدادات الموجودة في الكود
+        base_url: firebaseConfig.databaseURL
+    };
+
+    // 2. تجميع هيكلية قاعدة البيانات (Paths & Models)
+    // نأخذ عينة واحدة فقط من المصفوفات لتقليل حجم النص وتوضيح الهيكل فقط
+    const dbStructure = {
+        products_table: {
+            firebase_path: "products_database",
+            description: "Stores basic product info and carton configurations",
+            data_model_example: products.length > 0 ? products[0] : { 
+                id: "unique_id_string", 
+                name: "Product Name Example", 
+                cartonCount: 12 
+            }
+        },
+        recipes_table: {
+            firebase_path: "bom_database",
+            description: "Stores recipes linked to products and their ingredients",
+            data_model_example: recipes.length > 0 ? recipes[0] : {
+                id: "recipe_id_string",
+                productId: "linked_product_id",
+                name: "Recipe Name",
+                yieldPerMix: 150,
+                description: "Notes...",
+                imageUrl: "http...",
+                materials: [
+                    { name: "Sugar", qty: 50.5 },
+                    { name: "Water", qty: 10 }
+                ]
+            }
+        },
+        history_table: {
+            firebase_path: "saved_calculations",
+            description: "Stores production logs and calculations",
+            // نأخذ أول عنصر من الكاش إذا وجد
+            data_model_example: Object.keys(historyDataCache).length > 0 ? historyDataCache[Object.keys(historyDataCache)[0]] : {
+                productId: "prod_id",
+                recipeId: "rec_id",
+                productName: "Product Name",
+                recipeName: "Recipe Name",
+                mixes: 5,
+                targetPcs: 1000,
+                totalPcs: 1000,
+                adjColCount: 2,
+                date: "Date String",
+                adjustments: { "MaterialName": { "1": 0.5 } },
+                customRowsData: [{ id: "cust_1", name: "Custom Mat", base: 10 }]
+            }
+        }
+    };
+
+    // 3. حالة التطبيق الحالية (Runtime Variables)
+    const runtimeState = {
+        loaded_products_count: products.length,
+        loaded_recipes_count: recipes.length,
+        active_view: localStorage.getItem('current_active_view'),
+        current_active_product_id: activeProductId,
+        calculator_state: {
+            current_mixes: $('#calc-mix-count').val(),
+            current_target: $('#calc-target-pcs').val(),
+            adjustment_columns: adjColCount
+        }
+    };
+
+    // 4. تجميع الملف النهائي
+    const fullSchema = {
+        _generated_at: new Date().toString(),
+        _note: "This JSON defines the API structure for external apps integration.",
+        CONNECTION_SETTINGS: connectionInfo,
+        DATABASE_SCHEMA: dbStructure,
+        CURRENT_APP_STATE: runtimeState
+    };
+
+    // عرض البيانات في النافذة
+    $('#schema-output').text(JSON.stringify(fullSchema, null, 4));
+    new bootstrap.Modal(document.getElementById('dev-schema-modal')).show();
+}
+
+function copySchemaToClipboard() {
+    const text = $('#schema-output').text();
+    navigator.clipboard.writeText(text).then(() => {
+        alert("JSON Data copied to clipboard!");
+    });
+}
+// --- Developer Tools: Secure Schema Generator ---
+
+function openDevSchemaModal() {
+    // 1. طلب كود الحماية
+    const pin = prompt("Enter Developer PIN to access Schema:");
+
+    // 2. التحقق من الكود
+    if (pin !== "2000") {
+        alert("Access Denied: Incorrect PIN.");
+        return; // إيقاف الدالة وعدم عرض البيانات
+    }
+
+    // --- إذا الكود صحيح، أكمل توليد البيانات ---
+
+    // إعدادات الاتصال
+    const connectionInfo = {
+        platform: "Firebase Realtime Database",
+        auth_method: "API Key",
+        config: firebaseConfig, 
+        base_url: firebaseConfig.databaseURL
+    };
+
+    // هيكلية البيانات (تأخذ عينات حية من المتغيرات الموجودة في الذاكرة)
+    const dbStructure = {
+        // جدول المنتجات
+        products_table: {
+            firebase_path: "products_database",
+            description: "Stores product definitions",
+            example_record: products.length > 0 ? products[0] : { 
+                id: "-NQK...", 
+                name: "Example Product", 
+                cartonCount: 24 
+            }
+        },
+        // جدول الوصفات
+        recipes_table: {
+            firebase_path: "bom_database",
+            description: "Stores BOM (Bill of Materials) recipes",
+            example_record: recipes.length > 0 ? recipes[0] : {
+                id: "-NQK...",
+                productId: "-NQK...",
+                name: "Standard Mix",
+                yieldPerMix: 150,
+                description: "Mix for 5 mins...",
+                imageUrl: "https://...",
+                materials: [
+                    { name: "Sugar", qty: 50 },
+                    { name: "Water", qty: 10 }
+                ]
+            }
+        },
+        // جدول السجل المحفوظ
+        history_table: {
+            firebase_path: "saved_calculations",
+            description: "Stores calculation history log",
+            // يحاول جلب أول سجل من الذاكرة كمثال
+            example_record: Object.keys(historyDataCache).length > 0 ? historyDataCache[Object.keys(historyDataCache)[0]] : {
+                productId: "-NQK...",
+                recipeId: "-NQK...",
+                productName: "Product A",
+                recipeName: "Recipe V1",
+                mixes: 5,
+                targetPcs: 1000,
+                totalPcs: 1000,
+                adjColCount: 1,
+                date: new Date().toString(),
+                adjustments: { "Sugar": { "1": 0.5 } },
+                customRowsData: []
+            }
+        }
+    };
+
+    // متغيرات التطبيق الحالية (للمساعدة في التطوير)
+    const appState = {
+        total_products_loaded: products.length,
+        total_recipes_loaded: recipes.length,
+        current_view: localStorage.getItem('current_active_view'),
+        selected_product_id: activeProductId || "None",
+        is_history_loading: isLoadingHistory
+    };
+
+    // تجميع الملف النهائي
+    const fullSchema = {
+        _generated_at: new Date().toISOString(),
+        _security_level: "Protected (PIN 2000)",
+        APP_CONFIG: connectionInfo,
+        DB_SCHEMA: dbStructure,
+        RUNTIME_STATE: appState
+    };
+
+    // عرض البيانات وفتح النافذة
+    $('#schema-output').text(JSON.stringify(fullSchema, null, 4));
+    new bootstrap.Modal(document.getElementById('dev-schema-modal')).show();
+}
+
+function copySchemaToClipboard() {
+    const text = $('#schema-output').text();
+    navigator.clipboard.writeText(text).then(() => {
+        alert("JSON Schema copied to clipboard!");
+    });
+}
+
+
+
+</script>
+</body>
+</html>
