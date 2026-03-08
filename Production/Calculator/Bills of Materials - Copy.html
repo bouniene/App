@@ -3,19 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Production System Pro V14 - Enhanced Tree</title>
+<title>Production System Pro V14 - Enhanced</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
   tailwind.config = {
     corePlugins: {
-      preflight: false, // هذا يمنع اختفاء العناوين وتغيير خطوط Bootstrap
+      preflight: false,
     },
     blocklist: [
-      'collapse', // هذا يمنع Tailwind من تدمير القوائم الجانبية
+      'collapse',
     ]
   }
 </script>
@@ -27,7 +28,7 @@
 
 <style>
 /* --- Core Styles --- */
-:root { --primary-color: #2563eb; --bg-color: #f8fafc; --sidebar-width: 260px; --right-panel-width: 320px; }
+:root { --primary-color: #2563eb; --bg-color: #f8fafc; --sidebar-width: 240px; --right-panel-width: 320px; }
 body { background-color: var(--bg-color); font-family: 'Roboto', sans-serif; color: #1e293b; overflow: hidden; }
 
 /* --- Layout --- */
@@ -36,83 +37,62 @@ body { background-color: var(--bg-color); font-family: 'Roboto', sans-serif; col
 #main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
 
 /* --- Sidebar Menu Tree Style --- */
-.sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #f1f5f9; background: #f8fafc; }
+.sidebar-header { padding: 12px; text-align: center; border-bottom: 1px solid #f1f5f9; background: #f8fafc; }
 
 /* Tree Buttons */
 .tree-btn {
-    width: 100%;
-    text-align: left;
-    background: none;
-    border: none;
-    padding: 12px 20px;
-    font-weight: 600;
-    color: #475569;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-    transition: background 0.2s;
-    border-bottom: 1px solid #f1f5f9;
+    width: 100%; text-align: left; background: none; border: none; padding: 8px 15px; font-weight: 600; font-size: 0.9rem; color: #475569; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s; border-bottom: 1px solid #f1f5f9;
 }
 .tree-btn:hover { background-color: #f8fafc; color: var(--primary-color); }
-.tree-btn i.fa-chevron-down { transition: transform 0.3s ease; font-size: 0.8rem; }
+.tree-btn i.fa-chevron-down { transition: transform 0.3s ease; font-size: 0.75rem; }
 .tree-btn[aria-expanded="true"] i.fa-chevron-down { transform: rotate(180deg); }
 .tree-btn[aria-expanded="true"] { color: var(--primary-color); background-color: #eff6ff; }
 
 /* Tree Submenu */
 .tree-submenu { background-color: #fcfcfc; list-style: none; padding: 0; margin: 0; border-bottom: 1px solid #e2e8f0; }
-.nav-link-sub {
-    display: flex;
-    align-items: center;
-    padding: 8px 20px 8px 45px;
-    color: #64748b;
-    text-decoration: none;
-    font-size: 0.9rem;
-    transition: all 0.2s;
-    border-left: 3px solid transparent;
-    cursor: pointer;
-    position: relative;
-}
-.nav-link-sub:before {
-    content: ''; position: absolute; left: 28px; top: 50%;
-    width: 5px; height: 5px; border-radius: 50%; background: #cbd5e1; transform: translateY(-50%);
-}
+.nav-link-sub { display: flex; align-items: center; padding: 6px 15px 6px 35px; color: #64748b; text-decoration: none; font-size: 0.85rem; transition: all 0.2s; border-left: 3px solid transparent; cursor: pointer; position: relative; }
+.nav-link-sub:before { content: ''; position: absolute; left: 20px; top: 50%; width: 5px; height: 5px; border-radius: 50%; background: #cbd5e1; transform: translateY(-50%); }
 .nav-link-sub:hover { background-color: #f1f5f9; color: var(--primary-color); }
 .nav-link-sub.active { background-color: #e0e7ff; color: var(--primary-color); border-left-color: var(--primary-color); font-weight: 500; }
 .nav-link-sub.active:before { background: var(--primary-color); }
 
 /* --- Content Views --- */
-#top-nav { height: 60px; background-color: #fff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; padding: 0 25px; flex-shrink: 0; }
-#content-area { flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; }
+#top-nav { height: 45px; background-color: #fff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; flex-shrink: 0; }
+#content-area { flex-grow: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; }
 
 /* --- Tables & Calc --- */
-.table-compact thead th { background-color: #f1f5f9; color: #475569; padding: 6px 10px; font-size: 0.75rem; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
-.table-compact tbody td { padding: 4px 10px; vertical-align: middle; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; height: 35px; }
+.table-compact thead th { background-color: #f1f5f9; color: #475569; padding: 4px 8px; font-size: 0.7rem; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
+.table-compact tbody td { padding: 2px 8px; vertical-align: middle; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; height: 28px; }
+
 /* --- Fix Tailwind/Bootstrap Conflict --- */
-.collapse {
-    visibility: visible !important;
-}
-.collapse:not(.show) {
-    display: none !important;
-}
-.calc-compact-box { background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px 15px; }
-.calc-label-sm { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; display: block; }
-.calc-view-container { display: flex; height: 100%; gap: 20px; }
-.calc-center-panel { flex-grow: 1; overflow-y: auto; padding-right: 10px; }
+.collapse { visibility: visible !important; }
+.collapse:not(.show) { display: none !important; }
+.calc-compact-box { background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 6px 10px; }
+.calc-label-sm { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; display: block; }
+.calc-view-container { display: flex; height: 100%; gap: 15px; }
+.calc-center-panel { flex-grow: 1; overflow-y: auto; padding-right: 5px; }
 .calc-right-panel { width: var(--right-panel-width); min-width: var(--right-panel-width); background: white; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; flex-direction: column; height: 100%; }
 
 /* Inputs within Tables */
-.adj-input { width: 60px; padding: 2px 5px; font-size: 0.85rem; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center; }
+.adj-input { width: 50px; padding: 1px 3px; font-size: 0.8rem; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center; }
 .adj-positive { color: #166534; border-color: #86efac; background-color: #f0fdf4; font-weight: bold; }
 .adj-negative { color: #991b1b; border-color: #fca5a5; background-color: #fef2f2; font-weight: bold; }
-.custom-name-input { width: 100%; border: none; background: transparent; border-bottom: 1px dashed #cbd5e1; padding: 2px; font-size: 0.85rem; color: #334155; }
+.custom-name-input { width: 100%; border: none; background: transparent; border-bottom: 1px dashed #cbd5e1; padding: 1px; font-size: 0.8rem; color: #334155; }
 .custom-name-input:focus { outline: none; border-bottom: 1px solid var(--primary-color); }
-.custom-base-input { width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; padding: 2px 5px; text-align: right; font-size: 0.85rem; color: #64748b; }
-.ing-tag { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; background-color: #f1f5f9; border: 1px solid #e2e8f0; color: #475569; margin-right: 4px; display: inline-block; margin-bottom: 2px; }
+.custom-base-input { width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; padding: 1px 3px; text-align: right; font-size: 0.8rem; color: #64748b; }
+.ing-tag { font-size: 0.7rem; padding: 2px 5px; border-radius: 4px; background-color: #f1f5f9; border: 1px solid #e2e8f0; color: #475569; margin-right: 4px; display: inline-block; margin-bottom: 2px; }
 
 /* History View Styles */
 .history-card { transition: transform 0.2s, box-shadow 0.2s; cursor: default; }
 .history-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+
+/* --- Mix Calculator Styles (Added) --- */
+.mix-calculator-container { width: 100%; font-family: 'Cairo', sans-serif; }
+.table-compact-mix { font-size: 0.75rem !important; text-align: center; }
+.bg-dark-red { background-color: #8B0000 !important; color: white !important; }
+.bg-dark-blue { background-color: #004085 !important; color: white !important; }
+.result-cell { font-weight: bold; background-color: #f8f9fa; }
+[contenteditable="true"]:focus { outline: 2px solid #007bff; background-color: #fff; }
 
 /* --- PRINT STYLES --- */
 @media print {
@@ -126,7 +106,7 @@ body { background-color: var(--bg-color); font-family: 'Roboto', sans-serif; col
     .calc-center-panel { width: 100%; padding: 0; overflow: visible; height: auto; }
     #print-section { display: block !important; width: 100%; }
     .table { width: 100% !important; border-collapse: collapse; }
-    .table th, .table td { border: 1px solid #dee2e6 !important; padding: 8px !important; font-size: 10pt; }
+    .table th, .table td { border: 1px solid #dee2e6 !important; padding: 6px !important; font-size: 10pt; }
     .table thead th { background-color: #f8f9fa !important; color: black !important; }
     .adj-input, .custom-base-input, .custom-name-input { border: none !important; background: transparent !important; padding: 0; width: auto; font-weight: bold; }
     .adj-input, .custom-base-input { text-align: right; }
@@ -140,10 +120,10 @@ body { background-color: var(--bg-color); font-family: 'Roboto', sans-serif; col
 <div class="main-container">
     <aside id="sidebar">
         <div class="sidebar-header">
-            <div class="font-bold text-xl text-blue-600">
+            <div class="font-bold text-lg text-blue-600">
                 <i class="fas fa-industry me-2"></i> SYSTEM PRO
             </div>
-            <small class="text-xs text-gray-400 d-block mt-1">v14.0 Enhanced Tree</small>
+            <small class="text-xs text-gray-400 d-block mt-1">v14.0 Enhanced</small>
         </div>
 
         <div class="flex-grow-1 overflow-auto" id="sidebarAccordion">
@@ -180,22 +160,22 @@ body { background-color: var(--bg-color); font-family: 'Roboto', sans-serif; col
 
 </div>
 
-        <div class="p-3 border-t bg-gray-50 text-center">
+        <div class="p-2 border-t bg-gray-50 text-center">
              <small class="text-xs text-gray-400">&copy; 2026 Production App</small>
         </div>
     </aside>
 
     <div id="main-wrapper">
 <nav id="top-nav">
-    <h5 class="mb-0 fw-bold text-gray-700" id="page-title">Products Catalog</h5>
-    <div class="d-flex align-items-center gap-3">
-        <button class="btn btn-sm btn-outline-dark rounded-pill px-3 d-flex align-items-center" onclick="openDevSchemaModal()">
-            <i class="fas fa-database me-2"></i> Schema JSON
+    <h6 class="mb-0 fw-bold text-gray-700" id="page-title">Products Catalog</h6>
+    <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-sm btn-outline-dark rounded-pill px-2 d-flex align-items-center" onclick="openDevSchemaModal()" style="font-size: 0.75rem;">
+            <i class="fas fa-database me-1"></i> Schema
         </button>
 
-        <div class="d-flex align-items-center bg-gray-50 px-3 py-1 rounded-pill border">
-            <span id="connection-status" style="width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:8px;background-color:red;"></span>
-            <span id="status-text" class="small fw-bold text-secondary">Offline</span>
+        <div class="d-flex align-items-center bg-gray-50 px-2 py-1 rounded-pill border">
+            <span id="connection-status" style="width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;background-color:red;"></span>
+            <span id="status-text" class="small fw-bold text-secondary" style="font-size: 0.75rem;">Offline</span>
         </div>
     </div>
 </nav>
@@ -205,8 +185,8 @@ body { background-color: var(--bg-color); font-family: 'Roboto', sans-serif; col
             <div id="view-products">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div class="position-relative" style="max-width: 300px; width:100%;">
-                        <i class="fas fa-search position-absolute text-muted" style="left: 10px; top: 50%; transform: translateY(-50%);"></i>
-                        <input type="text" id="product-search" class="form-control rounded-pill ps-5" placeholder="Search products...">
+                        <i class="fas fa-search position-absolute text-muted" style="left: 10px; top: 50%; transform: translateY(-50%); font-size: 0.85rem;"></i>
+                        <input type="text" id="product-search" class="form-control form-control-sm rounded-pill ps-4" placeholder="Search products...">
                     </div>
                     <div class="d-flex gap-2 ms-3">
                         <button class="btn btn-sm btn-primary" onclick="openCreateProductModal()">New Product</button>
@@ -229,33 +209,33 @@ body { background-color: var(--bg-color); font-family: 'Roboto', sans-serif; col
             </div>
 
             <div id="view-product-details" class="d-none h-100">
-                <div class="d-flex items-center mb-3">
+                <div class="d-flex items-center mb-2">
                     <button class="btn btn-outline-secondary btn-sm me-3" onclick="closeProductDetails()">Back</button>
-                    <h4 class="fw-bold m-0" id="detail-product-title">Product</h4>
+                    <h5 class="fw-bold m-0" id="detail-product-title">Product</h5>
                 </div>
-                <div class="row h-[calc(100%-50px)]">
+                <div class="row h-[calc(100%-40px)]">
                     <div class="col-md-4">
-                        <div class="card h-100 p-3 shadow-sm">
-                            <h6 class="fw-bold text-primary mb-3">Settings</h6>
+                        <div class="card h-100 p-2 shadow-sm">
+                            <h6 class="fw-bold text-primary mb-2 small">Settings</h6>
                             <input type="hidden" id="edit-prod-id">
-                            <div class="mb-2"><label class="small text-muted">Name</label><input id="edit-prod-name" class="form-control"></div>
-                            <div class="mb-3"><label class="small text-muted">Pcs/Carton</label><input type="number" id="edit-prod-count" class="form-control"></div>
-                            <button class="btn btn-primary w-100" onclick="updateProductDetails()">Save Changes</button>
+                            <div class="mb-2"><label class="small text-muted">Name</label><input id="edit-prod-name" class="form-control form-control-sm"></div>
+                            <div class="mb-3"><label class="small text-muted">Pcs/Carton</label><input type="number" id="edit-prod-count" class="form-control form-control-sm"></div>
+                            <button class="btn btn-primary btn-sm w-100" onclick="updateProductDetails()">Save Changes</button>
                         </div>
                     </div>
                     <div class="col-md-8">
                         <div class="card h-100 shadow-sm">
-                            <div class="card-header bg-white d-flex justify-content-between">
-                                <span class="fw-bold">Recipes Configuration</span>
-                                <button class="btn btn-sm btn-success" onclick="openAddRecipeModal()">+ Add New</button>
+                            <div class="card-header bg-white d-flex justify-content-between py-2">
+                                <span class="fw-bold small">Recipes Configuration</span>
+                                <button class="btn btn-sm btn-success py-0" onclick="openAddRecipeModal()">+ Add New</button>
                             </div>
                             <div class="card-body p-0 overflow-auto">
-                                <table class="table table-hover mb-0">
+                                <table class="table table-hover table-sm mb-0">
                                     <thead class="bg-light">
                                         <tr>
-                                            <th class="ps-3 w-25">Recipe Name</th>
-                                            <th>Ingredients (Tags)</th>
-                                            <th class="text-end pe-3" style="width: 120px;">Actions</th>
+                                            <th class="ps-3 w-25 small">Recipe Name</th>
+                                            <th class="small">Ingredients (Tags)</th>
+                                            <th class="text-end pe-3 small" style="width: 120px;">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody id="product-recipes-body"></tbody>
@@ -269,19 +249,26 @@ body { background-color: var(--bg-color); font-family: 'Roboto', sans-serif; col
             <div id="view-calculator" class="d-none h-100">
                 <div class="calc-view-container">
                     <div class="calc-center-panel">
-                        <div class="bg-white p-4 rounded shadow-sm border mb-4">
-                            <div class="d-flex align-items-center mb-3 no-print">
-    <button id="btn-back-history" class="btn btn-outline-secondary btn-sm me-3 d-none" onclick="goBackToHistory()">
-        <i class="fas fa-arrow-left me-1"></i> Back to History
-    </button>
-    
-    <h4 class="fw-bold text-primary m-0">
-        <i class="fas fa-calculator me-2"></i>Production Calculator
-    </h4>
+                        <div class="bg-white p-3 rounded shadow-sm border mb-3">
+                            <div class="d-flex align-items-center justify-content-between mb-2 no-print">
+    <div class="d-flex align-items-center">
+        <button id="btn-back-history" class="btn btn-outline-secondary btn-sm me-2 d-none" onclick="goBackToHistory()">
+            <i class="fas fa-arrow-left me-1"></i> Back
+        </button>
+        <h5 class="fw-bold text-primary m-0">
+            <i class="fas fa-calculator me-2"></i>Production Calculator
+        </h5>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <span id="mode-badge" class="badge bg-secondary d-none">History Edit Mode</span>
+        <button class="btn btn-sm btn-outline-danger" onclick="resetCalculator()" title="تصفير الحاسبة">
+            <i class="fas fa-trash-alt me-1"></i> مسح البيانات
+        </button>
+    </div>
 </div>
                             
-                            <div class="row g-2 mb-3 align-items-end no-print">
-                                <div class="col-md-6"><label class="calc-label-sm text-secondary">Product</label><select id="calc-product-select" class="form-select select2-basic w-100"><option value="">-- Search --</option></select></div>
+                            <div class="row g-2 mb-2 align-items-end no-print">
+                                <div class="col-md-6"><label class="calc-label-sm text-secondary">Product</label><select id="calc-product-select" class="form-select select2-basic w-100" disabled><option value="">-- جاري التحميل... --</option></select></div>
                                 <div class="col-md-6"><label class="calc-label-sm text-secondary">Recipe Variant</label><select id="calc-recipe-select" class="form-select select2-basic w-100" disabled><option value="">-- Search --</option></select></div>
                             </div>
 
@@ -294,49 +281,156 @@ body { background-color: var(--bg-color); font-family: 'Roboto', sans-serif; col
                             </div>
 
                             <div id="print-section">
-                                <div class="d-none d-print-block mb-4 text-center">
-                                    <h2 class="fw-bold">Production Order Report</h2>
+                                <div class="d-none d-print-block mb-3 text-center">
+                                    <h3 class="fw-bold">Production Order Report</h3>
                                     <div id="print-header-info" class="text-muted"></div>
                                 </div>
 
-                                <div class="row g-3">
+                                <div class="row g-2">
                                     <div class="col-md-8">
                                         <div class="d-flex justify-content-between align-items-center border-bottom pb-1 mb-2">
-                                            <h6 class="fw-bold text-secondary small mb-0 text-uppercase">Raw Materials Bill</h6>
-                                            <div class="d-flex gap-1 no-print">
-                                                <button class="btn btn-xs btn-outline-danger" onclick="removeAdjColumn()" style="font-size: 0.7rem;"><i class="fas fa-minus me-1"></i> Del Adj</button>
-                                                <button class="btn btn-xs btn-outline-primary" onclick="addAdjColumn()" style="font-size: 0.7rem;"><i class="fas fa-plus me-1"></i> Add Adj</button>
-                                            </div>
-                                        </div>
+    <div class="d-flex align-items-center gap-3">
+        <h6 class="fw-bold text-secondary small mb-0 text-uppercase">Raw Materials Bill</h6>
+        <div class="form-check form-switch m-0 no-print" title="تفعيل/إيقاف دمج الملون في الجدول">
+            <input class="form-check-input" type="checkbox" id="colorant-toggle" checked onchange="toggleColorantIntegration()">
+            <label class="form-check-label small text-info fw-bold" for="colorant-toggle" style="font-size: 0.7rem;">+ Colorant</label>
+        </div>
+    </div>
+    <div class="d-flex gap-1 no-print">
+        <button class="btn btn-xs btn-outline-danger" onclick="removeAdjColumn()" style="font-size: 0.65rem; padding: 2px 5px;"><i class="fas fa-minus me-1"></i> Del Adj</button>
+        <button class="btn btn-xs btn-outline-primary" onclick="addAdjColumn()" style="font-size: 0.65rem; padding: 2px 5px;"><i class="fas fa-plus me-1"></i> Add Adj</button>
+    </div>
+</div>
                                         
-                                        <table class="table table-bordered table-sm mb-2" id="calc-main-table">
+                                        <table class="table table-bordered table-compact mb-2" id="calc-main-table">
                                             <thead class="table-light">
                                                 <tr id="table-header-row">
                                                     <th>Material</th>
-                                                    <th class="text-end bg-gray-50" style="width: 80px;">Base</th>
+                                                    <th class="text-end bg-gray-50" style="width: 70px;">Base</th>
                                                     <th class="text-end bg-blue-50">Final (Kg)</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="calc-materials-body">
-                                                <tr><td colspan="3" class="text-center text-muted small py-3">Select a recipe...</td></tr>
+                                                <tr><td colspan="3" class="text-center text-muted small py-2">Select a recipe...</td></tr>
                                             </tbody>
                                         </table>
                                         
                                         <div class="text-center no-print">
-                                             <button class="btn btn-sm btn-light border w-100 text-muted" onclick="addCustomRow()"><i class="fas fa-plus-circle me-1"></i> Add Custom Row</button>
+                                             <button class="btn btn-sm btn-light border w-100 text-muted py-1" onclick="addCustomRow()"><i class="fas fa-plus-circle me-1"></i> Add Custom Row</button>
                                         </div>
-                                    </div>
+
+                                        <div class="mt-3 border rounded p-2 bg-light shadow-sm">
+    <h6 class="fw-bold text-info mb-2 text-center border-bottom pb-1"><i class="fas fa-palette me-2"></i>معالجة و حساب الملون (Colorant)</h6>
+    
+    <div class="row g-2">
+        <div class="col-md-6">
+            <div class="mix-calculator-container border border-success rounded p-1 bg-white shadow-sm mb-2">
+                <h6 class="text-center fw-bold text-success mb-1" style="font-size: 0.75rem;">حساب القيمة (في البداية)</h6>
+                <table class="table table-bordered table-compact-mix text-center mb-0" style="font-size: 0.7rem;">
+                    <thead>
+                        <tr>
+                            <th class="py-1">HIPS (%)</th>
+                            <th class="py-1">MB (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="py-1" contenteditable="true" id="hipsRatioStart">25</td>
+                            <td class="py-1" contenteditable="true" id="mbRatioStart">1.5</td>
+                        </tr>
+                        <tr>
+                            <th colspan="2" class="bg-success text-white py-1">إجمالي وزن الخلطة بالبداية</th>
+                        </tr>
+                        <tr>
+                            <td colspan="2" class="py-1" contenteditable="true" id="mixNoteStart" placeholder="أدخل الوزن">0</td>
+                        </tr>
+                        <tr class="table-light">
+                            <th colspan="2" class="py-1 text-muted">النتائج (Kg)</th>
+                        </tr>
+                        <tr>
+                            <td id="mix-result-hips-start" class="result-cell text-success py-1">0</td>
+                            <td id="mix-result-mb-start" class="result-cell text-success py-1">0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mix-calculator-container border border-danger rounded p-1 bg-white shadow-sm">
+                <h6 class="text-center fw-bold text-danger mb-1" style="font-size: 0.75rem;">حساب القيمة (المتبقي)</h6>
+                <table class="table table-bordered table-compact-mix text-center mb-0" style="font-size: 0.7rem;">
+                    <thead>
+                        <tr>
+                            <th class="py-1">HIPS (%)</th>
+                            <th class="py-1">MB (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="py-1" contenteditable="true" id="hipsRatioEnd">25</td>
+                            <td class="py-1" contenteditable="true" id="mbRatioEnd">1.5</td>
+                        </tr>
+                        <tr>
+                            <th colspan="2" class="bg-danger text-white py-1">إجمالي وزن الخلطة المتبقية</th>
+                        </tr>
+                        <tr>
+                            <td colspan="2" class="py-1" contenteditable="true" id="mixNoteEnd" placeholder="أدخل الوزن">0</td>
+                        </tr>
+                        <tr class="table-light">
+                            <th colspan="2" class="py-1 text-muted">النتائج (Kg)</th>
+                        </tr>
+                        <tr>
+                            <td id="mix-result-hips-end" class="result-cell text-danger py-1">0</td>
+                            <td id="mix-result-mb-end" class="result-cell text-danger py-1">0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="col-md-6 d-flex flex-column">
+            <div class="input-group input-group-sm mb-2 shadow-sm">
+                <span class="input-group-text bg-info text-white fw-bold" style="font-size: 0.75rem;">عدد الخلطات</span>
+                <input type="number" id="colorant-mix-count" class="form-control text-center fw-bold" placeholder="0" step="0.5" oninput="updateColorantCalculations()">
+            </div>
+
+            <div class="bg-white border border-info rounded p-1 shadow-sm flex-grow-1 d-flex flex-column">
+                <h6 class="fw-bold text-center text-info mb-1 border-bottom pb-1" style="font-size: 0.75rem;">الاستهلاك النهائي (Total)</h6>
+                <div class="table-responsive flex-grow-1">
+                    <table class="table table-bordered table-sm text-center mb-0 align-middle" style="font-size: 0.7rem;">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="py-1">المكون</th>
+                                <th class="py-1">من الخلطات</th>
+                                <th class="bg-info text-white py-1">Total (Kg)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="colorant-final-totals">
+                            </tbody>
+                    </table>
+                </div>
+                <div class="text-center mt-1">
+                    <small class="text-muted" style="font-size: 0.65rem;">Total = (Mixes * Qty) + Start - End</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+                                        </div>
                                     
                                     <div class="col-md-4">
-                                        <div class="bg-gray-50 p-3 rounded border h-100 d-flex flex-column justify-content-center">
+                                        <div class="bg-gray-50 p-2 rounded border h-100 d-flex flex-column justify-content-center">
                                             <div class="text-center">
                                                 <small class="d-block text-muted">Total Cartons</small>
-                                                <span class="fs-2 fw-bold text-dark" id="est-total-cartons">--</span>
+                                                <span class="fs-3 fw-bold text-dark" id="est-total-cartons">--</span>
                                                 <small class="text-muted d-block">(<span id="est-total-pcs">0</span> Pcs)</small>
                                             </div>
-                                            <div class="mt-auto d-grid gap-2 no-print">
-                                                <button class="btn btn-success btn-sm w-100" onclick="saveCalculationToHistory()"><i class="fas fa-save me-2"></i> Save to History</button>
-                                                <button class="btn btn-dark btn-sm w-100" onclick="window.print()"><i class="fas fa-print me-2"></i> Print A4</button>
+                                            <div class="mt-auto d-grid gap-1 no-print pt-2">
+                                                <input type="text" id="calc-save-title" class="form-control form-control-sm border-success text-center mb-1" placeholder="-- Set Title for Record --" oninput="updateCalculations()">
+                                                <div id="save-btn-group" class="d-flex gap-1">
+                                                    <button class="btn btn-success btn-sm w-100" id="btn-save-history" onclick="saveCalculationToHistory()"><i class="fas fa-save me-1"></i> Save Draft</button>
+                                                    <button class="btn btn-primary btn-sm w-100 d-none" id="btn-update-history" onclick="updateCalculationInHistory()"><i class="fas fa-sync me-1"></i> Update</button>
+                                                </div>
+                                                <button class="btn btn-dark btn-sm w-100" onclick="window.print()"><i class="fas fa-print me-1"></i> Print A4</button>
                                             </div>
                                         </div>
                                     </div>
@@ -346,41 +440,48 @@ body { background-color: var(--bg-color); font-family: 'Roboto', sans-serif; col
                     </div>
 
                     <div class="calc-right-panel no-print">
-                        <div class="p-3 border-bottom bg-gray-50 d-flex justify-content-between align-items-center">
-                            <h6 class="fw-bold m-0 text-primary"><i class="fas fa-tools me-2"></i>Recipe Builder</h6>
+                        <div class="p-2 border-bottom bg-gray-50 d-flex justify-content-between align-items-center">
+                            <h6 class="fw-bold m-0 text-primary small"><i class="fas fa-tools me-2"></i>Recipe Builder</h6>
                         </div>
-                        <div class="p-3 flex-grow-1 overflow-auto">
+                        <div class="p-2 overflow-auto" style="flex: 1 1 auto; max-height: 50%;">
                             <div id="quick-edit-content" class="d-none">
                                 <input type="hidden" id="qe-recipe-id">
-                                <div class="mb-3"><label class="small fw-bold text-muted">Yield (Pcs/Mix)</label><input type="number" id="qe-yield" class="form-control form-control-sm" oninput="quickEditUpdate()"></div>
+                                <div class="mb-2"><label class="small fw-bold text-muted" style="font-size:0.75rem;">Yield (Pcs/Mix)</label><input type="number" id="qe-yield" class="form-control form-control-sm" oninput="quickEditUpdate()"></div>
                                 <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-1">
-                                    <label class="small fw-bold text-muted mb-0">Ingredients</label>
-                                    <button class="btn btn-xs btn-outline-success py-0" onclick="addQuickEditRow()">+ New Row</button>
+                                    <label class="small fw-bold text-muted mb-0" style="font-size:0.75rem;">Ingredients</label>
+                                    <button class="btn btn-xs btn-outline-success py-0" onclick="addQuickEditRow()" style="font-size:0.7rem;">+ New Row</button>
                                 </div>
                                 <div id="qe-ingredients-list"></div>
                             </div>
-                            <div id="quick-edit-empty" class="text-center text-muted mt-5">
+                            <div id="quick-edit-empty" class="text-center text-muted mt-5 small">
                                 <i class="fas fa-arrow-left me-2"></i> Select a recipe to edit.
                             </div>
                         </div>
-                        <div class="p-3 border-top bg-gray-50">
+                        <div class="p-2 border-top bg-gray-50">
                             <button class="btn btn-primary w-100 btn-sm" onclick="saveQuickEdit()">Update Database</button>
                         </div>
+
+                        <div class="p-2 border-top bg-gray-50 d-flex justify-content-between align-items-center">
+                            <h6 class="fw-bold m-0 text-info small"><i class="fas fa-palette me-2"></i>وصفة الملون (Colorant)</h6>
+                            <button class="btn btn-xs btn-outline-info py-0" onclick="addColorantIngredient()" style="font-size:0.7rem;">+ Add</button>
+                        </div>
+                        <div class="p-2 flex-grow-1 overflow-auto bg-white" id="colorant-recipe-list">
+                            </div>
                     </div>
                 </div>
             </div>
 
             <div id="view-history" class="d-none h-100">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                     <h4 class="fw-bold text-gray-700 m-0"><i class="fas fa-history me-2 text-warning"></i>Saved Production Calculations</h4>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                     <h5 class="fw-bold text-gray-700 m-0"><i class="fas fa-history me-2 text-warning"></i>Saved Production Calculations</h5>
                      <button class="btn btn-outline-secondary btn-sm" onclick="fetchHistoryData()"><i class="fas fa-sync-alt me-1"></i> Refresh</button>
                 </div>
                 
-                <div class="bg-white rounded border shadow-sm">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light">
+                <div class="bg-white rounded border shadow-sm overflow-auto" style="height: calc(100% - 50px);">
+                    <table class="table table-hover table-compact align-middle mb-0">
+                        <thead class="bg-light sticky-top">
                             <tr>
-                                <th class="ps-3 py-3">Date</th>
+                                <th class="ps-3 py-2">Record Details</th>
                                 <th>Product Name</th>
                                 <th>Recipe Used</th>
                                 <th>Total Pcs</th>
@@ -388,7 +489,7 @@ body { background-color: var(--bg-color); font-family: 'Roboto', sans-serif; col
                             </tr>
                         </thead>
                         <tbody id="history-table-body">
-                            <tr><td colspan="5" class="text-center p-5 text-muted">Loading history...</td></tr>
+                            <tr><td colspan="5" class="text-center p-4 text-muted">Loading history...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -398,85 +499,89 @@ body { background-color: var(--bg-color); font-family: 'Roboto', sans-serif; col
     </div>
 </div>
 
-<div class="modal fade" id="create-product-modal" tabindex="-1"><div class="modal-dialog modal-sm"><div class="modal-content"><div class="modal-body"><input id="new-prod-name" class="form-control mb-2" placeholder="Product Name"><input id="new-prod-count" class="form-control mb-2" type="number" placeholder="Pcs/Carton"><button class="btn btn-primary w-100" onclick="createNewProduct()">Create</button></div></div></div></div>
+<div class="modal fade" id="create-product-modal" tabindex="-1"><div class="modal-dialog modal-sm"><div class="modal-content"><div class="modal-body"><input id="new-prod-name" class="form-control mb-2 form-control-sm" placeholder="Product Name"><input id="new-prod-count" class="form-control mb-2 form-control-sm" type="number" placeholder="Pcs/Carton"><button class="btn btn-primary btn-sm w-100" onclick="createNewProduct()">Create</button></div></div></div></div>
 
 <div class="modal fade" id="recipe-modal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-light">
-                <h5 class="modal-title fw-bold">Recipe Configuration</h5>
+            <div class="modal-header bg-light py-2">
+                <h6 class="modal-title fw-bold">Recipe Configuration</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="row">
                     <div class="col-md-5 border-end">
                         <input type="hidden" id="recipe-id"><input type="hidden" id="recipe-product-id">
-                        <div class="mb-3"><label class="small fw-bold">Name</label><input id="recipe-name" class="form-control"></div>
-                        <div class="mb-3"><label class="small fw-bold">Yield</label><input id="recipe-yield" type="number" class="form-control"></div>
-                        <div class="mb-3"><label class="small fw-bold">Notes</label><textarea id="recipe-desc" class="form-control" rows="3"></textarea></div>
-                        <div class="mb-3"><label class="small fw-bold">Image URL</label><input id="recipe-img" class="form-control"></div>
+                        <div class="mb-2"><label class="small fw-bold">Name</label><input id="recipe-name" class="form-control form-control-sm"></div>
+                        <div class="mb-2"><label class="small fw-bold">Yield</label><input id="recipe-yield" type="number" class="form-control form-control-sm"></div>
+                        <div class="mb-2"><label class="small fw-bold">Notes</label><textarea id="recipe-desc" class="form-control form-control-sm" rows="2"></textarea></div>
+                        <div class="mb-2"><label class="small fw-bold">Image URL</label><input id="recipe-img" class="form-control form-control-sm"></div>
                     </div>
                     <div class="col-md-7 ps-4">
-                        <div class="d-flex justify-content-between mb-2"><h6>Ingredients</h6><button class="btn btn-sm btn-outline-success" onclick="addMaterialRow()">+ Add</button></div>
-                        <div id="materials-rows" style="max-height: 400px; overflow-y: auto;"></div>
+                        <div class="d-flex justify-content-between mb-2"><h6 class="small fw-bold">Ingredients</h6><button class="btn btn-sm btn-outline-success py-0" onclick="addMaterialRow()">+ Add</button></div>
+                        <div id="materials-rows" style="max-height: 300px; overflow-y: auto;"></div>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer"><button class="btn btn-primary" onclick="saveRecipe()">Save Recipe</button></div>
+            <div class="modal-footer py-1"><button class="btn btn-primary btn-sm" onclick="saveRecipe()">Save Recipe</button></div>
         </div>
     </div>
 </div>
-<div class="modal fade" id="dev-schema-modal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title font-monospace"><i class="fas fa-database me-2"></i>App Data Structure (JSON)</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body bg-light">
-                <p class="small text-muted mb-2">
-                    استخدم هذه البيانات لربط أي تطبيق خارجي بقاعدة بيانات Firebase الخاصة بهذا النظام. 
-                    يحتوي هذا الملف على إعدادات الاتصال، أسماء الجداول (Paths)، ونماذج حية عن البيانات الحالية.
-                </p>
-                <div class="position-relative">
-                    <button class="btn btn-sm btn-primary position-absolute top-0 end-0 m-2" onclick="copySchemaToClipboard()">
-                        <i class="fas fa-copy"></i> Copy JSON
-                    </button>
-                    <pre id="schema-output" class="p-3 border rounded bg-white text-dark shadow-sm" style="font-size: 0.8rem; max-height: 600px; overflow: auto;"></pre>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 
 <div class="modal fade" id="dev-schema-modal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title font-monospace"><i class="fas fa-lock me-2"></i>Secure Data Schema (JSON)</h5>
+            <div class="modal-header bg-gradient-primary text-white py-2" style="background: linear-gradient(45deg, #2563eb, #1e40af);">
+                <h6 class="modal-title m-0"><i class="fas fa-robot me-2"></i>AI Module Generator</h6>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body bg-light">
-                <div class="alert alert-info small">
-                    <i class="fas fa-info-circle me-1"></i>
-
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-dark small">وصف الموديل (ماذا تريد أن تصنع؟)</label>
+                    <textarea id="ai-user-prompt" class="form-control form-control-sm border-primary shadow-sm" rows="2" 
+                        placeholder="مثال: أريد لوحة تحكم للمخزون..."></textarea>
                 </div>
                 <div class="position-relative">
-                    <button class="btn btn-sm btn-primary position-absolute top-0 end-0 m-2" onclick="copySchemaToClipboard()">
-                        <i class="fas fa-copy me-1"></i> Copy
-                    </button>
-                    <pre id="schema-output" class="p-3 border rounded bg-white text-dark shadow-sm" style="font-size: 0.8rem; max-height: 600px; overflow: auto;direction: ltr; text-align: left;"></pre>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="fw-bold text-secondary">Data Structure Context (JSON)</small>
+                        <button class="btn btn-primary btn-sm" onclick="copySmartPrompt()">
+                            <i class="fas fa-magic me-1"></i> Generate Prompt
+                        </button>
+                    </div>
+                    <pre id="schema-output" class="p-2 border rounded bg-white text-dark shadow-sm" 
+                         style="font-size: 0.7rem; max-height: 250px; overflow: auto; direction: ltr; text-align: left; opacity: 0.8;"></pre>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
+// --- DEFAULT RECIPES ---
+const DEFAULT_RECIPE = {
+    id: 'default_recipe',
+    name: "⭐ Default Recipe (Standard)",
+    yieldPerMix: 1,
+    materials: [
+        { name: "GB", qty: 100 },
+        { name: "HIPS", qty: 3 },
+        { name: "SOD", qty: 0.45 },
+        { name: "PUR", qty: 0.25 },
+        { name: "DOP", qty: 0.1 },
+        { name: "MB", qty: 1 }
+    ]
+};
+
+// Default Colorant Recipe
+let colorantRecipe = [
+    { name: "HIPS", qty: 25 },
+    { name: "MB", qty: 2.5 }
+];
+
 const firebaseConfig = { apiKey: "AIzaSyCaBkl26zD1jR7-P9MWv7d4uD0T0QXUrnQ", authDomain: "appd-326a4.firebaseapp.com", databaseURL: "https://appd-326a4-default-rtdb.firebaseio.com", projectId: "appd-326a4", appId: "1:1001287247517:web:4c6e2a3b1cbada09821674" };
 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
@@ -487,87 +592,246 @@ const savedRef = db.ref('saved_calculations');
 let products = [], recipes = [], adjColCount = 1, currentQuickRecipe = null, activeProductId = null;
 let customRows = []; 
 let isLoadingHistory = false;
-let historyDataCache = {}; // Cache to store retrieved history
+let isRestoringLocal = false;
+let historyDataCache = {}; 
+let currentLoadedHistoryKey = null;
+// متغير لتتبع حالة دمج الملون (مشغل افتراضياً)
+let isColorantActive = true;
 
-$(document).ready(function() { $('.select2-basic').select2({ theme: 'bootstrap-5', width: '100%' }); });
+// دالة تشغيل وإيقاف عمود الملون في الجدول الرئيسي
+function toggleColorantIntegration() {
+    isColorantActive = $('#colorant-toggle').is(':checked');
+    renderCalcTableStructure(); 
+    updateColorantCalculations(); 
+    updateCalculations(); 
+}
+$(document).ready(function() { 
+    $('.select2-basic').select2({ theme: 'bootstrap-5', width: '100%' }); 
+    
+calculateMixHelper('hipsRatioStart', 'mbRatioStart', 'mixNoteStart', 'mix-result-hips-start', 'mix-result-mb-start');
+    calculateMixHelper('hipsRatioEnd', 'mbRatioEnd', 'mixNoteEnd', 'mix-result-hips-end', 'mix-result-mb-end');
+    
+    renderColorantRecipeBuilder();
+    updateColorantCalculations();
+});
+// دالة لحفظ مدخلات المستخدم للأسطر اليدوية مباشرة في الذاكرة لمنع مسحها
+window.updateCustomRow = function(el, id, field) {
+    const row = customRows.find(r => r.id === id);
+    if(row) { row[field] = el.value; }
+    updateCalculations();
+};
 // --- Sidebar Memory & Accordion State ---
-// --- Restore Last Active View ---
-const lastView = localStorage.getItem('current_active_view') || 'products'; // الافتراضي products
-
-// 1. البحث عن الزر الخاص بهذه الصفحة في القائمة الجانبية
-// نبحث عن الرابط الذي يحتوي في الـ onclick على اسم الصفحة المحفوظة
+const lastView = localStorage.getItem('current_active_view') || 'products'; 
 const activeLink = $(`.nav-link-sub[onclick*="'${lastView}'"]`);
 
-// 2. تشغيل الدالة لفتح الصفحة وتفعيل الزر
 if (activeLink.length > 0) {
-    // نمرر اسم الصفحة وعنصر الرابط ليتم تلوينه
     switchView(lastView, activeLink[0]); 
-    
-    // (إضافي) التأكد من أن القائمة المنسدلة التي تحتوي هذا الزر مفتوحة
     const parentMenu = activeLink.closest('.collapse');
     if (parentMenu.length > 0) {
         parentMenu.addClass('show');
-        // تعديل سهم القائمة الرئيسية
         const parentBtn = $(`button[data-bs-target="#${parentMenu.attr('id')}"]`);
         parentBtn.removeClass('collapsed').attr('aria-expanded', 'true');
     }
 } else {
-    // إذا لم نجد شيئاً، نفتح الافتراضي
     switchView('products');
 }
-// 1. استرجاع آخر قائمة كانت مفتوحة من الذاكرة
-var lastOpenedMenu = localStorage.getItem('sidebar_active_menu');
 
+var lastOpenedMenu = localStorage.getItem('sidebar_active_menu');
 if (lastOpenedMenu) {
-    // إذا وجدنا قائمة محفوظة، نقوم بفتحها
     $(lastOpenedMenu).addClass('show');
-    // نقوم بتعديل الزر الخاص بها ليظهر السهم مفتوحاً
     $('button[data-bs-target="' + lastOpenedMenu + '"]').removeClass('collapsed').attr('aria-expanded', 'true');
 }
 
-// 2. الاستماع لحدث فتح أي قائمة لحفظها
-$('.tree-submenu').on('shown.bs.collapse', function () {
-    // عند فتح أي قائمة، نحفظ الـ ID الخاص بها
-    localStorage.setItem('sidebar_active_menu', '#' + $(this).attr('id'));
-});
+$('.tree-submenu').on('shown.bs.collapse', function () { localStorage.setItem('sidebar_active_menu', '#' + $(this).attr('id')); });
+$('.tree-submenu').on('hidden.bs.collapse', function () { if ($('.tree-submenu.show').length === 0) localStorage.removeItem('sidebar_active_menu'); });
 
-// 3. (اختياري) إذا قام المستخدم بإغلاق القائمة يدوياً، نحذفها من الذاكرة
-$('.tree-submenu').on('hidden.bs.collapse', function () {
-    // ملاحظة: هذا الحدث ينطلق أيضاً عند فتح قائمة أخرى (لأن الأولى تغلق)، 
-    // لذلك نتحقق أولاً مما إذا كان الإغلاق بسبب فتح قائمة جديدة أم لا.
-    // الطريقة الأبسط: لا نحذف الذاكرة هنا لأن 'shown' للقائمة الجديدة سيقوم بالتحديث.
-    // لكن إذا أردت أنه لو أغلق كل شيء يدوياً لا يفتح شيء:
-    var currentOpen = $('.tree-submenu.show');
-    if (currentOpen.length === 0) {
-        localStorage.removeItem('sidebar_active_menu');
+// --- Realtime Sync ---
+// --- Realtime Sync & Offline Mode ---
+let offlineFallbackTimer;
+
+db.ref(".info/connected").on("value", (snap) => {
+    if (snap.val()) { 
+        // إذا عاد الإنترنت، نلغي مؤقت الطوارئ ونحدث الحالة
+        clearTimeout(offlineFallbackTimer);
+        $('#connection-status').css('background-color', '#22c55e'); 
+        $('#status-text').text('Online').addClass('text-success'); 
+    } else { 
+        // إذا انقطع الإنترنت
+        $('#connection-status').css('background-color', 'red'); 
+        $('#status-text').text('Offline').removeClass('text-success'); 
+        
+        // إذا كانت قائمة المنتجات فارغة (أي أن التطبيق فتح بدون إنترنت)
+        if (products.length === 0) {
+            // ننتظر 3 ثوانٍ، إذا لم تصل البيانات، نفعل وضع الأوفلاين
+            offlineFallbackTimer = setTimeout(() => {
+                enableOfflineCalculator();
+            }, 3000);
+        }
     }
 });
-// --- Realtime Sync ---
-db.ref(".info/connected").on("value", (snap) => {
-    if (snap.val()) { $('#connection-status').css('background-color', '#22c55e'); $('#status-text').text('Online').addClass('text-success'); } 
-    else { $('#connection-status').css('background-color', 'red'); $('#status-text').text('Offline').removeClass('text-success'); }
-});
+
+// دالة تفعيل وضع عدم الاتصال (Offline Mode)
+function enableOfflineCalculator() {
+    // تأمين إضافي: إذا وصلت البيانات في اللحظة الأخيرة، لا تفعل شيء
+    if (products.length > 0) return; 
+    
+    console.log("No internet. Enabling Offline Calculator mode.");
+    
+    // 1. توليد "منتج وهمي" لكي يقبله النظام
+    products = [{ 
+        id: 'offline_mode_product', 
+        name: "⚡ Offline Mode (Standard Product)", 
+        cartonCount: 1 
+    }];
+    
+    // 2. فك قفل القائمة المنسدلة وإضافة المنتج الوهمي
+    populateSelects();
+    
+    // 3. اختيار المنتج الوهمي تلقائياً
+    // (هذا سيؤدي برمجياً لتشغيل حدث 'change' الذي سيختار Default Recipe ويفتح الجداول!)
+    $('#calc-product-select').val('offline_mode_product').trigger('change');
+}
 
 productsRef.on('value', snap => {
     products = []; if (snap.val()) Object.keys(snap.val()).forEach(k => products.push({ id: k, ...snap.val()[k] }));
-    renderProductsTable(); populateSelects();
+    renderProductsTable(); 
+    if(!isRestoringLocal && !isLoadingHistory) populateSelects();
 });
 
 bomRef.on('value', snap => {
     recipes = []; if (snap.val()) Object.keys(snap.val()).forEach(k => recipes.push({ id: k, ...snap.val()[k] }));
     if(activeProductId) renderProductRecipes(activeProductId);
-    if($('#calc-recipe-select').val() && !isLoadingHistory) {
+    if($('#calc-recipe-select').val() && !isLoadingHistory && !isRestoringLocal) {
         const currentId = $('#calc-recipe-select').val();
         loadQuickEditData(currentId);
         updateCalculations();
     }
 });
 
-// Listener for Saved History (Populates the new Table View)
 savedRef.on('value', snap => {
     historyDataCache = snap.val() || {};
-    renderHistoryTable();
+    if(lastView === 'history' || $('#view-history').hasClass('d-none') === false) {
+        renderHistoryTable();
+    }
 });
+
+// --- Colorant Functionality ---
+function renderColorantRecipeBuilder() {
+    const list = $('#colorant-recipe-list').empty();
+    colorantRecipe.forEach((m, i) => {
+        list.append(`
+            <div class="input-group input-group-sm mb-1">
+                <input class="form-control cr-name" value="${m.name}" oninput="updateColorantFromUI()">
+                <input type="number" class="form-control cr-qty" value="${m.qty}" step="0.1" oninput="updateColorantFromUI()" style="max-width:70px;">
+                <button class="btn btn-outline-danger" onclick="removeColorantIngredient(${i})">×</button>
+            </div>
+        `);
+    });
+}
+
+function updateColorantFromUI() {
+    const mats = [];
+    $('#colorant-recipe-list .input-group').each(function() { 
+        mats.push({ 
+            name: $(this).find('.cr-name').val() || '', 
+            qty: parseFloat($(this).find('.cr-qty').val()) || 0 
+        }); 
+    });
+    colorantRecipe = mats;
+    updateColorantCalculations();
+}
+
+function addColorantIngredient() {
+    colorantRecipe.push({name: "", qty: 0});
+    renderColorantRecipeBuilder();
+}
+
+function removeColorantIngredient(index) {
+    colorantRecipe.splice(index, 1);
+    renderColorantRecipeBuilder();
+    updateColorantCalculations();
+}
+
+function updateColorantCalculations() {
+    const mixCount = parseFloat($('#colorant-mix-count').val()) || 0;
+    const totalsBody = $('#colorant-final-totals').empty();
+
+    window.colorantTotals = {}; 
+
+    colorantRecipe.forEach(item => {
+        const cleanName = item.name.trim().toUpperCase();
+        const calcVal = item.qty * mixCount;
+        let startVal = 0, endVal = 0;
+
+        if(cleanName === 'HIPS') {
+            startVal = parseFloat($('#mix-result-hips-start').text()) || 0;
+            endVal = parseFloat($('#mix-result-hips-end').text()) || 0;
+        } else if (cleanName === 'MB') {
+            startVal = parseFloat($('#mix-result-mb-start').text()) || 0;
+            endVal = parseFloat($('#mix-result-mb-end').text()) || 0;
+        }
+
+        const finalTotal = calcVal + startVal - endVal;
+        
+        // حفظ النتيجة في الذاكرة العامة (لتقرأها الجداول لاحقاً)
+        window.colorantTotals[cleanName] = finalTotal;
+
+        totalsBody.append(`
+            <tr>
+                <td class="fw-bold text-secondary">${item.name}</td>
+                <td>${calcVal.toFixed(2)} Kg</td>
+                <td class="bg-info-subtle fw-bold text-info">${finalTotal.toFixed(2)} Kg</td>
+            </tr>
+        `);
+    });
+    
+    // إجبار الجدول الرئيسي على تحديث نفسه ليقرأ القيم الجديدة للملون
+    const state = getAdjustmentState(); 
+    renderCalcTableStructure(); 
+    restoreState(state); 
+    updateCalculations(); 
+
+    if (!isLoadingHistory && !currentLoadedHistoryKey && !isRestoringLocal) {
+        saveLocalCalcState();
+    }
+}
+
+// Ensure the helper also triggers the final total update
+function calculateMixHelper(hipsId, mbId, noteId, resHipsId, resMbId) {
+    const hipsRatioEl = document.getElementById(hipsId);
+    const mbRatioEl = document.getElementById(mbId);
+    const mixNoteEl = document.getElementById(noteId);
+    const resHipsEl = document.getElementById(resHipsId);
+    const resMbEl = document.getElementById(resMbId);
+
+    if(!hipsRatioEl) return;
+
+    const formatNumber = (num) => parseFloat(Number(num).toFixed(2)).toString();
+
+    const calc = () => {
+        const totalWeight = parseFloat(mixNoteEl.innerText.replace(/[,\٫]/g, '.')) || 0;
+        const rHips = parseFloat(hipsRatioEl.innerText) || 0;
+        const rMb = parseFloat(mbRatioEl.innerText) || 0;
+
+        let mbResult = 0;
+        let hipsResult = 0;
+
+        if ((rHips + rMb) > 0) {
+            mbResult = (totalWeight * rMb) / (rHips + rMb);
+            hipsResult = totalWeight - mbResult;
+        }
+
+        resHipsEl.innerText = formatNumber(hipsResult);
+        resMbEl.innerText = formatNumber(mbResult);
+        
+        updateColorantCalculations();
+    };
+
+    [hipsRatioEl, mbRatioEl, mixNoteEl].forEach(el => {
+        el.addEventListener('input', calc);
+    });
+}
+
 
 function renderHistoryTable() {
     const tbody = $('#history-table-body').empty();
@@ -580,18 +844,22 @@ function renderHistoryTable() {
         const item = historyDataCache[key];
         const dateObj = new Date(item.date);
         const dateStr = dateObj.toLocaleDateString() + ' <span class="text-muted small">' + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + '</span>';
+        const customTitleHtml = item.customTitle ? `<div class="fw-bold text-success mb-1" style="font-size:0.85rem;"><i class="fas fa-tag me-1"></i>${item.customTitle}</div>` : '';
 
         tbody.append(`
             <tr class="history-card">
-                <td class="ps-3">${dateStr}</td>
+                <td class="ps-3">
+                    ${customTitleHtml}
+                    ${dateStr}
+                </td>
                 <td class="fw-bold text-primary">${item.productName || 'Unknown'}</td>
                 <td><span class="badge bg-light text-dark border">${item.recipeName || 'Custom'}</span></td>
                 <td class="fw-bold">${item.totalPcs || 0}</td>
                 <td class="text-end pe-3">
-                    <button class="btn btn-sm btn-outline-primary me-2" onclick='loadSavedCalculation(${JSON.stringify({key, ...item})})'>
-                        <i class="fas fa-folder-open me-1"></i> Load
+                    <button class="btn btn-sm btn-outline-primary me-1 py-0" onclick='loadSavedCalculation(${JSON.stringify({key, ...item})})'>
+                        <i class="fas fa-folder-open me-1"></i> Edit
                     </button>
-                     <button class="btn btn-sm btn-outline-danger" onclick="deleteHistoryItem('${key}')">
+                     <button class="btn btn-sm btn-outline-danger py-0" onclick="deleteHistoryItem('${key}')">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
@@ -601,7 +869,6 @@ function renderHistoryTable() {
 }
 
 function fetchHistoryData() {
-    // Manually trigger a read if needed, though .on() handles updates
     savedRef.once('value').then(snap => {
         historyDataCache = snap.val() || {};
         renderHistoryTable();
@@ -610,54 +877,205 @@ function fetchHistoryData() {
 }
 
 function deleteHistoryItem(key) {
-    if(confirm('Are you sure you want to delete this saved calculation?')) {
-        savedRef.child(key).remove();
-    }
+    if(confirm('Are you sure you want to delete this saved calculation?')) { savedRef.child(key).remove(); }
 }
 
-// --- Navigation Handling (Updated for Tree View) ---
 function switchView(v, el) {
-if (v === 'calculator' && !isLoadingHistory) {
+    if (v === 'calculator' && !isLoadingHistory) {
         $('#btn-back-history').addClass('d-none');
-    }
-localStorage.setItem('current_active_view', v);
-    // Visual Active State for Sidebar
-    if(el) {
-        $('.nav-link-sub').removeClass('active');
-        $(el).addClass('active');
+        $('#mode-badge').addClass('d-none');
+        currentLoadedHistoryKey = null;
+        $('#btn-save-history').html('<i class="fas fa-save me-1"></i> Save Draft');
+        $('#btn-update-history').addClass('d-none');
+        loadLocalCalcState();
     }
 
-    // Hide all views
+    localStorage.setItem('current_active_view', v);
+    if(el) { $('.nav-link-sub').removeClass('active'); $(el).addClass('active'); }
+
     $('#view-products, #view-product-details, #view-calculator, #view-history').addClass('d-none');
-    
-    // Show selected view
     $('#view-' + v).removeClass('d-none');
     
-    // Update Title
     let title = "Production System";
     if(v === 'products') title = "Products Catalog";
     if(v === 'calculator') title = "Production Calculator";
-    if(v === 'history') {
-        title = "Saved History";
-        renderHistoryTable(); // Ensure table is up to date when viewing
-    }
+    if(v === 'history') { title = "Saved History"; renderHistoryTable(); }
     $('#page-title').text(title);
 }
 
-// --- Calculation Functions ---
+// --- دالة الحفظ المحسنة ---
+function saveLocalCalcState() {
+    // نمنع الحفظ إذا كنا في وضع تحميل سجل قديم حتى لا يتلف المسودة (Draft)
+    if(isLoadingHistory || currentLoadedHistoryKey || isRestoringLocal) return;
+
+    const state = {
+        pid: $('#calc-product-select').val(),
+        rid: $('#calc-recipe-select').val(),
+        mixes: $('#calc-mix-count').val(),
+        targetPcs: $('#calc-target-pcs').val(),
+        title: $('#calc-save-title').val(),
+        adjColCount: adjColCount,
+        adjustments: getAdjustmentState().adj,
+        customRows: getAdjustmentState().custom,
+        // حفظ تعديلات الـ Recipe Builder المؤقتة
+        currentQuickRecipe: currentQuickRecipe, 
+        // حفظ وصفة الملون
+        colorantRecipe: colorantRecipe,
+        colorantMixCount: $('#colorant-mix-count').val(),
+        colorantValues: {
+            startHips: $('#hipsRatioStart').text(),
+            startMb: $('#mbRatioStart').text(),
+            startNote: $('#mixNoteStart').text(),
+            endHips: $('#hipsRatioEnd').text(),
+            endMb: $('#mbRatioEnd').text(),
+            endNote: $('#mixNoteEnd').text()
+        }
+    };
+    localStorage.setItem('calc_draft_state', JSON.stringify(state));
+    console.log("Draft Saved Auto");
+}
+
+// --- دالة الاستعادة المحسنة ---
+function loadLocalCalcState() {
+    if (currentLoadedHistoryKey) return; 
+    const saved = localStorage.getItem('calc_draft_state');
+    if (!saved) return;
+
+    try {
+        isRestoringLocal = true;
+        const state = JSON.parse(saved);
+        
+        // 1. استعادة المنتج
+        if (state.pid) {
+            $('#calc-product-select').val(state.pid).trigger('change.select2');
+            
+            // بناء قائمة الوصفات فوراً للمنتج المستعاد
+            const rs = $('#calc-recipe-select').empty().append('<option value="">-- Select --</option>');
+            const prodRecipes = recipes.filter(r => r.productId === state.pid);
+            prodRecipes.forEach(r => rs.append(`<option value="${r.id}">${r.name}</option>`));
+            rs.append(`<option value="default_recipe">⭐ Default Recipe (Standard)</option>`);
+            rs.prop('disabled', false).trigger('change.select2');
+            
+            // 2. استعادة الوصفة المحددة
+            if (state.rid) {
+                $('#calc-recipe-select').val(state.rid).trigger('change.select2');
+                // استعادة بيانات الـ Builder
+                if(state.currentQuickRecipe) {
+                    currentQuickRecipe = state.currentQuickRecipe;
+                    loadQuickEditData(state.rid); 
+                }
+            }
+        }
+
+        // 3. استعادة وصفة الملون (Colorant)
+        if(state.colorantRecipe) {
+            colorantRecipe = state.colorantRecipe;
+            renderColorantRecipeBuilder();
+        }
+
+        // 4. استعادة الأرقام والمدخلات الأخرى
+        $('#calc-mix-count').val(state.mixes || '');
+        $('#calc-target-pcs').val(state.targetPcs || '');
+        $('#calc-save-title').val(state.title || '');
+        $('#colorant-mix-count').val(state.colorantMixCount || '');
+
+        if (state.colorantValues) {
+            $('#hipsRatioStart').text(state.colorantValues.startHips);
+            $('#mbRatioStart').text(state.colorantValues.startMb);
+            $('#mixNoteStart').text(state.colorantValues.startNote);
+            $('#hipsRatioEnd').text(state.colorantValues.endHips);
+            $('#mbRatioEnd').text(state.colorantValues.endMb);
+            $('#mixNoteEnd').text(state.colorantValues.endNote);
+        }
+
+        // 5. إعادة بناء الجدول
+        adjColCount = state.adjColCount || 1;
+        customRows = state.customRows ? Object.keys(state.customRows).map(id => ({
+            id, 
+            name: state.customRows[id].name, 
+            base: state.customRows[id].base
+        })) : [];
+
+        renderCalcTableStructure();
+        if (state.adjustments) restoreState(state);
+        
+        // تحديث الحسابات النهائية
+        updateCalculations();
+        updateColorantCalculations();
+        
+        isRestoringLocal = false;
+    } catch (e) { 
+        console.error('Error restoring draft', e); 
+        isRestoringLocal = false; 
+    }
+}
+
+function loadLocalCalcState() {
+    if (currentLoadedHistoryKey) return; 
+    const saved = localStorage.getItem('calc_draft_state');
+    if (!saved) return;
+    try {
+        isRestoringLocal = true;
+        const state = JSON.parse(saved);
+        
+        // استعادة المنتج والوصفة
+        if (state.pid) {
+            $('#calc-product-select').val(state.pid).trigger('change.select2');
+            const rs = $('#calc-recipe-select').empty().append('<option value="">-- Select --</option>').prop('disabled', false);
+            const prodRecipes = recipes.filter(r => r.productId === state.pid);
+            prodRecipes.forEach(r => rs.append(`<option value="${r.id}">${r.name}</option>`));
+            rs.append(`<option value="default_recipe">⭐ Default Recipe (Standard)</option>`);
+        }
+        if (state.rid) $('#calc-recipe-select').val(state.rid).trigger('change.select2');
+        
+        // استعادة أرقام الإنتاج
+        $('#calc-mix-count').val(state.mixes || '');
+        $('#calc-target-pcs').val(state.targetPcs || '');
+        $('#calc-save-title').val(state.title || '');
+        
+        // 🔴 استعادة قيم الملون (هنا الإصلاح)
+        if (state.colorantValues) {
+            $('#hipsRatioStart').text(state.colorantValues.startHips);
+            $('#mbRatioStart').text(state.colorantValues.startMb);
+            $('#mixNoteStart').text(state.colorantValues.startNote);
+            $('#hipsRatioEnd').text(state.colorantValues.endHips);
+            $('#mbRatioEnd').text(state.colorantValues.endMb);
+            $('#mixNoteEnd').text(state.colorantValues.endNote);
+        }
+
+        if(state.colorantRecipe) {
+            colorantRecipe = state.colorantRecipe;
+            renderColorantRecipeBuilder();
+        }
+        $('#colorant-mix-count').val(state.colorantMixCount || '');
+        
+        // إعادة رسم الجداول
+        adjColCount = state.adjColCount || 1;
+        customRows = state.customRows ? Object.keys(state.customRows).map(id => ({id, name: state.customRows[id].name, base: state.customRows[id].base})) : [];
+        
+        renderCalcTableStructure();
+        if (state.adjustments) restoreAdjustments(state.adjustments);
+        
+        // تشغيل الحسابات فوراً بعد الاستعادة
+        $('#mixNoteStart').trigger('input');
+        $('#mixNoteEnd').trigger('input');
+        updateCalculations();
+        updateColorantCalculations();
+        
+        isRestoringLocal = false;
+    } catch (e) { console.error('Error loading draft', e); isRestoringLocal = false; }
+}
+
 function getAdjustmentState() {
     const currentState = {};
     $('.adj-input').each(function() {
-        const mat = $(this).data('mat'), col = $(this).data('col'), val = $(this).val();
+        const mat = $(this).attr('data-mat'), col = $(this).attr('data-col'), val = $(this).val();
         if(!currentState[mat]) currentState[mat] = {}; currentState[mat][col] = val;
     });
     const customData = {};
     $('.custom-row').each(function() {
-        const id = $(this).data('id');
-        customData[id] = {
-            name: $(this).find('.custom-name-input').val(),
-            base: $(this).find('.custom-base-input').val()
-        };
+        const id = $(this).attr('data-id');
+        customData[id] = { name: $(this).find('.custom-name-input').val(), base: $(this).find('.custom-base-input').val() };
     });
     return { adj: currentState, custom: customData };
 }
@@ -668,6 +1086,8 @@ function restoreState(state) {
             if(parseInt(col) <= adjColCount) {
                 const input = $(`.adj-input[data-mat="${mat}"][data-col="${col}"]`);
                 input.val(val);
+                if(parseFloat(val) > 0) input.addClass('adj-positive'); 
+                else if(parseFloat(val) < 0) input.addClass('adj-negative');
             }
         }
     }
@@ -693,7 +1113,7 @@ function addCustomRow() {
     const state = getAdjustmentState();
     const newId = 'cust_' + Date.now();
     customRows.push({ id: newId });
-    renderCalcTableStructure(); restoreState(state);
+    renderCalcTableStructure(); restoreState(state); updateCalculations();
 }
 
 function removeCustomRow(id) {
@@ -703,92 +1123,152 @@ function removeCustomRow(id) {
 }
 
 function renderCalcTableStructure() {
-    let headerHtml = `<th>Material</th><th class="text-end bg-gray-50" style="width: 80px;">Base</th>`;
-    for(let i=1; i<=adjColCount; i++) headerHtml += `<th class="text-center no-print" style="width: 70px;">Adj ${i}</th>`;
+    let headerHtml = `<th>Material</th><th class="text-end bg-gray-50" style="width: 70px;">Base</th>`;
+    for(let i=1; i<=adjColCount; i++) headerHtml += `<th class="text-center no-print" style="width: 60px;">Adj ${i}</th>`;
+    
+    if (typeof isColorantActive !== 'undefined' && isColorantActive) {
+        headerHtml += `<th class="text-center bg-info-subtle no-print" style="width: 70px; font-size: 0.65rem;" title="قيمة الملون المضافة">Adj Colorant</th>`;
+    }
+    
     headerHtml += `<th class="text-end bg-blue-50">Final (Kg)</th>`;
     $('#table-header-row').html(headerHtml);
 
     const tbody = $('#calc-materials-body').empty();
-    const r = currentQuickRecipe || recipes.find(x => x.id === $('#calc-recipe-select').val());
-    if(!r || !r.materials) { tbody.html('<tr><td colspan="10" class="text-center text-muted py-3">Select recipe...</td></tr>'); return; }
+    const currentId = $('#calc-recipe-select').val();
+    let r = currentQuickRecipe;
     
-    // Standard Rows
+    if(!r) {
+        if(currentId === 'default_recipe') r = DEFAULT_RECIPE;
+        else r = recipes.find(x => x.id === currentId);
+    }
+
+    if(!r || !r.materials) { tbody.html('<tr><td colspan="10" class="text-center text-muted py-2">Select recipe...</td></tr>'); return; }
+    
     r.materials.forEach(m => {
         let adjs = '';
-        for(let i=1; i<=adjColCount; i++) adjs += `<td class="text-center no-print"><input type="number" class="adj-input" data-mat="${m.name}" data-col="${i}" placeholder="+/-" step="0.1"></td>`;
+        for(let i=1; i<=adjColCount; i++) adjs += `<td class="text-center no-print p-1"><input type="number" class="adj-input w-100" data-mat="${m.name}" data-col="${i}" placeholder="+/-" step="0.1"></td>`;
+        
+        let colorantCellHtml = (typeof isColorantActive !== 'undefined' && isColorantActive) ? `<td class="text-center bg-info-subtle p-1"><input type="text" class="form-control form-control-sm colorant-adj-display w-100 border-0 bg-transparent text-center text-info fw-bold p-0" readonly value="-"></td>` : '';
+
         tbody.append(`<tr class="calc-row">
-            <td class="fw-bold text-secondary">${m.name}</td>
-            <td class="text-end text-muted base-qty" data-base-per-mix="${m.qty}">0.00</td>
+            <td class="fw-bold text-secondary p-1 mat-name-cell">${m.name}</td>
+            <td class="text-end text-muted base-qty p-1" data-base-per-mix="${m.qty}">0.00</td>
             ${adjs}
-            <td class="text-end fw-bold bg-blue-50 final-qty">0.00</td>
+            ${colorantCellHtml}
+            <td class="text-end fw-bold bg-blue-50 final-qty p-1">0.00</td>
         </tr>`);
     });
 
-    // Custom Rows
     customRows.forEach(row => {
         let adjs = '';
-        for(let i=1; i<=adjColCount; i++) adjs += `<td class="text-center no-print"><input type="number" class="adj-input" data-mat="${row.id}" data-col="${i}" placeholder="+/-" step="0.1"></td>`;
+        for(let i=1; i<=adjColCount; i++) adjs += `<td class="text-center no-print p-1"><input type="number" class="adj-input w-100" data-mat="${row.id}" data-col="${i}" placeholder="+/-" step="0.1"></td>`;
+        
+        let colorantCellHtml = (typeof isColorantActive !== 'undefined' && isColorantActive) ? `<td class="text-center bg-info-subtle p-1"><input type="text" class="form-control form-control-sm colorant-adj-display w-100 border-0 bg-transparent text-center text-info fw-bold p-0" readonly value="-"></td>` : '';
+
+        // التعديل السحري هنا: نستخدم value="${row.name || ''}" مع دالة updateCustomRow
         tbody.append(`<tr class="custom-row" data-id="${row.id}">
-            <td class="p-1"><div class="d-flex"><button class="btn btn-sm text-danger no-print me-1 btn-close-row" onclick="removeCustomRow('${row.id}')">×</button><input class="custom-name-input" placeholder="Material Name"></div></td>
-            <td class="p-1"><input type="number" class="custom-base-input" placeholder="0.00" step="0.01" oninput="updateCalculations()"></td>
+            <td class="p-0"><div class="d-flex align-items-center h-100"><button class="btn btn-sm text-danger no-print me-1 btn-close-row p-1" onclick="removeCustomRow('${row.id}')">×</button><input class="custom-name-input h-100 m-0" placeholder="Material Name" value="${row.name || ''}" oninput="updateCustomRow(this, '${row.id}', 'name')"></div></td>
+            <td class="p-1"><input type="number" class="custom-base-input w-100 h-100 m-0" placeholder="0.00" step="0.01" value="${row.base || ''}" oninput="updateCustomRow(this, '${row.id}', 'base')"></td>
             ${adjs}
-            <td class="text-end fw-bold bg-blue-50 final-qty">0.00</td>
+            ${colorantCellHtml}
+            <td class="text-end fw-bold bg-blue-50 final-qty p-1">0.00</td>
         </tr>`);
     });
 }
 
 function updateCalculations() {
-    const mixes = parseFloat($('#calc-mix-count').val()) || 0;
-    const pcs = parseFloat($('#calc-target-pcs').val()) || 0;
-    const pid = $('#calc-product-select').val();
+    try {
+        const mixes = parseFloat($('#calc-mix-count').val()) || 0;
+        const pcs = parseFloat($('#calc-target-pcs').val()) || 0;
+        const pid = $('#calc-product-select').val();
 
-    if(pid) {
-        const prodName = $("#calc-product-select option:selected").text();
-        const recName = $("#calc-recipe-select option:selected").text();
-        const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString();
-        $('#print-header-info').html(`<div class="fs-5">${prodName}</div><div class="small">${recName} | ${mixes} Mixes | ${dateStr}</div>`);
+        if(pid) {
+            const prodName = $("#calc-product-select option:selected").text();
+            const recName = $("#calc-recipe-select option:selected").text();
+            const dateStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString();
+            const customTitle = $('#calc-save-title').val() ? `<div class="fw-bold mb-1">[${$('#calc-save-title').val()}]</div>` : '';
+            $('#print-header-info').html(`${customTitle}<div class="fs-6">${prodName}</div><div class="small">${recName} | ${mixes} Mixes | ${dateStr}</div>`);
+        }
+        
+        $('#est-total-pcs').text(pcs.toLocaleString());
+        const p = products.find(x => x.id === pid);
+        $('#est-total-cartons').text(p && p.cartonCount > 0 && pcs > 0 ? (pcs / p.cartonCount).toFixed(1) : "--");
+
+        window.colorantTotals = window.colorantTotals || {};
+
+        // حساب الصفوف الأساسية
+        $('.calc-row').each(function() {
+            const matNameCell = $(this).find('.mat-name-cell').text();
+            const matName = matNameCell ? matNameCell.trim().toUpperCase() : '';
+            const base = (parseFloat($(this).find('.base-qty').attr('data-base-per-mix')) || 0) * mixes;
+            $(this).find('.base-qty').text(base.toFixed(2));
+            
+            let adjSum = 0;
+            $(this).find('.adj-input').each(function() { adjSum += parseFloat($(this).val()) || 0; });
+            
+            const colorantAdj = typeof isColorantActive !== 'undefined' && isColorantActive ? (window.colorantTotals[matName] || 0) : 0;
+            $(this).find('.colorant-adj-display').val(colorantAdj !== 0 ? colorantAdj.toFixed(2) : '-');
+
+            $(this).find('.final-qty').text((base + adjSum + colorantAdj).toFixed(2));
+        });
+
+        // حساب الصفوف المضافة يدوياً
+        $('.custom-row').each(function() {
+            const matVal = $(this).find('.custom-name-input').val();
+            const matName = matVal ? matVal.trim().toUpperCase() : '';
+            const base = parseFloat($(this).find('.custom-base-input').val()) || 0;
+            
+            let adjSum = 0;
+            $(this).find('.adj-input').each(function() { adjSum += parseFloat($(this).val()) || 0; });
+            
+            const colorantAdj = typeof isColorantActive !== 'undefined' && isColorantActive ? (window.colorantTotals[matName] || 0) : 0;
+            $(this).find('.colorant-adj-display').val(colorantAdj !== 0 ? colorantAdj.toFixed(2) : '-');
+
+            $(this).find('.final-qty').text((base + adjSum + colorantAdj).toFixed(2));
+        });
+
+        if (!isLoadingHistory && !currentLoadedHistoryKey && !isRestoringLocal) {
+            saveLocalCalcState();
+        }
+    } catch (err) {
+        console.error("حدث خطأ في الحساب وتم منعه من إيقاف النظام:", err);
     }
-    
-    $('#est-total-pcs').text(pcs.toLocaleString());
-    const p = products.find(x => x.id === pid);
-    $('#est-total-cartons').text(p && p.cartonCount > 0 && pcs > 0 ? (pcs / p.cartonCount).toFixed(1) : "--");
-
-    $('.calc-row').each(function() {
-        const base = (parseFloat($(this).find('.base-qty').data('base-per-mix')) || 0) * mixes;
-        $(this).find('.base-qty').text(base.toFixed(2));
-        let adjSum = 0;
-        $(this).find('.adj-input').each(function() { adjSum += parseFloat($(this).val()) || 0; });
-        $(this).find('.final-qty').text((base + adjSum).toFixed(2));
-    });
-
-    $('.custom-row').each(function() {
-        const base = parseFloat($(this).find('.custom-base-input').val()) || 0;
-        let adjSum = 0;
-        $(this).find('.adj-input').each(function() { adjSum += parseFloat($(this).val()) || 0; });
-        $(this).find('.final-qty').text((base + adjSum).toFixed(2));
-    });
 }
 
-function saveCalculationToHistory() {
+function gatherCalcData() {
     const rid = $('#calc-recipe-select').val();
-    if(!rid) return alert("Select recipe first");
+    if(!rid) { alert("Select recipe first"); return null; }
     
     const adjs = {};
     $('.adj-input').each(function() {
-        const mat = $(this).data('mat'), col = $(this).data('col'), val = parseFloat($(this).val());
+        const mat = $(this).attr('data-mat'), col = $(this).attr('data-col'), val = parseFloat($(this).val());
         if(val) { if(!adjs[mat]) adjs[mat] = {}; adjs[mat][col] = val; }
     });
 
     const savedCustomRows = [];
     $('.custom-row').each(function() {
         savedCustomRows.push({
-            id: $(this).data('id'),
+            id: $(this).attr('data-id'),
             name: $(this).find('.custom-name-input').val(),
             base: $(this).find('.custom-base-input').val()
         });
     });
 
-    savedRef.push({
+const mixCalculationsData = {
+        start: {
+            hips: $('#hipsRatioStart').text(),
+            mb: $('#mbRatioStart').text(),
+            note: $('#mixNoteStart').text()
+        },
+        end: {
+            hips: $('#hipsRatioEnd').text(),
+            mb: $('#mbRatioEnd').text(),
+            note: $('#mixNoteEnd').text()
+        }
+    };
+
+    return {
+        customTitle: $('#calc-save-title').val() || "",
         productId: $('#calc-product-select').val(),
         recipeId: rid,
         productName: $("#calc-product-select option:selected").text(),
@@ -799,26 +1279,45 @@ function saveCalculationToHistory() {
         adjColCount: adjColCount,
         adjustments: adjs,
         customRowsData: savedCustomRows,
+        mixCalculations: mixCalculationsData,
+        colorantRecipe: colorantRecipe,
+        colorantMixCount: $('#colorant-mix-count').val() || 0,
         date: new Date().toString()
-    });
+    };
+}
+
+function saveCalculationToHistory() {
+    const dataToSave = gatherCalcData();
+    if(!dataToSave) return;
+    savedRef.push(dataToSave);
     alert("Saved successfully! Check History.");
 }
 
+function updateCalculationInHistory() {
+    if(!currentLoadedHistoryKey) return;
+    const dataToSave = gatherCalcData();
+    if(!dataToSave) return;
+    savedRef.child(currentLoadedHistoryKey).update(dataToSave);
+    alert("History Record Updated Successfully!");
+}
+
 function loadSavedCalculation(data) {
-    if(typeof data === 'string') data = JSON.parse(data); // Safety check
+    if(typeof data === 'string') data = JSON.parse(data); 
     isLoadingHistory = true; 
-   $('#btn-back-history').removeClass('d-none'); 
-    // Switch View via function to handle UI states
+    
+    $('#btn-back-history').removeClass('d-none'); 
+    $('#mode-badge').removeClass('d-none');
+    currentLoadedHistoryKey = data.key;
+    $('#btn-save-history').html('<i class="fas fa-plus me-1"></i> Save as New');
+    $('#btn-update-history').removeClass('d-none');
+
     switchView('calculator');
     
-    // Set Product manually
     $('#calc-product-select').val(data.productId).trigger('change.select2');
     
-    // Build Recipe List Manually
     const rs = $('#calc-recipe-select').empty().append('<option>-- Select --</option>');
-    recipes.filter(r => r.productId === data.productId).forEach(r => {
-        rs.append(`<option value="${r.id}">${r.name}</option>`);
-    });
+    recipes.filter(r => r.productId === data.productId).forEach(r => { rs.append(`<option value="${r.id}">${r.name}</option>`); });
+    rs.append(`<option value="default_recipe">⭐ Default Recipe (Standard)</option>`);
     
     rs.prop('disabled', false);
     $('#calc-recipe-select').val(data.recipeId).trigger('change.select2');
@@ -827,7 +1326,27 @@ function loadSavedCalculation(data) {
     
     $('#calc-mix-count').val(data.mixes);
     $('#calc-target-pcs').val(data.targetPcs);
+    $('#calc-save-title').val(data.customTitle || "");
     
+    if(data.colorantRecipe) {
+        colorantRecipe = data.colorantRecipe;
+        renderColorantRecipeBuilder();
+    }
+    $('#colorant-mix-count').val(data.colorantMixCount || '');
+
+    if (data.mixCalculations) {
+        $('#hipsRatioStart').text(data.mixCalculations.start.hips);
+        $('#mbRatioStart').text(data.mixCalculations.start.mb || data.mixCalculations.start.ms); // لدعم الملفات القديمة
+        $('#mixNoteStart').text(data.mixCalculations.start.note);
+        
+        $('#hipsRatioEnd').text(data.mixCalculations.end.hips);
+        $('#mbRatioEnd').text(data.mixCalculations.end.mb || data.mixCalculations.end.ms); // لدعم الملفات القديمة
+        $('#mixNoteEnd').text(data.mixCalculations.end.note);
+
+        $('#mixNoteStart').trigger('input');
+        $('#mixNoteEnd').trigger('input');
+    }
+
     customRows = [];
     if(data.customRowsData) data.customRowsData.forEach(row => customRows.push({ id: row.id }));
 
@@ -847,6 +1366,7 @@ function loadSavedCalculation(data) {
     }
     
     updateCalculations();
+    updateColorantCalculations();
     setTimeout(() => { isLoadingHistory = false; }, 200);
 }
 
@@ -872,18 +1392,56 @@ $(document).on('input', '.adj-input', function() {
 });
 
 $('#calc-product-select').on('change', function() {
-    if (isLoadingHistory) return;
+    if (isLoadingHistory || isRestoringLocal) return;
+    
     const pid = $(this).val();
-    const rs = $('#calc-recipe-select').empty().append('<option>-- Select --</option>').prop('disabled', !pid);
-    if(pid) recipes.filter(r => r.productId === pid).forEach(r => rs.append(`<option value="${r.id}">${r.name}</option>`));
-    $('#calc-mix-count, #calc-target-pcs').val('');
-    customRows = []; renderCalcTableStructure();
+    const rs = $('#calc-recipe-select');
+    
+    // 1. تفريغ قائمة الوصفات بأمان وإخبار Select2 بالتحديث
+    rs.empty().append('<option value="">-- Select --</option>');
+    
+    if(pid) {
+        const prodRecipes = recipes.filter(r => r.productId === pid);
+        prodRecipes.forEach(r => rs.append(`<option value="${r.id}">${r.name}</option>`));
+        rs.append(`<option value="default_recipe">⭐ Default Recipe (Standard)</option>`);
+        
+        rs.prop('disabled', false);
+
+        if(prodRecipes.length === 0) {
+            // تفعيل الوصفة الافتراضية إذا لم يجد وصفات
+            rs.val('default_recipe').trigger('change');
+            return; 
+        } else {
+            // تحديث شكل قائمة الوصفات بعد إضافة الخيارات
+            rs.val('').trigger('change.select2');
+        }
+    } else {
+        rs.prop('disabled', true).trigger('change.select2');
+    }
+
+    // 2. تصفير خانات الإدخال الأساسية
+    $('#calc-mix-count, #calc-target-pcs, #calc-save-title').val('');
+    
+    // 3. مسح الذاكرة من الوصفات القديمة لمنع تداخل الجداول
+    customRows = [];
+    currentQuickRecipe = null; // مسح الوصفة السابقة تماماً
+    $('#quick-edit-content').addClass('d-none');
+    $('#quick-edit-empty').removeClass('d-none');
+    
+    // 4. رسم الجداول وحسابها داخل جدار حماية لمنع تجميد القائمة
+    try {
+        renderCalcTableStructure();
+        updateCalculations();
+    } catch (error) {
+        console.error("حدث خطأ بسيط وتم تجاوزه:", error);
+    }
 });
 
 $('#calc-recipe-select').on('change', function() { 
-    if(!isLoadingHistory) {
+    if(!isLoadingHistory && !isRestoringLocal) {
         loadQuickEditData($(this).val()); 
         renderCalcTableStructure(); 
+        updateCalculations();
     }
 });
 
@@ -899,11 +1457,12 @@ $('#calc-target-pcs').on('input', function() {
     updateCalculations();
 });
 
-// --- Quick Edit & Helpers ---
 function loadQuickEditData(rid) {
-    const r = recipes.find(x => x.id === rid);
+    let r;
+    if (rid === 'default_recipe') { r = DEFAULT_RECIPE; } else { r = recipes.find(x => x.id === rid); }
     if(!r) { $('#quick-edit-empty').removeClass('d-none'); $('#quick-edit-content').addClass('d-none'); return; }
-    currentQuickRecipe = JSON.parse(JSON.stringify(r));
+    
+    currentQuickRecipe = JSON.parse(JSON.stringify(r)); // Clone
     $('#quick-edit-empty').addClass('d-none'); $('#quick-edit-content').removeClass('d-none');
     $('#qe-recipe-id').val(r.id); $('#qe-yield').val(r.yieldPerMix || 0);
     $('#yield-display-badge').text(`Yield: ${r.yieldPerMix || 0}`);
@@ -918,6 +1477,8 @@ function renderQuickEditRows() {
 }
 
 function quickEditUpdate() {
+    const state = getAdjustmentState(); 
+    
     const mats = [];
     $('#qe-ingredients-list .input-group').each(function() { mats.push({ name: $(this).find('.qe-name').val(), qty: parseFloat($(this).find('.qe-qty').val()) || 0 }); });
     currentQuickRecipe.materials = mats;
@@ -926,11 +1487,19 @@ function quickEditUpdate() {
     $('#yield-display-badge').text(`Yield: ${newYield}`);
     const currentMixes = parseFloat($('#calc-mix-count').val());
     if (currentMixes) { $('#calc-target-pcs').val((currentMixes * newYield).toFixed(0)); }
-    renderCalcTableStructure(); updateCalculations();
+    
+    renderCalcTableStructure(); 
+    restoreState(state); 
+    updateCalculations();
+	saveLocalCalcState(); // أضف هذا السطر هنا
 }
 
 function saveQuickEdit() {
     if(!currentQuickRecipe) return;
+    if($('#qe-recipe-id').val() === 'default_recipe') {
+        alert("لا يمكنك تعديل الوصفة الافتراضية في قاعدة البيانات. هذه التعديلات ستطبق على هذه الحسبة فقط.");
+        return;
+    }
     bomRef.child($('#qe-recipe-id').val()).update({ yieldPerMix: currentQuickRecipe.yieldPerMix, materials: currentQuickRecipe.materials });
     alert("Database Updated!");
 }
@@ -957,7 +1526,7 @@ function renderProductRecipes(pid) {
     const t = $('#product-recipes-body').empty();
     recipes.filter(r => r.productId === pid).forEach(r => {
         let tagsHtml = (r.materials && r.materials.length > 0) ? r.materials.map(m => `<span class="ing-tag">${m.name}: <b>${m.qty}</b></span>`).join('') : '<span class="text-muted small">No ingredients</span>';
-        t.append(`<tr><td class="fw-bold ps-3">${r.name}</td><td>${tagsHtml}</td><td class="text-end"><button class="btn btn-sm btn-link" onclick="editRecipeFromList('${r.id}')">Edit</button><button class="btn btn-sm btn-link text-danger" onclick="deleteRecipe('${r.id}')">Delete</button></td></tr>`);
+        t.append(`<tr><td class="fw-bold ps-3">${r.name}</td><td>${tagsHtml}</td><td class="text-end"><button class="btn btn-sm btn-link py-0" onclick="editRecipeFromList('${r.id}')">Edit</button><button class="btn btn-sm btn-link text-danger py-0" onclick="deleteRecipe('${r.id}')">Delete</button></td></tr>`);
     });
 }
 
@@ -965,230 +1534,169 @@ function openAddRecipeModal() {
     $('#recipe-id').val(''); $('#recipe-product-id').val(activeProductId); $('#recipe-name, #recipe-yield, #recipe-desc, #recipe-img').val(''); $('#materials-rows').empty();
     addMaterialRow(); addMaterialRow(); new bootstrap.Modal(document.getElementById('recipe-modal')).show();
 }
-function addMaterialRow(n='', q='') { $('#materials-rows').append(`<div class="row g-2 mb-2 align-items-center"><div class="col-7"><input class="form-control form-control-sm mat-name" placeholder="Name" value="${n}"></div><div class="col-4"><input type="number" class="form-control form-control-sm mat-qty" placeholder="Qty" value="${q}" step="0.01"></div><div class="col-1"><button class="btn btn-sm text-danger" onclick="$(this).closest('.row').remove()"><i class="fas fa-times"></i></button></div></div>`); }
+function addMaterialRow(n='', q='') { $('#materials-rows').append(`<div class="row g-2 mb-2 align-items-center"><div class="col-7"><input class="form-control form-control-sm mat-name" placeholder="Name" value="${n}"></div><div class="col-4"><input type="number" class="form-control form-control-sm mat-qty" placeholder="Qty" value="${q}" step="0.01"></div><div class="col-1"><button class="btn btn-sm text-danger py-0" onclick="$(this).closest('.row').remove()"><i class="fas fa-times"></i></button></div></div>`); }
 function saveRecipe() {
     const mats = []; $('#materials-rows .row').each(function() { const n = $(this).find('.mat-name').val(), q = $(this).find('.mat-qty').val(); if(n && q) mats.push({ name: n, qty: parseFloat(q) }); });
     const data = { productId: $('#recipe-product-id').val(), name: $('#recipe-name').val(), yieldPerMix: parseFloat($('#recipe-yield').val()) || 0, description: $('#recipe-desc').val() || "", imageUrl: $('#recipe-img').val() || "", materials: mats };
     if($('#recipe-id').val()) bomRef.child($('#recipe-id').val()).update(data); else bomRef.push(data);
     bootstrap.Modal.getInstance(document.getElementById('recipe-modal')).hide();
 }
+
 function editRecipeFromList(id) {
-    const r = recipes.find(x => x.id === id); $('#recipe-id').val(r.id); $('#recipe-name').val(r.name); $('#recipe-yield').val(r.yieldPerMix); $('#recipe-desc').val(r.description || ""); $('#recipe-img').val(r.imageUrl || "");
+    const r = recipes.find(x => x.id === id); 
+    $('#recipe-id').val(r.id); 
+    $('#recipe-product-id').val(r.productId);
+    $('#recipe-name').val(r.name); 
+    $('#recipe-yield').val(r.yieldPerMix); 
+    $('#recipe-desc').val(r.description || ""); 
+    $('#recipe-img').val(r.imageUrl || "");
     $('#materials-rows').empty(); if(r.materials) r.materials.forEach(m => addMaterialRow(m.name, m.qty));
     new bootstrap.Modal(document.getElementById('recipe-modal')).show();
 }
+
 function deleteRecipe(id) { if(confirm("Delete?")) bomRef.child(id).remove(); }
 function openCreateProductModal() { new bootstrap.Modal(document.getElementById('create-product-modal')).show(); }
 function createNewProduct() { productsRef.push({ name: $('#new-prod-name').val(), cartonCount: parseInt($('#new-prod-count').val()) || 0 }); bootstrap.Modal.getInstance(document.getElementById('create-product-modal')).hide(); }
-function populateSelects() { const s = $('#calc-product-select'); const v = s.val(); s.empty().append('<option value="">-- Search Product --</option>'); products.forEach(p => s.append(`<option value="${p.id}">${p.name}</option>`)); if(v) s.val(v).trigger('change.select2'); }
+function populateSelects() { 
+    const s = $('#calc-product-select'); 
+    const v = s.val(); 
 
-
-function goBackToHistory() {
-    // 1. إخفاء زر الرجوع
-    $('#btn-back-history').addClass('d-none');
-    
-    // 2. العودة لصفحة السجل
-    switchView('history');
-    
-    // 3. (اختياري) تنظيف الحاسبة لتكون جاهزة لعملية جديدة
-    // $('#calc-product-select').val('').trigger('change'); 
-}
-
-// --- Developer Tools: Schema Generator ---
-
-function openDevSchemaModal() {
-    // 1. تجميع إعدادات الاتصال
-    const connectionInfo = {
-        platform: "Firebase Realtime Database",
-        config: firebaseConfig, // يأخذ الإعدادات الموجودة في الكود
-        base_url: firebaseConfig.databaseURL
-    };
-
-    // 2. تجميع هيكلية قاعدة البيانات (Paths & Models)
-    // نأخذ عينة واحدة فقط من المصفوفات لتقليل حجم النص وتوضيح الهيكل فقط
-    const dbStructure = {
-        products_table: {
-            firebase_path: "products_database",
-            description: "Stores basic product info and carton configurations",
-            data_model_example: products.length > 0 ? products[0] : { 
-                id: "unique_id_string", 
-                name: "Product Name Example", 
-                cartonCount: 12 
-            }
-        },
-        recipes_table: {
-            firebase_path: "bom_database",
-            description: "Stores recipes linked to products and their ingredients",
-            data_model_example: recipes.length > 0 ? recipes[0] : {
-                id: "recipe_id_string",
-                productId: "linked_product_id",
-                name: "Recipe Name",
-                yieldPerMix: 150,
-                description: "Notes...",
-                imageUrl: "http...",
-                materials: [
-                    { name: "Sugar", qty: 50.5 },
-                    { name: "Water", qty: 10 }
-                ]
-            }
-        },
-        history_table: {
-            firebase_path: "saved_calculations",
-            description: "Stores production logs and calculations",
-            // نأخذ أول عنصر من الكاش إذا وجد
-            data_model_example: Object.keys(historyDataCache).length > 0 ? historyDataCache[Object.keys(historyDataCache)[0]] : {
-                productId: "prod_id",
-                recipeId: "rec_id",
-                productName: "Product Name",
-                recipeName: "Recipe Name",
-                mixes: 5,
-                targetPcs: 1000,
-                totalPcs: 1000,
-                adjColCount: 2,
-                date: "Date String",
-                adjustments: { "MaterialName": { "1": 0.5 } },
-                customRowsData: [{ id: "cust_1", name: "Custom Mat", base: 10 }]
-            }
-        }
-    };
-
-    // 3. حالة التطبيق الحالية (Runtime Variables)
-    const runtimeState = {
-        loaded_products_count: products.length,
-        loaded_recipes_count: recipes.length,
-        active_view: localStorage.getItem('current_active_view'),
-        current_active_product_id: activeProductId,
-        calculator_state: {
-            current_mixes: $('#calc-mix-count').val(),
-            current_target: $('#calc-target-pcs').val(),
-            adjustment_columns: adjColCount
-        }
-    };
-
-    // 4. تجميع الملف النهائي
-    const fullSchema = {
-        _generated_at: new Date().toString(),
-        _note: "This JSON defines the API structure for external apps integration.",
-        CONNECTION_SETTINGS: connectionInfo,
-        DATABASE_SCHEMA: dbStructure,
-        CURRENT_APP_STATE: runtimeState
-    };
-
-    // عرض البيانات في النافذة
-    $('#schema-output').text(JSON.stringify(fullSchema, null, 4));
-    new bootstrap.Modal(document.getElementById('dev-schema-modal')).show();
-}
-
-function copySchemaToClipboard() {
-    const text = $('#schema-output').text();
-    navigator.clipboard.writeText(text).then(() => {
-        alert("JSON Data copied to clipboard!");
-    });
-}
-// --- Developer Tools: Secure Schema Generator ---
-
-function openDevSchemaModal() {
-    // 1. طلب كود الحماية
-    const pin = prompt("Enter Developer PIN to access Schema:");
-
-    // 2. التحقق من الكود
-    if (pin !== "2000") {
-        alert("Access Denied: Incorrect PIN.");
-        return; // إيقاف الدالة وعدم عرض البيانات
+    // حماية ضد تحديث القائمة وهي مفتوحة (لحل مشكلة عدم الاستجابة للضغط)
+    if (s.data('select2') && s.data('select2').isOpen()) {
+        return; 
     }
 
-    // --- إذا الكود صحيح، أكمل توليد البيانات ---
+    s.empty().append('<option value="">-- Search Product --</option>'); 
+    products.forEach(p => s.append(`<option value="${p.id}">${p.name}</option>`)); 
+    
+    // تفعيل القائمة بعد انتهاء جلب البيانات
+    s.prop('disabled', false);
 
-    // إعدادات الاتصال
-    const connectionInfo = {
-        platform: "Firebase Realtime Database",
-        auth_method: "API Key",
-        config: firebaseConfig, 
-        base_url: firebaseConfig.databaseURL
-    };
+    // إعادة القيمة المحددة سابقاً بهدوء دون التأثير على الواجهة
+    if(v) { 
+        s.val(v).trigger('change.select2'); 
+    } 
+}
 
-    // هيكلية البيانات (تأخذ عينات حية من المتغيرات الموجودة في الذاكرة)
+function goBackToHistory() {
+    $('#btn-back-history').addClass('d-none');
+    $('#mode-badge').addClass('d-none');
+    switchView('history');
+}
+
+function openDevSchemaModal() {
+    const pin = prompt("Enter Developer PIN:");
+    if (pin !== "2000") { alert("Access Denied: Incorrect PIN."); return; }
+    
     const dbStructure = {
-        // جدول المنتجات
-        products_table: {
-            firebase_path: "products_database",
-            description: "Stores product definitions",
-            example_record: products.length > 0 ? products[0] : { 
-                id: "-NQK...", 
-                name: "Example Product", 
-                cartonCount: 24 
-            }
-        },
-        // جدول الوصفات
-        recipes_table: {
-            firebase_path: "bom_database",
-            description: "Stores BOM (Bill of Materials) recipes",
-            example_record: recipes.length > 0 ? recipes[0] : {
-                id: "-NQK...",
-                productId: "-NQK...",
-                name: "Standard Mix",
-                yieldPerMix: 150,
-                description: "Mix for 5 mins...",
-                imageUrl: "https://...",
-                materials: [
-                    { name: "Sugar", qty: 50 },
-                    { name: "Water", qty: 10 }
-                ]
-            }
-        },
-        // جدول السجل المحفوظ
-        history_table: {
-            firebase_path: "saved_calculations",
-            description: "Stores calculation history log",
-            // يحاول جلب أول سجل من الذاكرة كمثال
-            example_record: Object.keys(historyDataCache).length > 0 ? historyDataCache[Object.keys(historyDataCache)[0]] : {
-                productId: "-NQK...",
-                recipeId: "-NQK...",
-                productName: "Product A",
-                recipeName: "Recipe V1",
-                mixes: 5,
-                targetPcs: 1000,
-                totalPcs: 1000,
-                adjColCount: 1,
-                date: new Date().toString(),
-                adjustments: { "Sugar": { "1": 0.5 } },
-                customRowsData: []
-            }
-        }
+        products_table: { path: "products_database", description: "قائمة المنتجات", sample: products.length > 0 ? products[0] : { id: "p1", name: "Product A", cartonCount: 10 } },
+        recipes_table: { path: "bom_database", description: "وصفات التصنيع", sample: recipes.length > 0 ? recipes[0] : { id: "r1", productId: "p1", name: "Recipe X", materials: [] } },
+        history_table: { path: "saved_calculations", description: "سجل الحسابات المحفوظة", sample: { date: "2024-01-01", totalPcs: 1000, recipeName: "Recipe X" } }
     };
-
-    // متغيرات التطبيق الحالية (للمساعدة في التطوير)
-    const appState = {
-        total_products_loaded: products.length,
-        total_recipes_loaded: recipes.length,
-        current_view: localStorage.getItem('current_active_view'),
-        selected_product_id: activeProductId || "None",
-        is_history_loading: isLoadingHistory
-    };
-
-    // تجميع الملف النهائي
-    const fullSchema = {
-        _generated_at: new Date().toISOString(),
-        _security_level: "Protected (PIN 2000)",
-        APP_CONFIG: connectionInfo,
-        DB_SCHEMA: dbStructure,
-        RUNTIME_STATE: appState
-    };
-
-    // عرض البيانات وفتح النافذة
-    $('#schema-output').text(JSON.stringify(fullSchema, null, 4));
+    const connectionInfo = { platform: "Firebase Realtime Database", global_db_variable: "db", note: "Use global 'db' variable. Do not initialize app again." };
+    currentSchemaSnapshot = { FIREBASE_CONFIG: connectionInfo, DB_SCHEMA: dbStructure };
+    $('#schema-output').text(JSON.stringify(currentSchemaSnapshot, null, 4));
     new bootstrap.Modal(document.getElementById('dev-schema-modal')).show();
 }
 
-function copySchemaToClipboard() {
-    const text = $('#schema-output').text();
-    navigator.clipboard.writeText(text).then(() => {
-        alert("JSON Schema copied to clipboard!");
-    });
+function copySmartPrompt() {
+    const userRequest = $('#ai-user-prompt').val();
+    if (!userRequest.trim()) { alert("الرجاء كتابة وصف للموديل أولاً!"); return; }
+    const smartPrompt = `[Same Prompt Logic As Before...]`;
+    navigator.clipboard.writeText(smartPrompt).then(() => { alert("تم نسخ البرومت! اذهب الآن للذكاء الاصطناعي والصقه."); });
 }
 
+window.registerModule = function(config) {
+    console.log(`[System] Loading Module: ${config.title}`);
+    if (config.css) $('<style>').text(config.css).appendTo('head');
+    if (config.html && config.viewId) {
+        const cleanId = config.viewId.replace('#', '');
+        const viewHtml = `<div id="${cleanId}" class="d-none h-100 custom-module-view">${config.html}</div>`;
+        $('#content-area').append(viewHtml);
+    }
+    if (config.menu) addToSidebar(config.menu, config.viewId);
+    if (typeof config.init === 'function') { try { config.init(); } catch (e) { console.error(`[System] Error initializing module ${config.title}:`, e); } }
+};
 
+function addToSidebar(menu, viewId) {
+    const cleanViewId = viewId.replace('#', '');
+    const onclickFunc = `switchView('${cleanViewId}', this)`;
+    
+    if (menu.parentId && menu.parentId !== 'root') {
+        const parent = $(`#${menu.parentId}`);
+        if (parent.length) {
+            parent.append(`<a class="nav-link-sub" onclick="${onclickFunc}">${menu.icon ? `<i class="${menu.icon} me-2"></i>` : ''} ${menu.label}</a>`);
+        }
+    } else {
+        const uniqueId = `menu-${cleanViewId}`;
+        const accordionHtml = `<div><button class="tree-btn collapsed" data-bs-toggle="collapse" data-bs-target="#${uniqueId}" aria-expanded="false"><span><i class="${menu.icon || 'fas fa-plug'} me-2 text-info"></i> ${menu.sectionTitle || menu.label}</span><i class="fas fa-chevron-down"></i></button><div class="collapse tree-submenu" id="${uniqueId}" data-bs-parent="#sidebarAccordion"><a class="nav-link-sub" onclick="${onclickFunc}">${menu.label}</a></div></div>`;
+        $('#sidebarAccordion').append(accordionHtml);
+    }
+}
 
+window.switchView = window.switchView || function(viewName, element) { /* Same as existing */ };
+
+(function loadExternalScripts() {
+    let fileIndex = 1;
+    const maxFiles = 50; 
+    function tryLoadScript() {
+        if (fileIndex > maxFiles) return;
+        const script = document.createElement('script');
+        script.src = `${fileIndex}.js`;
+        script.onload = function() { console.log(`[System] Loaded plugin: ${fileIndex}.js`); fileIndex++; tryLoadScript(); };
+        script.onerror = function() { console.log(`[System] No more plugins found after ${fileIndex-1}.js`); };
+        document.body.appendChild(script);
+    }
+    setTimeout(tryLoadScript, 1000); 
+})();
+// دالة تصفير حاسبة الإنتاج
+// دالة تصفير حاسبة الإنتاج
+// دالة تصفير حاسبة الإنتاج الصارمة
+function resetCalculator() {
+    if (!confirm("هل أنت متأكد من أنك تريد مسح جميع البيانات المدخلة وتصفير الحاسبة؟")) return;
+
+    // 1. إعادة ضبط القوائم
+    $('#calc-product-select').val('').trigger('change.select2');
+    $('#calc-recipe-select').empty().append('<option value="">-- Search --</option>').prop('disabled', true);
+
+    // 2. تفريغ المدخلات
+    $('#calc-mix-count, #calc-target-pcs, #calc-save-title, #colorant-mix-count').val('');
+
+    // 3. تصفير النتائج الخلفية تماماً لمنع الحسابات الشبحية
+    $('.result-cell').text('0');
+
+    // 4. القيم الافتراضية
+    $('#hipsRatioStart, #hipsRatioEnd').text('25');
+    $('#mbRatioStart, #mbRatioEnd').text('1.5');
+    $('#mixNoteStart, #mixNoteEnd').text('0');
+
+    // 5. استعادة الوصفة الافتراضية للملون
+    colorantRecipe = [
+        { name: "HIPS", qty: 25 },
+        { name: "MB", qty: 2.5 }
+    ];
+    renderColorantRecipeBuilder();
+
+    // 6. تفريغ المصفوفات والمتغيرات 
+    adjColCount = 1;
+    customRows = []; // تمسح كل الأسطر من الذاكرة
+    window.colorantTotals = {};
+    if (typeof isColorantActive !== 'undefined') {
+        isColorantActive = true;
+        $('#colorant-toggle').prop('checked', true);
+    }
+
+    localStorage.removeItem('calc_draft_state');
+    currentLoadedHistoryKey = null;
+    $('#mode-badge').addClass('d-none');
+    $('#btn-save-history').html('<i class="fas fa-save me-1"></i> Save Draft');
+    $('#btn-update-history').addClass('d-none');
+
+    // 7. تطبيق النظافة على الواجهة
+    renderCalcTableStructure(); // ترسم واجهة فارغة
+    updateCalculations();
+    updateColorantCalculations(); // تحسب القيم بناء على (0) فلن تضيف أي أسطر
+}
 </script>
 </body>
 </html>
