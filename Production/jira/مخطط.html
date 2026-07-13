@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مصمم مخططات UML الاحترافي المطور</title>
+    <style>
+        :root {
+            --primary-color: #2c7be5;
+            --header-text: #ffffff;
+            --bg-grid: #f4f6f8;
+            --border-color: #cbd5e0;
+            --node-width: 220px;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-grid);
+        }
+
+        /* --- Print Styles Improved --- */
+        @media print {
+            @page { size: auto; margin: 0mm; }
+            body, html { 
+                background: white !important; 
+                -webkit-print-color-adjust: exact !important; 
+                print-color-adjust: exact !important;
+                width: 100%;
+                height: 100%;
+                overflow: visible !important;
+            }
+            #toolbar, #zoom-controls, .add-field-btn, .action-icon, .port, .resize-handle, .node-actions, #line-settings-popup {
+                display: none !important;
+            }
+            #workspace-container {
+                overflow: visible !important;
+                position: static !important;
+                height: auto !important;
+                background: none !important;
+            }
+            #workspace {
+                transform: scale(1) !important; /* Reset zoom for print */
+                position: static !important;
+                width: 100%;
+                height: auto;
+                overflow: visible !important;
+            }
+            .node {
+                page-break-inside: avoid;
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
+            /* Force background colors */
+            .node-header {
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact;
+            }
+        }
+
+        /* Workspace Wrapper */
+        #workspace-container {
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            position: relative;
+            background-image: radial-gradient(#dfe3e8 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        #workspace {
+            transform-origin: 0 0;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* --- Toolbar Compact Style --- */
+        #toolbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 45px; /* Reduced height */
+            background: white;
+            padding: 0 15px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            overflow-x: auto; /* Allow scroll if screen is very small */
+            overflow-y: hidden;
+            scrollbar-width: none; /* Hide scrollbar Firefox */
+        }
+        
+        #toolbar::-webkit-scrollbar { display: none; /* Hide scrollbar Chrome/Safari */ }
+
+        #toolbar h3 {
+            margin: 0 0 0 10px;
+            font-size: 14px; /* Smaller font */
+            color: #2d3748;
+            white-space: nowrap;
+        }
+
+        .toolbar-group {
+            display: flex;
+            gap: 5px; /* Reduced gap */
+            align-items: center;
+            border-left: 1px solid #eee;
+            padding-left: 10px;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 4px 8px; /* Compact padding */
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px; /* Smaller font */
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn.secondary { background: #e2e8f0; color: #2d3748; }
+        .btn.secondary:hover { background: #cbd5e0; }
+        
+        /* Zoom Controls */
+        #zoom-controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 5px 15px;
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 1000;
+        }
+        
+        input[type="range"] { width: 100px; cursor: pointer; }
+
+        /* SVG Layer */
+        #svg-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: visible;
+        }
+
+        /* --- Connection Lines Styling --- */
+        path {
+            fill: none;
+            stroke: #94a3b8;
+            stroke-width: 2px;
+            pointer-events: auto; /* Important for clicking */
+            transition: stroke 0.3s;
+            cursor: pointer;
+            stroke-linejoin: round;
+            stroke-linecap: round;
+        }
+        
+        /* Transparent wider path for easier clicking */
+        path.hit-area {
+            stroke: transparent;
+            stroke-width: 15px;
+            cursor: pointer;
+            pointer-events: stroke;
+        }
+
+        path:hover, path.selected-path {
+            stroke: var(--primary-color);
+            filter: drop-shadow(0 0 2px rgba(44, 123, 229, 0.5));
+        }
+        
+        /* Animation Keyframes */
+        @keyframes dash-animation {
+            to { stroke-dashoffset: -20; }
+        }
+        
+        .animated-line {
+            animation: dash-animation 1s linear infinite;
+        }
+
+        /* Nodes General Style */
+        .node {
+            position: absolute;
+            width: var(--node-width);
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1;
+            transition: box-shadow 0.2s, border 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .node.selected-node {
+            border: 2px solid #e74c3c !important;
+            box-shadow: 0 0 0 4px rgba(231, 76, 60, 0.1);
+            z-index: 10;
+        }
+
+        .node:hover {
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            z-index: 5;
+        }
+
+        /* Resize Handle */
+        .resize-handle {
+            position: absolute;
+            top: -5px; right: -5px;
+            width: 10px; height: 10px;
+            background: white;
+            border: 1px solid #333;
+            cursor: nesw-resize;
+            z-index: 20;
+            display: none;
+        }
+        
+        .node:hover .resize-handle, .node.selected-node .resize-handle {
+            display: block;
+        }
+
+        /* --- Shape Specific Styles --- */
+        .node.shape-class, .node.shape-table {
+            border: 1px solid #a0aec0;
+            overflow: hidden;
+        }
+        .node.shape-class .node-header, .node.shape-table .node-header {
+            background: var(--primary-color);
+            color: var(--header-text);
+            padding: 6px 10px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            justify-content: center;
+        }
+        .node.shape-class .node-title, .node.shape-table .node-title {
+            text-align: center;
+            font-weight: 700;
+            font-size: 13px;
+        }
+        .node.shape-class .node-body { background: #fff; }
+
+        .node.shape-usecase {
+            border-radius: 50%;
+            width: 160px; height: 100px;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center;
+            border: 2px solid var(--primary-color);
+            background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
+        }
+        .node.shape-usecase .node-header {
+            background: transparent !important; color: #2d3748 !important; width: 90%; padding: 0; justify-content: center;
+        }
+        .node.shape-usecase .node-body, .node.shape-usecase .add-field-btn { display: none; }
+
+        .node.shape-decision {
+            width: 100px; height: 100px;
+            background: transparent; border: none; box-shadow: none;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .diamond-inner {
+            width: 70%; height: 70%;
+            background: white; border: 2px solid var(--primary-color);
+            transform: rotate(45deg); position: absolute; z-index: 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .node.shape-decision .node-header {
+            background: transparent !important; color: #2d3748 !important; z-index: 1; padding: 0; width: 100%; text-align: center;
+        }
+        .node.shape-decision .node-actions {
+            position: absolute; top: -25px; right: -10px;
+            background: rgba(255,255,255,0.9); border-radius: 4px; padding: 2px; border: 1px solid #ccc;
+        }
+
+        .node.shape-activity {
+            border-radius: 20px; border: 2px solid var(--primary-color);
+            text-align: center; min-height: 50px; overflow: hidden;
+        }
+        
+        .node.shape-note {
+            background: #fff9c4; border: 1px solid #fbc02d; border-bottom-right-radius: 0;
+        }
+        .node.shape-note::after {
+            content: ''; position: absolute; bottom: 0; right: 0; width: 0; height: 0;
+            border-style: solid; border-width: 0 0 15px 15px;
+            border-color: transparent transparent #f4f6f8 transparent;
+            box-shadow: -1px -1px 2px rgba(0,0,0,0.1);
+        }
+        .node.shape-note .node-header { background: #fbc02d; color: #555; }
+
+        .node.shape-form { border-top: 4px solid var(--primary-color); }
+
+        /* --- IMPROVED IMAGE & CHOICE NODES --- */
+        /* 7. Image Node (Better Style) */
+        .node.shape-image {
+            padding: 0;
+            background: #fff;
+            border: 1px solid #dcdcdc;
+            border-radius: 8px;
+            overflow: hidden; /* Clips image at corners */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        }
+        .node.shape-image .node-header {
+            background: #f8f9fa;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .img-placeholder {
+            width: 100%; height: 100px;
+            background: #edf2f7;
+            display: flex; align-items: center; justify-content: center;
+            color: #a0aec0; font-size: 24px;
+            cursor: pointer; overflow: hidden;
+        }
+        .img-placeholder img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* 9. Choice Node (Better Style) */
+        .node.shape-choice {
+            border: 2px solid #a0aec0; /* Solid border instead of dashed */
+            border-radius: 8px;
+            background-color: #fdfdfd;
+        }
+        .node.shape-choice .node-header {
+            background: #4a5568;
+            color: white;
+            border-radius: 6px 6px 0 0;
+        }
+
+        .node.shape-datetime { border-left: 4px solid var(--primary-color); }
+
+        /* Common Header & Body */
+        .node-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 6px 10px;
+            font-weight: 600;
+            cursor: grab;
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 13px;
+        }
+
+        .node-header:active { cursor: grabbing; }
+
+        .node-title {
+            flex-grow: 1; outline: none; margin-left: 5px;
+        }
+
+        .node-actions { display: flex; gap: 4px; align-items: center; }
+
+        .action-icon {
+            cursor: pointer; opacity: 0.8; font-size: 12px;
+            padding: 2px; border-radius: 3px;
+        }
+        .action-icon:hover { opacity: 1; background: rgba(0,0,0,0.1); }
+
+        .color-picker-wrapper {
+            position: relative; width: 12px; height: 12px;
+            overflow: hidden; display: inline-flex; align-items: center; justify-content: center;
+            cursor: pointer; border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.8);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        
+        .color-picker-input {
+            position: absolute; left: -50%; top: -50%; width: 200%; height: 200%;
+            cursor: pointer; opacity: 0;
+        }
+
+        .node-body { padding: 5px 0; width: 100%; }
+
+        .field-row {
+            padding: 4px 10px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #f1f1f1;
+            font-size: 12px; color: #4a5568;
+        }
+        
+        .field-input {
+            border: none; width: 100%; outline: none; background: transparent;
+            font-family: 'Consolas', monospace; font-size: 12px;
+        }
+        
+        .field-checkbox-row {
+            display: flex; align-items: center; gap: 5px; padding: 4px 10px;
+        }
+
+        .add-field-btn {
+            width: 100%; padding: 4px;
+            background: #f8fafc; border: none; border-top: 1px solid #eee;
+            color: #718096; cursor: pointer;
+            font-size: 10px; font-weight: 600; text-transform: uppercase;
+        }
+        .add-field-btn:hover { background: #edf2f7; color: var(--primary-color); }
+
+        .section-separator {
+            border-bottom: 1px solid #cbd5e0; margin: 0; height: 1px;
+        }
+
+        /* Ports */
+        .port {
+            position: absolute; width: 12px; height: 12px;
+            background: white; border: 2px solid #94a3b8; border-radius: 50%;
+            z-index: 10; cursor: crosshair; transition: all 0.2s; opacity: 0; 
+        }
+        
+        .node:hover .port { opacity: 1; }
+        .port:hover {
+            background: var(--primary-color); border-color: var(--primary-color);
+            transform: scale(1.2); opacity: 1;
+        }
+
+        .port-top { top: -6px; left: 50%; transform: translateX(-50%); }
+        .port-right { right: -6px; top: 50%; transform: translateY(-50%); }
+        .port-bottom { bottom: -6px; left: 50%; transform: translateX(-50%); }
+        .port-left { left: -6px; top: 50%; transform: translateY(-50%); }
+
+        .port.active-port {
+            background: #e74c3c; border-color: #e74c3c; opacity: 1;
+        }
+
+        #temp-line { pointer-events: none; }
+
+        /* --- Line Settings Popup --- */
+        #line-settings-popup {
+            position: fixed;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            z-index: 2000;
+            display: none;
+            width: 220px;
+            font-size: 12px;
+            direction: rtl;
+        }
+        
+        #line-settings-popup h4 { margin: 0 0 8px 0; color: #333; font-size: 13px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+        
+        .line-setting-row {
+            display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
+        }
+        .line-setting-row label { color: #666; }
+        
+        .popup-btn-group { display: flex; gap: 5px; margin-top: 5px; }
+        .popup-btn { 
+            flex: 1; padding: 4px; border: 1px solid #ddd; background: #f8f8f8; cursor: pointer; border-radius: 3px; 
+            font-size: 11px;
+        }
+        .popup-btn:hover { background: #eee; }
+
+    </style>
+</head>
+<body>
+
+    <div id="toolbar">
+        <h3>UML Pro</h3>
+        
+        <div class="toolbar-group">
+            <button class="btn" onclick="addNode('class')"><span>⬜</span> Class</button>
+            <button class="btn secondary" onclick="addNode('table')"><span>📅</span> Table</button>
+            <button class="btn secondary" onclick="addNode('form')"><span>📋</span> Form</button>
+        </div>
+
+        <div class="toolbar-group">
+            <button class="btn secondary" onclick="addNode('usecase')"><span>🥚</span> Use Case</button>
+            <button class="btn secondary" onclick="addNode('decision')"><span>◇</span> Decision</button>
+            <button class="btn secondary" onclick="addNode('activity')"><span>🔄</span> Activity</button>
+        </div>
+
+        <div class="toolbar-group">
+            <button class="btn secondary" onclick="addNode('image')"><span>🖼️</span> Image</button>
+            <button class="btn secondary" onclick="addNode('datetime')"><span>🕒</span> Date</button>
+            <button class="btn secondary" onclick="addNode('choice')"><span>☑️</span> Choice</button>
+        </div>
+
+        <div class="toolbar-group">
+            <button class="btn secondary" onclick="addNode('note')"><span>📝</span> Note</button>
+        </div>
+
+        <div class="toolbar-group" style="margin-right: auto;">
+            <button class="btn secondary" onclick="deleteSelectedNode()" title="Delete Selected (Del)"><span>❌</span> حذف</button>
+            <button class="btn secondary" onclick="clearCanvas()"><span>🗑️</span> مسح</button>
+            <button class="btn secondary" onclick="printCanvas()"><span>🖨️</span> طباعة</button>
+        </div>
+        
+        <div style="font-size: 11px; color: #888; margin-right: 15px;">
+            <span id="save-status">تم الحفظ</span>
+        </div>
+    </div>
+
+    <div id="workspace-container" onmousedown="startPan(event)">
+        <div id="workspace">
+            <svg id="svg-layer">
+                <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8" class="arrow-shape" />
+                    </marker>
+                    <marker id="arrowhead-start" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                        <polygon points="10 0, 0 3.5, 10 7" fill="#94a3b8" class="arrow-shape" />
+                    </marker>
+                </defs>
+            </svg>
+            <div id="canvas"></div>
+        </div>
+    </div>
+
+    <div id="line-settings-popup">
+        <h4>خصائص الرابط</h4>
+        
+        <div class="line-setting-row">
+            <label>اللون:</label>
+            <input type="color" id="line-color" onchange="updateLineStyle('color', this.value)">
+        </div>
+        
+        <div class="line-setting-row">
+            <label>السمك:</label>
+            <input type="range" id="line-width" min="1" max="6" value="2" oninput="updateLineStyle('width', this.value)">
+        </div>
+        
+        <div class="line-setting-row">
+            <label>متقطع:</label>
+            <input type="checkbox" id="line-dashed" onchange="updateLineStyle('dashed', this.checked)">
+        </div>
+
+        <div class="line-setting-row">
+            <label>حركة (Animation):</label>
+            <input type="checkbox" id="line-animated" onchange="updateLineStyle('animated', this.checked)">
+        </div>
+
+        <div class="line-setting-row">
+            <label>اتجاه السهم:</label>
+            <select id="line-arrows" onchange="updateLineStyle('arrow', this.value)" style="width: 100px;">
+                <option value="end">نهاية →</option>
+                <option value="start">بداية ←</option>
+                <option value="both">كلاهما ↔</option>
+                <option value="none">بدون —</option>
+            </select>
+        </div>
+        
+        <div class="popup-btn-group">
+            <button class="popup-btn" onclick="deleteSelectedLine()" style="color:red;">حذف الرابط</button>
+        </div>
+    </div>
+
+    <div id="zoom-controls">
+        <span style="font-size: 11px; color: #666;">تكبير/تصغير</span>
+        <button class="btn secondary" style="padding: 2px 6px;" onclick="adjustZoom(-0.1)">-</button>
+        <input type="range" id="zoomRange" min="0.5" max="2" step="0.1" value="1" oninput="setZoom(this.value)">
+        <button class="btn secondary" style="padding: 2px 6px;" onclick="adjustZoom(0.1)">+</button>
+        <span id="zoomValue" style="font-size: 11px; min-width: 30px; text-align: center;">100%</span>
+    </div>
+
+    <script>
+        let nodeCount = 0;
+        let connections = [];
+        let currentZoom = 1;
+        let isConnecting = false;
+        let sourcePort = null;
+        let startPortElem = null;
+        let selectedNodeId = null;
+        let selectedLine = null; // Store currently selected line object
+
+        const canvas = document.getElementById('canvas');
+        const svgLayer = document.getElementById('svg-layer');
+        const workspace = document.getElementById('workspace');
+        const saveStatus = document.getElementById('save-status');
+        const linePopup = document.getElementById('line-settings-popup');
+
+        // --- Initialization ---
+        window.onload = () => {
+            loadData();
+            if (nodeCount === 0) {
+                // Demo Data
+                addNode('class', 150, 150, false);
+                addNode('decision', 450, 250, false);
+                saveToLocal();
+            }
+            updateLines();
+        };
+
+        // --- Interactions ---
+        document.addEventListener('mousedown', (e) => {
+            // Close line popup if clicked outside
+            if (!e.target.closest('#line-settings-popup') && e.target.tagName !== 'path') {
+                linePopup.style.display = 'none';
+                if(selectedLine) {
+                    selectedLine.path.classList.remove('selected-path');
+                    selectedLine = null;
+                }
+            }
+
+            if (e.target.id === 'workspace-container' || e.target.id === 'workspace' || e.target.id === 'canvas' || e.target.tagName === 'svg') {
+                deselectNodes();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                const active = document.activeElement;
+                const isInput = active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable;
+                if (!isInput) {
+                    if (selectedNodeId) {
+                        deleteNode(selectedNodeId);
+                        e.preventDefault();
+                    } else if (selectedLine) {
+                        deleteSelectedLine();
+                        e.preventDefault();
+                    }
+                }
+            }
+        });
+
+        function selectNode(id) {
+            deselectNodes();
+            selectedNodeId = id;
+            const node = document.getElementById(id);
+            if(node) node.classList.add('selected-node');
+        }
+
+        function deselectNodes() {
+            if(selectedNodeId) {
+                const node = document.getElementById(selectedNodeId);
+                if(node) node.classList.remove('selected-node');
+            }
+            selectedNodeId = null;
+        }
+
+        function deleteSelectedNode() {
+            if(selectedNodeId) deleteNode(selectedNodeId);
+            else alert('الرجاء تحديد شكل أولاً للحذف');
+        }
+
+        // --- Node Creation ---
+        function addNode(type = 'class', x = 350, y = 150, save = true) {
+            nodeCount++;
+            const node = document.createElement('div');
+            const nodeId = `node-${new Date().getTime()}-${nodeCount}`;
+            node.className = `node shape-${type}`;
+            node.id = nodeId;
+            node.dataset.type = type;
+            node.style.left = `${x}px`;
+            node.style.top = `${y}px`;
+
+            // Default Colors
+            let primaryColor = '#2c7be5';
+            let headerText = '#ffffff';
+
+            if (type === 'note') { primaryColor = '#fbc02d'; headerText = '#333333'; }
+            if (type === 'decision') { primaryColor = '#2c7be5'; }
+            if (type === 'usecase') { primaryColor = '#2c7be5'; }
+            if (type === 'image' || type === 'choice') { primaryColor = '#718096'; }
+
+            node.style.setProperty('--primary-color', primaryColor);
+            node.style.setProperty('--header-text', headerText);
+
+            node.onmousedown = (e) => {
+                if(!e.target.closest('.action-icon') && !e.target.closest('.color-picker-input') && !e.target.closest('.field-input') && !e.target.closest('.resize-handle')) {
+                    selectNode(nodeId);
+                }
+            };
+
+            const dragTrigger = `onmousedown="startDrag(event, this.closest('.node'))"`;
+
+            // Action Buttons
+            let headerActions = `
+                <div class="node-actions">
+                    <div class="color-picker-wrapper" title="لون الخلفية/الحدود">
+                        <input type="color" class="color-picker-input" onchange="changeColor(this, '${nodeId}')" value="${primaryColor}">
+                        <div style="width:100%;height:100%;background:inherit;"></div>
+                    </div>
+                    <div class="color-picker-wrapper" title="لون النص" style="background:transparent; border:1px solid #ddd;">
+                        <input type="color" class="color-picker-input" onchange="changeTextColor(this, '${nodeId}')" value="${headerText}">
+                        <div style="width:100%;height:100%; display:flex; align-items:center; justify-content:center; color:#555; font-size:10px;">T</div>
+                    </div>
+                    <span class="action-icon" onclick="deleteNode('${nodeId}')" style="color:${type === 'decision' || type === 'usecase' ? '#333' : 'inherit'}">✖</span>
+                </div>`;
+
+            const standardHeader = (title) => `
+                <div class="node-header" ${dragTrigger}>
+                    <span class="node-title" contenteditable="true" spellcheck="false" oninput="saveToLocal()">${title}</span>
+                    ${headerActions}
+                </div>`;
+
+            let content = '';
+
+            // --- Content Generation Based on Type ---
+            if (type === 'class' || type === 'table') {
+                content = `
+                    ${standardHeader(type === 'class' ? 'Class Name' : 'Table Name')}
+                    <div class="node-body">
+                        <div class="field-row"><input class="field-input" value="${type === 'class' ? '- id: int' : 'id (PK)'}" oninput="saveToLocal()"></div>
+                    </div>
+                    <button class="add-field-btn" onclick="addField(this, 'attribute')">+ ${type === 'class' ? 'Attribute' : 'Column'}</button>
+                    ${type === 'class' ? `
+                        <div class="section-separator"></div>
+                        <div class="node-body methods-body">
+                             <div class="field-row"><input class="field-input" value="+ method(): void" oninput="saveToLocal()"></div>
+                        </div>
+                        <button class="add-field-btn" onclick="addField(this, 'method')">+ Method</button>
+                    ` : ''}
+                `;
+            } else if (type === 'form') {
+                 content = `
+                    ${standardHeader('Form Title')}
+                    <div class="node-body">
+                        <div class="field-row">
+                            <input class="field-input" value="Label:" style="width:40%; font-weight:bold;">
+                            <input class="field-input" placeholder="Input..." style="border:1px solid #ddd; padding:2px; border-radius:3px;">
+                        </div>
+                    </div>
+                    <button class="add-field-btn" onclick="addFormField(this)">+ Input Field</button>
+                `;
+            } else if (type === 'usecase') {
+                content = `
+                    <div class="node-header" ${dragTrigger}>
+                        <span class="node-title" contenteditable="true" spellcheck="false" oninput="saveToLocal()">Use Case</span>
+                        ${headerActions}
+                    </div>
+                `;
+            } else if (type === 'activity') {
+                 content = `
+                    ${standardHeader('Activity')}
+                    <div class="node-body" contenteditable="true" oninput="saveToLocal()" style="padding:10px; text-align:center;">Action...</div>
+                `;
+            } else if (type === 'decision') {
+                content = `
+                    <div class="diamond-inner"></div>
+                    <div class="node-header" ${dragTrigger}>
+                        <span class="node-title" contenteditable="true" spellcheck="false" oninput="saveToLocal()">?</span>
+                         ${headerActions}
+                    </div>
+                `;
+            } else if (type === 'note') {
+                content = `
+                    ${standardHeader('Note')}
+                    <div class="node-body" contenteditable="true" oninput="saveToLocal()" style="padding:10px; min-height:60px; font-family: 'Comic Sans MS', cursive, sans-serif;">Add note...</div>
+                `;
+            } else if (type === 'image') {
+                content = `
+                    ${standardHeader('Image Node')}
+                    <div class="node-body" style="padding:0;">
+                        <div class="img-placeholder" onclick="updateImage(this)">
+                            <span>📷 Click</span>
+                            <img src="" style="display:none;" />
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'datetime') {
+                content = `
+                    ${standardHeader('Date/Time')}
+                    <div class="node-body" style="padding:10px;">
+                        <input type="datetime-local" class="field-input" onchange="saveToLocal()" style="border:1px solid #ddd; padding:5px; border-radius:4px;">
+                    </div>
+                `;
+            } else if (type === 'choice') {
+                content = `
+                    ${standardHeader('Options List')}
+                    <div class="node-body">
+                        <div class="field-checkbox-row">
+                            <input type="checkbox"> <input class="field-input" value="Option 1" oninput="saveToLocal()">
+                        </div>
+                    </div>
+                    <button class="add-field-btn" onclick="addChoiceField(this)">+ Option</button>
+                `;
+            }
+
+            node.innerHTML = `
+                <div class="resize-handle" onmousedown="startResize(event, '${nodeId}')"></div>
+                <div class="port port-top" onmousedown="startConnection(event, '${nodeId}', 'top')"></div>
+                <div class="port port-right" onmousedown="startConnection(event, '${nodeId}', 'right')"></div>
+                <div class="port port-bottom" onmousedown="startConnection(event, '${nodeId}', 'bottom')"></div>
+                <div class="port port-left" onmousedown="startConnection(event, '${nodeId}', 'left')"></div>
+                ${content}
+            `;
+
+            canvas.appendChild(node);
+            if (save) saveToLocal();
+            return node;
+        }
+
+        // --- Helpers for New Nodes ---
+        function addField(btn, type) {
+            const body = btn.previousElementSibling;
+            let val = type === 'method' ? "+ newMethod(): void" : "- newAttribute: type";
+            const row = document.createElement('div');
+            row.className = 'field-row';
+            row.innerHTML = `<input class="field-input" value="${val}" oninput="saveToLocal()"><span style="cursor:pointer;color:#e53e3e;" onclick="this.parentNode.remove(); saveToLocal()">×</span>`;
+            body.appendChild(row);
+            saveToLocal();
+        }
+
+        function addFormField(btn) {
+            const body = btn.previousElementSibling;
+            const row = document.createElement('div');
+            row.className = 'field-row';
+            row.innerHTML = `
+                <input class="field-input" value="Label:" style="width:40%; font-weight:bold;" oninput="saveToLocal()">
+                <input class="field-input" placeholder="Input..." style="border:1px solid #ddd; padding:2px; border-radius:3px;">
+                <span style="cursor:pointer;color:#e53e3e;" onclick="this.parentNode.remove(); saveToLocal()">×</span>
+            `;
+            body.appendChild(row);
+            saveToLocal();
+        }
+
+        function addChoiceField(btn) {
+            const body = btn.previousElementSibling;
+            const row = document.createElement('div');
+            row.className = 'field-checkbox-row';
+            row.innerHTML = `
+                <input type="checkbox"> <input class="field-input" value="Option" oninput="saveToLocal()">
+                <span style="cursor:pointer;color:#e53e3e; margin-left:auto;" onclick="this.parentNode.remove(); saveToLocal()">×</span>
+            `;
+            body.appendChild(row);
+            saveToLocal();
+        }
+
+        function updateImage(placeholder) {
+            const url = prompt("Enter Image URL:", "https://via.placeholder.com/150");
+            if (url) {
+                const img = placeholder.querySelector('img');
+                const span = placeholder.querySelector('span');
+                img.src = url;
+                img.style.display = 'block';
+                span.style.display = 'none';
+                saveToLocal();
+            }
+        }
+
+        function deleteNode(id) {
+            if(confirm('حذف العنصر؟')) {
+                const node = document.getElementById(id);
+                // Remove connections attached to this node
+                connections = connections.filter(conn => {
+                    if (conn.from === id || conn.to === id) {
+                        conn.path.remove();
+                        return false;
+                    }
+                    return true;
+                });
+                node.remove();
+                if(selectedNodeId === id) selectedNodeId = null;
+                saveToLocal();
+            }
+        }
+
+        // --- Styles & Colors ---
+        function changeColor(input, nodeId) {
+            const node = document.getElementById(nodeId);
+            node.style.setProperty('--primary-color', input.value);
+            saveToLocal();
+        }
+
+        function changeTextColor(input, nodeId) {
+            const node = document.getElementById(nodeId);
+            node.style.setProperty('--header-text', input.value);
+            // Force update inline styles if needed
+            const header = node.querySelector('.node-header');
+            if (header) header.style.color = input.value;
+            saveToLocal();
+        }
+
+        // --- Resize Logic ---
+        let resizingNode = null;
+        let resizeStart = {};
+
+        function startResize(e, nodeId) {
+            e.stopPropagation();
+            e.preventDefault();
+            resizingNode = document.getElementById(nodeId);
+            resizeStart = {
+                x: e.clientX, y: e.clientY,
+                w: resizingNode.offsetWidth, h: resizingNode.offsetHeight,
+                top: resizingNode.offsetTop
+            };
+            document.addEventListener('mousemove', doResize);
+            document.addEventListener('mouseup', stopResize);
+        }
+
+        function doResize(e) {
+            if (!resizingNode) return;
+            const dx = (e.clientX - resizeStart.x) / currentZoom;
+            const dy = (e.clientY - resizeStart.y) / currentZoom;
+            
+            resizingNode.style.width = Math.max(100, resizeStart.w + dx) + 'px';
+            const newHeight = Math.max(60, resizeStart.h - dy);
+            // Only move top if height effectively changed
+            if (resizeStart.h - dy > 60) {
+                 resizingNode.style.top = (resizeStart.top + dy) + 'px';
+            }
+            resizingNode.style.height = newHeight + 'px';
+            updateLines();
+        }
+
+        function stopResize() {
+            if(resizingNode) saveToLocal();
+            resizingNode = null;
+            document.removeEventListener('mousemove', doResize);
+            document.removeEventListener('mouseup', stopResize);
+        }
+
+        // --- Drag Logic ---
+        let draggedNode = null;
+        let dragStartPos = {};
+        let nodeStartPos = {};
+
+        function startDrag(e, node) {
+            if(e.target.closest('.resize-handle')) return;
+            e.stopPropagation();
+            draggedNode = node;
+            selectNode(node.id);
+            dragStartPos = { x: e.clientX, y: e.clientY };
+            nodeStartPos = { x: parseInt(node.style.left || 0), y: parseInt(node.style.top || 0) };
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('mouseup', stopDrag);
+        }
+
+        function onDrag(e) {
+            if (!draggedNode) return;
+            const deltaX = (e.clientX - dragStartPos.x) / currentZoom;
+            const deltaY = (e.clientY - dragStartPos.y) / currentZoom;
+            draggedNode.style.left = (nodeStartPos.x + deltaX) + 'px';
+            draggedNode.style.top = (nodeStartPos.y + deltaY) + 'px';
+            updateLines();
+        }
+
+        function stopDrag() {
+            if (draggedNode) saveToLocal();
+            draggedNode = null;
+            document.removeEventListener('mousemove', onDrag);
+            document.removeEventListener('mouseup', stopDrag);
+        }
+
+        // --- Pan Logic ---
+        let isPanning = false;
+        let panStart = {};
+        let scrollStart = {};
+
+        function startPan(e) {
+            if (e.target.closest('.node') || e.target.closest('.port')) return;
+            isPanning = true;
+            panStart = { x: e.clientX, y: e.clientY };
+            scrollStart = { x: document.getElementById('workspace-container').scrollLeft, y: document.getElementById('workspace-container').scrollTop };
+            document.getElementById('workspace-container').style.cursor = 'grabbing';
+            document.addEventListener('mousemove', onPan);
+            document.addEventListener('mouseup', stopPan);
+        }
+
+        function onPan(e) {
+            if (!isPanning) return;
+            const dx = e.clientX - panStart.x;
+            const dy = e.clientY - panStart.y;
+            document.getElementById('workspace-container').scrollLeft = scrollStart.x - dx;
+            document.getElementById('workspace-container').scrollTop = scrollStart.y - dy;
+        }
+
+        function stopPan() {
+            isPanning = false;
+            document.getElementById('workspace-container').style.cursor = 'default';
+            document.removeEventListener('mousemove', onPan);
+            document.removeEventListener('mouseup', stopPan);
+        }
+
+        // --- Smart Connection Logic ---
+        function startConnection(e, nodeId, portSide) {
+            e.stopPropagation();
+            isConnecting = true;
+            sourcePort = { nodeId, side: portSide };
+            startPortElem = e.target;
+            startPortElem.classList.add('active-port');
+            
+            const tempLine = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            tempLine.setAttribute("id", "temp-line");
+            tempLine.setAttribute("stroke", "#2c7be5");
+            tempLine.setAttribute("stroke-width", "2");
+            tempLine.setAttribute("stroke-dasharray", "5,5");
+            svgLayer.appendChild(tempLine);
+
+            document.addEventListener('mousemove', drawTempLine);
+            document.addEventListener('mouseup', endConnection);
+        }
+
+        function drawTempLine(e) {
+            if (!isConnecting) return;
+            const tempLine = document.getElementById("temp-line");
+            const startRect = startPortElem.getBoundingClientRect();
+            const workspaceRect = workspace.getBoundingClientRect();
+            
+            const x1 = (startRect.left + startRect.width / 2 - workspaceRect.left) / currentZoom;
+            const y1 = (startRect.top + startRect.height / 2 - workspaceRect.top) / currentZoom;
+            const x2 = (e.clientX - workspaceRect.left) / currentZoom;
+            const y2 = (e.clientY - workspaceRect.top) / currentZoom;
+            
+            tempLine.setAttribute("d", `M ${x1} ${y1} L ${x2} ${y2}`);
+        }
+
+        function endConnection(e) {
+            isConnecting = false;
+            document.removeEventListener('mousemove', drawTempLine);
+            document.removeEventListener('mouseup', endConnection);
+            const tempLine = document.getElementById("temp-line");
+            if (tempLine) tempLine.remove();
+            if (startPortElem) startPortElem.classList.remove('active-port');
+
+            const targetNode = e.target.closest('.node');
+            
+            if (targetNode) {
+                const targetId = targetNode.id;
+                if (sourcePort.nodeId !== targetId) {
+                    createConnectionObj(sourcePort.nodeId, targetId);
+                    saveToLocal();
+                }
+            }
+        }
+
+        function createConnectionObj(id1, id2, props = {}) {
+            // Check for existing
+            const exists = connections.some(c => (c.from === id1 && c.to === id2) || (c.from === id2 && c.to === id1));
+            if (exists) return;
+
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            svgLayer.appendChild(path);
+            
+            // Connection Object
+            const connObj = { 
+                from: id1, 
+                to: id2, 
+                path: path,
+                // Default Properties
+                color: props.color || '#94a3b8',
+                width: props.width || 2,
+                dashed: props.dashed || false,
+                animated: props.animated || false,
+                arrow: props.arrow || 'end' // start, end, both, none
+            };
+
+            // Apply Styles
+            applyLineStyles(connObj);
+
+            // Click Handler for Settings Popup
+            path.addEventListener('click', function(e) {
+                e.stopPropagation();
+                openLineSettings(e, connObj);
+            });
+
+            connections.push(connObj);
+            updateLines();
+        }
+
+        // --- Line Settings & Popups ---
+        function applyLineStyles(conn) {
+            const p = conn.path;
+            p.setAttribute('stroke', conn.color);
+            p.setAttribute('stroke-width', conn.width);
+            
+            // Dashed
+            if (conn.dashed) p.setAttribute('stroke-dasharray', '8,5');
+            else p.removeAttribute('stroke-dasharray');
+
+            // Animated (Needs dasharray to work)
+            if (conn.animated) {
+                p.classList.add('animated-line');
+                // Ensure there is a dash pattern for animation
+                if(!conn.dashed) p.setAttribute('stroke-dasharray', '10,5');
+            } else {
+                p.classList.remove('animated-line');
+                if(!conn.dashed) p.removeAttribute('stroke-dasharray');
+            }
+
+            // Arrows
+            p.removeAttribute('marker-end');
+            p.removeAttribute('marker-start');
+
+            if (conn.arrow === 'end' || conn.arrow === 'both') {
+                p.setAttribute('marker-end', 'url(#arrowhead)');
+            }
+            if (conn.arrow === 'start' || conn.arrow === 'both') {
+                p.setAttribute('marker-start', 'url(#arrowhead-start)');
+            }
+        }
+
+        function openLineSettings(e, connObj) {
+            selectedLine = connObj;
+            
+            // Remove selection class from others
+            document.querySelectorAll('path').forEach(p => p.classList.remove('selected-path'));
+            connObj.path.classList.add('selected-path');
+
+            // Set Form Values
+            document.getElementById('line-color').value = connObj.color;
+            document.getElementById('line-width').value = connObj.width;
+            document.getElementById('line-dashed').checked = connObj.dashed;
+            document.getElementById('line-animated').checked = connObj.animated;
+            document.getElementById('line-arrows').value = connObj.arrow;
+
+            // Position Popup
+            linePopup.style.display = 'block';
+            linePopup.style.left = e.clientX + 'px';
+            linePopup.style.top = e.clientY + 'px';
+        }
+
+        function updateLineStyle(key, value) {
+            if (!selectedLine) return;
+            selectedLine[key] = value;
+            applyLineStyles(selectedLine);
+            saveToLocal();
+        }
+
+        function deleteSelectedLine() {
+            if (!selectedLine) return;
+            if(confirm('هل تريد حذف الرابط؟')) {
+                selectedLine.path.remove();
+                connections = connections.filter(c => c !== selectedLine);
+                selectedLine = null;
+                linePopup.style.display = 'none';
+                saveToLocal();
+            }
+        }
+
+        function updateLines() {
+            connections.forEach(conn => {
+                const nodeA = document.getElementById(conn.from);
+                const nodeB = document.getElementById(conn.to);
+                if (!nodeA || !nodeB) return;
+
+                const rectA = nodeA.getBoundingClientRect();
+                const rectB = nodeB.getBoundingClientRect();
+                const workspaceRect = workspace.getBoundingClientRect();
+
+                const x1 = (rectA.left + rectA.width / 2 - workspaceRect.left) / currentZoom;
+                const y1 = (rectA.top + rectA.height / 2 - workspaceRect.top) / currentZoom;
+                const x2 = (rectB.left + rectB.width / 2 - workspaceRect.left) / currentZoom;
+                const y2 = (rectB.top + rectB.height / 2 - workspaceRect.top) / currentZoom;
+
+                const dx = Math.abs(x1 - x2);
+                const dy = Math.abs(y1 - y2);
+                let d = "";
+                
+                if (dx > dy) {
+                    const c1x = x1 + (x2 - x1) / 2;
+                    d = `M ${x1} ${y1} C ${c1x} ${y1}, ${c1x} ${y2}, ${x2} ${y2}`;
+                } else {
+                    const c1y = y1 + (y2 - y1) / 2;
+                    d = `M ${x1} ${y1} C ${x1} ${c1y}, ${x2} ${c1y}, ${x2} ${y2}`;
+                }
+                
+                conn.path.setAttribute("d", d);
+            });
+        }
+
+        // --- Zoom & Utils ---
+        function setZoom(val) {
+            currentZoom = parseFloat(val);
+            document.getElementById('zoomRange').value = currentZoom;
+            document.getElementById('zoomValue').innerText = Math.round(currentZoom * 100) + '%';
+            workspace.style.transform = `scale(${currentZoom})`;
+            setTimeout(updateLines, 10);
+        }
+
+        function adjustZoom(delta) {
+            let newZoom = currentZoom + delta;
+            if (newZoom < 0.5) newZoom = 0.5;
+            if (newZoom > 2) newZoom = 2;
+            setZoom(newZoom);
+        }
+
+        function clearCanvas() {
+            if(confirm("هل تريد مسح كل شيء؟")) {
+                canvas.innerHTML = '';
+                connections.forEach(c => c.path.remove());
+                connections = [];
+                nodeCount = 0;
+                localStorage.removeItem('dbDesignerData');
+            }
+        }
+        
+        function printCanvas() { window.print(); }
+
+        // --- LocalStorage ---
+        function saveToLocal() {
+            const nodes = [];
+            document.querySelectorAll('.node').forEach(n => {
+                const title = n.querySelector('.node-title') ? n.querySelector('.node-title').innerText : '';
+                const primaryColor = n.style.getPropertyValue('--primary-color');
+                const headerText = n.style.getPropertyValue('--header-text');
+                const type = n.dataset.type;
+                
+                const inputs = [];
+                n.querySelectorAll('input.field-input:not([type="datetime-local"])').forEach(inp => inputs.push(inp.value));
+                
+                let extraData = {};
+                
+                if (type === 'image') {
+                     const img = n.querySelector('img');
+                     extraData.src = img.src;
+                     extraData.visible = img.style.display !== 'none';
+                }
+                if (type === 'datetime') {
+                    const dateInput = n.querySelector('input[type="datetime-local"]');
+                    if(dateInput) extraData.date = dateInput.value;
+                }
+                
+                let bodyContent = '';
+                const bodyDiv = n.querySelector('.node-body');
+                if (bodyDiv && ['note', 'activity'].includes(type)) {
+                    bodyContent = bodyDiv.innerText;
+                }
+
+                nodes.push({
+                    id: n.id,
+                    left: n.style.left,
+                    top: n.style.top,
+                    width: n.style.width,
+                    height: n.style.height,
+                    title, type, primaryColor, headerText, inputs, bodyContent, extraData
+                });
+            });
+
+            // Save Connection Props
+            const connData = connections.map(c => ({ 
+                from: c.from, 
+                to: c.to,
+                color: c.color,
+                width: c.width,
+                dashed: c.dashed,
+                animated: c.animated,
+                arrow: c.arrow
+            }));
+
+            localStorage.setItem('dbDesignerData', JSON.stringify({ nodes, connections: connData, nodeCount }));
+            
+            saveStatus.innerText = "جاري الحفظ...";
+            setTimeout(() => saveStatus.innerText = "تم الحفظ تلقائياً", 1000);
+        }
+
+        function loadData() {
+            const dataStr = localStorage.getItem('dbDesignerData');
+            if (!dataStr) return;
+
+            const data = JSON.parse(dataStr);
+            nodeCount = data.nodeCount || 0;
+
+            data.nodes.forEach(n => {
+                const node = addNode(n.type, parseInt(n.left), parseInt(n.top), false);
+                node.id = n.id;
+                
+                if(n.width) node.style.width = n.width;
+                if(n.height) node.style.height = n.height;
+
+                const titleElem = node.querySelector('.node-title');
+                if (titleElem) titleElem.innerText = n.title;
+                
+                if (n.primaryColor) {
+                    node.style.setProperty('--primary-color', n.primaryColor);
+                    const cp = node.querySelector('.color-picker-input');
+                    if(cp) cp.value = n.primaryColor;
+                }
+                if (n.headerText) node.style.setProperty('--header-text', n.headerText);
+
+                // Restore Content
+                if (['class', 'table', 'form', 'choice'].includes(n.type)) {
+                    const bodies = node.querySelectorAll('.node-body');
+                    bodies.forEach(b => b.innerHTML = '');
+                    const mainBody = node.querySelector('.node-body'); 
+                    const methodsBody = node.querySelector('.methods-body');
+                    
+                    if (n.type === 'form') {
+                         n.inputs.forEach((val, i) => {
+                             if(i % 2 === 0) {
+                                 const row = document.createElement('div');
+                                 row.className = 'field-row';
+                                 row.innerHTML = `
+                                    <input class="field-input" value="${val}" style="width:40%; font-weight:bold;" oninput="saveToLocal()">
+                                    <input class="field-input" value="${n.inputs[i+1] || ''}" style="border:1px solid #ddd; padding:2px; border-radius:3px;">
+                                    <span style="cursor:pointer;color:#e53e3e;" onclick="this.parentNode.remove(); saveToLocal()">×</span>
+                                `;
+                                mainBody.appendChild(row);
+                             }
+                         });
+                    } else if (n.type === 'choice') {
+                        n.inputs.forEach(val => {
+                             const row = document.createElement('div');
+                             row.className = 'field-checkbox-row';
+                             row.innerHTML = `<input type="checkbox"> <input class="field-input" value="${val}" oninput="saveToLocal()"><span style="cursor:pointer;color:#e53e3e; margin-left:auto;" onclick="this.parentNode.remove(); saveToLocal()">×</span>`;
+                             mainBody.appendChild(row);
+                        });
+                    } else {
+                        n.inputs.forEach(val => {
+                            if (val.includes('(') && methodsBody) {
+                                addFieldToNode(methodsBody, val);
+                            } else {
+                                addFieldToNode(mainBody, val);
+                            }
+                        });
+                    }
+                } else if (n.type === 'image') {
+                    if (n.extraData && n.extraData.visible) {
+                        const img = node.querySelector('img');
+                        const span = node.querySelector('.img-placeholder span');
+                        img.src = n.extraData.src;
+                        img.style.display = 'block';
+                        span.style.display = 'none';
+                    }
+                } else if (n.type === 'datetime') {
+                    if (n.extraData && n.extraData.date) {
+                        node.querySelector('input').value = n.extraData.date;
+                    }
+                } else {
+                    const body = node.querySelector('.node-body');
+                    if (body) body.innerText = n.bodyContent;
+                }
+            });
+
+            // Restore Connections with props
+            if(data.connections) {
+                data.connections.forEach(c => {
+                    createConnectionObj(c.from, c.to, {
+                        color: c.color,
+                        width: c.width,
+                        dashed: c.dashed,
+                        animated: c.animated,
+                        arrow: c.arrow
+                    });
+                });
+            }
+        }
+
+        function addFieldToNode(container, text) {
+            const row = document.createElement('div');
+            row.className = 'field-row';
+            row.innerHTML = `<input class="field-input" value="${text}" oninput="saveToLocal()"><span style="cursor:pointer;color:#e53e3e;" onclick="this.parentNode.remove(); saveToLocal()">×</span>`;
+            container.appendChild(row);
+        }
+
+    </script>
+</body>
+</html>

@@ -470,12 +470,20 @@ productInput.addEventListener("input", updateResult);
 numberInput.addEventListener("input", updateResult);
 </script>
 
-<div class="mb-2">
-<label for="new-po-date" class="form-label mb-1">تاريخ أمر الإنتاج</label>
-<div class="d-flex align-items-center">
-<input type="date" class="form-control form-control-sm" id="new-po-date" required>
-<span id="new-po-date-day" class="small text-muted ms-2"></span>
-</div>
+<div class="row mb-2">
+    <div class="col-6">
+        <label for="new-po-date" class="form-label mb-1">تاريخ البدء</label>
+        <div class="d-flex align-items-center">
+            <input type="date" class="form-control form-control-sm" id="new-po-date" required>
+        </div>
+        <span id="new-po-date-day" class="small text-muted"></span>
+    </div>
+    <div class="col-6">
+        <label for="new-po-end-date" class="form-label mb-1 text-primary">تاريخ الانتهاء المتوقع</label>
+        <div class="d-flex align-items-center">
+            <input type="date" class="form-control form-control-sm border-primary" id="new-po-end-date" required>
+        </div>
+    </div>
 </div>
 <div class="mb-2"><label for="new-po-line" class="form-label mb-1">خط الإنتاج</label><select class="form-select form-select-sm" id="new-po-line"><option value="PS100">PS100</option><option value="PS75">PS75</option><option value="PS75-1">PS75-1</option></select></div>
 <hr>
@@ -1654,7 +1662,7 @@ let html = `
 <h2>تقرير أمر الإنتاج: ${po.name}</h2>
 <p><strong>تاريخ الأمر:</strong> ${po.date} | <strong>الحالة:</strong> ${po.status}</p>
 </div>
-<div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-white border rounded small no-print"><div class="d-flex align-items-center gap-2"><strong>الاسم/الرقم:</strong><span contenteditable="true" data-field="name" class="p-1 border-bottom border-1 border-dashed" style="display: inline-block; min-width: 150px;">${po.name}</span></div><div class="d-flex align-items-center gap-2"><strong>التاريخ:</strong><input type="date" class="form-control form-control-sm d-inline-block" style="width: auto;" data-field="date" value="${po.date}"><span class="small text-muted ps-2">${formatDateWithArabicDay(po.date)}</span></div><div class="d-flex align-items-center gap-2"><strong>الحالة:</strong><select class="form-select form-select-sm d-inline-block" style="width: auto;" data-field="status"><option value="قيد الانتظار" ${po.status === 'قيد الانتظار' ? 'selected' : ''}>قيد الانتظار</option><option value="قيد التنفيذ" ${po.status === 'قيد التنفيذ' ? 'selected' : ''}>قيد التنفيذ</option><option value="مكتمل" ${po.status === 'مكتمل' ? 'selected' : ''}>مكتمل</option><option value="مؤرشف" ${po.status === 'مؤرشف' ? 'selected' : ''}>مؤرشف</option></select></div></div>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 p-2 bg-white border rounded small no-print"><div class="d-flex align-items-center gap-2"><strong>الاسم:</strong><span contenteditable="true" data-field="name" class="p-1 border-bottom border-1 border-dashed" style="display: inline-block; min-width: 100px;">${po.name}</span></div><div class="d-flex align-items-center gap-2"><strong>الخط:</strong><select class="form-select form-select-sm d-inline-block" style="width: auto;" data-field="productionLine"><option value="PS100" ${po.productionLine === 'PS100' ? 'selected' : ''}>PS-100</option><option value="PS75" ${po.productionLine === 'PS75' ? 'selected' : ''}>PS-75</option><option value="PS75-1" ${po.productionLine === 'PS75-1' ? 'selected' : ''}>PS-75-1</option></select></div><div class="d-flex align-items-center gap-2"><strong>البدء:</strong><input type="date" class="form-control form-control-sm d-inline-block" style="width: auto;" data-field="date" value="${po.date}"></div><div class="d-flex align-items-center gap-2 text-primary"><strong>الانتهاء:</strong><input type="date" class="form-control form-control-sm d-inline-block border-primary" style="width: auto;" data-field="endDate" value="${po.endDate || po.date}"></div><div class="d-flex align-items-center gap-2"><strong>الحالة:</strong><select class="form-select form-select-sm d-inline-block" style="width: auto;" data-field="status"><option value="قيد الانتظار" ${po.status === 'قيد الانتظار' ? 'selected' : ''}>قيد الانتظار</option><option value="قيد التنفيذ" ${po.status === 'قيد التنفيذ' ? 'selected' : ''}>قيد التنفيذ</option><option value="مكتمل" ${po.status === 'مكتمل' ? 'selected' : ''}>مكتمل</option><option value="مؤرشف" ${po.status === 'مؤرشف' ? 'selected' : ''}>مؤرشف</option></select></div></div>
 
 <div id="po-targets-wrapper">${targetProductsHtml}</div>
 
@@ -2450,6 +2458,7 @@ document.getElementById('save-new-po-btn').addEventListener('click', () => {
 const editId = $('#save-new-po-btn').attr('data-edit-po-id');
 const name = document.getElementById('new-po-name').value.trim();
 const date = document.getElementById('new-po-date').value;
+const endDate = document.getElementById('new-po-end-date').value || date; // إذا تركه فارغاً، يجعله نفس تاريخ البدء
 if (!name || !date) return alert("يرجى إدخال اسم وتاريخ لأمر الإنتاج.");
 
 const productionLine = document.getElementById('new-po-line').value;
@@ -2487,6 +2496,7 @@ if (editId) {
     if (poToUpdate) {
         poToUpdate.name = name;
         poToUpdate.date = date;
+        poToUpdate.endDate = endDate; // <--- تمت الإضافة هنا
         poToUpdate.productionLine = productionLine;
         poToUpdate.targetProducts = targetProducts;
         delete poToUpdate.targetType; 
@@ -2494,7 +2504,7 @@ if (editId) {
     }
 } else {
     const newPO = {
-        id: `po_${Date.now()}`, name, date, status: 'قيد الانتظار', productionLine,
+        id: `po_${Date.now()}`, name, date, endDate, status: 'قيد الانتظار', productionLine, // <--- تمت إضافة endDate هنا
         targetProducts,
         products: [], materialsList: [...state.rawMaterials],
         rawMaterials: { starting: {}, addedEntries: [], addedCollapsed: false, remaining: {}, startingLocked: false, mixCalculator: { hipsRatio: '25', msRatio: '1.5', note: '' }, adjustments: {} }
@@ -2621,7 +2631,7 @@ if (fullRenderNeeded) { renderApp(); }
 
 
 
-.on('change', 'input[data-field="date"], select[data-field="status"], input[data-field="day_date"], input[data-field="mixes_count"], input[data-field="added_entry_date"]', function() {
+.on('change', 'input[data-field="date"], input[data-field="endDate"], select[data-field="status"], select[data-field="productionLine"], input[data-field="day_date"], input[data-field="mixes_count"], input[data-field="added_entry_date"]', function() {
     const po = state.productionOrders.find(p => p.id === state.activePOId); if (!po) return;
     const poIndex = state.productionOrders.findIndex(p => p.id === po.id); if (poIndex < 0) return;
 
@@ -2650,7 +2660,22 @@ if (fullRenderNeeded) { renderApp(); }
             updates[`productionOrders/${poIndex}/date`] = value;
             el.next('span').text(formatDateWithArabicDay(value));
         }
-    } else if (field === 'status') {
+    } 
+else if (field === 'endDate') {
+    if (po.endDate !== value) {
+        historyManager.pushState();
+        po.endDate = value;
+        updates[`productionOrders/${poIndex}/endDate`] = value;
+    }
+}	
+else if (field === 'productionLine') {
+        if (po.productionLine !== value) {
+            historyManager.pushState();
+            po.productionLine = value;
+            updates[`productionOrders/${poIndex}/productionLine`] = value;
+        }
+    }	
+else if (field === 'status') {
         if (po.status !== value) {
 		historyManager.pushState();
             po.status = value;
@@ -3582,6 +3607,7 @@ if (typeof updateResult === 'function') {
 }
 
 $('#new-po-date').val(po.date);
+$('#new-po-end-date').val(po.endDate || po.date);
 $('#new-po-date-day').text(formatDateWithArabicDay(po.date).split('،')[0]);
 $('#new-po-line').val(po.productionLine);
 
