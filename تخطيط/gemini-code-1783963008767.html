@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APS Scheduler Pro</title>
+    
+    <!-- Bootstrap CSS (LTR Default) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Vis-Timeline CSS & JS -->
+    <script type="text/javascript" src="https://unpkg.com/vis-timeline@latest/standalone/umd/vis-timeline-graph2d.min.js"></script>
+    <link href="https://unpkg.com/vis-timeline@latest/styles/vis-timeline-graph2d.min.css" rel="stylesheet" type="text/css" />
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        :root { --bs-body-font-family: "Segoe UI", "Cairo", sans-serif; }
+        body {
+            background-color: #f4f6f9;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            margin: 0;
+            transition: background-color 0.3s;
+        }
+
+        .en-num, input[type="number"], input[type="date"], .vis-text, .vis-label, table {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+            direction: ltr !important;
+        }
+
+        /* --- Top Navigation --- */
+        #top-nav {
+            background-color: #2c3e50;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 100;
+            gap: 10px;
+        }
+        
+        .nav-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+        .custom-checkbox {
+            display: flex; align-items: center; background: rgba(255,255,255,0.1);
+            padding: 4px 10px; border-radius: 4px; font-size: 0.85rem; cursor: pointer;
+        }
+        .custom-checkbox input { margin-right: 6px; cursor: pointer; }
+
+        /* --- Timeline Container --- */
+        #visualization { flex-grow: 1; width: 100%; background-color: #fff; }
+
+        /* --- Default Vis-Timeline Customization --- */
+        .vis-timeline { border: none; }
+        .vis-time-axis .vis-text { color: #555; font-weight: 600; }
+        .vis-labelset .vis-label {
+            border-bottom: 1px solid #e0e0e0;
+            background-color: #f8f9fa;
+            display: flex; align-items: center;
+            padding: 0 15px; font-weight: bold; color: #333;
+        }
+
+        .vis-item {
+            border-radius: 4px; color: white; font-size: 0.85rem;
+            border: 1px solid rgba(0,0,0,0.2); box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            opacity: 0.85; transition: opacity 0.2s, box-shadow 0.2s; overflow: hidden; cursor: move;
+        }
+        .vis-item:hover { opacity: 1; box-shadow: 0 4px 8px rgba(0,0,0,0.4); z-index: 10 !important; }
+
+        .vis-item.crossing-today {
+            border: 2px solid #000000 !important; box-shadow: 0 0 10px rgba(0,0,0,0.4);
+            opacity: 1 !important; z-index: 8;
+        }
+
+        .vis-item .vis-item-content { padding: 6px 8px; width: 100%; white-space: normal; }
+
+        /* Status Colors (Default) */
+        .status-completed { background-color: rgba(40, 167, 69, 0.9) !important; border-color: #1e7e34 !important; }
+        .status-progress { background-color: rgba(220, 53, 69, 0.9) !important; border-color: #c82333 !important; }
+        .status-waiting { background-color: rgba(0, 123, 255, 0.9) !important; border-color: #0062cc !important; }
+        .status-archived { background-color: rgba(108, 117, 125, 0.9) !important; border-color: #545b62 !important; }
+
+        .vis-current-time { background-color: #dc3545; width: 2px; z-index: 10; pointer-events: none; }
+
+        /* ==========================================
+           Tags Styling (STRICTLY NO WRAP & SMALL FONT) 
+           ========================================== */
+        .po-data-container {
+            display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px;
+        }
+        
+.po-summary-text, .po-weight-text {
+    /* تم تصغير حجم الخط هنا */
+    font-size: 7px !important; 
+    line-height: 1.1;
+    padding: 0px 4px; /* تقليل الهوامش الداخلية ليصغر المربع المحيط بالخط */
+    border-radius: 4px; /* تقليل استدارة الزوايا لتناسب الحجم الجديد */
+    
+    /* CRITICAL: Never wrap text */
+    white-space: nowrap !important; 
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    max-width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+        .po-summary-text { background: rgba(0, 0, 0, 0.4); color: #fff; }
+        .po-weight-text { background: rgba(255, 193, 7, 0.9); color: #000; font-weight: 600; border-color: rgba(0, 0, 0, 0.1); }
+
+        /* ==========================================
+           Modern Theme (Matches Image _36db21)
+           ========================================== */
+        .modern-theme #visualization { background-color: #ffffff; }
+        .modern-theme .vis-labelset .vis-label {
+            background-color: #ffffff !important;
+            border-bottom: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;
+        }
+        
+        /* Inject RESOURCES header into the top-left empty corner */
+        .modern-theme .vis-panel.vis-top.vis-left { background-color: #f4f5f7; border-bottom: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; }
+        .modern-theme .vis-panel.vis-top.vis-left::after {
+            content: "RESOURCES"; position: absolute; top: 50%; left: 15px; transform: translateY(-50%);
+            font-weight: 700; color: #6c757d; font-size: 0.75rem; font-family: 'Inter', sans-serif;
+        }
+
+        /* Items in Modern Theme (Sharp edges, distinct flat colors) */
+        .modern-theme .vis-item {
+            border-radius: 2px !important; opacity: 1 !important; border: 1px solid transparent; box-shadow: none;
+        }
+        /* Blue selection border exactly like image */
+        .modern-theme .vis-item.vis-selected { border: 2px solid #0d6efd !important; padding: 0; }
+        .modern-theme .vis-item.vis-selected .vis-item-content { padding: 4px 6px; }
+
+        /* Map status to Modern Theme colors (Black and Red mainly as per image vibe) */
+        .modern-theme .status-waiting { background-color: #000000 !important; color: #fff; }
+        .modern-theme .status-progress { background-color: #ff0000 !important; color: #fff; }
+        .modern-theme .status-completed { background-color: #28a745 !important; color: #fff; }
+        
+        /* Modern Current Time Line + "NOW" badge */
+        .modern-theme .vis-current-time { background-color: #ff3b30; width: 2px; }
+        .modern-theme .vis-current-time::before {
+            content: "NOW"; position: absolute; top: 0; left: 2px;
+            background-color: #ff3b30; color: white; font-size: 10px; font-weight: bold;
+            padding: 2px 5px; border-radius: 2px; z-index: 100;
+        }
+
+        /* Modals... */
+        .modal-xl { max-width: 1100px; }
+        .modal-header { background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+        .modal-title { font-family: 'Inter', sans-serif; font-weight: 700; color: #0f172a; }
+        .section-title { font-family: 'Inter', sans-serif; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; color: #64748b; margin-bottom: 1rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; }
+        .table-summary { font-size: 0.85rem; }
+        .table-summary th { background-color: #f1f5f9; color: #475569; font-weight: 600; }
+        .summary-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; height: 100%; }
+		
+		
+		
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation -->
+    <nav id="top-nav">
+        <div class="d-flex align-items-center gap-3">
+            <h5 class="mb-0 fw-bold"><i class="fas fa-project-diagram me-2"></i> APS Scheduler</h5>
+            <input type="text" id="search-input" class="form-control form-control-sm en-num" placeholder="Search orders..." style="width: 180px;">
+        </div>
+        
+        <div class="nav-actions">
+            <!-- Toggles -->
+            <label class="custom-checkbox text-warning border border-warning" title="Match the layout to the uploaded image">
+                <input type="checkbox" id="toggle-theme"> <i class="fas fa-paint-brush me-1"></i> Modern Theme
+            </label>
+            <label class="custom-checkbox" title="Check to Pan, Uncheck to Zoom">
+                <input type="checkbox" id="toggle-scroll"> <i class="fas fa-arrows-alt-h me-1"></i> Scroll to Pan
+            </label>
+            <label class="custom-checkbox">
+                <input type="checkbox" id="toggle-boxes"> <i class="fas fa-box me-1"></i> Show Boxes Qty
+            </label>
+            <label class="custom-checkbox">
+                <input type="checkbox" id="toggle-weight"> <i class="fas fa-balance-scale me-1"></i> Show Weight
+            </label>
+
+            <div class="border-start border-secondary mx-1" style="height: 24px;"></div>
+
+            <!-- Undo / Redo -->
+            <button class="btn btn-sm btn-outline-light" onclick="undo()" id="btn-undo" disabled><i class="fas fa-undo"></i></button>
+            <button class="btn btn-sm btn-outline-light" onclick="redo()" id="btn-redo" disabled><i class="fas fa-redo"></i></button>
+
+            <!-- Actions -->
+            <button class="btn btn-sm btn-outline-light ms-2" onclick="focusCurrentTime()"><i class="fas fa-crosshairs"></i> Today</button>
+            <button class="btn btn-sm btn-warning" onclick="resetAndRefresh()" title="Refresh & Reset Zoom"><i class="fas fa-sync-alt"></i></button>
+        </div>
+    </nav>
+
+    <div id="visualization"></div>
+
+    <!-- PO Details Modal -->
+    <div class="modal fade" id="po-details-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title d-flex align-items-center gap-2">
+                        <i class="fas fa-clipboard-list text-primary"></i>
+                        <span id="modal-po-name">Order Details</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body bg-light">
+                    <!-- Modal Content... -->
+                    <div class="row g-3">
+                        <div class="col-lg-4">
+                            <div class="summary-card">
+                                <h6 class="section-title">Schedule Settings</h6>
+                                <form id="edit-po-form">
+                                    <input type="hidden" id="modal-po-id">
+                                    <input type="hidden" id="modal-po-index">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Start Date</label>
+                                        <input type="date" class="form-control form-control-sm en-num" id="modal-po-start" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Target End Date</label>
+                                        <input type="date" class="form-control form-control-sm en-num" id="modal-po-end" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Production Line</label>
+                                        <select class="form-select form-select-sm en-num" id="modal-po-line">
+                                            <option value="PS100">PS-100</option>
+                                            <option value="PS75">PS-75</option>
+                                            <option value="PS75-1">PS-75-1</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Status</label>
+                                        <select class="form-select form-select-sm" id="modal-po-status">
+                                            <option value="قيد الانتظار">Pending (قيد الانتظار)</option>
+                                            <option value="قيد التنفيذ">In Progress (قيد التنفيذ)</option>
+                                            <option value="مكتمل">Completed (مكتمل)</option>
+                                            <option value="مؤرشف">Archived (مؤرشف)</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Schedule Notes</label>
+                                        <textarea class="form-control form-control-sm" id="modal-po-notes" rows="3"></textarea>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-8">
+                            <div class="d-flex flex-column gap-3 h-100">
+                                <div class="summary-card flex-grow-1">
+                                    <h6 class="section-title">Grand Total Summary (Production)</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover table-bordered table-summary mb-0" id="grand-total-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Product Name</th>
+                                                    <th class="text-center">Boxes (Qty)</th>
+                                                    <th class="text-center">Pieces (Qty)</th>
+                                                    <th class="text-center">Weight (Kg)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="summary-card flex-grow-1">
+                                    <h6 class="section-title">Consumption Summary (Kg)</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover table-bordered table-summary mb-0" id="consumption-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Raw Material</th>
+                                                    <th class="text-center">Calculated Consumption</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary px-4" onclick="savePODetails()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // ==========================================
+        // 1. Firebase Config & Connection
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCaBkl26zD1jR7-P9MWv7d4uD0T0QXUrnQ",
+            authDomain: "appd-326a4.firebaseapp.com",
+            databaseURL: "https://appd-326a4-default-rtdb.firebaseio.com",
+            projectId: "appd-326a4",
+            storageBucket: "appd-326a4.firebasestorage.app",
+            messagingSenderId: "1001287247517",
+            appId: "1:1001287247517:web:4c6e2a3b1cbada09821674"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const dbRef = firebase.database().ref('data7777/productionOrders');
+
+        // ==========================================
+        // 2. State & History Management (Undo/Redo)
+        // ==========================================
+        let originalData = []; 
+        let historyStack = [];
+        let redoStack = [];
+
+        const updateHistoryButtons = () => {
+            document.getElementById('btn-undo').disabled = historyStack.length === 0;
+            document.getElementById('btn-redo').disabled = redoStack.length === 0;
+        };
+
+        const pushToHistory = (index, oldPoData, newStart, newEnd, newGroup) => {
+            historyStack.push({
+                index: index, oldDate: oldPoData.date, oldEndDate: oldPoData.endDate,
+                oldLine: oldPoData.productionLine, newDate: newStart, newEndDate: newEnd, newLine: newGroup
+            });
+            redoStack = []; updateHistoryButtons();
+        };
+
+        window.undo = () => {
+            if (historyStack.length === 0) return;
+            const action = historyStack.pop(); redoStack.push(action); updateHistoryButtons();
+            dbRef.update({ [`${action.index}/date`]: action.oldDate, [`${action.index}/endDate`]: action.oldEndDate, [`${action.index}/productionLine`]: action.oldLine });
+        };
+
+        window.redo = () => {
+            if (redoStack.length === 0) return;
+            const action = redoStack.pop(); historyStack.push(action); updateHistoryButtons();
+            dbRef.update({ [`${action.index}/date`]: action.newDate, [`${action.index}/endDate`]: action.newEndDate, [`${action.index}/productionLine`]: action.newLine });
+        };
+
+        // ==========================================
+        // 3. Data Processing Helpers
+        // ==========================================
+        const parseLocaleFloat = (numStr) => {
+            if (typeof numStr !== 'string') return parseFloat(numStr) || 0;
+            return parseFloat(numStr.trim().replace(/[,\٫]/g, '.')) || 0;
+        };
+        const formatNumber = (num) => parseFloat(Number(num).toFixed(2)).toString();
+        const normalizeProductName = (name) => (typeof name === 'string') ? name.toLowerCase().replace(/\s+/g, '') : '';
+        const formatGroupToLine = (group) => {
+            if (group === 'PS100') return 'PS100'; if (group === 'PS75') return 'PS75';
+            if (group === 'PS75-1') return 'PS75-1'; return 'PS100';
+        };
+
+        const formatLocalYYYYMMDD = (dateObj) => {
+            const d = new Date(dateObj);
+            const year = d.getFullYear(); const month = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        const calculateSummariesObj = (po) => {
+            const grandTotalSummary = {};
+            if (po.products && po.products.length > 0) {
+                po.products.forEach(dayEntry => {
+                    if (dayEntry && dayEntry.groups) {
+                        dayEntry.groups.forEach(group => {
+                            if (group && group.products) {
+                                group.products.forEach(p => {
+                                    if (!p) return;
+                                    const originalName = p.name ? p.name.trim() : '';
+                                    const normalizedName = normalizeProductName(originalName);
+                                    if (normalizedName && normalizedName !== normalizeProductName('منتج جديد')) {
+                                        if (!grandTotalSummary[normalizedName]) grandTotalSummary[normalizedName] = { qtyBox: 0, qtyPiece: 0, displayName: originalName, isWaste: false };
+                                        grandTotalSummary[normalizedName].qtyBox += parseLocaleFloat(p.qtyBox);
+                                        grandTotalSummary[normalizedName].qtyPiece += parseLocaleFloat(p.qtyPiece);
+                                    }
+                                    const dechetsValue = parseLocaleFloat(p.kg);
+                                    if (dechetsValue > 0) {
+                                        if (!grandTotalSummary['Déchets']) grandTotalSummary['Déchets'] = { kg: 0, displayName: 'Déchets', isWaste: true };
+                                        grandTotalSummary['Déchets'].kg += dechetsValue;
+                                    }
+                                    const spoiledMixValue = parseLocaleFloat(p.spoiledMix);
+                                    if (spoiledMixValue > 0) {
+                                        if (!grandTotalSummary['Fasda']) grandTotalSummary['Fasda'] = { kg: 0, displayName: 'Fasda', isWaste: true };
+                                        grandTotalSummary['Fasda'].kg += spoiledMixValue;
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+            return grandTotalSummary;
+        };
+
+        const generateModalSummaries = (po) => {
+            const grandTotalSummary = calculateSummariesObj(po);
+            let grandTotalHtml = '';
+            const summaryKeys = Object.keys(grandTotalSummary);
+            if (summaryKeys.length > 0) {
+                summaryKeys.forEach(key => {
+                    const item = grandTotalSummary[key];
+                    if (item.isWaste) grandTotalHtml += `<tr><td class="fw-bold text-danger">${item.displayName}</td><td class="text-center text-muted">-</td><td class="text-center text-muted">-</td><td class="text-center fw-bold en-num">${formatNumber(item.kg)}</td></tr>`;
+                    else if (item.qtyBox > 0 || item.qtyPiece > 0) grandTotalHtml += `<tr><td class="fw-bold">${item.displayName}</td><td class="text-center en-num">${formatNumber(item.qtyBox)}</td><td class="text-center en-num">${formatNumber(item.qtyPiece)}</td><td class="text-center text-muted">-</td></tr>`;
+                });
+            } else { grandTotalHtml = '<tr><td colspan="4" class="text-center text-muted py-3">No production data recorded.</td></tr>'; }
+            document.querySelector('#grand-total-table tbody').innerHTML = grandTotalHtml;
+
+            let consumptionHtml = '';
+            const materialsList = po.materialsList || ['GB', 'GC Y', 'HIPS korea', 'HIPS 330', 'SOD', 'PUR', 'N 7000', 'DOP', 'MS 1008', 'MS BALCK', 'K Fasda', 'MS Marron', 'Carton (2_9)'];
+            if (po.rawMaterials) {
+                const addedTotals = Object.fromEntries(materialsList.map(m => [m, 0]));
+                (po.rawMaterials.addedEntries || []).forEach(entry => { materialsList.forEach(m => { if(entry[m]) addedTotals[m] += parseLocaleFloat(entry[m]); }); });
+                const consumptionData = materialsList.map(m => {
+                    const starting = po.rawMaterials.starting ? parseLocaleFloat(po.rawMaterials.starting[m]) : 0;
+                    const remaining = po.rawMaterials.remaining ? parseLocaleFloat(po.rawMaterials.remaining[m]) : 0;
+                    const consumption = starting + addedTotals[m] - remaining;
+                    return { name: m, value: consumption > 0 ? consumption : 0 };
+                }).filter(item => item.value > 0);
+
+                const dopValue = parseLocaleFloat(po.rawMaterials.mixCalculator?.dop);
+                if (dopValue > 0) consumptionData.push({ name: 'DOP', value: dopValue });
+
+                if (consumptionData.length > 0) consumptionHtml = consumptionData.map(item => `<tr><td class="fw-bold">${item.name}</td><td class="text-center fw-bold text-primary en-num">${formatNumber(item.value)}</td></tr>`).join('');
+                else consumptionHtml = '<tr><td colspan="2" class="text-center text-muted py-3">No consumption calculated.</td></tr>';
+            } else { consumptionHtml = '<tr><td colspan="2" class="text-center text-muted py-3">No data available.</td></tr>'; }
+            document.querySelector('#consumption-table tbody').innerHTML = consumptionHtml;
+        };
+
+        // ==========================================
+        // 4. Vis-Timeline Setup & Rendering
+        // ==========================================
+        let timeline;
+        let items = new vis.DataSet();
+        
+        // المجموعة بهيكل يتناسب مع الشكل الكلاسيكي ومع الـ Modern Theme (الصورة المرفقة)
+        let groups = new vis.DataSet([
+            { id: 'PS100', content: '<div class="d-flex justify-content-between align-items-center w-100 pe-2" style="min-width: 140px;"><div><div class="fw-bold en-num" style="font-size:14px;color:#333;">PS-100</div><div style="font-size:11px;color:#777;">Extrusion</div></div><i class="fas fa-check-circle text-success fs-5"></i></div>' },
+            { id: 'PS75', content: '<div class="d-flex justify-content-between align-items-center w-100 pe-2" style="min-width: 140px;"><div><div class="fw-bold en-num" style="font-size:14px;color:#333;">PS-75</div><div style="font-size:11px;color:#777;">Extrusion</div></div><i class="fas fa-check-circle text-success fs-5"></i></div>' },
+            { id: 'PS75-1', content: '<div class="d-flex justify-content-between align-items-center w-100 pe-2" style="min-width: 140px;"><div><div class="fw-bold en-num" style="font-size:14px;color:#333;">PS-75-1</div><div style="font-size:11px;color:#777;">Extrusion</div></div><i class="fas fa-tools text-warning fs-5"></i></div>' }
+        ]);
+        
+        const detailsModal = new bootstrap.Modal(document.getElementById('po-details-modal'));
+
+        const initTimeline = () => {
+            const container = document.getElementById('visualization');
+            const options = {
+                stack: true, 
+                margin: { item: { horizontal: 0, vertical: 10 }, axis: 5 },
+                horizontalScroll: false,
+                snap: null,
+                editable: { add: true, updateTime: true, updateGroup: true, remove: false },
+                orientation: 'top',
+                start: new Date(new Date().setDate(new Date().getDate() - 3)), 
+                end: new Date(new Date().setDate(new Date().getDate() + 14)), 
+                zoomMin: 1000 * 60 * 60 * 24, 
+                format: { minorLabels: { day: 'D MMMM', month: 'MMMM YYYY' } },
+                
+                onAdd: function (item, callback) {
+                    const newLine = formatGroupToLine(item.group);
+                    const newPO = { id: 'PO_' + Date.now(), name: 'New Production Order', date: formatLocalYYYYMMDD(item.start), endDate: formatLocalYYYYMMDD(new Date(item.start.getTime() + (24*60*60*1000))), productionLine: newLine, status: 'قيد الانتظار' };
+                    const newIndex = originalData.length;
+                    dbRef.child(newIndex.toString()).set(newPO).then(() => { callback(item); }).catch(err => { alert("Error: " + err); callback(null); });
+                },
+
+                onMoving: function (item, callback) {
+                    const itemStart = item.start.getTime(); const itemEnd = item.end.getTime(); const duration = itemEnd - itemStart;
+                    const snapThreshold = 1000 * 60 * 60 * 12; let minDiff = snapThreshold; let closestTime = null; let snapType = null;
+                    const groupItems = items.get({ filter: function (i) { return i.group === item.group && i.id !== item.id; }});
+                    groupItems.forEach(target => {
+                        if (!target.start || !target.end) return;
+                        const tStart = target.start.getTime(); const tEnd = target.end.getTime();
+                        if (Math.abs(itemStart - tStart) < minDiff) { minDiff = Math.abs(itemStart - tStart); closestTime = tStart; snapType = 'start'; }
+                        if (Math.abs(itemStart - tEnd) < minDiff) { minDiff = Math.abs(itemStart - tEnd); closestTime = tEnd; snapType = 'start'; }
+                        if (Math.abs(itemEnd - tStart) < minDiff) { minDiff = Math.abs(itemEnd - tStart); closestTime = tStart; snapType = 'end'; }
+                        if (Math.abs(itemEnd - tEnd) < minDiff) { minDiff = Math.abs(itemEnd - tEnd); closestTime = tEnd; snapType = 'end'; }
+                    });
+                    if (snapType === 'start') { item.start = new Date(closestTime); item.end = new Date(closestTime + duration); } 
+                    else if (snapType === 'end') { item.end = new Date(closestTime); item.start = new Date(closestTime - duration); } 
+                    else {
+                        const d = new Date(item.start); if (d.getHours() >= 12) d.setDate(d.getDate() + 1);
+                        d.setHours(0, 0, 0, 0); item.start = new Date(d.getTime()); item.end = new Date(d.getTime() + duration);
+                    }
+                    callback(item);
+                },
+
+                onMove: function (item, callback) {
+                    const oldPoData = {...originalData[item.index]}; const newStart = formatLocalYYYYMMDD(item.start); const newEnd = formatLocalYYYYMMDD(item.end); const newLine = formatGroupToLine(item.group);
+                    pushToHistory(item.index, oldPoData, newStart, newEnd, newLine);
+                    dbRef.update({ [`${item.index}/date`]: newStart, [`${item.index}/endDate`]: newEnd, [`${item.index}/productionLine`]: newLine })
+                        .then(() => { callback(item); }).catch(err => { alert("Error: " + err); callback(null); });
+                }
+            };
+
+            timeline = new vis.Timeline(container, items, groups, options);
+            timeline.on('doubleClick', function (properties) { if (properties.item) openDetailsModal(properties.item); });
+        };
+
+        // ==========================================
+        // 5. Render Timeline Items
+        // ==========================================
+        const renderTimelineItems = () => {
+            const showBoxes = document.getElementById('toggle-boxes').checked;
+            const showWeight = document.getElementById('toggle-weight').checked;
+            const timelineItems = [];
+            const nowTime = new Date().getTime(); 
+
+            originalData.forEach((po, index) => {
+                if (!po) return;
+
+                let start = po.date ? new Date(po.date) : new Date();
+                let end = po.endDate ? new Date(po.endDate) : new Date(start.getTime() + (24 * 60 * 60 * 1000));
+                
+                let className = 'status-waiting';
+                if (po.status === 'مكتمل') className = 'status-completed';
+                else if (po.status === 'قيد التنفيذ') className = 'status-progress';
+                else if (po.status === 'مؤرشف') className = 'status-archived';
+
+                if (start.getTime() <= nowTime && end.getTime() >= nowTime) { className += ' crossing-today'; }
+
+                let groupId = po.productionLine ? po.productionLine.replace('-', '') : 'PS100';
+                if (po.productionLine === 'PS75-1') groupId = 'PS75-1';
+
+                let contentHtml = `<div class="fw-bold en-num">${po.name}</div>`;
+                
+                if (showBoxes || showWeight) {
+                    const summaries = calculateSummariesObj(po);
+                    let tagsHtml = '';
+                    Object.keys(summaries).forEach(k => {
+                        const v = summaries[k];
+                        // الصرامة هنا في استخدام style="width: max-content; white-space: nowrap;" لمنع الانقسام إطلاقاً
+if (!v.isWaste && showBoxes && (v.qtyBox > 0 || v.qtyPiece > 0)) {
+    tagsHtml += `<div class="po-summary-text en-num" style="width: max-content; white-space: nowrap; font-size: 7px !important; padding: 1px 3px !important; line-height: 1.1;">${v.displayName}: ${formatNumber(v.qtyBox)} (${formatNumber(v.qtyPiece)})</div>`;
+}
+if (v.isWaste && showWeight && v.kg > 0) {
+    tagsHtml += `<div class="po-weight-text en-num" style="width: max-content; white-space: nowrap; font-size: 7px !important; padding: 1px 3px !important; line-height: 1.1;"><i class="fas fa-weight-hanging"></i> ${v.displayName}: ${formatNumber(v.kg)} Kg</div>`;
+}
+                    });
+                    
+                    if (tagsHtml) { contentHtml += `<div class="po-data-container">${tagsHtml}</div>`; }
+                }
+
+                timelineItems.push({
+                    id: po.id || `temp_${index}`, index: index, group: groupId, content: contentHtml,
+                    start: start, end: end, className: className, title: `Status: ${po.status}\n(Double click to view details)` 
+                });
+            });
+
+            items.clear(); items.add(timelineItems); applySearchFilter();
+        };
+
+        const fetchDataFromFirebase = () => {
+            dbRef.once('value', (snapshot) => { originalData = snapshot.val() || []; renderTimelineItems(); });
+        };
+
+        dbRef.on('value', (snapshot) => { originalData = snapshot.val() || []; renderTimelineItems(); });
+
+        // ==========================================
+        // 6. UI Controls & Interactions
+        // ==========================================
+        
+        // Theme Toggle
+        document.getElementById('toggle-theme').addEventListener('change', function(e) {
+            if(e.target.checked) {
+                document.body.classList.add('modern-theme');
+            } else {
+                document.body.classList.remove('modern-theme');
+            }
+            // Trigger redraw to fix headers
+            timeline.redraw();
+        });
+
+        // Scroll Toggle
+        document.getElementById('toggle-scroll').addEventListener('change', function(e) {
+            timeline.setOptions({ horizontalScroll: e.target.checked, zoomKey: e.target.checked ? 'ctrlKey' : '' });
+        });
+
+        document.getElementById('toggle-boxes').addEventListener('change', renderTimelineItems);
+        document.getElementById('toggle-weight').addEventListener('change', renderTimelineItems);
+
+        // Reset and Refresh Zoom
+        window.resetAndRefresh = () => {
+            fetchDataFromFirebase();
+            const start = new Date(new Date().setDate(new Date().getDate() - 3));
+            const end = new Date(new Date().setDate(new Date().getDate() + 14));
+            timeline.setWindow(start, end);
+        };
+
+        const openDetailsModal = (itemId) => {
+            const item = items.get(itemId); const poData = originalData[item.index];
+            document.getElementById('modal-po-name').textContent = poData.name;
+            document.getElementById('modal-po-id').value = poData.id; document.getElementById('modal-po-index').value = item.index;
+            document.getElementById('modal-po-start').value = item.start ? formatLocalYYYYMMDD(item.start) : '';
+            document.getElementById('modal-po-end').value = item.end ? formatLocalYYYYMMDD(item.end) : '';
+            document.getElementById('modal-po-status').value = poData.status || 'قيد الانتظار';
+            document.getElementById('modal-po-line').value = formatGroupToLine(item.group);
+            document.getElementById('modal-po-notes').value = poData.scheduleNotes || '';
+            generateModalSummaries(poData); detailsModal.show();
+        };
+
+        window.savePODetails = () => {
+            const index = document.getElementById('modal-po-index').value; const start = document.getElementById('modal-po-start').value;
+            const end = document.getElementById('modal-po-end').value; const status = document.getElementById('modal-po-status').value;
+            const line = document.getElementById('modal-po-line').value; const notes = document.getElementById('modal-po-notes').value;
+            if (new Date(end) <= new Date(start)) { alert("End Date must be after the Start Date!"); return; }
+            dbRef.update({ [`${index}/date`]: start, [`${index}/endDate`]: end, [`${index}/status`]: status, [`${index}/productionLine`]: line, [`${index}/scheduleNotes`]: notes })
+                .then(() => { detailsModal.hide(); }).catch(err => alert("Save Error: " + err));
+        };
+
+        const focusCurrentTime = () => timeline.moveTo(new Date());
+
+        const applySearchFilter = () => {
+            const term = document.getElementById('search-input').value.toLowerCase(); const allItems = items.get();
+            const filtered = allItems.map(item => {
+                const po = originalData[item.index];
+                if (po.name.toLowerCase().includes(term)) { item.className = item.className.replace(' opacity-25', ''); } 
+                else { if (!item.className.includes('opacity-25')) item.className += ' opacity-25'; }
+                return item;
+            });
+            items.update(filtered);
+        };
+        document.getElementById('search-input').addEventListener('input', applySearchFilter);
+
+        setInterval(renderTimelineItems, 60000);
+
+        document.addEventListener('DOMContentLoaded', () => { initTimeline(); fetchDataFromFirebase(); });
+   
+
+   </script>
+</body>
+</html>

@@ -969,13 +969,45 @@ console.log("Data snapshot received from Firebase. Syncing...");
 const loadedState = snapshot.val();
 
 if (loadedState) {
-state.productionOrders = loadedState.productionOrders || [];
+// 1. إصلاح وتحويل مصفوفة أوامر الإنتاج وتنظيفها من المفاتيح التالفة (مثل undefined)
+let rawPOs = loadedState.productionOrders || [];
+let cleanPOs = [];
+
+if (Array.isArray(rawPOs)) {
+    cleanPOs = rawPOs.filter(po => po && po.name && po.id);
+} else if (typeof rawPOs === 'object') {
+    Object.keys(rawPOs).forEach(key => {
+        if (key !== 'undefined' && rawPOs[key] && rawPOs[key].name) {
+            cleanPOs.push(rawPOs[key]);
+        }
+    });
+}
+state.productionOrders = cleanPOs;
+
 state.sidebarCollapsed = loadedState.sidebarCollapsed || { 'قيد التنفيذ': false, 'قيد الانتظار': false, 'مكتمل': false, 'مؤرشف': true };
 if (loadedState.rawMaterials) { state.rawMaterials = loadedState.rawMaterials; }
-state.inventory = loadedState.inventory || { stockAdditions: [] };
+
+// 2. إصلاح وتحويل مصفوفة المخزون
+let rawInventory = loadedState.inventory || { stockAdditions: [] };
+if (rawInventory.stockAdditions && !Array.isArray(rawInventory.stockAdditions)) {
+    rawInventory.stockAdditions = Object.values(rawInventory.stockAdditions).filter(item => item);
+}
+state.inventory = rawInventory;
 
 state.productionOrders.forEach(po => {
 if (!po) return;
+
+// 3. إصلاح وتحويل المصفوفات الداخلية داخل كل أمر إنتاج (الأيام، الإضافات، والمنتجات المستهدفة)
+if (po.products && !Array.isArray(po.products)) {
+    po.products = Object.values(po.products).filter(p => p);
+}
+if (po.rawMaterials && po.rawMaterials.addedEntries && !Array.isArray(po.rawMaterials.addedEntries)) {
+    po.rawMaterials.addedEntries = Object.values(po.rawMaterials.addedEntries).filter(e => e);
+}
+if (po.targetProducts && !Array.isArray(po.targetProducts)) {
+    po.targetProducts = Object.values(po.targetProducts).filter(t => t);
+}
+
 if (!po.hasOwnProperty('id')) po.id = `po_${Date.now()}_${Math.random()}`;
 if (!po.hasOwnProperty('productionLine')) po.productionLine = '';
 if (!po.hasOwnProperty('targetProducts')) po.targetProducts = [];

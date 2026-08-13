@@ -663,8 +663,8 @@ main#main-content {
     </div>
 
     <!-- --- NEW ---: Modal for Import Item Details -->
-    <div class="modal fade" id="import-details-modal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
+<div class="modal fade" id="import-details-modal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <form id="import-form">
                     <div class="modal-header">
@@ -1877,20 +1877,46 @@ return structuredTerms.every(term => {
         
         // ✨ --- المنطق الجديد للبحث (AND/OR) يبدأ هنا --- ✨
         // تم استبدال منطق التوافيق القديم بهذا المنطق الأكثر وضوحًا
+        // ✨ --- المنطق الجديد للبحث (AND/OR/EXACT) يبدأ هنا --- ✨
+        // ✨ --- المنطق الجديد للبحث (AND/OR/EXACT) يبدأ هنا --- ✨
         if (fuzzyTerms.length > 0) {
-            if (this.state.searchLogic === 'AND') {
-                // منطق "AND": يجب أن يتطابق العنصر مع *كل* كلمات البحث
-                // نبدأ بالبيانات المفلترة ونقوم بتصفيتها مع كل كلمة بحث جديدة
+            
+            // ======= ✨ 1. منطق التطابق التام المستقل (Exact Match as OR) =======
+            if (this.state.searchLogic === 'EXACT') {
+                
+                // تجهيز قائمة بقواعد البحث (Regex) لكل كلمة على حدة مسبقاً (لزيادة السرعة)
+                const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const exactRegexes = fuzzyTerms.map(term => 
+                    new RegExp('(^|[^a-zA-Z0-9\u0621-\u064A])' + escapeRegExp(term) + '([^a-zA-Z0-9\u0621-\u064A]|$)', 'i')
+                );
+                
+                filteredData = filteredData.filter(item => {
+                    let searchableText = '';
+                    // تجميع كل النصوص القابلة للبحث في سلسلة نصية واحدة لفحصها
+                    if (currentView === 'import') {
+                        searchableText = [item.Name, item.Category, item['Location (press Enter to add)'], item['Foil Components'], item['Sample Name']].join(' ');
+                    } else if (currentView === 'foil') {
+                        searchableText = [item.name, item.reference].join(' ');
+                    } else {
+                        const loc = Array.isArray(item.location) ? item.location.join(' ') : (item.location || '');
+                        searchableText = [item.name, item.category, loc, item.componentNamesStr].join(' ');
+                    }
+                    
+                    // ✨ السطر السحري: نتحقق مما إذا كانت "أي" كلمة من كلمات البحث تتطابق تطابقاً تاماً (some)
+                    return exactRegexes.some(regex => regex.test(searchableText));
+                });
+            } 
+            // ======= 2. منطق التطابق الشامل (AND) =======
+            else if (this.state.searchLogic === 'AND') {
                 fuzzyTerms.forEach(term => {
                     const tempFuse = new Fuse(filteredData, fuseOptions);
                     filteredData = tempFuse.search(term).map(result => result.item);
                 });
-
-            } else { // منطق "OR"
-                // منطق "OR": يكفي أن يتطابق العنصر مع *أي* كلمة بحث
-                // نبحث عن كل كلمة على حدة في البيانات الأصلية المفلترة ونجمع النتائج الفريدة
+            } 
+            // ======= 3. منطق التطابق الجزئي (OR) =======
+            else { 
                 const resultSet = new Set();
-                const initialDataForFuzzySearch = [...filteredData]; // نسخة من البيانات بعد الفلترة المخصصة
+                const initialDataForFuzzySearch = [...filteredData]; 
 
                 fuzzyTerms.forEach(term => {
                     const tempFuse = new Fuse(initialDataForFuzzySearch, fuseOptions);
@@ -1901,6 +1927,8 @@ return structuredTerms.every(term => {
                 filteredData = Array.from(resultSet);
             }
         }
+        // --- نهاية المنطق الجديد ---
+        // --- نهاية المنطق الجديد ---
         // --- نهاية المنطق الجديد ---
         
         if (currentView !== 'foil' && currentView !== 'import') {
@@ -2245,52 +2273,95 @@ if (imageFile) {
             },
 
 renderSearchControls(view) {
-            const searchContainer = SampleManagerApp.elements.searchContainer;
-            // ✨ الحصول على الحاوية الجديدة
-            const logicContainer = document.getElementById('search-logic-container'); 
+                const searchContainer = SampleManagerApp.elements.searchContainer;
+                const logicContainer = document.getElementById('search-logic-container'); 
 
-            if (view === 'reports' || (view !== 'foil' && SampleManagerApp.state.showArchived)) {
-                searchContainer.innerHTML = '';
-                logicContainer.innerHTML = ''; // ✨ إفراغ الحاوية وإخفاؤها
-                return;
-            }
-            
-            // ✨ تم حذف أزرار البحث من هذا القالب
-            searchContainer.innerHTML = `
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-search"></i></span>
-                    <input type="search" id="${view}-search-input" class="form-control" placeholder="Search..." autocomplete="off">
-                    <span id="item-count-display" class="input-group-text bg-light text-dark"></span>
-                </div>
-                <div id="advanced-search-dropdown" class="advanced-search-dropdown" style="display: none;"></div>
-            `;
-            
-            // ✨ إضافة الأزرار برمجياً إلى الحاوية الجديدة
-            logicContainer.innerHTML = `
-                <button type="button" data-logic="AND" class="btn btn-outline-secondary ${SampleManagerApp.state.searchLogic === 'AND' ? 'active' : ''}" title="Match ALL terms">All</button>
-                <button type="button" data-logic="OR" class="btn btn-outline-secondary ${SampleManagerApp.state.searchLogic === 'OR' ? 'active' : ''}" title="Match ANY term">Any</button>
-            `;
-
-            // ربط الأحداث مع العناصر التي تم إنشاؤها للتو
-            const input = document.getElementById(`${view}-search-input`);
-            input.addEventListener('focus', () => this.showAdvancedSearch(view));
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && input.value.trim()) {
-                    e.preventDefault();
-                    SampleManagerApp.Search.addTerm(view, input.value.trim());
+                if (view === 'reports' || (view !== 'foil' && SampleManagerApp.state.showArchived)) {
+                    searchContainer.innerHTML = '';
+                    logicContainer.innerHTML = ''; 
+                    return;
                 }
-            });
-
-            const dropdown = document.getElementById('advanced-search-dropdown');
-            dropdown.addEventListener('click', (e) => {
-                const item = e.target.closest('.search-dropdown-item');
-                if (item && item.dataset.filterKey && item.dataset.filterValue) {
-                    const { filterKey, filterValue } = item.dataset;
-                    const term = `${filterKey}:"${filterValue}"`;
-                    SampleManagerApp.Search.addTerm(view, term);
+                
+                // ====== التحقق مما إذا كان مربع البحث موجوداً بالفعل ======
+                const existingInput = document.getElementById(`${view}-search-input`);
+                if (existingInput) {
+                    if (logicContainer) {
+                        const andBtn = logicContainer.querySelector('[data-logic="AND"]');
+                        const orBtn = logicContainer.querySelector('[data-logic="OR"]');
+                        const exactBtn = logicContainer.querySelector('[data-logic="EXACT"]'); // ✨ زر المطابقة التامة
+                        
+                        if(andBtn) andBtn.className = `btn btn-outline-secondary ${SampleManagerApp.state.searchLogic === 'AND' ? 'active' : ''}`;
+                        if(orBtn) orBtn.className = `btn btn-outline-secondary ${SampleManagerApp.state.searchLogic === 'OR' ? 'active' : ''}`;
+                        if(exactBtn) exactBtn.className = `btn btn-outline-secondary ${SampleManagerApp.state.searchLogic === 'EXACT' ? 'active' : ''}`;
+                    }
+                    return;
                 }
-            });
-        },
+                // ==========================================================
+
+                searchContainer.innerHTML = `
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="search" id="${view}-search-input" class="form-control" placeholder="Search..." autocomplete="off">
+                        <span id="item-count-display" class="input-group-text bg-light text-dark"></span>
+                    </div>
+                    <div id="advanced-search-dropdown" class="advanced-search-dropdown" style="display: none;"></div>
+                `;
+                
+                // ✨ إضافة الزر الجديد EXACT في الواجهة
+                logicContainer.innerHTML = `
+                    <button type="button" data-logic="AND" class="btn btn-outline-secondary ${SampleManagerApp.state.searchLogic === 'AND' ? 'active' : ''}" title="Match ALL terms">All</button>
+                    <button type="button" data-logic="OR" class="btn btn-outline-secondary ${SampleManagerApp.state.searchLogic === 'OR' ? 'active' : ''}" title="Match ANY term">Any</button>
+                    <button type="button" data-logic="EXACT" class="btn btn-outline-secondary ${SampleManagerApp.state.searchLogic === 'EXACT' ? 'active' : ''}" title="Exact Word Match">Exact</button>
+                `;
+
+                // ربط الأحداث مع العناصر التي تم إنشاؤها
+                const input = document.getElementById(`${view}-search-input`);
+                input.addEventListener('focus', () => this.showAdvancedSearch(view));
+                
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && input.value.trim()) {
+                        e.preventDefault();
+                        SampleManagerApp.Search.addTerm(view, input.value.trim());
+                    }
+                });
+
+                // التعرف على اللصق المتعدد الأسطر (كما فعلنا سابقاً)
+                input.addEventListener('paste', (e) => {
+                    const pasteData = (e.clipboardData || window.clipboardData).getData('text');
+                    if (pasteData.includes('\n')) {
+                        e.preventDefault(); 
+                        const newTerms = pasteData.split(/\r?\n/).map(t => t.trim()).filter(Boolean);
+                        if (newTerms.length > 0) {
+                            const currentTerms = SampleManagerApp.state.searchTerms[view];
+                            let isChanged = false;
+                            newTerms.forEach(term => {
+                                if (!currentTerms.includes(term)) {
+                                    currentTerms.push(term);
+                                    isChanged = true;
+                                }
+                            });
+                            if (isChanged) {
+                                SampleManagerApp.state.importRenderLimit = 30;
+                                SampleManagerApp.state.isAppendingImport = false;
+                                SampleManagerApp.UI.renderSearchTags(view);
+                                SampleManagerApp.handleSearch();
+                            }
+                            input.value = '';
+                            SampleManagerApp.UI.hideAdvancedSearch();
+                        }
+                    }
+                });
+
+                const dropdown = document.getElementById('advanced-search-dropdown');
+                dropdown.addEventListener('click', (e) => {
+                    const item = e.target.closest('.search-dropdown-item');
+                    if (item && item.dataset.filterKey && item.dataset.filterValue) {
+                        const { filterKey, filterValue } = item.dataset;
+                        const term = `${filterKey}:"${filterValue}"`;
+                        SampleManagerApp.Search.addTerm(view, term);
+                    }
+                });
+            },
             showAdvancedSearch(view) {
                 const dropdown = document.getElementById('advanced-search-dropdown');
                 if (!dropdown) return;
@@ -2558,6 +2629,7 @@ const statuses = ['Available', 'Not Available', 'Unknown']; // إضافة Unknow
 
             // --- NEW ---: Create a Kanban card for the import view
             // --- NEW ---: Create a Kanban card for the import view
+            // --- MODIFIED ---: Create a Kanban card for the import view (Matches Main Kanban)
             createImportKanbanCard(item) {
                 const isConfirmed = SampleManagerApp.state.samples.some(s => s.originalId === item.ID);
                 const statusBadge = isConfirmed 
@@ -2566,30 +2638,37 @@ const statuses = ['Available', 'Not Available', 'Unknown']; // إضافة Unknow
                 const placeholderText = encodeURIComponent((item['Sample Name'] || '?')[0]);
                 const placeholderImg = `https://placehold.co/80x80/6c757d/ffffff?text=${placeholderText}`;
 
-                // ✨ تجهيز شكل Category (نص أزرق قابل للنقر)
+                // تجهيز شكل Category (نص أزرق قابل للنقر)
                 const categoryDisplay = (item.Category && item.Category !== '-' && item.Category !== 'Uncategorized') 
-                    ? `<span class="import-category-link">${item.Category}</span>` 
+                    ? `<a href="#" class="import-category-link" data-category="${item.Category}">${item.Category}</a>` 
                     : (item.Category || '-');
 
-                // ✨ تجهيز شكل Foil (على شكل تاق ملون)
-                const foilDisplay = (item['Foil Components'] && item['Foil Components'] !== '-' && item['Foil Components'] !== '****') 
-                    ? `<span class="import-foil-tag">${item['Foil Components']}</span>` 
-                    : (item['Foil Components'] || '-');
+                // ✨ استخراج الفويل وعرضه بنفس شكل Tags في كانبان الأساسي
+                let componentNamesHtml = '<span style="font-size: 0.9em; color: #888;">No components</span>';
+                const rawFoils = item['Foil Components'];
+                if (rawFoils && rawFoils !== '-' && rawFoils !== '****') {
+                    // تقسيم النص بناءً على الفاصلة أو علامة الزائد
+                    const foilNames = rawFoils.split(/[,+]/).map(f => f.trim()).filter(Boolean);
+                    componentNamesHtml = foilNames.map(name => `<span class="component-tag import-foil-tag">${name}</span>`).join('');
+                }
 
+                // ✨ أضفنا كلاس 'kanban-card' لتطبيق نفس التأثيرات البصرية تماماً
                 return `
-                <div class="import-kanban-card ${isConfirmed ? 'opacity-50' : ''}" data-id="${item.ID}">
+                <div class="kanban-card import-kanban-card ${isConfirmed ? 'opacity-50' : ''}" data-id="${item.ID}">
                     <div class="kanban-card-header">
                         <div>
-                            <div class="kanban-card-title">${item['Sample Name']}</div>
+                            <div class="d-flex align-items-center justify-content-start">
+                                <div class="kanban-card-title me-2">${item['Sample Name']}</div>
+                            </div>
                         </div>
                         <div class="kanban-image-container">
                              <img src="${placeholderImg}" alt="Sample Image">
                         </div>
                     </div>
                     <div class="kanban-card-body">
-                        <p class="mb-1"><strong>Category:</strong> ${categoryDisplay}</p>
-                        <p class="mb-1"><strong>Location:</strong> ${item['Location (press Enter to add)'] || '-'}</p>
-                        <p class="mb-1"><strong>Foil:</strong> ${foilDisplay}</p>
+                        <p class="mb-1"><strong><i class="bi bi-tag-fill me-1"></i>Category:</strong> ${categoryDisplay}</p>
+                        <p class="mb-1"><strong><i class="bi bi-geo-alt-fill me-1"></i>Location:</strong> ${item['Location (press Enter to add)'] || '-'}</p>
+                        <div class="component-tags-container mt-2">${componentNamesHtml}</div>
                     </div>
                     <div class="kanban-card-footer">
                         ${statusBadge}
@@ -2892,42 +2971,199 @@ SampleManagerApp.state.locationSelect.setValue(sample.location || []);
             },
 
             // --- NEW ---: Open a modal to confirm import and add an image
+            // --- MODIFIED ---: Open a modal to confirm import (Matches Details Modal)
+            // --- MODIFIED ---: Open a modal to confirm import (Matches Details Modal 100%)
+            // --- MODIFIED ---: Open a modal to confirm import (Matches Kanban Details Modal 100%)
             openImportDetailsModal(itemId) {
                 const sampleToImport = SampleManagerApp.state.googleSheetSamples.find(s => s.ID === itemId);
                 if (!sampleToImport) return;
 
-                const form = document.getElementById('import-form');
-                form.reset();
-
-                document.getElementById('import-item-id').value = itemId;
-                document.getElementById('import-name').textContent = sampleToImport['Sample Name'];
-                document.getElementById('import-category').textContent = sampleToImport.Category;
-                document.getElementById('import-location').textContent = sampleToImport['Location (press Enter to add)'];
-                document.getElementById('import-foil').textContent = sampleToImport['Foil Components'];
-                
-                // Reset image preview
-                const imgPreview = document.getElementById('import-image-preview');
-                imgPreview.src = '';
-                imgPreview.classList.add('d-none');
-                document.getElementById('import-image-drop-zone').querySelector('p').textContent = 'Drag & drop an image here, or click to select.';
-                
-                // This is a new listener each time, so we clone to remove old ones
+                // 1. استنساخ الفورم لإزالة أي أحداث (Event Listeners) قديمة
                 const oldForm = document.getElementById('import-form');
-                const newForm = oldForm.cloneNode(true);
+                const newForm = oldForm.cloneNode(false);
                 oldForm.parentNode.replaceChild(newForm, oldForm);
 
+                // 2. ✨ البحث عن مكونات الفويل في قاعدة البيانات لإنشاء الأشرطة المرئية
+                let componentsBarsHtml = '';
+                const rawFoils = sampleToImport['Foil Components'];
+                let matchedComponentIds = []; 
+                let uniqueMatchedNames = new Set(); // نستخدم Set لمنع التكرار وتجميع الفويلات بنفس طريقة الكانبان
+
+                if (rawFoils && rawFoils !== '-' && rawFoils !== '****') {
+                    // تقسيم الأسماء بناءً على الفاصلة أو علامة الزائد
+                    const foilNames = rawFoils.split(/[,+]/).map(f => f.trim()).filter(Boolean);
+                    
+                    foilNames.forEach(name => {
+                        // البحث عن كل الفويلات التي تشارك هذا الاسم في قاعدة البيانات
+                        let matchingFoils = SampleManagerApp.state.foils.filter(f => f.name.trim().toLowerCase() === name.toLowerCase());
+                        
+                        // إن لم يجد مطابقة تامة، يبحث بمطابقة تقريبية
+                        if (matchingFoils.length === 0) {
+                            matchingFoils = SampleManagerApp.state.foils.filter(f => f.name.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(f.name.toLowerCase()));
+                        }
+
+                        if (matchingFoils.length > 0) {
+                            matchingFoils.forEach(foil => {
+                                if (!matchedComponentIds.includes(foil.docId)) {
+                                    matchedComponentIds.push(foil.docId); // حفظ الـ IDs لاستيرادها
+                                }
+                                uniqueMatchedNames.add(foil.name); // حفظ الاسم الأصلي من قاعدة البيانات للتجميع
+                            });
+                        }
+                    });
+                }
+
+                // ✨ تطبيق نفس منطق عرض التفاصيل الأساسية (renderDetailsModal) بنسبة 100%
+                if (uniqueMatchedNames.size > 0) {
+                    const uniqueNames = Array.from(uniqueMatchedNames);
+                    const lightColors = ['rgba(232, 245, 253, 0.7)', 'rgba(237, 247, 237, 0.7)', 'rgba(250, 240, 255, 0.7)', 'rgba(255, 248, 225, 0.7)', 'rgba(255, 235, 238, 0.7)'];
+                    let colorIndex = 0;
+
+                    uniqueNames.forEach(name => {
+                        // نجلب جميع الفويلات المرتبطة بهذا الاسم لعرضها معاً
+                        const allMatchingFoils = SampleManagerApp.state.foils.filter(f => f.name === name);
+                        const backgroundColor = lightColors[(colorIndex++) % lightColors.length];
+                        const representativeFoil = allMatchingFoils[0];
+                        const placeholderImg = `https://placehold.co/40x40/6c757d/ffffff?text=${encodeURIComponent(representativeFoil.name[0] || '?')}`;
+                        const groupImageHtml = `<img src="${representativeFoil.imageUrl || placeholderImg}" class="component-bar-image me-2" onerror="this.onerror=null;this.src='${placeholderImg}';">`;
+
+                        let barsHtml = '';
+
+                        // إذا كان هناك أكثر من فويل بنفس الاسم (مثل حالة MM014 في الصورة المرفقة)
+                        if (allMatchingFoils.length > 1) {
+                            allMatchingFoils.forEach(foil => {
+                                barsHtml += `
+                                    <div class="mt-2">
+                                        <h6 class="component-bar-title mb-1"><small class="text-muted">Ref: ${foil.reference || 'N/A'}</small></h6>
+                                        ${this.createVisualBar(foil)}
+                                    </div>`;
+                            });
+                            
+                            componentsBarsHtml += `
+                                <div class="mb-3 p-2" style="border-left: 3px solid rgb(var(--bs-danger-rgb)); background-color: ${backgroundColor}; border-radius: 5px;">
+                                    <div class="d-flex align-items-center">
+                                        ${groupImageHtml}
+                                        <h6 class="component-bar-title mb-0 flex-grow-1">${representativeFoil.name} <span class="badge bg-secondary">${allMatchingFoils.length}</span></h6>
+                                    </div>
+                                    ${barsHtml}
+                                </div>`;
+                        } 
+                        // إذا كان فويل واحد فقط (مثل حالة WXGL012-2 في الصورة المرفقة)
+                        else {
+                            const foil = allMatchingFoils[0];
+                            if (foil) {
+                                barsHtml = `<div class="mt-2">${this.createVisualBar(foil)}</div>`;
+                                componentsBarsHtml += `
+                                <div class="component-bar-container p-2 mb-2" style="background-color: ${backgroundColor}; border-radius: 5px;">
+                                    <div class="d-flex align-items-center">
+                                        ${groupImageHtml}
+                                        <h6 class="component-bar-title mb-0 flex-grow-1">${foil.name} <small class="text-muted">(Ref: ${foil.reference || 'N/A'})</small></h6>
+                                    </div>
+                                    ${barsHtml}
+                                </div>`;
+                            }
+                        }
+                    });
+                } else if (rawFoils && rawFoils !== '-' && rawFoils !== '****') {
+                    // في حال كان اسم الفويل مكتوباً في جوجل شيت ولكنه غير موجود إطلاقاً في قاعدة بياناتك
+                    componentsBarsHtml = `<div class="alert alert-warning py-2 px-3 mt-2 small"><i class="bi bi-exclamation-triangle me-2"></i> No matching foils found in your database for: <strong>${rawFoils}</strong></div>`;
+                } else {
+                    componentsBarsHtml = '<div class="text-muted small mt-2">No visual components available.</div>';
+                }
+
+                // 3. ✨ بناء HTML للنافذة لتبدو تماماً مثل نافذة التفاصيل
+                newForm.innerHTML = `
+                    <div class="modal-header">
+                        <h5 class="modal-title">Import Sample: ${sampleToImport['Sample Name']}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="import-item-id" value="${itemId}">
+                        <div class="row">
+                            <div class="col-md-5 mb-3 mb-md-0 text-center">
+                                <div id="import-image-drop-zone" class="mb-3 p-4 border rounded" style="cursor: pointer; border: 2px dashed #ccc; transition: all 0.2s;">
+                                    <img src="" id="import-image-preview" class="img-fluid rounded d-none mb-2 shadow-sm" style="max-height: 200px;">
+                                    <div id="import-drop-text">
+                                        <i class="bi bi-cloud-upload display-4 text-muted"></i>
+                                        <p class="mb-0 mt-2 text-muted">Drag & drop an image here,<br>or click to select.</p>
+                                    </div>
+                                    <input type="file" id="import-image-input" class="form-control" accept="image/*" hidden>
+                                </div>
+                            </div>
+                            <div class="col-md-7">
+                                <ul class="list-group mb-3">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center"><strong>Name:</strong> <span class="fw-bold">${sampleToImport['Sample Name']}</span></li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center"><strong>Category:</strong> <span>${sampleToImport.Category || '-'}</span></li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center"><strong>Location:</strong> <span><span class="badge bg-warning text-dark">${sampleToImport['Location (press Enter to add)'] || '-'}</span></span></li>
+                                </ul>
+                                <h6 class="border-bottom pb-2 mb-3 fw-bold">Foil Components Overview</h6>
+                                <div id="import-components-bars-section" style="max-height: 280px; overflow-y: auto;">
+                                    ${componentsBarsHtml}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-cloud-arrow-down-fill me-1"></i> Confirm & Import</button>
+                    </div>
+                `;
+
+                // 4. تفعيل وظائف السحب والإفلات للصورة
+                const importDropZone = document.getElementById('import-image-drop-zone');
+                const importFileInput = document.getElementById('import-image-input');
+                const dropText = document.getElementById('import-drop-text');
+                
+                importDropZone.addEventListener('click', () => importFileInput.click());
+                importDropZone.addEventListener('dragover', (e) => { 
+                    e.preventDefault(); 
+                    importDropZone.style.borderColor = 'var(--bs-primary-import-rgb)'; 
+                    importDropZone.style.backgroundColor = '#f8f9fa'; 
+                });
+                importDropZone.addEventListener('dragleave', () => { 
+                    importDropZone.style.borderColor = '#ccc'; 
+                    importDropZone.style.backgroundColor = 'transparent'; 
+                });
+                importDropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    importDropZone.style.borderColor = '#ccc';
+                    importDropZone.style.backgroundColor = 'transparent';
+                    if (e.dataTransfer.files.length) {
+                        importFileInput.files = e.dataTransfer.files;
+                        const event = new Event('change', { bubbles: true });
+                        importFileInput.dispatchEvent(event);
+                    }
+                });
+                importFileInput.addEventListener('change', () => {
+                    if (importFileInput.files.length) {
+                        this.updateImagePreview(importFileInput.files[0], 'import-image-preview', 'import-image-drop-zone');
+                        dropText.classList.add('d-none');
+                    }
+                });
+
+                // 5. وظيفة زر الحفظ والاستيراد
                 newForm.addEventListener('submit', async (e) => {
                     e.preventDefault();
-                    this.UI.setLoading(true);
+                    this.setLoading(true);
                     
                     const imageFile = document.getElementById('import-image-input').files[0];
                     let imageUrl = '';
 
                     if (imageFile) {
-                        imageUrl = await SampleManagerApp.uploadToImgur(imageFile);
-                        if (!imageUrl) { // Stop if upload fails
-                            this.UI.setLoading(false);
+                        let processedFile = imageFile;
+                        try {
+                            processedFile = await this.ImageConverter.convertToPng(imageFile);
+                        } catch (error) {
+                            console.error("Image conversion failed:", error);
+                            this.showToast("Failed to process the image.", 'danger');
+                            this.setLoading(false);
                             return;
+                        }
+
+                        imageUrl = await SampleManagerApp.uploadToImgur(processedFile);
+                        if (!imageUrl) {
+                            this.setLoading(false);
+                            return; 
                         }
                     }
 
@@ -2935,18 +3171,24 @@ SampleManagerApp.state.locationSelect.setValue(sample.location || []);
                         name: sampleToImport['Sample Name'],
                         category: sampleToImport['Category'],
                         location: [sampleToImport['Location (press Enter to add)']],
-                        components: sampleToImport['Foil Components'] !== '****' ? [] : [],
+                        components: matchedComponentIds, // سيتم ربط كل الفويلات التي تم العثور عليها بالمنتج تلقائياً
                         originalId: sampleToImport.ID,
                         description: `Imported from Google Sheets. Original Name: ${sampleToImport.Name}`,
-                        imageUrl: imageUrl, // Add the new image URL
+                        imageUrl: imageUrl, 
+                        status: 'Unknown',
+                        quantity: null
                     };
 
-                    this.addSample(newSampleData);
-                    this.UI.showToast(`Successfully imported ${sampleToImport.Name}!`, 'success');
+                    SampleManagerApp.addSample(newSampleData);
+                    this.showToast(`Successfully imported ${sampleToImport.Name}!`, 'success');
                     SampleManagerApp.elements.importDetailsModal.hide();
-                    this.UI.setLoading(false);
-                    // The view will re-render automatically via addSample's flow
+                    this.setLoading(false);
                 });
+
+                // تفعيل التلميحات (Tooltips) الخاصة بالشريط المرئي
+                setTimeout(() => {
+                    this.initTooltips();
+                }, 100);
 
                 history.pushState({ modal: 'import-details-modal' }, '');
                 SampleManagerApp.elements.importDetailsModal.show();
