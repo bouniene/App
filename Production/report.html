@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تقرير الاستهلاك الشامل (المطور)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        :root {
+            --bs-primary: #0d6efd;
+            --bs-body-font-family: "Cairo", sans-serif;
+        }
+        body { 
+            background-color: #f4f6f9; 
+            font-family: var(--bs-body-font-family); 
+            font-size: 0.8rem; 
+        }
+        .main-container { display: flex; height: 100vh; overflow: hidden; }
+        
+        /* Sidebar Styling */
+        #sidebar {
+            width: 280px; 
+            min-width: 280px;
+            background-color: #fff;
+            border-left: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -2px 0 8px rgba(0,0,0,0.03);
+            z-index: 100;
+        }
+        #sidebar-content { flex-grow: 1; overflow-y: auto; padding: 0.75rem; }
+        .sidebar-header { border-bottom: 1px solid #e0e0e0; padding: 0.75rem; background-color: #f8f9fa; height: 50px; }
+        
+        /* Main Area */
+        #main-container-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+        #top-nav { height: 50px; background-color: #fff; border-bottom: 1px solid #e0e0e0; padding: 0 1rem; display: flex; align-items: center; justify-content: space-between; }
+        #main-content-area { flex-grow: 1; overflow-y: auto; padding: 1rem; }
+        
+        /* Tables and Cards */
+        .report-card { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 1rem; border: 1px solid #e0e0e0; }
+        
+        /* Tables layout */
+        .table-compact { margin-bottom: 0; }
+        .table-compact th, .table-compact td { padding: 0.25rem 0.5rem !important; vertical-align: middle; text-align: center; font-size: 0.8rem; }
+        thead th { background-color: #f1f3f5 !important; color: #495057; font-weight: 700; border-bottom: 2px solid #dee2e6; white-space: nowrap; }
+        
+        /* Tree View & Groups */
+        .merged-group-row td { background-color: #e9ecef !important; font-weight: bold; color: #212529; }
+        .child-row td { background-color: #fdfdfd !important; color: #6c757d; font-size: 0.75rem; border-style: dashed; }
+        .toggle-icon { transition: transform 0.2s; display: inline-block; width: 15px; cursor: pointer; padding: 0 5px; }
+        .toggle-icon.open { transform: rotate(-90deg); }
+        .toggle-icon:hover { color: #0056b3 !important; }
+        
+        /* Checkbox Lists */
+        .material-checkbox-list { max-height: 150px; overflow-y: auto; border: 1px solid #ced4da; border-radius: 4px; padding: 0.25rem; background: #fff; }
+        .search-input { border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom: none; }
+        .list-container-bound { border-top-left-radius: 0; border-top-right-radius: 0; }
+
+        /* Editable Cells */
+        td[contenteditable="true"] { background-color: #fffbdd; transition: background-color 0.2s; border: 1px dashed #ffc107 !important; }
+        td[contenteditable="true"]:focus { background-color: #fff; outline: 2px solid var(--bs-primary); }
+        
+        .result-cell { background-color: #e3f2fd !important; font-weight: bold; color: #084298; }
+
+        @media print {
+            body { background-color: #fff !important; font-size: 10pt; }
+            #sidebar, #top-nav, .no-print { display: none !important; }
+            .main-container { display: block; height: auto; }
+            #main-content-area { padding: 0 !important; }
+            .report-card { box-shadow: none; border: none; padding: 0; }
+            .table-compact th, .table-compact td { border: 1px solid #000 !important; padding: 2px !important; }
+            td[contenteditable="true"] { border: 1px solid #000 !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <!-- Main Content -->
+    <main id="main-container-wrapper">
+        <nav id="top-nav" class="no-print">
+            <h6 class="mb-0 fw-bold"><i class="fas fa-chart-line text-primary me-2"></i> تقرير الاستهلاك المتقدم</h6>
+            <div class="d-flex gap-2">
+                <button id="open-col-modal-btn" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#custom-col-modal">
+                    <i class="fas fa-columns me-1"></i> أعمدة مخصصة
+                </button>
+                <button id="print-btn" class="btn btn-dark btn-sm"><i class="fas fa-print me-1"></i> طباعة</button>
+            </div>
+        </nav>
+        
+        <div id="main-content-area">
+            <div id="loading-indicator" class="text-center py-5">
+                <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+                <p class="mt-2 text-muted small">جاري سحب البيانات...</p>
+            </div>
+
+            <div id="report-container" class="report-card d-none">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="fw-bold text-primary mb-0">إجمالي الاستهلاك المحسوب</h5>
+                        <small class="text-muted d-block" id="report-date-range-display">الفترة: جميع الأوقات</small>
+                        <small class="text-muted d-block fw-bold" id="report-lines-display">الخطوط: الكل</small>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered table-compact" id="results-table">
+                        <thead>
+                            <tr id="table-head-row">
+                                <!-- سيتم حقن العناوين عبر JS -->
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <!-- النتائج ستظهر هنا -->
+                        </tbody>
+                        <tfoot id="table-foot">
+                            <!-- المجاميع -->
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Sidebar Filters -->
+    <aside id="sidebar" class="no-print">
+        <div class="sidebar-header d-flex justify-content-between align-items-center">
+            <span class="fw-bold"><i class="fas fa-sliders-h me-1"></i> لوحة التحكم</span>
+        </div>
+        <div id="sidebar-content">
+            
+            <!-- Date Filter -->
+            <div class="mb-3 border-bottom pb-2">
+                <label class="fw-bold text-primary mb-1">الفترة الزمنية</label>
+                <div class="row g-1">
+                    <div class="col-6">
+                        <input type="date" id="filter-start-date" class="form-control form-control-sm" title="من تاريخ">
+                    </div>
+                    <div class="col-6">
+                        <input type="date" id="filter-end-date" class="form-control form-control-sm" title="إلى تاريخ">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Production Line Filter -->
+            <div class="mb-3 border-bottom pb-2">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="fw-bold text-primary mb-0">خط الإنتاج (الآلة)</label>
+                    <button class="btn btn-link btn-sm p-0 text-decoration-none text-muted" id="select-all-lines">تبديل الكل</button>
+                </div>
+                <div id="lines-checklist" class="material-checkbox-list" style="max-height: 100px;">
+                    <!-- Checkboxes injected here -->
+                </div>
+            </div>
+
+            <!-- Material Visibility Filter -->
+            <div class="mb-3 border-bottom pb-2">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="fw-bold text-primary mb-0">المواد المعروضة</label>
+                    <button class="btn btn-link btn-sm p-0 text-decoration-none text-muted" id="select-all-materials">تبديل الكل</button>
+                </div>
+                <input type="text" id="search-materials" class="form-control form-control-sm search-input" placeholder="ابحث عن مادة...">
+                <div id="materials-checklist" class="material-checkbox-list list-container-bound">
+                    <!-- Checkboxes injected here -->
+                </div>
+            </div>
+
+            <!-- Merge Groups -->
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="fw-bold text-primary mb-0">مجموعات الدمج</label>
+                    <button class="btn btn-sm btn-outline-primary py-0 px-1" onclick="openGroupModal()">
+                        <i class="fas fa-plus"></i> إنشاء
+                    </button>
+                </div>
+                <div id="merge-groups-list" class="list-group">
+                    <!-- Groups injected here -->
+                </div>
+            </div>
+
+            <button id="generate-report-btn" class="btn btn-primary btn-sm w-100 fw-bold mt-2">
+                <i class="fas fa-sync-alt me-1"></i> تحديث التقرير
+            </button>
+        </div>
+    </aside>
+</div>
+
+<!-- Modal: Add/Edit Merge Group -->
+<div class="modal fade" id="add-group-modal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title fw-bold" id="group-modal-title">مجموعة دمج</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-2">
+                <input type="hidden" id="edit-group-id">
+                <div class="mb-2">
+                    <label class="form-label mb-1">اسم المجموعة</label>
+                    <input type="text" id="new-group-name" class="form-control form-control-sm">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label mb-1">المواد:</label>
+                    <input type="text" id="search-group-materials" class="form-control form-control-sm search-input" placeholder="بحث...">
+                    <div id="group-materials-selection" class="material-checkbox-list list-container-bound" style="max-height: 120px;">
+                        <!-- Checkboxes -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer py-1">
+                <button type="button" class="btn btn-primary btn-sm w-100" id="save-group-btn">حفظ المجموعة</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Add Custom Math Column -->
+<div class="modal fade" id="custom-col-modal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title fw-bold">إضافة عمود حسابي</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-2">
+                <div class="mb-2">
+                    <label class="form-label mb-1">موقع العمود في الجدول</label>
+                    <select id="col-pos" class="form-select form-select-sm">
+                        <option value="after">بعد الاستهلاك الأساسي</option>
+                        <option value="before">قبل الاستهلاك الأساسي</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label mb-1">العملية الحسابية</label>
+                    <select id="col-type" class="form-select form-select-sm">
+                        <option value="plus">جمع (+)</option>
+                        <option value="minus">طرح (-)</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label mb-1">اسم العمود</label>
+                    <input type="text" id="col-name" class="form-control form-control-sm" placeholder="مثال: استرجاع، تالف...">
+                </div>
+            </div>
+            <div class="modal-footer py-1">
+                <button type="button" class="btn btn-success btn-sm w-100" id="add-col-btn">إضافة للجدول</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// --- إعدادات قاعدة البيانات ---
+const firebaseConfig = {
+    apiKey: "AIzaSyCaBkl26zD1jR7-P9MWv7d4uD0T0QXUrnQ",
+    authDomain: "appd-326a4.firebaseapp.com",
+    databaseURL: "https://appd-326a4-default-rtdb.firebaseio.com",
+    projectId: "appd-326a4",
+    storageBucket: "appd-326a4.firebasestorage.app",
+    messagingSenderId: "1001287247517",
+    appId: "1:1001287247517:web:4c6e2a3b1cbada09821674"
+};
+
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+
+const database = firebase.database();
+const dbRef = database.ref('data7777');
+
+// --- متغيرات الحالة (State) ---
+let productionOrders = [];
+let allUniqueMaterials = new Set();
+let allUniqueLines = new Set();
+let mergeGroups = []; 
+let customColumns = []; 
+let customCellData = {}; 
+let generatedReportData = []; 
+
+// --- إعداد التاريخ الافتراضي (تاريخ اليوم لـ 'إلى تاريخ') ---
+document.getElementById('filter-end-date').value = new Date().toISOString().split('T')[0];
+
+// --- دوال مساعدة ---
+const parseLocaleFloat = (numStr) => {
+    if (typeof numStr !== 'string') return parseFloat(numStr) || 0;
+    const sanitizedStr = numStr.trim().replace(/[,\٫]/g, '.');
+    return parseFloat(sanitizedStr) || 0;
+};
+const formatNumber = (num) => parseFloat(Number(num).toFixed(2)).toString();
+
+// --- البحث في القوائم ---
+function attachSearch(inputId, containerId) {
+    document.getElementById(inputId).addEventListener('input', function(e) {
+        const term = e.target.value.toLowerCase();
+        const items = document.querySelectorAll(`#${containerId} .form-check`);
+        items.forEach(div => {
+            const text = div.textContent.toLowerCase();
+            div.style.display = text.includes(term) ? 'block' : 'none';
+        });
+    });
+}
+attachSearch('search-materials', 'materials-checklist');
+attachSearch('search-group-materials', 'group-materials-selection');
+
+// --- التسمية التلقائية للعمود الحسابي ---
+document.getElementById('open-col-modal-btn').addEventListener('click', () => {
+    document.getElementById('col-type').value = 'plus';
+    document.getElementById('col-pos').value = 'after';
+    document.getElementById('col-name').value = 'جمع';
+});
+
+document.getElementById('col-type').addEventListener('change', function() {
+    const nameInput = document.getElementById('col-name');
+    if (this.value === 'plus') nameInput.value = 'جمع';
+    else nameInput.value = 'طرح';
+});
+
+// --- جلب البيانات وتجهيز القوائم ---
+dbRef.once('value').then((snapshot) => {
+    const data = snapshot.val();
+    if (data && data.productionOrders) {
+        productionOrders = data.productionOrders;
+        extractMetadata();
+        buildSidebarUI();
+        document.getElementById('loading-indicator').classList.add('d-none');
+        document.getElementById('report-container').classList.remove('d-none');
+        generateReport();
+    } else {
+        alert("لا توجد بيانات أوامر إنتاج في قاعدة البيانات.");
+    }
+});
+
+function extractMetadata() {
+    allUniqueMaterials.clear();
+    allUniqueLines.clear();
+    
+    productionOrders.forEach(po => {
+        if (!po) return;
+        
+        // جلب المواد
+        if (po.materialsList) po.materialsList.forEach(m => allUniqueMaterials.add(m));
+        if (parseLocaleFloat(po.rawMaterials?.mixCalculator?.dop) > 0) allUniqueMaterials.add('DOP');
+        
+        // جلب خطوط الإنتاج
+        const line = po.productionLine ? po.productionLine.trim() : 'غير محدد';
+        allUniqueLines.add(line);
+    });
+}
+
+function buildSidebarUI() {
+    // 1. بناء قائمة خطوط الإنتاج
+    const linesArray = Array.from(allUniqueLines).sort();
+    document.getElementById('lines-checklist').innerHTML = linesArray.map((line, idx) => `
+        <div class="form-check m-0">
+            <input class="form-check-input filter-line-cb" type="checkbox" value="${line}" id="cb-line-${idx}" checked>
+            <label class="form-check-label w-100" for="cb-line-${idx}">${line}</label>
+        </div>
+    `).join('');
+
+    // 2. بناء قائمة المواد
+    const materialsArray = Array.from(allUniqueMaterials).sort();
+    document.getElementById('materials-checklist').innerHTML = materialsArray.map((m, idx) => `
+        <div class="form-check m-0">
+            <input class="form-check-input filter-material-cb" type="checkbox" value="${m}" id="cb-filter-${idx}" checked>
+            <label class="form-check-label w-100" for="cb-filter-${idx}">${m}</label>
+        </div>
+    `).join('');
+
+    document.getElementById('group-materials-selection').innerHTML = materialsArray.map((m, idx) => `
+        <div class="form-check m-0">
+            <input class="form-check-input group-material-cb" type="checkbox" value="${m}" id="cb-group-${idx}">
+            <label class="form-check-label w-100" for="cb-group-${idx}">${m}</label>
+        </div>
+    `).join('');
+}
+
+// --- أزرار تحديد الكل للمواد والخطوط ---
+document.getElementById('select-all-materials').addEventListener('click', () => {
+    const checkboxes = document.querySelectorAll('.filter-material-cb');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
+});
+
+document.getElementById('select-all-lines').addEventListener('click', () => {
+    const checkboxes = document.querySelectorAll('.filter-line-cb');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
+});
+
+// --- إدارة مجموعات الدمج ---
+window.openGroupModal = function(id = null) {
+    const modal = new bootstrap.Modal(document.getElementById('add-group-modal'));
+    document.querySelectorAll('.group-material-cb').forEach(cb => cb.checked = false);
+    document.getElementById('search-group-materials').value = '';
+    document.querySelectorAll('#group-materials-selection .form-check').forEach(div => div.style.display = 'block');
+
+    if (id) {
+        const group = mergeGroups.find(g => g.id === id);
+        document.getElementById('group-modal-title').textContent = "تعديل المجموعة";
+        document.getElementById('edit-group-id').value = group.id;
+        document.getElementById('new-group-name').value = group.name;
+        group.materials.forEach(m => {
+            const cb = document.querySelector(`.group-material-cb[value="${m}"]`);
+            if(cb) cb.checked = true;
+        });
+    } else {
+        document.getElementById('group-modal-title').textContent = "مجموعة دمج جديدة";
+        document.getElementById('edit-group-id').value = '';
+        document.getElementById('new-group-name').value = 'Merge Group ' + (mergeGroups.length + 1);
+    }
+    modal.show();
+};
+
+document.getElementById('save-group-btn').addEventListener('click', () => {
+    const name = document.getElementById('new-group-name').value.trim();
+    if (!name) return alert("أدخل اسم المجموعة");
+    const materials = Array.from(document.querySelectorAll('.group-material-cb:checked')).map(cb => cb.value);
+    if (materials.length === 0) return alert("اختر مادة واحدة على الأقل");
+
+    const editId = document.getElementById('edit-group-id').value;
+    if (editId) {
+        const group = mergeGroups.find(g => g.id === editId);
+        group.name = name;
+        group.materials = materials;
+    } else {
+        mergeGroups.push({ id: 'grp_' + Date.now(), name, materials });
+    }
+    
+    bootstrap.Modal.getInstance(document.getElementById('add-group-modal')).hide();
+    renderMergeGroupsList();
+    generateReport();
+});
+
+function renderMergeGroupsList() {
+    document.getElementById('merge-groups-list').innerHTML = mergeGroups.map(g => `
+        <div class="list-group-item d-flex justify-content-between align-items-center py-1 px-2 mb-1 border rounded bg-white">
+            <div class="text-truncate" style="cursor:pointer;" onclick="openGroupModal('${g.id}')">
+                <strong class="text-primary">${g.name}</strong><br>
+                <span class="text-muted" style="font-size: 0.65rem;">${g.materials.join(' + ')}</span>
+            </div>
+            <button class="btn btn-sm text-danger p-0 ms-2" onclick="deleteGroup('${g.id}'); event.stopPropagation();"><i class="fas fa-trash-alt"></i></button>
+        </div>
+    `).join('');
+}
+
+window.deleteGroup = function(id) {
+    mergeGroups = mergeGroups.filter(g => g.id !== id);
+    renderMergeGroupsList();
+    generateReport();
+};
+
+// --- الأعمدة المخصصة ---
+document.getElementById('add-col-btn').addEventListener('click', () => {
+    const name = document.getElementById('col-name').value.trim();
+    if (!name) return alert("أدخل اسم العمود");
+    const type = document.getElementById('col-type').value;
+    const pos = document.getElementById('col-pos').value;
+    
+    customColumns.push({ id: 'col_' + Date.now(), name, type, pos });
+    bootstrap.Modal.getInstance(document.getElementById('custom-col-modal')).hide();
+    
+    renderTable(); 
+});
+
+window.removeCol = function(colId) {
+    customColumns = customColumns.filter(c => c.id !== colId);
+    renderTable();
+};
+
+// --- حساب المجموع (التسلسل الحقيقي للطرح والجمع) ---
+function calculateRowResult(rowKey, baseValue) {
+    if (customColumns.length === 0) return baseValue;
+    
+    let beforeCols = customColumns.filter(c => c.pos === 'before');
+    let afterCols = customColumns.filter(c => c.pos === 'after');
+    
+    let components = [];
+    
+    // 1. الأعمدة (قبل)
+    beforeCols.forEach(c => {
+        const valStr = customCellData[rowKey]?.[c.id] || '0';
+        components.push({ val: parseLocaleFloat(valStr), op: c.type, isBase: false });
+    });
+    
+    // 2. العمود الأساسي (الاستهلاك المحسوب)
+    components.push({ val: baseValue, isBase: true });
+    
+    // 3. الأعمدة (بعد)
+    afterCols.forEach(c => {
+        const valStr = customCellData[rowKey]?.[c.id] || '0';
+        components.push({ val: parseLocaleFloat(valStr), op: c.type, isBase: false });
+    });
+    
+    // تقييم العملية (من اليسار لليمين أو بالترتيب)
+    let res = components[0].val;
+    for (let i = 1; i < components.length; i++) {
+        let current = components[i];
+        let prev = components[i-1];
+        
+        let operator = current.isBase ? prev.op : current.op;
+        
+        if (operator === 'plus') {
+            res += current.val;
+        } else if (operator === 'minus') {
+            res -= current.val;
+        }
+    }
+    
+    return res;
+}
+
+// --- توليد التقرير ---
+document.getElementById('generate-report-btn').addEventListener('click', generateReport);
+document.getElementById('print-btn').addEventListener('click', () => window.print());
+
+function generateReport() {
+    const startDate = document.getElementById('filter-start-date').value;
+    const endDate = document.getElementById('filter-end-date').value;
+    const selectedLines = Array.from(document.querySelectorAll('.filter-line-cb:checked')).map(cb => cb.value);
+    
+    // تجهيز نصوص الرأس
+    let dateText = "جميع الأوقات";
+    if (startDate && endDate) dateText = `من ${startDate} إلى ${endDate}`;
+    else if (startDate) dateText = `من ${startDate} فصاعداً`;
+    else if (endDate) dateText = `حتى ${endDate}`;
+    document.getElementById('report-date-range-display').textContent = `الفترة: ${dateText}`;
+
+    let lineText = selectedLines.length === allUniqueLines.size ? "الكل" : selectedLines.join('، ');
+    if(selectedLines.length === 0) lineText = "لم يتم تحديد أي خط";
+    document.getElementById('report-lines-display').textContent = `الخطوط: ${lineText}`;
+
+    // الفلترة
+    const filteredPOs = productionOrders.filter(po => {
+        if (!po || !po.date) return false;
+        if (startDate && po.date < startDate) return false;
+        if (endDate && po.date > endDate) return false;
+        
+        const line = po.productionLine ? po.productionLine.trim() : 'غير محدد';
+        if (!selectedLines.includes(line)) return false;
+
+        return true;
+    });
+
+    const rawConsumptions = {};
+    allUniqueMaterials.forEach(m => rawConsumptions[m] = 0);
+
+    filteredPOs.forEach(po => {
+        if (!po || !po.materialsList || !po.rawMaterials) return;
+        const addedTotals = {};
+        po.materialsList.forEach(m => addedTotals[m] = 0);
+        (po.rawMaterials.addedEntries || []).forEach(entry => {
+            if(!entry) return;
+            po.materialsList.forEach(m => addedTotals[m] += parseLocaleFloat(entry[m]));
+        });
+
+        po.materialsList.forEach(m => {
+            const startVal = parseLocaleFloat(po.rawMaterials.starting?.[m]);
+            const addedVal = addedTotals[m];
+            const remainVal = parseLocaleFloat(po.rawMaterials.remaining?.[m]);
+            const consumption = startVal + addedVal - remainVal;
+            if (consumption > 0) rawConsumptions[m] += consumption;
+        });
+
+        const dopValue = parseLocaleFloat(po.rawMaterials.mixCalculator?.dop);
+        if (dopValue > 0) rawConsumptions['DOP'] = (rawConsumptions['DOP'] || 0) + dopValue;
+    });
+
+    const visibleMaterials = Array.from(document.querySelectorAll('.filter-material-cb:checked')).map(cb => cb.value);
+    generatedReportData = []; 
+    const materialsIncludedInGroups = new Set();
+
+    mergeGroups.forEach(group => {
+        let groupSum = 0;
+        let children = [];
+        group.materials.forEach(mat => {
+            const val = rawConsumptions[mat] || 0;
+            groupSum += val;
+            children.push({ name: mat, value: val });
+            materialsIncludedInGroups.add(mat);
+        });
+        
+        if (groupSum > 0) {
+            generatedReportData.push({ 
+                key: group.id, 
+                name: group.name, 
+                value: groupSum, 
+                isGroup: true,
+                children: children
+            });
+        }
+    });
+
+    visibleMaterials.forEach(mat => {
+        if (!materialsIncludedInGroups.has(mat)) {
+            const val = rawConsumptions[mat] || 0;
+            if (val > 0) {
+                generatedReportData.push({ key: mat, name: mat, value: val, isGroup: false });
+            }
+        }
+    });
+
+    renderTable();
+}
+
+// --- رسم الجدول ---
+function renderTable() {
+    const thead = document.getElementById('table-head-row');
+    const tbody = document.getElementById('table-body');
+    const tfoot = document.getElementById('table-foot');
+
+    let beforeCols = customColumns.filter(c => c.pos === 'before');
+    let afterCols = customColumns.filter(c => c.pos === 'after');
+
+    // Headers
+    let headHtml = `<th>المادة / المجموعة</th>`;
+    beforeCols.forEach(col => {
+        const icon = col.type === 'plus' ? '<i class="fas fa-plus-circle text-success"></i>' : '<i class="fas fa-minus-circle text-danger"></i>';
+        headHtml += `<th class="bg-light">${icon} ${col.name} <i class="fas fa-times text-danger ms-2 cursor-pointer no-print" onclick="removeCol('${col.id}')" title="حذف"></i></th>`;
+    });
+    headHtml += `<th>الاستهلاك الأساسي (Kg)</th>`;
+    afterCols.forEach(col => {
+        const icon = col.type === 'plus' ? '<i class="fas fa-plus-circle text-success"></i>' : '<i class="fas fa-minus-circle text-danger"></i>';
+        headHtml += `<th class="bg-light">${icon} ${col.name} <i class="fas fa-times text-danger ms-2 cursor-pointer no-print" onclick="removeCol('${col.id}')" title="حذف"></i></th>`;
+    });
+    if (customColumns.length > 0) headHtml += `<th class="result-cell">النتيجة النهائية</th>`;
+    thead.innerHTML = headHtml;
+
+    // Body
+    tbody.innerHTML = '';
+    let grandBaseTotal = 0;
+    let grandFinalTotal = 0;
+
+    generatedReportData.sort((a, b) => (b.isGroup === a.isGroup) ? 0 : a.isGroup ? -1 : 1);
+
+    if (generatedReportData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${2 + customColumns.length + (customColumns.length?1:0)}" class="text-center text-muted">لا توجد بيانات</td></tr>`;
+        tfoot.innerHTML = '';
+        return;
+    }
+
+    generatedReportData.forEach((item, index) => {
+        grandBaseTotal += item.value;
+        const rowKey = item.key;
+        const finalResult = calculateRowResult(rowKey, item.value);
+        grandFinalTotal += finalResult;
+
+        let beforeCellsHtml = '';
+        beforeCols.forEach(col => {
+            const val = customCellData[rowKey]?.[col.id] || '';
+            beforeCellsHtml += `<td contenteditable="true" data-rowkey="${rowKey}" data-colid="${col.id}">${val}</td>`;
+        });
+        
+        let afterCellsHtml = '';
+        afterCols.forEach(col => {
+            const val = customCellData[rowKey]?.[col.id] || '';
+            afterCellsHtml += `<td contenteditable="true" data-rowkey="${rowKey}" data-colid="${col.id}">${val}</td>`;
+        });
+
+        const resultCellHtml = customColumns.length > 0 ? `<td class="result-cell row-final-result" data-rowkey="${rowKey}">${formatNumber(finalResult)}</td>` : '';
+
+        if (item.isGroup) {
+            tbody.innerHTML += `
+                <tr class="merged-group-row">
+                    <td class="text-start pe-3">
+                        <i class="fas fa-chevron-left toggle-icon me-1 text-primary" onclick="toggleGroup('group-children-${index}', this)"></i> 
+                        <i class="fas fa-layer-group text-muted me-1"></i> ${item.name}
+                    </td>
+                    ${beforeCellsHtml}
+                    <td>${formatNumber(item.value)}</td>
+                    ${afterCellsHtml}
+                    ${resultCellHtml}
+                </tr>
+            `;
+            // صفوف الأطفال (مخفية)
+            item.children.forEach(child => {
+                if(child.value > 0) {
+                    tbody.innerHTML += `
+                        <tr class="child-row group-children-${index}" style="display: none;">
+                            <td class="text-start pe-4"><i class="fas fa-level-down-alt fa-flip-horizontal ms-2 text-muted"></i> ${child.name}</td>
+                            ${beforeCols.map(()=>`<td class="bg-light text-muted">-</td>`).join('')}
+                            <td>${formatNumber(child.value)}</td>
+                            ${afterCols.map(()=>`<td class="bg-light text-muted">-</td>`).join('')}
+                            ${customColumns.length > 0 ? `<td class="bg-light text-muted">-</td>` : ''}
+                        </tr>
+                    `;
+                }
+            });
+        } else {
+            tbody.innerHTML += `
+                <tr>
+                    <td class="text-start pe-3">${item.name}</td>
+                    ${beforeCellsHtml}
+                    <td class="fw-bold">${formatNumber(item.value)}</td>
+                    ${afterCellsHtml}
+                    ${resultCellHtml}
+                </tr>
+            `;
+        }
+    });
+
+    // Footer
+    let footHtml = `<tr><th>المجموع الكلي</th>`;
+    beforeCols.forEach(() => footHtml += `<th></th>`);
+    footHtml += `<th>${formatNumber(grandBaseTotal)}</th>`;
+    afterCols.forEach(() => footHtml += `<th></th>`);
+    if (customColumns.length > 0) footHtml += `<th class="result-cell" id="grand-final-total">${formatNumber(grandFinalTotal)}</th>`;
+    footHtml += `</tr>`;
+    tfoot.innerHTML = footHtml;
+
+    attachContentEditableListeners();
+}
+
+// --- العرض الشجري ---
+window.toggleGroup = function(childClass, iconEl) {
+    const isOpening = !iconEl.classList.contains('open');
+    iconEl.classList.toggle('open');
+    
+    document.querySelectorAll('.' + childClass).forEach(el => {
+        el.style.display = isOpening ? 'table-row' : 'none';
+    });
+};
+
+// --- تحديث الحسابات عند الكتابة في الأعمدة المخصصة ---
+function attachContentEditableListeners() {
+    const cells = document.querySelectorAll('#table-body td[contenteditable="true"]');
+    cells.forEach(cell => {
+        cell.addEventListener('input', function() {
+            const rowKey = this.getAttribute('data-rowkey');
+            const colId = this.getAttribute('data-colid');
+            const val = this.innerText.trim();
+            
+            if (!customCellData[rowKey]) customCellData[rowKey] = {};
+            customCellData[rowKey][colId] = val;
+
+            const rowItem = generatedReportData.find(item => item.key === rowKey);
+            if (rowItem) {
+                const newResult = calculateRowResult(rowKey, rowItem.value);
+                const resultCell = document.querySelector(`.row-final-result[data-rowkey="${rowKey}"]`);
+                if (resultCell) resultCell.textContent = formatNumber(newResult);
+                
+                let grandFinal = 0;
+                generatedReportData.forEach(item => {
+                    grandFinal += calculateRowResult(item.key, item.value);
+                });
+                const grandTotalEl = document.getElementById('grand-final-total');
+                if (grandTotalEl) grandTotalEl.textContent = formatNumber(grandFinal);
+            }
+        });
+        
+        cell.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.blur();
+            }
+        });
+    });
+}
+</script>
+</body>
+</html>
