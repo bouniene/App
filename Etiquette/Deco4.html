@@ -901,11 +901,16 @@ html, body, p, span, div, h1, h2, h3, h4, h5, h6, input, textarea, button {
     </div>
     <div class="control-group">
         <label>خيارات العرض</label>
+<div class="control-group">
+        <label>خيارات العرض</label>
         <div class="display-options">
             <label> <input type="checkbox" id="toggleQrCode" checked=""> <span>إظهار الكود</span> </label>
             <label> <input type="checkbox" id="toggleSameCodeInRow" checked=""> <span>رمز موحد لكل سطر</span> </label>
             <label> <input type="checkbox" id="toggleShapes"> <span>إظهار الأشكال الملونة</span> </label>
+            <!-- الزر الجديد هنا -->
+            <label> <input type="checkbox" id="toggleSyncLabels" checked=""> <span style="color: #ffc107 !important;">تعميم التعديلات</span> </label>
         </div>
+    </div>
     </div>
     <div class="control-group">
       <label>إخفاء الملصقات</label>
@@ -1463,20 +1468,51 @@ function updateLabelQR(d, a, length){
         hideBatchPrintModal();
     }, 500);
 }
+// --- دالة جديدة لتعميم التعديلات على باقي الملصقات ---
+    function syncField(changedElement, selector) {
+        // التحقق مما إذا كان زر التعميم مفعلاً
+        const syncEnabled = document.getElementById('toggleSyncLabels').checked;
+        if (!syncEnabled) return;
+
+        // جلب القيمة الجديدة (استخدمنا innerHTML للحفاظ على النزول للسطر)
+        const newValue = changedElement.innerHTML;
+        const allBoxes = document.querySelectorAll('#editor-page .label-box');
+
+        allBoxes.forEach(box => {
+            const targetEl = box.querySelector(selector);
+            // إذا كان هذا الحقل ليس هو الحقل الذي نقوم بالكتابة فيه حالياً
+            if (targetEl && targetEl !== changedElement) {
+                targetEl.innerHTML = newValue;
+                targetEl.dataset.manual = 'true'; // تعيين كيدوي حتى لا يتم استبداله
+            }
+        });
+    }
     document.addEventListener('DOMContentLoaded', () => {
         const grid = document.querySelector('#editor-page .labels-grid');
         const template = grid.querySelector('.label-box');
         grid.innerHTML = '';
-        for (let i = 0; i < 8; i++) {
+for (let i = 0; i < 8; i++) {
             const clone = template.cloneNode(true);
             grid.appendChild(clone);
+            
+            // تعديل مستمع حدث Référence
             const refEl = clone.querySelector('.ref');
             refEl.setAttribute('contenteditable', 'true');
-            refEl.addEventListener('input', () => { refEl.dataset.manual = 'true'; updateLabels(); });
+            refEl.addEventListener('input', function() { 
+                this.dataset.manual = 'true'; 
+                syncField(this, '.ref'); // استدعاء دالة التعميم
+                updateLabels(); 
+            });
+            
+            // تعديل مستمعي الأحداث للحقول الأخرى (العدد والأبعاد)
             ['.pcs', '.dim'].forEach(selector => {
                 const el = clone.querySelector(selector);
                 el.setAttribute('contenteditable', 'true');
-                el.addEventListener('input', () => el.dataset.manual = 'true');
+                el.addEventListener('input', function() { 
+                    this.dataset.manual = 'true';
+                    syncField(this, selector); // استدعاء دالة التعميم
+                    updateLabels(); // تحديث الملصق لتحديث كود QR فوراً
+                });
             });
         }
         const hideContainer = document.getElementById('hide-container');

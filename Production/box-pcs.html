@@ -27,7 +27,9 @@
             padding: 20px;
             font-size: 14px;
         }
-
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { background-color: #334155; }
+th .arrow { font-size: 0.7em; margin-right: 4px; margin-left: 4px; opacity: .9; }
         .container { max-width: 1200px; margin: 0 auto; }
 
         /* --- Header & Layout --- */
@@ -159,7 +161,19 @@
         }
         .rev-num { font-size: 2.5rem; font-weight: 700; color: var(--primary); line-height: 1; }
         .rev-label { font-size: 0.8rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; }
-
+#reverse-tab { grid-template-columns: 240px 1fr; gap: 15px; max-width: 900px; margin: 0 auto; align-items: start; }
+@media (max-width: 768px) { #reverse-tab { grid-template-columns: 1fr !important; } }
+.side-panel input { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; margin-bottom: 8px; }
+#sideList { max-height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+.side-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 10px; border: 1px solid var(--border); background: #fff;
+    border-radius: 6px; cursor: pointer; font-size: 0.9rem; color: var(--text-main);
+}
+.side-item small { color: var(--text-light); font-family: Consolas, monospace; }
+.side-item:hover { background: #eff6ff; border-color: var(--primary); }
+.side-item.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.side-item.active small { color: #dbeafe; }
     </style>
 </head>
 <body>
@@ -198,14 +212,14 @@
             
             <table id="resultsTable">
                 <thead>
-                    <tr>
-                        <th style="width: 35%;">Model</th>
-                        <th style="width: 15%;">Boxes</th>
-                        <th style="width: 15%;">Extra</th>
-                        <th style="width: 15%;">Pcs Total</th>
-                        <th style="width: 20%;">Final Total</th>
-                    </tr>
-                </thead>
+    <tr>
+        <th class="sortable" data-key="model" style="width: 35%;" onclick="sortBy('model')">Model <span class="arrow"></span></th>
+        <th class="sortable" data-key="boxes" style="width: 15%;" onclick="sortBy('boxes')">Boxes <span class="arrow"></span></th>
+        <th class="sortable" data-key="extra" style="width: 15%;" onclick="sortBy('extra')">Extra <span class="arrow"></span></th>
+        <th class="sortable" data-key="pcs" style="width: 15%;" onclick="sortBy('pcs')">Pcs Total <span class="arrow"></span></th>
+        <th class="sortable" data-key="final" style="width: 20%;" onclick="sortBy('final')">Final Total <span class="arrow"></span></th>
+    </tr>
+</thead>
                 <tbody id="resultsBody"></tbody>
                 <tfoot>
                     <tr class="total-row">
@@ -220,9 +234,16 @@
         </div>
     </div>
 
-    <div id="reverse-tab" class="card hidden" style="display: none; max-width: 600px; margin: 0 auto;">
+    <div id="reverse-tab" class="hidden" style="display: none;">
+    <aside class="card side-panel">
+        <h3 style="margin:0 0 10px 0; font-size:1rem;">Products</h3>
+        <input type="text" id="sideSearch" placeholder="🔍 Filter..." oninput="renderSidebar()">
+        <div id="sideList"></div>
+    </aside>
+
+    <div class="card">
         <h3 style="text-align: center; margin-bottom: 20px;">Reverse Calculator (Pieces → Boxes)</h3>
-        
+
         <div class="rev-input-group">
             <label>Search & Select Product</label>
             <input list="modelDataList" id="revModelSearch" placeholder="Type model name to search..." oninput="calcReverse()">
@@ -250,6 +271,7 @@
             </p>
         </div>
     </div>
+</div>
 
 </div>
 
@@ -284,70 +306,97 @@
     const manualRowsContainer = document.getElementById('manualRowsContainer');
 
     // --- Logic: Calculation ---
-    function calculateTotal() {
-        if (!tableInputContainer.classList.contains('hidden')) {
-            syncTableToText();
-        }
+    let sortState = { key: null, dir: 'asc' };
 
-        const lines = inputArea.value.trim().split('\n');
-        resultsBody.innerHTML = '';
-        
-        let totalBoxes = 0, totalExtras = 0, totalPcsInBox = 0, grandFinal = 0;
+function sortBy(key) {
+    if (sortState.key !== key) { sortState = { key, dir: 'asc' }; }
+    else if (sortState.dir === 'asc') { sortState.dir = 'desc'; }
+    else { sortState = { key: null, dir: 'asc' }; }
+    calculateTotal();
+}
 
-        lines.forEach(line => {
-            if (!line.trim() || /^[0-9]+[a-zA-Z]+$/.test(line.trim())) return;
-            
-            const parts = line.trim().split(/\s+/);
-            if (parts.length < 2) return;
-            
-            let modelName, boxCount, extraPieces;
-            
-            if (parts.length >= 3 && !isNaN(parts[parts.length - 1]) && !isNaN(parts[parts.length - 2])) {
-                extraPieces = parseInt(parts.pop(), 10); 
-                boxCount = parseInt(parts.pop(), 10); 
-                modelName = parts.join(' ');
-            } else {
-                extraPieces = 0; 
-                boxCount = parseInt(parts.pop(), 10); 
-                modelName = parts.join(' ');
-            }
-            if (isNaN(boxCount)) return;
+function updateSortArrows() {
+    document.querySelectorAll('th.sortable').forEach(th => {
+        const arrow = th.querySelector('.arrow');
+        arrow.textContent = th.dataset.key === sortState.key
+            ? (sortState.dir === 'asc' ? '▲' : '▼') : '';
+    });
+}
 
-            const modelCode = modelName.split('-')[0].trim();
-            const piecesPerBox = productData[modelCode] || 0;
-            
-            const currentBoxPieces = boxCount * piecesPerBox;
-            const currentFinal = currentBoxPieces + extraPieces;
-            
-            totalBoxes += boxCount;
-            totalExtras += extraPieces;
-            totalPcsInBox += currentBoxPieces;
-            grandFinal += currentFinal;
-            
-            const row = resultsBody.insertRow();
-            row.innerHTML = `
-                <td>
-                    <div style="font-weight:600; color:var(--text-main)">${modelName}</div>
-                    <div style="font-size:0.75rem; color:var(--text-light)">${piecesPerBox} pcs/box</div>
-                </td> 
-                <td style="font-weight:bold; color:var(--primary); font-size:1.1em">${boxCount}</td> 
-                <td>${extraPieces > 0 ? extraPieces : '-'}</td> 
-                <td class="clickable-cell" onclick="copyCell(this)">
-                    ${currentBoxPieces} <span class="copied-tooltip">Copied!</span>
-                </td> 
-                <td class="clickable-cell" onclick="copyCell(this)" style="font-weight:bold;">
-                    ${currentFinal} <span class="copied-tooltip">Copied!</span>
-                </td>
-            `;
-        });
-        
-        document.getElementById('sumBoxes').textContent = totalBoxes;
-        document.getElementById('sumExtras').textContent = totalExtras;
-        document.getElementById('sumPiecesInBoxes').textContent = totalPcsInBox;
-        document.getElementById('sumFinal').textContent = grandFinal;
-
-        updateUrlFromText();
+function calculateTotal() {
+    if (!tableInputContainer.classList.contains('hidden')) {
+        syncTableToText();
     }
+
+    const lines = inputArea.value.trim().split('\n');
+    resultsBody.innerHTML = '';
+
+    let totalBoxes = 0, totalExtras = 0, totalPcsInBox = 0, grandFinal = 0;
+    const items = [];
+
+    lines.forEach(line => {
+        if (!line.trim() || /^[0-9]+[a-zA-Z]+$/.test(line.trim())) return;
+
+        const parts = line.trim().split(/\s+/);
+        if (parts.length < 2) return;
+
+        let modelName, boxCount, extraPieces;
+        if (parts.length >= 3 && !isNaN(parts[parts.length - 1]) && !isNaN(parts[parts.length - 2])) {
+            extraPieces = parseInt(parts.pop(), 10);
+            boxCount = parseInt(parts.pop(), 10);
+            modelName = parts.join(' ');
+        } else {
+            extraPieces = 0;
+            boxCount = parseInt(parts.pop(), 10);
+            modelName = parts.join(' ');
+        }
+        if (isNaN(boxCount)) return;
+
+        const modelCode = modelName.split('-')[0].trim();
+        const piecesPerBox = productData[modelCode] || 0;
+        const pcs = boxCount * piecesPerBox;
+
+        items.push({ model: modelName, boxes: boxCount, extra: extraPieces,
+                     pcs, final: pcs + extraPieces, perBox: piecesPerBox });
+    });
+
+    // الترتيب
+    if (sortState.key) {
+        const k = sortState.key, m = sortState.dir === 'asc' ? 1 : -1;
+        items.sort((a, b) => k === 'model'
+            ? m * a.model.localeCompare(b.model, undefined, { numeric: true })
+            : m * (a[k] - b[k]));
+    }
+
+    items.forEach(it => {
+        totalBoxes += it.boxes; totalExtras += it.extra;
+        totalPcsInBox += it.pcs; grandFinal += it.final;
+
+        const row = resultsBody.insertRow();
+        row.innerHTML = `
+            <td>
+                <div style="font-weight:600; color:var(--text-main)">${it.model}</div>
+                <div style="font-size:0.75rem; color:var(--text-light)">${it.perBox} pcs/box</div>
+            </td>
+            <td style="font-weight:bold; color:var(--primary); font-size:1.1em">${it.boxes}</td>
+            <td>${it.extra > 0 ? it.extra : '-'}</td>
+            <td class="clickable-cell" onclick="copyCell(this)">
+                ${it.pcs} <span class="copied-tooltip">Copied!</span>
+            </td>
+            <td class="clickable-cell" onclick="copyCell(this)" style="font-weight:bold;">
+                ${it.final} <span class="copied-tooltip">Copied!</span>
+            </td>
+        `;
+    });
+
+    document.getElementById('sumBoxes').textContent = totalBoxes;
+    document.getElementById('sumExtras').textContent = totalExtras;
+    document.getElementById('sumPiecesInBoxes').textContent = totalPcsInBox;
+    document.getElementById('sumFinal').textContent = grandFinal;
+
+    updateSortArrows();
+    updateUrlFromText();
+}
 
     // --- Logic: Table Input & Enter Navigation ---
     function addManualRow(model='', boxes='', extras='') {
@@ -378,7 +427,28 @@
             }
         }
     });
+function renderSidebar() {
+    const q = document.getElementById('sideSearch').value.trim().toLowerCase();
+    const current = document.getElementById('revModelSearch').value.trim();
+    const list = document.getElementById('sideList');
+    list.innerHTML = '';
+    Object.keys(productData)
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+        .filter(k => k.toLowerCase().includes(q))
+        .forEach(k => {
+            const btn = document.createElement('button');
+            btn.className = 'side-item' + (k === current ? ' active' : '');
+            btn.innerHTML = `<span>${k}</span><small>${productData[k]} pcs</small>`;
+            btn.onclick = () => selectModel(k);
+            list.appendChild(btn);
+        });
+}
 
+function selectModel(k) {
+    document.getElementById('revModelSearch').value = k;
+    calcReverse();
+    document.getElementById('revTotalInput').focus();
+}
     function toggleInputMode() {
         const isTextMode = textInputContainer.classList.contains('hidden');
         if (isTextMode) {
@@ -429,6 +499,7 @@
 
     // --- Logic: Reverse Calc (Updated for Search) ---
     function calcReverse() {
+	renderSidebar();
         // Changed to get value from INPUT instead of SELECT
         const modelInput = document.getElementById('revModelSearch'); 
         const totalInput = document.getElementById('revTotalInput');
@@ -503,7 +574,7 @@
             document.querySelectorAll('.tab-btn')[0].classList.add('active');
         } else {
             stdTab.classList.add('hidden'); stdTab.style.display = 'none';
-            revTab.classList.remove('hidden'); revTab.style.display = 'block';
+            revTab.classList.remove('hidden'); revTab.style.display = 'grid';
             document.querySelectorAll('.tab-btn')[1].classList.add('active');
             populateReverseDropdown();
         }
@@ -518,7 +589,9 @@
             opt.value = key; // The searchable value (Model Name)
             opt.label = `${productData[key]} pcs/box`; // Helper text shown in dropdown
             dataList.appendChild(opt);
+		
         });
+		renderSidebar();
     }
 
     function copyCell(cell) {
