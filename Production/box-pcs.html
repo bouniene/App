@@ -27,10 +27,10 @@
             padding: 20px;
             font-size: 14px;
         }
-th.sortable { cursor: pointer; user-select: none; }
-th.sortable:hover { background-color: #334155; }
-th .arrow { font-size: 0.7em; margin-right: 4px; margin-left: 4px; opacity: .9; }
-        .container { max-width: 1200px; margin: 0 auto; }
+        th.sortable { cursor: pointer; user-select: none; }
+        th.sortable:hover { background-color: #334155; }
+        th .arrow { font-size: 0.75em; margin-left: 4px; opacity: .9; }
+        .container { max-width: 1320px; margin: 0 auto; }
 
         /* --- Header & Layout --- */
         .header {
@@ -38,16 +38,17 @@ th .arrow { font-size: 0.7em; margin-right: 4px; margin-left: 4px; opacity: .9; 
             background: var(--bg-card); padding: 12px 20px;
             border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 15px;
         }
-        .header h1 { margin: 0; font-size: 1.2rem; font-weight: 700; color: var(--text-main); }
+        .header h1 { margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--text-main); }
         
         .btn-icon {
             background: transparent; border: 1px solid var(--border);
-            padding: 6px; border-radius: 6px; cursor: pointer; color: var(--text-light);
+            padding: 6px 12px; border-radius: 6px; cursor: pointer; color: var(--text-light);
+            font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;
             transition: all 0.2s;
         }
         .btn-icon:hover { background: var(--bg-body); color: var(--primary); border-color: var(--primary); }
 
-        .tabs { display: flex; gap: 8px; margin-bottom: 15px; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
         .tab-btn {
             padding: 8px 16px; border: none; background: #e2e8f0;
             border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem;
@@ -56,7 +57,7 @@ th .arrow { font-size: 0.7em; margin-right: 4px; margin-left: 4px; opacity: .9; 
         .tab-btn.active { background: var(--primary); color: white; }
 
         .grid-layout { display: grid; grid-template-columns: 1fr 1.6fr; gap: 15px; }
-        @media (max-width: 768px) { .grid-layout { grid-template-columns: 1fr; } }
+        @media (max-width: 860px) { .grid-layout { grid-template-columns: 1fr; } }
 
         .card {
             background: var(--bg-card); padding: 15px;
@@ -64,10 +65,39 @@ th .arrow { font-size: 0.7em; margin-right: 4px; margin-left: 4px; opacity: .9; 
             border: 1px solid var(--border);
         }
 
-        /* --- Improved Table Styling --- */
+        /* --- Table Controls & Styling --- */
+        .table-toolbar {
+            display: flex; justify-content: space-between; align-items: center;
+            gap: 10px; margin-bottom: 10px; flex-wrap: wrap;
+        }
+        .table-filter-group {
+            display: flex; align-items: center; gap: 8px; flex: 1; max-width: 400px;
+        }
+        .table-filter-group input, .table-filter-group select {
+            padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px;
+            font-size: 0.85rem; outline: none;
+        }
+        .table-filter-group input:focus, .table-filter-group select:focus {
+            border-color: var(--primary);
+        }
+        .table-action-btns { display: flex; gap: 8px; }
+        .btn-copy-table {
+            background: #eff6ff; border: 1px solid #bfdbfe; color: var(--primary);
+            padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.82rem;
+            font-weight: 600; transition: all 0.2s;
+        }
+        .btn-copy-table:hover { background: var(--primary); color: white; }
+
+        .btn-print-table {
+            background: #f8fafc; border: 1px solid #cbd5e1; color: #1e293b;
+            padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.82rem;
+            font-weight: 600; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;
+        }
+        .btn-print-table:hover { background: #334155; color: white; border-color: #334155; }
+
         table { 
             width: 100%; border-collapse: separate; border-spacing: 0; 
-            margin-top: 10px; border: 1px solid var(--border);
+            margin-top: 5px; border: 1px solid var(--border);
             border-radius: 6px; overflow: hidden;
         }
         
@@ -83,24 +113,50 @@ th .arrow { font-size: 0.7em; margin-right: 4px; margin-left: 4px; opacity: .9; 
 
         tbody tr:nth-child(even) { background-color: #f8fafc; }
         tbody tr:hover { background-color: #f1f5f9; }
-        td:first-child { text-align: left; font-weight: 500; }
-        td:nth-child(n+2) { font-family: 'Consolas', 'Monaco', monospace; }
+        td.cell-model { text-align: left; font-weight: 600; }
+        td.cell-mono { font-family: 'Consolas', 'Monaco', monospace; }
 
         tfoot tr { background-color: #eff6ff !important; }
         tfoot td {
             font-weight: bold; padding: 10px; border-top: 2px solid #bfdbfe; color: var(--primary-dark);
         }
 
-        .clickable-cell { cursor: pointer; position: relative; }
+        /* Universal Cell Copying */
+        .clickable-cell { cursor: pointer; position: relative; transition: background 0.15s; }
+        .clickable-cell:hover { background-color: #f1f5f9; outline: 1px dashed #93c5fd; }
         .clickable-cell:active { background-color: #bbf7d0 !important; }
         .copied-tooltip {
             position: absolute; top: -25px; left: 50%; transform: translateX(-50%);
             background: #1e293b; color: white; padding: 3px 8px; border-radius: 4px;
-            font-size: 11px; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+            font-size: 11px; opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 10;
         }
         .show-tooltip .copied-tooltip { opacity: 1; }
 
-        /* --- Inputs --- */
+        /* Custom In-cell Elements */
+        .print-blank-line {
+            display: block; width: 100%; min-height: 18px; border-bottom: 1px dashed #cbd5e1;
+        }
+        .print-box-symbol {
+            display: inline-block; font-size: 1.15rem; line-height: 1; color: #475569;
+        }
+        .custom-col-inp {
+            width: 90%; max-width: 140px; padding: 4px 6px; border: 1px solid var(--border);
+            border-radius: 4px; font-size: 0.82rem; text-align: center; outline: none;
+        }
+        .custom-col-inp:focus { border-color: var(--primary); }
+
+        /* --- Inputs & Buttons --- */
+        .input-header-actions {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+        }
+        .input-tools { display: flex; gap: 6px; }
+        .btn-clean {
+            background: #f1f5f9; border: 1px solid var(--border); color: #334155;
+            padding: 4px 10px; border-radius: 5px; font-size: 0.8rem; font-weight: 600;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .btn-clean:hover { background: #e2e8f0; color: var(--primary); border-color: var(--primary); }
+
         label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.85rem; color: var(--text-light); }
         textarea { 
             width: 100%; height: 350px; padding: 12px; 
@@ -108,15 +164,14 @@ th .arrow { font-size: 0.7em; margin-right: 4px; margin-left: 4px; opacity: .9; 
             font-family: 'Consolas', monospace; font-size: 13px;
             resize: vertical; box-sizing: border-box;
         }
-        textarea:focus, input:focus { outline: 2px solid var(--primary); border-color: transparent; }
+        textarea:focus, input:focus, select:focus { outline: 2px solid var(--primary); border-color: transparent; }
 
-        /* Table Input Mode Styling */
         .input-row { display: flex; gap: 5px; margin-bottom: 5px; }
         .input-row input {
             padding: 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 13px;
         }
         .inp-model { flex: 2; }
-        .inp-box, .inp-extra { flex: 1; text-align: center; }
+        .inp-box, .inp-extra, .inp-total { flex: 1; text-align: center; }
         .btn-del { 
             background: #fee2e2; color: #ef4444; border: none; 
             border-radius: 4px; width: 28px; cursor: pointer; font-weight: bold;
@@ -130,50 +185,198 @@ th .arrow { font-size: 0.7em; margin-right: 4px; margin-left: 4px; opacity: .9; 
         }
         .mode-switch-btn {
             background: none; border: none; color: var(--primary);
-            font-size: 0.85rem; cursor: pointer; text-decoration: underline; float: right;
+            font-size: 0.85rem; cursor: pointer; text-decoration: underline;
         }
 
-        /* --- Modal & Hidden --- */
+        /* --- Modal & Manager Styles --- */
         .hidden { display: none !important; }
         
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 999;
+            background: rgba(0,0,0,0.55); display: none; align-items: center; justify-content: center; z-index: 999;
         }
         .modal {
-            background: white; width: 90%; max-width: 450px; max-height: 80vh;
+            background: white; width: 94%; max-width: 860px; max-height: 90vh;
             border-radius: 8px; padding: 20px; display: flex; flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
         }
-        .modal-body { overflow-y: auto; flex: 1; margin: 15px 0; }
+        .modal-body { overflow-y: auto; flex: 1; margin: 10px 0; padding-right: 6px; }
+
+        /* Column Manager Layout */
+        .col-manager-grid {
+            display: grid; grid-template-columns: 310px 1fr; gap: 16px;
+        }
+        @media (max-width: 768px) { .col-manager-grid { grid-template-columns: 1fr; } }
+
+        .col-manager-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 6px 10px; border: 1px solid var(--border); background: #f8fafc;
+            border-radius: 6px; margin-bottom: 5px; font-size: 0.85rem;
+        }
+        .col-manager-left { display: flex; align-items: center; gap: 8px; }
+        .col-manager-actions { display: flex; align-items: center; gap: 3px; }
+        .btn-arrow-move {
+            background: #fff; border: 1px solid var(--border); border-radius: 4px;
+            padding: 2px 6px; cursor: pointer; font-size: 0.72rem; color: #475569;
+        }
+        .btn-arrow-move:hover { background: #e2e8f0; }
+
+        .add-col-panel {
+            background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px;
+            padding: 10px; margin-top: 10px;
+        }
+        .add-col-panel input, .add-col-panel select {
+            padding: 5px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.82rem;
+        }
+
+        /* Live Preview in Manager */
+        .preview-container {
+            border: 1px solid var(--border); border-radius: 6px; background: #fff;
+            padding: 10px; overflow-x: auto; max-height: 400px;
+        }
+
+        .settings-tabs { display: flex; gap: 6px; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+        .settings-tab-btn {
+            background: none; border: none; padding: 6px 12px; font-weight: 600; cursor: pointer;
+            border-radius: 4px; color: var(--text-light);
+        }
+        .settings-tab-btn.active { background: #e2e8f0; color: var(--primary); }
+
         .settings-row { display: grid; grid-template-columns: 2fr 1fr 30px; gap: 8px; margin-bottom: 8px; }
         .settings-row input { padding: 6px; border: 1px solid var(--border); border-radius: 4px; }
-        .btn-save { background: var(--primary); color: white; border: none; padding: 10px; border-radius: 6px; width: 100%; cursor: pointer; }
+        .pattern-row { display: grid; grid-template-columns: 1fr 30px; gap: 8px; margin-bottom: 8px; }
+        .pattern-row input { padding: 6px; border: 1px solid var(--border); border-radius: 4px; }
+        .btn-save { background: var(--primary); color: white; border: none; padding: 10px; border-radius: 6px; width: 100%; cursor: pointer; font-weight: 600; }
 
-        /* Reverse Calc UI */
-        .reverse-container { padding: 20px; text-align: center; }
+        /* Single Reverse Tab */
+        #single-reverse-tab { grid-template-columns: 240px 1fr; gap: 15px; max-width: 900px; margin: 0 auto; align-items: start; }
+        @media (max-width: 768px) { #single-reverse-tab { grid-template-columns: 1fr !important; } }
+        .side-panel input { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; margin-bottom: 8px; }
+        #sideList { max-height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+        .side-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 10px; border: 1px solid var(--border); background: #fff;
+            border-radius: 6px; cursor: pointer; font-size: 0.9rem; color: var(--text-main);
+        }
+        .side-item small { color: var(--text-light); font-family: Consolas, monospace; }
+        .side-item:hover { background: #eff6ff; border-color: var(--primary); }
+        .side-item.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .side-item.active small { color: #dbeafe; }
+
         .rev-input-group { margin-bottom: 20px; text-align: left; }
-        /* Updated Input Style for Datalist */
         .rev-input-group input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; }
-        
         .rev-result-box {
             background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 20px;
             display: flex; justify-content: center; align-items: center; gap: 30px;
         }
         .rev-num { font-size: 2.5rem; font-weight: 700; color: var(--primary); line-height: 1; }
         .rev-label { font-size: 0.8rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; }
-#reverse-tab { grid-template-columns: 240px 1fr; gap: 15px; max-width: 900px; margin: 0 auto; align-items: start; }
-@media (max-width: 768px) { #reverse-tab { grid-template-columns: 1fr !important; } }
-.side-panel input { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; margin-bottom: 8px; }
-#sideList { max-height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
-.side-item {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 8px 10px; border: 1px solid var(--border); background: #fff;
-    border-radius: 6px; cursor: pointer; font-size: 0.9rem; color: var(--text-main);
-}
-.side-item small { color: var(--text-light); font-family: Consolas, monospace; }
-.side-item:hover { background: #eff6ff; border-color: var(--primary); }
-.side-item.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-.side-item.active small { color: #dbeafe; }
+
+        /* Print Sheet Header */
+        .print-sheet-header { display: none; }
+
+        /* --- PRINT STYLING (A4 Match With Original Design) --- */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 10mm;
+            }
+            body.print-landscape {
+                size: A4 landscape;
+            }
+            body {
+                background: #fff !important;
+                color: #0f172a !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                font-size: 9.5pt !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .header, .tabs, .input-header-actions, #textInputContainer, #tableInputContainer, 
+            #revBatchTextContainer, #revBatchTableContainer, .side-panel, .table-toolbar, 
+            .modal-overlay, .copied-tooltip, .btn-icon, .btn-clean, .mode-switch-btn,
+            .btn-add, .grid-layout > div:first-child, #single-reverse-tab {
+                display: none !important;
+            }
+            .container {
+                max-width: 100% !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .grid-layout { display: block !important; }
+            .card {
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                background: transparent !important;
+            }
+
+            .print-sheet-header {
+                display: block !important;
+                margin-bottom: 12px;
+                border-bottom: 2px solid #1e293b;
+                padding-bottom: 6px;
+            }
+            .print-header-top {
+                display: flex; justify-content: space-between; align-items: flex-start;
+            }
+            .print-title {
+                margin: 0 0 2px 0; font-size: 15pt; font-weight: bold; color: #1e293b;
+            }
+            .print-sub { font-size: 8.5pt; color: #64748b; }
+            .print-meta { text-align: right; font-size: 8.5pt; color: #1e293b; line-height: 1.4; }
+            .print-custom-note { margin-top: 4px; font-size: 8.5pt; color: #334155; font-style: italic; }
+
+            /* Match the authentic on-screen table look */
+            table {
+                width: 100% !important;
+                border-collapse: separate !important;
+                border-spacing: 0 !important;
+                margin-top: 5px !important;
+                border: 1px solid #cbd5e1 !important;
+                border-radius: 6px !important;
+            }
+            thead { display: table-header-group !important; }
+            tfoot { display: table-footer-group !important; }
+            tr { page-break-inside: avoid !important; }
+            th {
+                background-color: #1e293b !important;
+                color: #f8fafc !important;
+                border: 1px solid #334155 !important;
+                padding: 6px 8px !important;
+                font-size: 8.5pt !important;
+            }
+            th .arrow { display: none !important; }
+            td {
+                border-bottom: 1px solid #e2e8f0 !important;
+                border-left: 1px solid #f1f5f9 !important;
+                border-right: 1px solid #f1f5f9 !important;
+                color: #334155 !important;
+                padding: 5px 8px !important;
+                font-size: 8.5pt !important;
+            }
+            tbody tr:nth-child(even) { background-color: #f8fafc !important; }
+            tfoot tr { background-color: #eff6ff !important; }
+            tfoot td {
+                border-top: 2px solid #bfdbfe !important;
+                color: #1e40af !important;
+                font-weight: bold !important;
+            }
+            .print-blank-line {
+                border-bottom: 1px solid #64748b !important;
+                min-height: 20px !important;
+            }
+            .print-box-symbol { font-size: 13pt !important; color: #000 !important; }
+            .custom-col-inp {
+                border: none !important;
+                border-bottom: 1px solid #64748b !important;
+                background: transparent !important;
+                border-radius: 0 !important;
+                width: 95% !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -184,15 +387,23 @@ th .arrow { font-size: 0.7em; margin-right: 4px; margin-left: 4px; opacity: .9; 
         <button class="btn-icon" onclick="openSettings()" title="Settings">⚙️ Settings</button>
     </div>
 
+    <!-- Main Navigation Tabs -->
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('standard')">Standard Calc</button>
-        <button class="tab-btn" onclick="switchTab('reverse')">Reverse Calc</button>
+        <button class="tab-btn active" onclick="switchTab('standard')">Standard Calc (Boxes → Pcs)</button>
+        <button class="tab-btn" onclick="switchTab('batch-reverse')">Batch Reverse (Pcs → Boxes)</button>
+        <button class="tab-btn" onclick="switchTab('single-reverse')">Quick Reverse (1-by-1)</button>
     </div>
 
+    <!-- TAB 1: STANDARD CALC -->
     <div id="standard-tab" class="grid-layout">
         <div class="card">
-            <button class="mode-switch-btn" id="toggleInputModeBtn" onclick="toggleInputMode()">Switch to Table Input</button>
-            <h3 style="margin:0 0 10px 0; font-size:1rem;">Input Data</h3>
+            <div class="input-header-actions">
+                <h3 style="margin:0; font-size:1rem;">Input Data</h3>
+                <div class="input-tools">
+                    <button class="btn-clean" onclick="cleanTextInput('std')" title="Clean product names & format">🧹 Clean Text</button>
+                    <button class="mode-switch-btn" id="toggleInputModeBtn" onclick="toggleInputMode('std')">Switch to Table Input</button>
+                </div>
+            </div>
             
             <div id="textInputContainer">
                 <textarea id="inputData" placeholder="Format: Model Box Extra&#10;Example:&#10;207 30 9&#10;100 10"></textarea>
@@ -200,86 +411,250 @@ th .arrow { font-size: 0.7em; margin-right: 4px; margin-left: 4px; opacity: .9; 
 
             <div id="tableInputContainer" class="hidden">
                 <div id="manualRowsContainer"></div>
-                <button class="btn-add" onclick="addManualRow()">+ Add Row</button>
+                <button class="btn-add" onclick="addManualRow('std')">+ Add Row</button>
             </div>
         </div>
 
         <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <h3 style="margin:0; font-size:1rem;">Results</h3>
-                <small style="color:var(--text-light)">Click cells to copy</small>
+            <div class="print-sheet-header" id="printSheetHeaderStd">
+                <div class="print-header-top">
+                    <div>
+                        <div class="print-title" id="stdPrintTitle">Packaging & Distribution Sheet</div>
+                        <div class="print-sub">Factory Calculator Pro • Official Dispatch Document</div>
+                    </div>
+                    <div class="print-meta">
+                        <div><strong>Date:</strong> <span class="printDateVal"></span></div>
+                        <div><strong>Time:</strong> <span class="printTimeVal"></span></div>
+                        <div class="printShiftVal"></div>
+                    </div>
+                </div>
+                <div class="print-custom-note printCustomNoteVal"></div>
+            </div>
+
+            <div class="table-toolbar">
+                <div class="table-filter-group">
+                    <input type="text" id="stdSearchFilter" placeholder="🔍 Filter model..." oninput="calculateTotal()">
+                    <select id="stdConditionFilter" onchange="calculateTotal()">
+                        <option value="all">All Items</option>
+                        <option value="withExtra">With Extra Only</option>
+                        <option value="noExtra">No Extra Only</option>
+                    </select>
+                </div>
+                <div class="table-action-btns">
+                    <button class="btn-print-table" onclick="openColumnsManager('std')">🖨️ Customize Columns & Print (A4)</button>
+                    <button class="btn-copy-table" onclick="copyFullTable('resultsTable', this)">📋 Copy Table</button>
+                </div>
             </div>
             
             <table id="resultsTable">
-                <thead>
-    <tr>
-        <th class="sortable" data-key="model" style="width: 35%;" onclick="sortBy('model')">Model <span class="arrow"></span></th>
-        <th class="sortable" data-key="boxes" style="width: 15%;" onclick="sortBy('boxes')">Boxes <span class="arrow"></span></th>
-        <th class="sortable" data-key="extra" style="width: 15%;" onclick="sortBy('extra')">Extra <span class="arrow"></span></th>
-        <th class="sortable" data-key="pcs" style="width: 15%;" onclick="sortBy('pcs')">Pcs Total <span class="arrow"></span></th>
-        <th class="sortable" data-key="final" style="width: 20%;" onclick="sortBy('final')">Final Total <span class="arrow"></span></th>
-    </tr>
-</thead>
+                <thead id="resultsTableHead"></thead>
                 <tbody id="resultsBody"></tbody>
-                <tfoot>
-                    <tr class="total-row">
-                        <td style="text-align: right;">GRAND TOTAL:</td>
-                        <td id="sumBoxes">0</td>
-                        <td id="sumExtras" style="color: #64748b;">0</td>
-                        <td id="sumPiecesInBoxes" style="color: #64748b; font-weight:normal;">0</td>
-                        <td id="sumFinal">0</td>
-                    </tr>
-                </tfoot>
+                <tfoot id="resultsTableFoot"></tfoot>
             </table>
         </div>
     </div>
 
-    <div id="reverse-tab" class="hidden" style="display: none;">
-    <aside class="card side-panel">
-        <h3 style="margin:0 0 10px 0; font-size:1rem;">Products</h3>
-        <input type="text" id="sideSearch" placeholder="🔍 Filter..." oninput="renderSidebar()">
-        <div id="sideList"></div>
-    </aside>
-
-    <div class="card">
-        <h3 style="text-align: center; margin-bottom: 20px;">Reverse Calculator (Pieces → Boxes)</h3>
-
-        <div class="rev-input-group">
-            <label>Search & Select Product</label>
-            <input list="modelDataList" id="revModelSearch" placeholder="Type model name to search..." oninput="calcReverse()">
-            <datalist id="modelDataList"></datalist>
-        </div>
-        <div class="rev-input-group">
-            <label>Total Pieces</label>
-            <input type="number" id="revTotalInput" placeholder="Enter total number of pieces..." oninput="calcReverse()">
-        </div>
-
-        <div id="revResult" class="hidden">
-            <div class="rev-result-box">
-                <div>
-                    <span class="rev-num" id="revBoxes">0</span>
-                    <div class="rev-label">Boxes</div>
-                </div>
-                <div style="font-size: 2rem; color: #cbd5e1;">+</div>
-                <div>
-                    <span class="rev-num" id="revExtras" style="color: var(--text-light);">0</span>
-                    <div class="rev-label">Extra</div>
+    <!-- TAB 2: BATCH REVERSE CALC -->
+    <div id="batch-reverse-tab" class="grid-layout hidden" style="display:none;">
+        <div class="card">
+            <div class="input-header-actions">
+                <h3 style="margin:0; font-size:1rem;">Input Data (Pieces)</h3>
+                <div class="input-tools">
+                    <button class="btn-clean" onclick="cleanTextInput('revBatch')" title="Clean product names & format">🧹 Clean Text</button>
+                    <button class="mode-switch-btn" id="toggleRevBatchModeBtn" onclick="toggleInputMode('revBatch')">Switch to Table Input</button>
                 </div>
             </div>
-            <p style="text-align: center; color: var(--text-light); margin-top: 10px; font-size: 0.85rem;">
-                Based on <span id="revPackSize">0</span> pcs/box
-            </p>
+            
+            <div id="revBatchTextContainer">
+                <textarea id="revBatchInputData" placeholder="Format: Model TotalPieces&#10;Example:&#10;203-1 (2.9m)  9,136&#10;217-1 6,370&#10;PLINTHE-103-1 (2.9m) 1730"></textarea>
+            </div>
+
+            <div id="revBatchTableContainer" class="hidden">
+                <div id="revBatchRowsContainer"></div>
+                <button class="btn-add" onclick="addManualRow('revBatch')">+ Add Row</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="print-sheet-header" id="printSheetHeaderRev">
+                <div class="print-header-top">
+                    <div>
+                        <div class="print-title" id="revPrintTitle">Production Calculation Sheet (Pieces → Boxes)</div>
+                        <div class="print-sub">Factory Calculator Pro • Packaging Order</div>
+                    </div>
+                    <div class="print-meta">
+                        <div><strong>Date:</strong> <span class="printDateVal"></span></div>
+                        <div><strong>Time:</strong> <span class="printTimeVal"></span></div>
+                        <div class="printShiftVal"></div>
+                    </div>
+                </div>
+                <div class="print-custom-note printCustomNoteVal"></div>
+            </div>
+
+            <div class="table-toolbar">
+                <div class="table-filter-group">
+                    <input type="text" id="revBatchSearchFilter" placeholder="🔍 Filter model..." oninput="calculateBatchReverse()">
+                    <select id="revBatchConditionFilter" onchange="calculateBatchReverse()">
+                        <option value="all">All Items</option>
+                        <option value="withExtra">With Extra Only</option>
+                        <option value="noExtra">Full Boxes Only</option>
+                    </select>
+                </div>
+                <div class="table-action-btns">
+                    <button class="btn-print-table" onclick="openColumnsManager('revBatch')">🖨️ Customize Columns & Print (A4)</button>
+                    <button class="btn-copy-table" onclick="copyFullTable('revBatchResultsTable', this)">📋 Copy Table</button>
+                </div>
+            </div>
+            
+            <table id="revBatchResultsTable">
+                <thead id="revBatchResultsHead"></thead>
+                <tbody id="revBatchResultsBody"></tbody>
+                <tfoot id="revBatchResultsFoot"></tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 3: SINGLE REVERSE CALC -->
+    <div id="single-reverse-tab" class="hidden" style="display: none;">
+        <aside class="card side-panel">
+            <h3 style="margin:0 0 10px 0; font-size:1rem;">Products</h3>
+            <input type="text" id="sideSearch" placeholder="🔍 Filter..." oninput="renderSidebar()">
+            <div id="sideList"></div>
+        </aside>
+
+        <div class="card">
+            <h3 style="text-align: center; margin-bottom: 20px;">Single Reverse Calculator (Pieces → Boxes)</h3>
+
+            <div class="rev-input-group">
+                <label>Search & Select Product</label>
+                <input list="modelDataList" id="revModelSearch" placeholder="Type model name to search..." oninput="calcReverseSingle()">
+                <datalist id="modelDataList"></datalist>
+            </div>
+            <div class="rev-input-group">
+                <label>Total Pieces</label>
+                <input type="text" id="revTotalInput" placeholder="Enter total number of pieces..." oninput="calcReverseSingle()">
+            </div>
+
+            <div id="revResult" class="hidden">
+                <div class="rev-result-box">
+                    <div>
+                        <span class="rev-num" id="revBoxes">0</span>
+                        <div class="rev-label">Boxes</div>
+                    </div>
+                    <div style="font-size: 2rem; color: #cbd5e1;">+</div>
+                    <div>
+                        <span class="rev-num" id="revExtras" style="color: var(--text-light);">0</span>
+                        <div class="rev-label">Extra Pcs</div>
+                    </div>
+                </div>
+                <p style="text-align: center; color: var(--text-light); margin-top: 10px; font-size: 0.85rem;">
+                    Based on <span id="revPackSize">0</span> pcs/box
+                </p>
+            </div>
         </div>
     </div>
 </div>
 
+<!-- ==========================================================
+     REBUILT MODAL: INTERACTIVE COLUMNS MANAGER & PRINT (A4)
+     ========================================================== -->
+<div id="columnsModal" class="modal-overlay">
+    <div class="modal">
+        <h2 style="margin-top:0; font-size:1.15rem; display:flex; justify-content:space-between; align-items:center;">
+            <span>🖨️ Customize Columns & Print (A4)</span>
+            <button style="background:none; border:none; font-size:1.3rem; cursor:pointer;" onclick="closeColumnsModal()">×</button>
+        </h2>
+        
+        <div class="modal-body">
+            <div class="col-manager-grid">
+                <!-- Left Control Panel -->
+                <div>
+                    <h4 style="margin:0 0 8px 0; font-size:0.85rem; color:var(--text-main);">Columns Visibility & Order:</h4>
+                    <div id="colManagerList"></div>
+
+                    <div class="add-col-panel">
+                        <strong style="display:block; font-size:0.82rem; margin-bottom:5px; color:#1e293b;">➕ Insert Column</strong>
+                        <input type="text" id="newColTitle" placeholder="Title (e.g. Pallet #, Sign)" style="width:100%; box-sizing:border-box; margin-bottom:5px;">
+                        <div style="display:flex; gap:5px; margin-bottom:5px;">
+                            <select id="newColType" style="flex:1;">
+                                <option value="blank">✍️ Blank Line</option>
+                                <option value="checkbox">☐ Checkbox</option>
+                                <option value="input">📝 Input Field</option>
+                            </select>
+                            <select id="newColPosType" style="width:75px;">
+                                <option value="after">After</option>
+                                <option value="before">Before</option>
+                            </select>
+                        </div>
+                        <div style="display:flex; gap:5px;">
+                            <select id="newColTargetCol" style="flex:1;"></select>
+                            <button style="background:var(--primary); color:#fff; border:none; padding:5px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer;" onclick="handleAddColumn()">Add</button>
+                        </div>
+                    </div>
+
+                    <!-- Print Sheet Info -->
+                    <div style="margin-top:10px; border-top:1px solid var(--border); padding-top:8px;">
+                        <label style="font-size:0.8rem; margin-bottom:2px;">Document Title</label>
+                        <input type="text" id="printDocTitleInput" oninput="updatePrintHeaderDetails()" style="width:100%; padding:4px 6px; border:1px solid var(--border); border-radius:4px; box-sizing:border-box; margin-bottom:5px;">
+                        
+                        <label style="font-size:0.8rem; margin-bottom:2px;">Shift / Operator Info</label>
+                        <input type="text" id="printShiftInput" oninput="updatePrintHeaderDetails()" placeholder="e.g. Shift 1" style="width:100%; padding:4px 6px; border:1px solid var(--border); border-radius:4px; box-sizing:border-box; margin-bottom:5px;">
+
+                        <label style="font-size:0.8rem; margin-bottom:2px;">Notes for Worker</label>
+                        <input type="text" id="printNotesInput" oninput="updatePrintHeaderDetails()" placeholder="e.g. Verify packaging" style="width:100%; padding:4px 6px; border:1px solid var(--border); border-radius:4px; box-sizing:border-box; margin-bottom:5px;">
+
+                        <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-size:0.8rem; margin-top:4px;">
+                            <input type="checkbox" id="printLandscapeCheck">
+                            Landscape A4 (تخطيط عرضي)
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Right Live Preview Panel -->
+                <div>
+                    <h4 style="margin:0 0 8px 0; font-size:0.85rem; color:var(--text-main);">Live Document Preview (معاينة فورية):</h4>
+                    <div class="preview-container">
+                        <div id="livePreviewContainer"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px; border-top:1px solid var(--border); padding-top:10px;">
+            <button style="background:#e2e8f0; color:#334155; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:600;" onclick="closeColumnsModal()">Close</button>
+            <button class="btn-save" style="background:#0f172a; width:auto; padding:8px 20px;" onclick="executePrintSheet()">🖨️ Print Sheet Now (A4)</button>
+        </div>
+    </div>
 </div>
 
+<!-- Settings Modal -->
 <div id="settingsModal" class="modal-overlay">
-    <div class="modal">
-        <h2 style="margin-top:0">⚙️ Product Settings</h2>
-        <div class="modal-body" id="settingsList"></div>
-        <button style="background:#e2e8f0; color:#334155; border:none; padding:8px; border-radius:4px; width:100%; margin-bottom:10px; cursor:pointer;" onclick="addSettingRow()">+ Add New Model</button>
+    <div class="modal" style="max-width:520px;">
+        <h2 style="margin-top:0; font-size:1.15rem;">⚙️ Settings</h2>
+        <div class="settings-tabs">
+            <button class="settings-tab-btn active" onclick="switchSettingsTab('models')">📦 Models & Pack Sizes</button>
+            <button class="settings-tab-btn" onclick="switchSettingsTab('patterns')">🧹 Cleaner Patterns</button>
+        </div>
+
+        <div class="modal-body" id="settingsModelsView">
+            <div id="settingsList"></div>
+            <button style="background:#e2e8f0; color:#334155; border:none; padding:8px; border-radius:4px; width:100%; margin-top:5px; cursor:pointer;" onclick="addSettingRow()">+ Add New Model</button>
+        </div>
+
+        <div class="modal-body hidden" id="settingsPatternsView">
+            <p style="font-size:0.85rem; color:var(--text-light); margin-top:0;">
+                Prefixes and patterns stripped by the "Clean Text" button:
+            </p>
+            <div id="patternsList"></div>
+            <button style="background:#e2e8f0; color:#334155; border:none; padding:8px; border-radius:4px; width:100%; margin-top:5px; cursor:pointer;" onclick="addPatternRow()">+ Add Pattern/Prefix</button>
+            <div style="margin-top:15px; font-size:0.85rem; color:var(--text-light);">
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                    <input type="checkbox" id="stripParenthesesCheckbox" checked>
+                    Always strip brackets content e.g. <code>(2.9m)</code>, <code>(2,9m)</code>, <code>(2.9)</code>, <code>(2,9)</code>
+                </label>
+            </div>
+        </div>
+
         <button class="btn-save" onclick="saveSettings()">Save Changes</button>
         <button style="background:transparent; color:#64748b; border:none; margin-top:10px; cursor:pointer;" onclick="closeSettings()">Cancel</button>
     </div>
@@ -296,220 +671,877 @@ th .arrow { font-size: 0.7em; margin-right: 4px; margin-left: 4px; opacity: .9; 
         '215': 33, '216': 50, '217': 98
     };
 
-    let productData = JSON.parse(localStorage.getItem('factoryCalcData')) || defaultData;
+    const defaultPatterns = [
+        'CIMAISE', 'PLINTHE', 'CORNIERE', 'CORNICHE', 'WALL PANEL', 'WALLPANEL', 'PANEL'
+    ];
 
-    // --- DOM Elements ---
+    // Added perBox as an INDEPENDENT column
+    const defaultStdColumns = [
+        { id: 'model', label: 'Model', type: 'base', sortable: true, visible: true },
+        { id: 'perBox', label: 'Pack Size', type: 'base', sortable: true, visible: true },
+        { id: 'boxes', label: 'Boxes', type: 'base', sortable: true, visible: true },
+        { id: 'extra', label: 'Extra', type: 'base', sortable: true, visible: true },
+        { id: 'pcs', label: 'Pcs Total', type: 'base', sortable: true, visible: true },
+        { id: 'final', label: 'Final Total', type: 'base', sortable: true, visible: true }
+    ];
+
+    const defaultRevBatchColumns = [
+        { id: 'model', label: 'Model', type: 'base', sortable: true, visible: true },
+        { id: 'perBox', label: 'Pack Size', type: 'base', sortable: true, visible: true },
+        { id: 'boxes', label: 'Boxes', type: 'base', sortable: true, visible: true },
+        { id: 'extra', label: 'Extra', type: 'base', sortable: true, visible: true },
+        { id: 'totalPcs', label: 'Total Pieces', type: 'base', sortable: true, visible: true }
+    ];
+
+    let productData = JSON.parse(localStorage.getItem('factoryCalcData')) || defaultData;
+    let storedPatterns = JSON.parse(localStorage.getItem('factoryCalcPatterns'));
+    let cleanPatterns = defaultPatterns;
+    if (storedPatterns && Array.isArray(storedPatterns)) {
+        cleanPatterns = Array.from(new Set([...defaultPatterns, ...storedPatterns]));
+    }
+    
+    let stripParentheses = localStorage.getItem('factoryCalcStripParen') !== 'false';
+
+    let stdColumns = JSON.parse(localStorage.getItem('factoryCalc_stdCols')) || defaultStdColumns;
+    let revBatchColumns = JSON.parse(localStorage.getItem('factoryCalc_revBatchCols')) || defaultRevBatchColumns;
+
+    // Ensure perBox exists if user had old stored column settings
+    if (!stdColumns.some(c => c.id === 'perBox')) {
+        stdColumns.splice(1, 0, { id: 'perBox', label: 'Pack Size', type: 'base', sortable: true, visible: true });
+    }
+
+    let currentManagerTarget = 'std';
+
+    // DOM Elements
     const inputArea = document.getElementById('inputData');
     const resultsBody = document.getElementById('resultsBody');
     const tableInputContainer = document.getElementById('tableInputContainer');
     const textInputContainer = document.getElementById('textInputContainer');
     const manualRowsContainer = document.getElementById('manualRowsContainer');
 
-    // --- Logic: Calculation ---
-    let sortState = { key: null, dir: 'asc' };
+    const revBatchInputArea = document.getElementById('revBatchInputData');
+    const revBatchResultsBody = document.getElementById('revBatchResultsBody');
+    const revBatchTableContainer = document.getElementById('revBatchTableContainer');
+    const revBatchTextContainer = document.getElementById('revBatchTextContainer');
+    const revBatchRowsContainer = document.getElementById('revBatchRowsContainer');
 
-function sortBy(key) {
-    if (sortState.key !== key) { sortState = { key, dir: 'asc' }; }
-    else if (sortState.dir === 'asc') { sortState.dir = 'desc'; }
-    else { sortState = { key: null, dir: 'asc' }; }
-    calculateTotal();
-}
+    let sortStateStd = { key: null, dir: 'asc' };
+    let sortStateRevBatch = { key: null, dir: 'asc' };
 
-function updateSortArrows() {
-    document.querySelectorAll('th.sortable').forEach(th => {
-        const arrow = th.querySelector('.arrow');
-        arrow.textContent = th.dataset.key === sortState.key
-            ? (sortState.dir === 'asc' ? '▲' : '▼') : '';
-    });
-}
-
-function calculateTotal() {
-    if (!tableInputContainer.classList.contains('hidden')) {
-        syncTableToText();
+    // --- Helper: Parsing Numbers ---
+    function isNumericStr(str) {
+        if (str === null || str === undefined) return false;
+        let s = String(str).trim().replace(/\s+/g, '');
+        if (!s) return false;
+        if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)) return true;
+        if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) return true;
+        s = s.replace(',', '.');
+        return !isNaN(parseFloat(s)) && isFinite(s);
     }
 
-    const lines = inputArea.value.trim().split('\n');
-    resultsBody.innerHTML = '';
+    function parseNumVal(str) {
+        if (str === null || str === undefined) return 0;
+        let s = String(str).trim().replace(/\s+/g, '');
+        if (!s) return 0;
+        if (/^\d{1,3}(,\d{3})+$/.test(s)) return parseInt(s.replace(/,/g, ''), 10);
+        if (/^\d{1,3}(\.\d{3})+$/.test(s)) return parseInt(s.replace(/\./g, ''), 10);
+        s = s.replace(',', '.');
+        const n = parseFloat(s);
+        return isNaN(n) ? 0 : Math.round(n);
+    }
 
-    let totalBoxes = 0, totalExtras = 0, totalPcsInBox = 0, grandFinal = 0;
-    const items = [];
+    // --- Core Helper: Find Packaging Size ---
+    function findPackSize(modelName) {
+        if (!modelName) return 0;
+        let clean = cleanSingleItem(modelName).trim();
+        
+        if (productData[clean]) return productData[clean];
+        if (productData[modelName]) return productData[modelName];
 
-    lines.forEach(line => {
-        if (!line.trim() || /^[0-9]+[a-zA-Z]+$/.test(line.trim())) return;
-
-        const parts = line.trim().split(/\s+/);
-        if (parts.length < 2) return;
-
-        let modelName, boxCount, extraPieces;
-        if (parts.length >= 3 && !isNaN(parts[parts.length - 1]) && !isNaN(parts[parts.length - 2])) {
-            extraPieces = parseInt(parts.pop(), 10);
-            boxCount = parseInt(parts.pop(), 10);
-            modelName = parts.join(' ');
-        } else {
-            extraPieces = 0;
-            boxCount = parseInt(parts.pop(), 10);
-            modelName = parts.join(' ');
+        const parts = clean.split(/[-\s]+/);
+        for (const p of parts) {
+            if (productData[p]) return productData[p];
         }
-        if (isNaN(boxCount)) return;
 
-        const modelCode = modelName.split('-')[0].trim();
-        const piecesPerBox = productData[modelCode] || 0;
-        const pcs = boxCount * piecesPerBox;
-
-        items.push({ model: modelName, boxes: boxCount, extra: extraPieces,
-                     pcs, final: pcs + extraPieces, perBox: piecesPerBox });
-    });
-
-    // الترتيب
-    if (sortState.key) {
-        const k = sortState.key, m = sortState.dir === 'asc' ? 1 : -1;
-        items.sort((a, b) => k === 'model'
-            ? m * a.model.localeCompare(b.model, undefined, { numeric: true })
-            : m * (a[k] - b[k]));
+        const keys = Object.keys(productData).sort((a,b) => b.length - a.length);
+        for (const k of keys) {
+            const regex = new RegExp(`(^|[^0-9a-zA-Z])${k}([^0-9a-zA-Z]|$)`, 'i');
+            if (regex.test(clean) || regex.test(modelName)) {
+                return productData[k];
+            }
+        }
+        return 0;
     }
 
-    items.forEach(it => {
-        totalBoxes += it.boxes; totalExtras += it.extra;
-        totalPcsInBox += it.pcs; grandFinal += it.final;
+    // --- Intelligent Cleaning: Removes ALL words before the model numbers ---
+    function cleanSingleItem(str) {
+        if (!str) return '';
+        let res = str.trim();
+        res = res.replace(/^[\s\-\*\•\–]+/, '').trim();
 
-        const row = resultsBody.insertRow();
-        row.innerHTML = `
-            <td>
-                <div style="font-weight:600; color:var(--text-main)">${it.model}</div>
-                <div style="font-size:0.75rem; color:var(--text-light)">${it.perBox} pcs/box</div>
-            </td>
-            <td style="font-weight:bold; color:var(--primary); font-size:1.1em">${it.boxes}</td>
-            <td>${it.extra > 0 ? it.extra : '-'}</td>
-            <td class="clickable-cell" onclick="copyCell(this)">
-                ${it.pcs} <span class="copied-tooltip">Copied!</span>
-            </td>
-            <td class="clickable-cell" onclick="copyCell(this)" style="font-weight:bold;">
-                ${it.final} <span class="copied-tooltip">Copied!</span>
-            </td>
-        `;
-    });
+        // 1. Remove bracketed content (e.g. (2.9m), (2,9m), (2.9), [2.9m])
+        if (stripParentheses) {
+            res = res.replace(/\s*\([^\)]*\)/g, '').trim();
+            res = res.replace(/\s*\[[^\]]*\]/g, '').trim();
+        }
 
-    document.getElementById('sumBoxes').textContent = totalBoxes;
-    document.getElementById('sumExtras').textContent = totalExtras;
-    document.getElementById('sumPiecesInBoxes').textContent = totalPcsInBox;
-    document.getElementById('sumFinal').textContent = grandFinal;
+        // 2. Remove standalone length metrics
+        res = res.replace(/\b\d+([.,]\d+)?\s*(m|meter|metre)\b/gi, '').trim();
 
-    updateSortArrows();
-    updateUrlFromText();
-}
+        // 3. Specifically strip known multi-word & single-word prefixes
+        cleanPatterns.forEach(pattern => {
+            if (!pattern) return;
+            const cleanPat = pattern.trim().replace(/-$/, '');
+            const escaped = cleanPat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`^${escaped}[\\s\\-_]*`, 'i');
+            res = res.replace(regex, '').trim();
+        });
 
-    // --- Logic: Table Input & Enter Navigation ---
-    function addManualRow(model='', boxes='', extras='') {
+        // 4. Fallback: Strip ANY leading words preceding the model number
+        // e.g. "WALL PANEL 401-11" or "ANY TEXT-203-1" => "401-11", "203-1"
+        res = res.replace(/^[A-Za-z\s\-_]+(?=\d{2,4}[-\s\w]*)/i, '').trim();
+
+        res = res.replace(/[\s\-_,]+$/, '').trim();
+        res = res.replace(/\s+/g, ' ').trim();
+        return res;
+    }
+
+    function cleanTextInput(mode) {
+        const targetArea = (mode === 'std') ? inputArea : revBatchInputArea;
+        let raw = targetArea.value;
+
+        raw = raw.replace(/([^\n])(?=(CIMAISE|PLINTHE|CORNIERE|CORNICHE|WALL\s*PANEL)\b)/gi, '$1\n');
+
+        const lines = raw.split('\n');
+        const cleanedLines = [];
+
+        lines.forEach(line => {
+            const trimmed = line.trim();
+            if (!trimmed) return;
+
+            const parts = trimmed.split(/\s+/);
+            if (mode === 'std') {
+                if (parts.length >= 3 && isNumericStr(parts[parts.length - 1]) && isNumericStr(parts[parts.length - 2])) {
+                    const extra = parseNumVal(parts.pop());
+                    const boxes = parseNumVal(parts.pop());
+                    const model = cleanSingleItem(parts.join(' '));
+                    cleanedLines.push(`${model}\t${boxes}\t${extra}`);
+                } else if (parts.length >= 2 && isNumericStr(parts[parts.length - 1])) {
+                    const boxes = parseNumVal(parts.pop());
+                    const model = cleanSingleItem(parts.join(' '));
+                    cleanedLines.push(`${model}\t${boxes}`);
+                } else {
+                    cleanedLines.push(cleanSingleItem(trimmed));
+                }
+            } else {
+                if (parts.length >= 2 && isNumericStr(parts[parts.length - 1])) {
+                    const total = parseNumVal(parts.pop());
+                    const model = cleanSingleItem(parts.join(' '));
+                    cleanedLines.push(`${model}\t${total}`);
+                } else {
+                    cleanedLines.push(cleanSingleItem(trimmed));
+                }
+            }
+        });
+
+        targetArea.value = cleanedLines.join('\n');
+        if (mode === 'std') calculateTotal();
+        else calculateBatchReverse();
+    }
+
+    // --- Universal Cell Copying ---
+    function copyCell(cell) {
+        const clone = cell.cloneNode(true);
+        const tooltip = clone.querySelector('.copied-tooltip');
+        if (tooltip) tooltip.remove();
+
+        const inp = cell.querySelector('input');
+        let text = inp ? inp.value.trim() : clone.innerText.trim();
+
+        if (!text || text === '-') return;
+
+        navigator.clipboard.writeText(text).then(() => {
+            let tip = cell.querySelector('.copied-tooltip');
+            if (!tip) {
+                tip = document.createElement('span');
+                tip.className = 'copied-tooltip';
+                tip.textContent = 'Copied!';
+                cell.appendChild(tip);
+            }
+            cell.classList.add('show-tooltip');
+            setTimeout(() => cell.classList.remove('show-tooltip'), 800);
+        });
+    }
+
+    // --- Sorting ---
+    function sortBy(mode, key) {
+        const st = (mode === 'std') ? sortStateStd : sortStateRevBatch;
+        if (st.key !== key) {
+            st.key = key; st.dir = 'asc';
+        } else if (st.dir === 'asc') {
+            st.dir = 'desc';
+        } else {
+            st.key = null; st.dir = 'asc';
+        }
+
+        if (mode === 'std') calculateTotal();
+        else calculateBatchReverse();
+    }
+
+    function updateSortArrows(tableId, state) {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+        table.querySelectorAll('th.sortable').forEach(th => {
+            const arrow = th.querySelector('.arrow');
+            if (arrow) {
+                arrow.textContent = th.dataset.key === state.key
+                    ? (state.dir === 'asc' ? '▲' : '▼') : '';
+            }
+        });
+    }
+
+    function renderTableStructure(tableId, columns, sortState, mode) {
+        const thead = document.getElementById(tableId === 'resultsTable' ? 'resultsTableHead' : 'revBatchResultsHead');
+        const visibleCols = columns.filter(c => c.visible);
+
+        let ths = visibleCols.map(c => {
+            const isSort = c.sortable;
+            return `<th class="${isSort ? 'sortable' : ''}" data-key="${c.id}" onclick="${isSort ? `sortBy('${mode}', '${c.id}')` : ''}">${c.label} ${isSort ? '<span class="arrow"></span>' : ''}</th>`;
+        }).join('');
+        thead.innerHTML = `<tr>${ths}</tr>`;
+    }
+
+    // --- Calculation: Standard Calc ---
+    function calculateTotal() {
+        if (!tableInputContainer.classList.contains('hidden')) {
+            syncTableToText('std');
+        }
+
+        renderTableStructure('resultsTable', stdColumns, sortStateStd, 'std');
+
+        const lines = inputArea.value.trim().split('\n');
+        resultsBody.innerHTML = '';
+
+        const searchFilter = (document.getElementById('stdSearchFilter').value || '').trim().toLowerCase();
+        const conditionFilter = document.getElementById('stdConditionFilter').value;
+
+        let totalBoxes = 0, totalExtras = 0, totalPcsInBox = 0, grandFinal = 0;
+        let items = [];
+
+        lines.forEach(line => {
+            if (!line.trim() || /^[0-9]+[a-zA-Z]+$/.test(line.trim())) return;
+
+            const parts = line.trim().split(/\s+/);
+            if (parts.length < 2) return;
+
+            let modelName, boxCount, extraPieces;
+            if (parts.length >= 3 && isNumericStr(parts[parts.length - 1]) && isNumericStr(parts[parts.length - 2])) {
+                extraPieces = parseNumVal(parts.pop());
+                boxCount = parseNumVal(parts.pop());
+                modelName = parts.join(' ');
+            } else if (parts.length >= 2 && isNumericStr(parts[parts.length - 1])) {
+                extraPieces = 0;
+                boxCount = parseNumVal(parts.pop());
+                modelName = parts.join(' ');
+            } else {
+                return;
+            }
+
+            const piecesPerBox = findPackSize(modelName);
+            const pcs = boxCount * piecesPerBox;
+
+            items.push({
+                model: modelName,
+                boxes: boxCount,
+                extra: extraPieces,
+                pcs,
+                final: pcs + extraPieces,
+                perBox: piecesPerBox
+            });
+        });
+
+        items = items.filter(it => {
+            if (searchFilter && !it.model.toLowerCase().includes(searchFilter)) return false;
+            if (conditionFilter === 'withExtra' && it.extra <= 0) return false;
+            if (conditionFilter === 'noExtra' && it.extra > 0) return false;
+            return true;
+        });
+
+        if (sortStateStd.key) {
+            const k = sortStateStd.key, m = sortStateStd.dir === 'asc' ? 1 : -1;
+            items.sort((a, b) => k === 'model'
+                ? m * a.model.localeCompare(b.model, undefined, { numeric: true })
+                : m * (a[k] - b[k]));
+        }
+
+        const visibleCols = stdColumns.filter(c => c.visible);
+
+        items.forEach(it => {
+            totalBoxes += it.boxes; totalExtras += it.extra;
+            totalPcsInBox += it.pcs; grandFinal += it.final;
+
+            const row = resultsBody.insertRow();
+            let rowHtml = '';
+
+            visibleCols.forEach(col => {
+                if (col.id === 'model') {
+                    rowHtml += `<td class="clickable-cell cell-model" onclick="copyCell(this)">
+                        ${it.model}
+                        <span class="copied-tooltip">Copied!</span>
+                    </td>`;
+                } else if (col.id === 'perBox') {
+                    rowHtml += `<td class="clickable-cell cell-mono" onclick="copyCell(this)" style="color:var(--text-light); font-size:0.85rem;">
+                        ${it.perBox > 0 ? it.perBox + ' pcs' : '<span style="color:var(--danger)">Unknown</span>'}
+                        <span class="copied-tooltip">Copied!</span>
+                    </td>`;
+                } else if (col.id === 'boxes') {
+                    rowHtml += `<td class="clickable-cell cell-mono" onclick="copyCell(this)" style="font-weight:bold; color:var(--primary); font-size:1.1em">${it.boxes} <span class="copied-tooltip">Copied!</span></td>`;
+                } else if (col.id === 'extra') {
+                    rowHtml += `<td class="clickable-cell cell-mono" onclick="copyCell(this)">${it.extra > 0 ? it.extra : '-'} <span class="copied-tooltip">Copied!</span></td>`;
+                } else if (col.id === 'pcs') {
+                    rowHtml += `<td class="clickable-cell cell-mono" onclick="copyCell(this)">${it.pcs} <span class="copied-tooltip">Copied!</span></td>`;
+                } else if (col.id === 'final') {
+                    rowHtml += `<td class="clickable-cell cell-mono" onclick="copyCell(this)" style="font-weight:bold;">${it.final} <span class="copied-tooltip">Copied!</span></td>`;
+                } else {
+                    rowHtml += renderCustomCellContent(col.colType);
+                }
+            });
+            row.innerHTML = rowHtml;
+        });
+
+        let tfootHtml = '<tr>';
+        visibleCols.forEach((col, idx) => {
+            if (idx === 0) {
+                tfootHtml += `<td style="text-align: right;">GRAND TOTAL:</td>`;
+            } else if (col.id === 'perBox') {
+                tfootHtml += `<td>-</td>`;
+            } else if (col.id === 'boxes') {
+                tfootHtml += `<td id="sumBoxes" class="clickable-cell cell-mono" onclick="copyCell(this)">${totalBoxes} <span class="copied-tooltip">Copied!</span></td>`;
+            } else if (col.id === 'extra') {
+                tfootHtml += `<td id="sumExtras" class="clickable-cell cell-mono" onclick="copyCell(this)" style="color: #64748b;">${totalExtras} <span class="copied-tooltip">Copied!</span></td>`;
+            } else if (col.id === 'pcs') {
+                tfootHtml += `<td id="sumPiecesInBoxes" class="clickable-cell cell-mono" onclick="copyCell(this)" style="color: #64748b; font-weight:normal;">${totalPcsInBox} <span class="copied-tooltip">Copied!</span></td>`;
+            } else if (col.id === 'final') {
+                tfootHtml += `<td id="sumFinal" class="clickable-cell cell-mono" onclick="copyCell(this)">${grandFinal} <span class="copied-tooltip">Copied!</span></td>`;
+            } else {
+                tfootHtml += `<td>-</td>`;
+            }
+        });
+        tfootHtml += '</tr>';
+        document.getElementById('resultsTableFoot').innerHTML = tfootHtml;
+
+        updateSortArrows('resultsTable', sortStateStd);
+        updateUrlFromText();
+        updateModalPreview();
+    }
+
+    // --- Calculation: Batch Reverse Calc ---
+    function calculateBatchReverse() {
+        if (!revBatchTableContainer.classList.contains('hidden')) {
+            syncTableToText('revBatch');
+        }
+
+        renderTableStructure('revBatchResultsTable', revBatchColumns, sortStateRevBatch, 'revBatch');
+
+        const lines = revBatchInputArea.value.trim().split('\n');
+        revBatchResultsBody.innerHTML = '';
+
+        const searchFilter = (document.getElementById('revBatchSearchFilter').value || '').trim().toLowerCase();
+        const conditionFilter = document.getElementById('revBatchConditionFilter').value;
+
+        let totalBoxes = 0, totalExtras = 0, grandFinal = 0;
+        let items = [];
+
+        lines.forEach(line => {
+            if (!line.trim()) return;
+            const parts = line.trim().split(/\s+/);
+            if (parts.length < 2) return;
+
+            if (!isNumericStr(parts[parts.length - 1])) return;
+            const totalPcs = parseNumVal(parts.pop());
+            const modelName = parts.join(' ');
+
+            const perBox = findPackSize(modelName);
+            let boxes = 0, extra = totalPcs;
+            if (perBox > 0) {
+                boxes = Math.floor(totalPcs / perBox);
+                extra = totalPcs % perBox;
+            }
+
+            items.push({
+                model: modelName,
+                perBox,
+                boxes,
+                extra,
+                totalPcs
+            });
+        });
+
+        items = items.filter(it => {
+            if (searchFilter && !it.model.toLowerCase().includes(searchFilter)) return false;
+            if (conditionFilter === 'withExtra' && it.extra <= 0) return false;
+            if (conditionFilter === 'noExtra' && it.extra > 0) return false;
+            return true;
+        });
+
+        if (sortStateRevBatch.key) {
+            const k = sortStateRevBatch.key, m = sortStateRevBatch.dir === 'asc' ? 1 : -1;
+            items.sort((a, b) => k === 'model'
+                ? m * a.model.localeCompare(b.model, undefined, { numeric: true })
+                : m * (a[k] - b[k]));
+        }
+
+        const visibleCols = revBatchColumns.filter(c => c.visible);
+
+        items.forEach(it => {
+            totalBoxes += it.boxes;
+            totalExtras += it.extra;
+            grandFinal += it.totalPcs;
+
+            const row = revBatchResultsBody.insertRow();
+            let rowHtml = '';
+
+            visibleCols.forEach(col => {
+                if (col.id === 'model') {
+                    rowHtml += `<td class="clickable-cell cell-model" onclick="copyCell(this)"><div style="font-weight:600; color:var(--text-main)">${it.model}</div><span class="copied-tooltip">Copied!</span></td>`;
+                } else if (col.id === 'perBox') {
+                    rowHtml += `<td class="clickable-cell cell-mono" onclick="copyCell(this)" style="color:var(--text-light); font-size:0.85rem;">
+                        ${it.perBox > 0 ? it.perBox + ' pcs' : '<span style="color:var(--danger)">Unknown</span>'}
+                        <span class="copied-tooltip">Copied!</span>
+                    </td>`;
+                } else if (col.id === 'boxes') {
+                    rowHtml += `<td class="clickable-cell cell-mono" onclick="copyCell(this)" style="font-weight:bold; color:var(--primary); font-size:1.1em">${it.boxes} <span class="copied-tooltip">Copied!</span></td>`;
+                } else if (col.id === 'extra') {
+                    rowHtml += `<td class="clickable-cell cell-mono" onclick="copyCell(this)" style="${it.extra > 0 ? 'font-weight:600; color:#b45309;' : ''}">${it.extra > 0 ? it.extra : '-'} <span class="copied-tooltip">Copied!</span></td>`;
+                } else if (col.id === 'totalPcs') {
+                    rowHtml += `<td class="clickable-cell cell-mono" onclick="copyCell(this)" style="font-weight:bold;">${it.totalPcs} <span class="copied-tooltip">Copied!</span></td>`;
+                } else {
+                    rowHtml += renderCustomCellContent(col.colType);
+                }
+            });
+            row.innerHTML = rowHtml;
+        });
+
+        let tfootHtml = '<tr>';
+        visibleCols.forEach((col, idx) => {
+            if (idx === 0) {
+                tfootHtml += `<td style="text-align: right;">GRAND TOTAL:</td>`;
+            } else if (col.id === 'perBox') {
+                tfootHtml += `<td>-</td>`;
+            } else if (col.id === 'boxes') {
+                tfootHtml += `<td id="sumRevBoxes" class="clickable-cell cell-mono" onclick="copyCell(this)">${totalBoxes} <span class="copied-tooltip">Copied!</span></td>`;
+            } else if (col.id === 'extra') {
+                tfootHtml += `<td id="sumRevExtras" class="clickable-cell cell-mono" onclick="copyCell(this)" style="color: #64748b;">${totalExtras} <span class="copied-tooltip">Copied!</span></td>`;
+            } else if (col.id === 'totalPcs') {
+                tfootHtml += `<td id="sumRevFinal" class="clickable-cell cell-mono" onclick="copyCell(this)">${grandFinal} <span class="copied-tooltip">Copied!</span></td>`;
+            } else {
+                tfootHtml += `<td>-</td>`;
+            }
+        });
+        tfootHtml += '</tr>';
+        document.getElementById('revBatchResultsFoot').innerHTML = tfootHtml;
+
+        updateSortArrows('revBatchResultsTable', sortStateRevBatch);
+        updateModalPreview();
+    }
+
+    function renderCustomCellContent(colType) {
+        if (colType === 'checkbox') {
+            return `<td><span class="print-box-symbol">☐</span></td>`;
+        } else if (colType === 'input') {
+            return `<td><input type="text" class="custom-col-inp" placeholder="Write..."></td>`;
+        } else {
+            return `<td><span class="print-blank-line"></span></td>`;
+        }
+    }
+
+    // --- Interactive Columns Manager with Live Preview ---
+    function openColumnsManager(mode) {
+        currentManagerTarget = mode;
+        renderColManagerList();
+        populateTargetColDropdown();
+
+        const defaultTitle = (mode === 'std') ? 'Packaging & Distribution Sheet' : 'Production Sheet (Pieces → Boxes)';
+        document.getElementById('printDocTitleInput').value = defaultTitle;
+
+        updateModalPreview();
+        document.getElementById('columnsModal').style.display = 'flex';
+    }
+
+    function closeColumnsModal() {
+        document.getElementById('columnsModal').style.display = 'none';
+    }
+
+    function updateModalPreview() {
+        const previewContainer = document.getElementById('livePreviewContainer');
+        if (!previewContainer) return;
+
+        const tableId = (currentManagerTarget === 'std') ? 'resultsTable' : 'revBatchResultsTable';
+        const srcTable = document.getElementById(tableId);
+        if (srcTable) {
+            previewContainer.innerHTML = '';
+            const clone = srcTable.cloneNode(true);
+            clone.style.margin = '0';
+            previewContainer.appendChild(clone);
+        }
+    }
+
+    function renderColManagerList() {
+        const list = document.getElementById('colManagerList');
+        const columns = (currentManagerTarget === 'std') ? stdColumns : revBatchColumns;
+        list.innerHTML = '';
+
+        columns.forEach((col, idx) => {
+            const item = document.createElement('div');
+            item.className = 'col-manager-item';
+            
+            let typeBadge = '';
+            if (col.type === 'custom') {
+                typeBadge = `<small style="background:#e0e7ff; color:#3730a3; padding:1px 5px; border-radius:3px; font-size:0.72rem;">${col.colType}</small>`;
+            }
+
+            item.innerHTML = `
+                <div class="col-manager-left">
+                    <input type="checkbox" id="chk_col_${idx}" ${col.visible ? 'checked' : ''} onchange="toggleColVisibility(${idx})">
+                    <label for="chk_col_${idx}" style="cursor:pointer; margin:0; font-weight:600; color:var(--text-main); font-size:0.85rem;">${col.label}</label>
+                    ${typeBadge}
+                </div>
+                <div class="col-manager-actions">
+                    <button class="btn-arrow-move" onclick="moveColumn(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} title="Move Left/Up">▲</button>
+                    <button class="btn-arrow-move" onclick="moveColumn(${idx}, 1)" ${idx === columns.length - 1 ? 'disabled' : ''} title="Move Right/Down">▼</button>
+                    ${col.type === 'custom' ? `<button class="btn-del" style="height:20px; width:20px; font-size:11px; margin-left:4px;" onclick="deleteCustomCol(${idx})">×</button>` : ''}
+                </div>
+            `;
+            list.appendChild(item);
+        });
+    }
+
+    function populateTargetColDropdown() {
+        const select = document.getElementById('newColTargetCol');
+        const columns = (currentManagerTarget === 'std') ? stdColumns : revBatchColumns;
+        select.innerHTML = '';
+        columns.forEach(col => {
+            const opt = document.createElement('option');
+            opt.value = col.id;
+            opt.textContent = col.label;
+            select.appendChild(opt);
+        });
+    }
+
+    function toggleColVisibility(idx) {
+        const columns = (currentManagerTarget === 'std') ? stdColumns : revBatchColumns;
+        columns[idx].visible = !columns[idx].visible;
+        saveColumnsState();
+        refreshCurrentView();
+    }
+
+    function moveColumn(idx, direction) {
+        const columns = (currentManagerTarget === 'std') ? stdColumns : revBatchColumns;
+        const newIdx = idx + direction;
+        if (newIdx < 0 || newIdx >= columns.length) return;
+
+        const temp = columns[idx];
+        columns[idx] = columns[newIdx];
+        columns[newIdx] = temp;
+
+        saveColumnsState();
+        renderColManagerList();
+        populateTargetColDropdown();
+        refreshCurrentView();
+    }
+
+    function deleteCustomCol(idx) {
+        const columns = (currentManagerTarget === 'std') ? stdColumns : revBatchColumns;
+        columns.splice(idx, 1);
+        saveColumnsState();
+        renderColManagerList();
+        populateTargetColDropdown();
+        refreshCurrentView();
+    }
+
+    function handleAddColumn() {
+        const titleInput = document.getElementById('newColTitle');
+        const colTitle = titleInput.value.trim();
+        if (!colTitle) {
+            titleInput.focus();
+            return;
+        }
+
+        const colType = document.getElementById('newColType').value;
+        const posType = document.getElementById('newColPosType').value;
+        const targetColId = document.getElementById('newColTargetCol').value;
+
+        const newCol = {
+            id: 'col_' + Date.now(),
+            label: colTitle,
+            type: 'custom',
+            colType: colType,
+            sortable: false,
+            visible: true
+        };
+
+        const columns = (currentManagerTarget === 'std') ? stdColumns : revBatchColumns;
+        const targetIdx = columns.findIndex(c => c.id === targetColId);
+
+        if (targetIdx !== -1) {
+            const insertIdx = (posType === 'after') ? targetIdx + 1 : targetIdx;
+            columns.splice(insertIdx, 0, newCol);
+        } else {
+            columns.push(newCol);
+        }
+
+        titleInput.value = '';
+        saveColumnsState();
+        renderColManagerList();
+        populateTargetColDropdown();
+        refreshCurrentView();
+    }
+
+    function saveColumnsState() {
+        if (currentManagerTarget === 'std') {
+            localStorage.setItem('factoryCalc_stdCols', JSON.stringify(stdColumns));
+        } else {
+            localStorage.setItem('factoryCalc_revBatchCols', JSON.stringify(revBatchColumns));
+        }
+    }
+
+    function refreshCurrentView() {
+        if (currentManagerTarget === 'std') calculateTotal();
+        else calculateBatchReverse();
+        updateModalPreview();
+    }
+
+    function updatePrintHeaderDetails() {
+        const docTitle = document.getElementById('printDocTitleInput').value.trim() || 'Packaging Sheet';
+        const shiftNote = document.getElementById('printShiftInput').value.trim();
+        const customNote = document.getElementById('printNotesInput').value.trim();
+
+        const headerId = (currentManagerTarget === 'std') ? 'printSheetHeaderStd' : 'printSheetHeaderRev';
+        const titleId = (currentManagerTarget === 'std') ? 'stdPrintTitle' : 'revPrintTitle';
+
+        document.getElementById(titleId).textContent = docTitle;
+        document.querySelector(`#${headerId} .printShiftVal`).textContent = shiftNote ? `Shift/Operator: ${shiftNote}` : '';
+        document.querySelector(`#${headerId} .printCustomNoteVal`).textContent = customNote ? `Notes: ${customNote}` : '';
+    }
+
+    function executePrintSheet() {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString();
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        document.querySelectorAll('.printDateVal').forEach(el => el.textContent = dateStr);
+        document.querySelectorAll('.printTimeVal').forEach(el => el.textContent = timeStr);
+
+        updatePrintHeaderDetails();
+
+        const isLandscape = document.getElementById('printLandscapeCheck').checked;
+        if (isLandscape) {
+            document.body.classList.add('print-landscape');
+        } else {
+            document.body.classList.remove('print-landscape');
+        }
+
+        // Apply changes directly to active view before printing
+        refreshCurrentView();
+
+        setTimeout(() => {
+            window.print();
+        }, 120);
+    }
+
+    // --- Table Input Modes ---
+    function toggleInputMode(mode) {
+        if (mode === 'std') {
+            const isTextMode = textInputContainer.classList.contains('hidden');
+            if (isTextMode) {
+                textInputContainer.classList.remove('hidden');
+                tableInputContainer.classList.add('hidden');
+                document.getElementById('toggleInputModeBtn').textContent = "Switch to Table Input";
+                calculateTotal();
+            } else {
+                textInputContainer.classList.add('hidden');
+                tableInputContainer.classList.remove('hidden');
+                document.getElementById('toggleInputModeBtn').textContent = "Switch to Text Input";
+                parseTextToTable('std');
+            }
+        } else {
+            const isTextMode = revBatchTextContainer.classList.contains('hidden');
+            if (isTextMode) {
+                revBatchTextContainer.classList.remove('hidden');
+                revBatchTableContainer.classList.add('hidden');
+                document.getElementById('toggleRevBatchModeBtn').textContent = "Switch to Table Input";
+                calculateBatchReverse();
+            } else {
+                revBatchTextContainer.classList.add('hidden');
+                revBatchTableContainer.classList.remove('hidden');
+                document.getElementById('toggleRevBatchModeBtn').textContent = "Switch to Text Input";
+                parseTextToTable('revBatch');
+            }
+        }
+    }
+
+    function addManualRow(mode, model='', val1='', val2='') {
         const div = document.createElement('div');
         div.className = 'input-row';
-        div.innerHTML = `
-            <input type="text" placeholder="Model" class="inp-model" value="${model}" oninput="calculateTotal()">
-            <input type="number" placeholder="Box" class="inp-box" value="${boxes}" oninput="calculateTotal()">
-            <input type="number" placeholder="Extra" class="inp-extra" value="${extras}" oninput="calculateTotal()">
-            <button class="btn-del" tabindex="-1" onclick="this.parentElement.remove(); calculateTotal();">×</button>
-        `;
-        manualRowsContainer.appendChild(div);
+        if (mode === 'std') {
+            div.innerHTML = `
+                <input type="text" placeholder="Model" class="inp-model" value="${model}" oninput="calculateTotal()">
+                <input type="text" placeholder="Box" class="inp-box" value="${val1}" oninput="calculateTotal()">
+                <input type="text" placeholder="Extra" class="inp-extra" value="${val2}" oninput="calculateTotal()">
+                <button class="btn-del" tabindex="-1" onclick="this.parentElement.remove(); calculateTotal();">×</button>
+            `;
+            manualRowsContainer.appendChild(div);
+        } else {
+            div.innerHTML = `
+                <input type="text" placeholder="Model" class="inp-model" value="${model}" oninput="calculateBatchReverse()">
+                <input type="text" placeholder="Total Pieces" class="inp-total" value="${val1}" oninput="calculateBatchReverse()">
+                <button class="btn-del" tabindex="-1" onclick="this.parentElement.remove(); calculateBatchReverse();">×</button>
+            `;
+            revBatchRowsContainer.appendChild(div);
+        }
         return div;
     }
 
-    manualRowsContainer.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const allInputs = Array.from(manualRowsContainer.querySelectorAll('input'));
-            const currentInput = e.target;
-            const currentIndex = allInputs.indexOf(currentInput);
-            if (currentIndex === allInputs.length - 1) {
-                const newRow = addManualRow();
-                newRow.querySelector('.inp-model').focus();
-            } else if (currentIndex >= 0 && currentIndex < allInputs.length - 1) {
-                allInputs[currentIndex + 1].focus();
-                allInputs[currentIndex + 1].select();
+    function parseTextToTable(mode) {
+        if (mode === 'std') {
+            manualRowsContainer.innerHTML = '';
+            const lines = inputArea.value.trim().split('\n');
+            lines.forEach(line => {
+                if (!line.trim()) return;
+                const parts = line.trim().split(/\s+/);
+                if (parts.length < 2) return;
+                let model, boxes, extra;
+                if (parts.length >= 3 && isNumericStr(parts[parts.length-1]) && isNumericStr(parts[parts.length-2])) {
+                    extra = parseNumVal(parts.pop());
+                    boxes = parseNumVal(parts.pop());
+                    model = parts.join(' ');
+                } else if (parts.length >= 2 && isNumericStr(parts[parts.length-1])) {
+                    extra = 0;
+                    boxes = parseNumVal(parts.pop());
+                    model = parts.join(' ');
+                } else {
+                    return;
+                }
+                addManualRow('std', model, boxes, extra);
+            });
+            if (manualRowsContainer.children.length === 0) {
+                const row = addManualRow('std');
+                setTimeout(() => row.querySelector('.inp-model').focus(), 50);
             }
-        }
-    });
-function renderSidebar() {
-    const q = document.getElementById('sideSearch').value.trim().toLowerCase();
-    const current = document.getElementById('revModelSearch').value.trim();
-    const list = document.getElementById('sideList');
-    list.innerHTML = '';
-    Object.keys(productData)
-        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
-        .filter(k => k.toLowerCase().includes(q))
-        .forEach(k => {
-            const btn = document.createElement('button');
-            btn.className = 'side-item' + (k === current ? ' active' : '');
-            btn.innerHTML = `<span>${k}</span><small>${productData[k]} pcs</small>`;
-            btn.onclick = () => selectModel(k);
-            list.appendChild(btn);
-        });
-}
-
-function selectModel(k) {
-    document.getElementById('revModelSearch').value = k;
-    calcReverse();
-    document.getElementById('revTotalInput').focus();
-}
-    function toggleInputMode() {
-        const isTextMode = textInputContainer.classList.contains('hidden');
-        if (isTextMode) {
-            textInputContainer.classList.remove('hidden');
-            tableInputContainer.classList.add('hidden');
-            document.getElementById('toggleInputModeBtn').textContent = "Switch to Table Input";
-            calculateTotal(); 
         } else {
-            textInputContainer.classList.add('hidden');
-            tableInputContainer.classList.remove('hidden');
-            document.getElementById('toggleInputModeBtn').textContent = "Switch to Text Input";
-            parseTextToTable();
-        }
-    }
-
-    function parseTextToTable() {
-        manualRowsContainer.innerHTML = '';
-        const lines = inputArea.value.trim().split('\n');
-        lines.forEach(line => {
-            if(!line.trim()) return;
-            const parts = line.trim().split(/\s+/);
-            if(parts.length < 2) return;
-            let model, boxes, extra;
-            if (parts.length >= 3 && !isNaN(parts[parts.length-1]) && !isNaN(parts[parts.length-2])) {
-                extra = parts.pop(); boxes = parts.pop(); model = parts.join(' ');
-            } else {
-                extra = 0; boxes = parts.pop(); model = parts.join(' ');
+            revBatchRowsContainer.innerHTML = '';
+            const lines = revBatchInputArea.value.trim().split('\n');
+            lines.forEach(line => {
+                if (!line.trim()) return;
+                const parts = line.trim().split(/\s+/);
+                if (parts.length < 2) return;
+                if (!isNumericStr(parts[parts.length-1])) return;
+                const total = parseNumVal(parts.pop());
+                const model = parts.join(' ');
+                addManualRow('revBatch', model, total);
+            });
+            if (revBatchRowsContainer.children.length === 0) {
+                const row = addManualRow('revBatch');
+                setTimeout(() => row.querySelector('.inp-model').focus(), 50);
             }
-            addManualRow(model, boxes, extra);
-        });
-        if(manualRowsContainer.children.length === 0) {
-            const row = addManualRow();
-            setTimeout(() => row.querySelector('.inp-model').focus(), 50); 
         }
     }
 
-    function syncTableToText() {
-        let text = '';
-        const rows = manualRowsContainer.querySelectorAll('.input-row');
-        rows.forEach(row => {
-            const m = row.querySelector('.inp-model').value.trim();
-            const b = row.querySelector('.inp-box').value.trim();
-            const e = row.querySelector('.inp-extra').value.trim();
-            if(m && b) text += `${m} ${b} ${e || 0}\n`;
-        });
-        inputArea.value = text;
+    function syncTableToText(mode) {
+        if (mode === 'std') {
+            let text = '';
+            const rows = manualRowsContainer.querySelectorAll('.input-row');
+            rows.forEach(row => {
+                const m = row.querySelector('.inp-model').value.trim();
+                const b = row.querySelector('.inp-box').value.trim();
+                const e = row.querySelector('.inp-extra').value.trim();
+                if (m && b) text += `${m} ${b} ${e || 0}\n`;
+            });
+            inputArea.value = text;
+        } else {
+            let text = '';
+            const rows = revBatchRowsContainer.querySelectorAll('.input-row');
+            rows.forEach(row => {
+                const m = row.querySelector('.inp-model').value.trim();
+                const t = row.querySelector('.inp-total').value.trim();
+                if (m && t) text += `${m} ${t}\n`;
+            });
+            revBatchInputArea.value = text;
+        }
     }
 
-    // --- Logic: Reverse Calc (Updated for Search) ---
-    function calcReverse() {
-	renderSidebar();
-        // Changed to get value from INPUT instead of SELECT
+    function setupEnterNavigation(container, mode) {
+        container.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const allInputs = Array.from(container.querySelectorAll('input'));
+                const currentInput = e.target;
+                const currentIndex = allInputs.indexOf(currentInput);
+                if (currentIndex === allInputs.length - 1) {
+                    const newRow = addManualRow(mode);
+                    newRow.querySelector('.inp-model').focus();
+                } else if (currentIndex >= 0 && currentIndex < allInputs.length - 1) {
+                    allInputs[currentIndex + 1].focus();
+                    allInputs[currentIndex + 1].select();
+                }
+            }
+        });
+    }
+    setupEnterNavigation(manualRowsContainer, 'std');
+    setupEnterNavigation(revBatchRowsContainer, 'revBatch');
+
+    // --- Copy Full Table (TSV) ---
+    function copyFullTable(tableId, btn) {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+
+        let tsv = [];
+        const headers = Array.from(table.querySelectorAll('thead th')).map(th => {
+            const clone = th.cloneNode(true);
+            const arrow = clone.querySelector('.arrow');
+            if (arrow) arrow.remove();
+            return clone.innerText.trim();
+        });
+        tsv.push(headers.join('\t'));
+
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(tr => {
+            const rowData = Array.from(tr.querySelectorAll('td')).map(td => {
+                const inp = td.querySelector('input');
+                if (inp) return inp.value;
+                return td.innerText.replace(/Copied!/g, '').trim();
+            });
+            tsv.push(rowData.join('\t'));
+        });
+
+        const footers = Array.from(table.querySelectorAll('tfoot td')).map(td => td.innerText.replace(/Copied!/g, '').trim());
+        if (footers.length) {
+            tsv.push(footers.join('\t'));
+        }
+
+        navigator.clipboard.writeText(tsv.join('\n')).then(() => {
+            const originalText = btn.textContent;
+            btn.textContent = '✓ Copied!';
+            btn.style.background = '#10b981';
+            btn.style.color = 'white';
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.style.background = '';
+                btn.style.color = '';
+            }, 1200);
+        });
+    }
+
+    // --- Single Reverse Calc Logic ---
+    function calcReverseSingle() {
+        renderSidebar();
         const modelInput = document.getElementById('revModelSearch'); 
         const totalInput = document.getElementById('revTotalInput');
-        
         const model = modelInput.value.trim();
-        const total = parseInt(totalInput.value);
+        const total = parseNumVal(totalInput.value);
         const resultBox = document.getElementById('revResult');
 
-        // Check if model exists in data
-        const perBox = productData[model];
+        const perBox = findPackSize(model);
 
         if (!model || !perBox || isNaN(total) || total < 0) {
             resultBox.classList.add('hidden');
@@ -525,14 +1557,77 @@ function selectModel(k) {
         resultBox.classList.remove('hidden');
     }
 
-    // --- Logic: Settings ---
+    function renderSidebar() {
+        const q = document.getElementById('sideSearch').value.trim().toLowerCase();
+        const current = document.getElementById('revModelSearch').value.trim();
+        const list = document.getElementById('sideList');
+        list.innerHTML = '';
+        Object.keys(productData)
+            .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+            .filter(k => k.toLowerCase().includes(q))
+            .forEach(k => {
+                const btn = document.createElement('button');
+                btn.className = 'side-item' + (k === current ? ' active' : '');
+                btn.innerHTML = `<span>${k}</span><small>${productData[k]} pcs</small>`;
+                btn.onclick = () => selectModel(k);
+                list.appendChild(btn);
+            });
+    }
+
+    function selectModel(k) {
+        document.getElementById('revModelSearch').value = k;
+        calcReverseSingle();
+        document.getElementById('revTotalInput').focus();
+    }
+
+    function populateReverseDropdown() {
+        const dataList = document.getElementById('modelDataList');
+        dataList.innerHTML = '';
+        Object.keys(productData).sort().forEach(key => {
+            const opt = document.createElement('option');
+            opt.value = key;
+            opt.label = `${productData[key]} pcs/box`;
+            dataList.appendChild(opt);
+        });
+        renderSidebar();
+    }
+
+    // --- Settings Modal & Tabs ---
     function openSettings() {
+        renderSettingsModels();
+        renderSettingsPatterns();
+        document.getElementById('stripParenthesesCheckbox').checked = stripParentheses;
+        document.getElementById('settingsModal').style.display = 'flex';
+    }
+
+    function closeSettings() {
+        document.getElementById('settingsModal').style.display = 'none';
+    }
+
+    function switchSettingsTab(tab) {
+        const buttons = document.querySelectorAll('.settings-tab-btn');
+        const modelsView = document.getElementById('settingsModelsView');
+        const patternsView = document.getElementById('settingsPatternsView');
+
+        if (tab === 'models') {
+            buttons[0].classList.add('active');
+            buttons[1].classList.remove('active');
+            modelsView.classList.remove('hidden');
+            patternsView.classList.add('hidden');
+        } else {
+            buttons[1].classList.add('active');
+            buttons[0].classList.remove('active');
+            patternsView.classList.remove('hidden');
+            modelsView.classList.add('hidden');
+        }
+    }
+
+    function renderSettingsModels() {
         const list = document.getElementById('settingsList');
         list.innerHTML = '';
         Object.keys(productData).sort().forEach(key => addSettingRowUI(key, productData[key]));
-        document.getElementById('settingsModal').style.display = 'flex';
     }
-    function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
+
     function addSettingRowUI(key='', val='') {
         const div = document.createElement('div');
         div.className = 'settings-row';
@@ -543,61 +1638,86 @@ function selectModel(k) {
         `;
         document.getElementById('settingsList').appendChild(div);
     }
-    function addSettingRow() { 
-        addSettingRowUI(); 
-        const body = document.querySelector('.modal-body');
+
+    function addSettingRow() {
+        addSettingRowUI();
+        const body = document.getElementById('settingsModelsView');
         body.scrollTop = body.scrollHeight;
     }
+
+    function renderSettingsPatterns() {
+        const list = document.getElementById('patternsList');
+        list.innerHTML = '';
+        cleanPatterns.forEach(pat => addPatternRowUI(pat));
+    }
+
+    function addPatternRowUI(pattern='') {
+        const div = document.createElement('div');
+        div.className = 'pattern-row';
+        div.innerHTML = `
+            <input type="text" placeholder="e.g. CIMAISE" class="set-pattern" value="${pattern}">
+            <button class="btn-del" onclick="this.parentElement.remove()">×</button>
+        `;
+        document.getElementById('patternsList').appendChild(div);
+    }
+
+    function addPatternRow() {
+        addPatternRowUI();
+        const body = document.getElementById('settingsPatternsView');
+        body.scrollTop = body.scrollHeight;
+    }
+
     function saveSettings() {
         const newMap = {};
         document.querySelectorAll('.settings-row').forEach(row => {
             const key = row.querySelector('.set-key').value.trim();
-            const val = parseInt(row.querySelector('.set-val').value.trim());
+            const val = parseNumVal(row.querySelector('.set-val').value.trim());
             if (key && !isNaN(val)) newMap[key] = val;
         });
         productData = newMap;
         localStorage.setItem('factoryCalcData', JSON.stringify(productData));
+
+        const newPatterns = [];
+        document.querySelectorAll('.set-pattern').forEach(input => {
+            const val = input.value.trim();
+            if (val) newPatterns.push(val);
+        });
+        cleanPatterns = newPatterns;
+        localStorage.setItem('factoryCalcPatterns', JSON.stringify(cleanPatterns));
+
+        stripParentheses = document.getElementById('stripParenthesesCheckbox').checked;
+        localStorage.setItem('factoryCalcStripParen', stripParentheses);
+
         closeSettings();
         calculateTotal();
+        calculateBatchReverse();
         populateReverseDropdown();
     }
 
-    // --- Utils & Init ---
+    // --- Tab Switching ---
     function switchTab(tab) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         const stdTab = document.getElementById('standard-tab');
-        const revTab = document.getElementById('reverse-tab');
-        
+        const revBatchTab = document.getElementById('batch-reverse-tab');
+        const singleRevTab = document.getElementById('single-reverse-tab');
+
+        stdTab.classList.add('hidden'); stdTab.style.display = 'none';
+        revBatchTab.classList.add('hidden'); revBatchTab.style.display = 'none';
+        singleRevTab.classList.add('hidden'); singleRevTab.style.display = 'none';
+
         if (tab === 'standard') {
             stdTab.classList.remove('hidden'); stdTab.style.display = 'grid';
-            revTab.classList.add('hidden'); revTab.style.display = 'none';
             document.querySelectorAll('.tab-btn')[0].classList.add('active');
-        } else {
-            stdTab.classList.add('hidden'); stdTab.style.display = 'none';
-            revTab.classList.remove('hidden'); revTab.style.display = 'grid';
+            calculateTotal();
+        } else if (tab === 'batch-reverse') {
+            revBatchTab.classList.remove('hidden'); revBatchTab.style.display = 'grid';
             document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            calculateBatchReverse();
+        } else {
+            singleRevTab.classList.remove('hidden'); singleRevTab.style.display = 'grid';
+            document.querySelectorAll('.tab-btn')[2].classList.add('active');
             populateReverseDropdown();
         }
-    }
-
-    // Updated to use DATALIST for search capability
-    function populateReverseDropdown() {
-        const dataList = document.getElementById('modelDataList');
-        dataList.innerHTML = '';
-        Object.keys(productData).sort().forEach(key => {
-            const opt = document.createElement('option');
-            opt.value = key; // The searchable value (Model Name)
-            opt.label = `${productData[key]} pcs/box`; // Helper text shown in dropdown
-            dataList.appendChild(opt);
-		
-        });
-		renderSidebar();
-    }
-
-    function copyCell(cell) {
-        navigator.clipboard.writeText(cell.innerText.split('\n')[0]);
-        cell.classList.add('show-tooltip');
-        setTimeout(() => cell.classList.remove('show-tooltip'), 800);
     }
 
     function updateUrlFromText() {
@@ -606,14 +1726,17 @@ function selectModel(k) {
     }
 
     inputArea.addEventListener('input', calculateTotal);
+    revBatchInputArea.addEventListener('input', calculateBatchReverse);
+
     window.addEventListener('load', () => {
-        if(window.location.hash) {
+        if (window.location.hash) {
             inputArea.value = decodeURIComponent(window.location.hash.substring(1));
+            calculateTotal();
+        } else {
             calculateTotal();
         }
         populateReverseDropdown();
     });
-
 </script>
 </body>
 </html>
