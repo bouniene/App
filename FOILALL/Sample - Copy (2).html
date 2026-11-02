@@ -1,0 +1,3905 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sample Management System</title>
+    <meta name="theme-color" content="#674ea7"/>
+    <link rel="manifest" id="manifest-placeholder">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/2.0.8/css/dataTables.bootstrap5.css" rel="stylesheet">
+
+
+    <style>
+        /* --- Odoo Theme & Core Styles --- */
+        :root {
+            --bs-primary-rgb: 103, 78, 167; /* Odoo-like Purple */
+            /* --- NEW ---: Color for the new import view */
+            --bs-primary-import-rgb: 20, 164, 77; 
+            --bs-secondary-rgb: 233, 236, 239; /* Light Gray */
+            --bs-body-font-family: 'Inter', 'Cairo', sans-serif;
+            --bs-body-bg: #f8f9fa;
+            --bs-card-bg: #ffffff;
+            --bs-card-border-color: #dee2e6;
+            --bs-border-radius: 0.25rem;
+            --bs-box-shadow-sm: 0 .125rem .25rem rgba(0,0,0,.075);
+            --bs-box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+        }
+
+        /* --- NEW ---: Style override when in import view */
+        body.import-view-active {
+           --bs-primary-rgb: var(--bs-primary-import-rgb);
+        }
+
+        body {
+            font-family: var(--bs-body-font-family);
+            background-color: var(--bs-body-bg);
+        }
+
+        /* --- App Layout --- */
+        .app-container { padding: 1rem 1.5rem; }
+        .control-panel {
+            display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+            padding: 0.75rem; background-color: var(--bs-body-bg); border-bottom: 1px solid var(--bs-card-border-color);
+            gap: 1rem; margin-bottom: 1rem;
+        }
+        .control-panel-left, .control-panel-right { display: flex; align-items: center; gap: 0.75rem; }
+        .search-container { flex-grow: 1; min-width: 250px; max-width: 450px; position: relative; }
+        .view-switcher .btn.active { background-color: rgb(var(--bs-primary-rgb)); color: white; border-color: rgb(var(--bs-primary-rgb)); }
+        .main-content { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- Save Status Indicator --- */
+        #save-status-indicator { display: flex; align-items: center; gap: 0.5rem; transition: opacity 0.3s; }
+        
+        /* --- Kanban View --- */
+        #kanban-view-content, #import-kanban-view-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 0.75rem;
+        }
+		
+		
+		/* ✨ التعديل الثالث: إضافة لمسة CSS لتحسين التجربة */
+.folder-item.dragging {
+    opacity: 0.5;
+    background-color: #d6d8db;
+}
+        .kanban-card, .import-kanban-card {
+            background-color: var(--bs-card-bg); border: 1px solid var(--bs-card-border-color); border-radius: var(--bs-border-radius);
+            box-shadow: var(--bs-box-shadow-sm); transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer;
+            display: flex; flex-direction: column; padding: 0.5rem;
+        }
+        .kanban-card:hover, .import-kanban-card:hover { transform: translateY(-4px); box-shadow: var(--bs-box-shadow); }
+        .kanban-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem; }
+        .kanban-card-title { font-weight: 700; font-size: 0.9rem; color: #333; }
+        .kanban-card-body { font-size: 0.75rem; color: #555; margin-bottom: 0.5rem; flex-grow: 1; }
+        .kanban-card-body p { margin-bottom: 0.2rem; }
+        .kanban-card-footer { margin-top: auto; display: flex; justify-content: flex-end; align-items: center; font-size: 0.7rem; color: #6c757d;}
+        .kanban-image-container { position: relative; width: 40px; height: 40px; flex-shrink: 0; margin-left: 0.5rem; }
+        .kanban-image-container img { 
+            width: 100%; height: 100%; object-fit: cover; border-radius: var(--bs-border-radius);
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .kanban-image-container:hover img {
+            transform: scale(4.5);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+		
+	/* --- New styles for Status Dropdown --- */
+/* --- Styles for Status Dropdown (Updated to Class) --- */
+.status-select {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+        .status-available {
+            background-color: #d1e7dd !important; /* Bootstrap Success Light */
+            color: #0f5132 !important;
+            font-weight: 600;
+        }
+        .status-not-available {
+            background-color: #f8d7da !important; /* Bootstrap Danger Light */
+            color: #842029 !important;
+            font-weight: 600;
+        }	
+		
+		
+		
+        .component-tag {
+            background-color: #dc3545;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7em;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .component-tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 4px;
+        }
+        .kanban-category-link {
+            cursor: pointer;
+            font-weight: 600;
+            color: rgb(var(--bs-primary-rgb));
+            text-decoration: none;
+        }
+        .kanban-category-link:hover {
+            text-decoration: underline;
+        }
+
+        /* --- List View & Foil View & Import View --- */
+        .dataTables_wrapper {
+            font-size: 14px;
+        }
+        .table-view-container .table { background-color: var(--bs-card-bg); box-shadow: var(--bs-box-shadow-sm); border-radius: var(--bs-border-radius); width: 100% !important; }
+        .table-view-container { 
+            border-radius: var(--bs-border-radius);
+        }
+        .table-view-container .table thead { background-color: #f1f3f5; }
+        .table-view-container .table th, .table-view-container .table td { font-weight: 600; padding: 0.75rem; vertical-align: middle;}
+        .table-view-container .table-hover tbody tr:hover { background-color: rgba(var(--bs-primary-rgb), 0.07); cursor: pointer; }
+        .list-view-row img {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            position: relative;
+        }
+        .list-view-row img:hover {
+            transform: scale(3.5);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+        /* --- NEW ---: Styles for confirmed/unconfirmed badges */
+        .badge-confirmed {
+            background-color: #d1e7dd;
+            color: #0f5132;
+        }
+        .badge-unconfirmed {
+            background-color: #fff3cd;
+            color: #664d03;
+        }
+        
+        /* --- Reports View (Accordion Style) --- */
+        .accordion-button { font-weight: 600; }
+        .accordion-button:not(.collapsed) { background-color: rgba(var(--bs-primary-rgb), 0.1); color: rgb(var(--bs-primary-rgb)); }
+        
+		
+		
+/* --- Search Tags & Autocomplete --- */
+.search-tags-container { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.search-tag { 
+    display: inline-flex; 
+    align-items: center; 
+    background-color: rgb(var(--bs-primary-rgb), 0.2); 
+    color: rgb(var(--bs-primary-rgb)); 
+    border: 1px solid rgb(var(--bs-primary-rgb), 0.4); 
+    padding: 0.25rem 0.75rem; 
+    border-radius: 1rem; 
+    font-size: 0.85rem; 
+    font-weight: 600; 
+    cursor: pointer; /* ✨ إضافة: جعل الوسم يظهر كأنه قابل للنقر */
+}
+.search-tag .btn-close { margin-left: 0.5rem; margin-right: -0.25rem; }
+
+/* ✨ --- الإضافة الجديدة هنا --- ✨ */
+.search-tag .search-tag-edit {
+    border: none;
+    outline: none;
+    background-color: transparent;
+    font: inherit;
+    color: inherit;
+    padding: 0;
+    margin: 0;
+    width: 100%; /* اجعل الحقل يملأ المساحة المتاحة */
+}		
+		
+		
+		
+        /* --- Search Tags & Autocomplete --- */
+        .search-tags-container { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .search-tag { display: inline-flex; align-items: center; background-color: rgb(var(--bs-primary-rgb), 0.2); color: rgb(var(--bs-primary-rgb)); border: 1px solid rgb(var(--bs-primary-rgb), 0.4); padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.85rem; font-weight: 600; }
+        .search-tag .btn-close { margin-left: 0.5rem; margin-right: -0.25rem; }
+        
+        /* --- Advanced Search Dropdown --- */
+        .advanced-search-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 1055;
+            background-color: #fff;
+            border: 1px solid var(--bs-card-border-color);
+            border-top: none;
+            box-shadow: var(--bs-box-shadow);
+            border-radius: 0 0 var(--bs-border-radius) var(--bs-border-radius);
+            padding: 0.75rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .search-dropdown-section { margin-bottom: 1rem; }
+        .search-dropdown-header {
+            font-weight: 700;
+            color: #495057;
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid #f1f3f5;
+            font-size: 0.9rem;
+        }
+        .search-dropdown-item {
+            padding: 0rem 0.1rem;
+            cursor: pointer;
+            border-radius: var(--bs-border-radius);
+            display: flex;
+            align-items: center;
+            font-size: 13px; 
+        }
+        .search-dropdown-item:hover { background-color: #e9ecef; }
+        .search-dropdown-item i { margin-right: 0.5rem; }
+        .search-dropdown-item .text-muted { margin-left: auto; font-size: 0.8em; }
+
+        
+        /* --- Modals & General --- */
+        .modal-header { background-color: #f8f9fa; border-bottom: 1px solid #dee2e6; color: #495057; }
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.8); display: flex; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(4px); }
+        #image-drop-zone, #import-image-drop-zone { border: 2px dashed #ccc; border-radius: var(--bs-border-radius); padding: 2rem; text-align: center; color: #6c757d; transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out; }
+        #image-drop-zone.dragover, #import-image-drop-zone.dragover { background-color: #e9ecef; border-color: rgb(var(--bs-primary-rgb)); }
+        #image-drop-zone p, #import-image-drop-zone p { margin: 0; }
+        #sample-image-preview, #import-image-preview { border: 1px solid var(--bs-card-border-color); object-fit: cover; }
+        
+        /* --- Visual Progress Bar --- */
+        .component-bar-container { margin-top: 1rem; border-top: 1px solid #eee; padding-top: 1rem; }
+        .component-bar-title { font-weight: 700; font-size: 1rem; }
+        .visual-bar-container { 
+            height: 25px; 
+            background-color: #e9ecef; 
+            border-radius: 5px; 
+            overflow: hidden; 
+            border: 1px solid #dee2e6;
+        }
+        .visual-bar-content { 
+            display: flex; 
+            height: 100%; 
+            width: 100%; 
+        }
+        .visual-bar-segment { 
+            height: 100%; 
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+        }
+        .component-bar-image {
+            width: 32px;
+            height: 32px;
+            object-fit: cover;
+            border-radius: var(--bs-border-radius);
+            border: 1px solid #ddd;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .component-bar-image:hover {
+            transform: scale(4.5);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 20;
+            position: relative;
+        }
+
+        /* --- Camera Modal Styles --- */
+        #camera-modal .modal-body { padding: 0; }
+        #camera-stream { width: 100%; height: auto; display: block; background-color: #000; }
+        #camera-snap-preview { width: 100%; height: auto; display: block; }
+        
+        /* --- Annotation Modal Styles --- */
+        #foil-tray {
+            border: 1px solid #dee2e6;
+            min-height: 50px;
+        }
+        .foil-label {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            cursor: grab;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: var(--bs-box-shadow-sm);
+            user-select: none;
+        }
+        .foil-label:active {
+            cursor: grabbing;
+            background-color: #e9ecef;
+        }
+        .foil-name {
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+        .foil-handle {
+            width: 10px;
+            height: 10px;
+            background-color: rgb(var(--bs-primary-rgb));
+            border-radius: 50%;
+            margin-top: 4px;
+            cursor: crosshair;
+            border: 2px solid white;
+            box-shadow: 0 0 0 1px rgb(var(--bs-primary-rgb));
+        }
+        #annotation-canvas {
+            max-width: 100%;
+            max-height: 70vh;
+            cursor: crosshair;
+        }
+		
+		
+		
+		
+		
+		
+		
+/* --- ✨ New EXTRA COMPACT Full-Height Sidebar Styles --- */
+.content-wrapper {
+    position: relative;
+}
+
+#location-sidebar {
+    position: fixed;
+    left: 0;
+    width: 150px;
+    z-index: 1000;
+    
+    background-color: #f8f9fa;
+    border-right: 1px solid #dee2e6;
+    border-top: 1px solid #dee2e6; /* ✨ أضف هذا السطر */
+    
+    transition: all 0.3s ease-in-out;
+    overflow-y: auto;
+}
+
+#location-sidebar.collapsed {
+    width: 0;
+    border: none;
+    padding: 0;
+    /* ❌ تم حذف 'overflow: hidden;' التي كانت تخفي الزر */
+}
+
+main#main-content {
+    padding-top: 1rem; 
+    margin-left: 150px; /* 👉 يجب أن تطابق القيمة الجديدة لعرض الشريط */
+    transition: margin-left 0.3s ease-in-out;
+}
+
+#location-sidebar.collapsed + main#main-content {
+    margin-left: 0;
+}
+
+#sidebar-toggle-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #e9ecef;
+    border: 1px solid #dee2e6;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: transform 0.3s ease, right 0.3s ease;
+}
+
+#location-sidebar.collapsed #sidebar-toggle-btn {
+    transform: rotate(180deg);
+    right: -14px; /* 🔘 قيمة محسوبة لوضع نصف الزر بالخارج */
+    background-color: #674ea7;
+    border: 1px solid #dee2e6;
+    color: white;
+}
+
+.sidebar-header {
+    padding: 0.8rem 0.75rem; /* تقليل الهامش الجانبي */
+    padding-top: 50px; 
+    border-bottom: 1px solid var(--bs-card-border-color);
+}
+
+.sidebar-header h4 {
+    margin: 0;
+    font-size: 0.9rem; /* ✒️ تم تصغير حجم الخط للعنوان */
+    font-weight: 700;
+}
+
+.folder-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.folder-item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    font-weight: 500; 
+    font-size: 0.8125rem;
+    color: #495057;
+    transition: background-color 0.2s ease, border-radius 0.2s ease;
+    /* ❌ تم حذف الحد السفلي */
+    border-top: 1px solid #e9ecef; /* ✨ تمت إضافة الحد العلوي كفاصل أساسي */
+    white-space: nowrap; 
+}
+
+.folder-item:hover {
+    background-color: #e9ecef;
+}
+
+.folder-item.active {
+    background-color: #ffffff; /* تغيير الخلفية للأبيض لتبدو بارزة */
+    color: rgb(var(--bs-primary-rgb));
+    border-left: 3px solid rgb(var(--bs-primary-rgb));
+    font-weight: 700; /* جعل الخط أسمك عند الاختيار */
+    
+    /* ✨ تمت إضافة الانحناء للزوايا اليمنى */
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    
+    /* جعل الحد العلوي شفافًا للعنصر النشط ليبدو متصلاً */
+    border-top-color: transparent;
+}
+
+.folder-icon {
+    color: #ffc107;
+    font-size: 0.9rem;   /* ண்ட் تم تصغير حجم الأيقونة */
+    margin-right: 0.5rem; /* ண்ட் تقليل المسافة بين الأيقونة والنص */
+}
+
+
+/* --- ✨ تنسيقات صفحة الاستيراد الجديدة (Category & Foil) ✨ --- */
+.import-category-link {
+    color: #0d6efd; /* لون أزرق */
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.import-category-link:hover {
+    text-decoration: underline;
+    color: #0a58ca;
+}
+
+.import-foil-tag {
+    background-color: #17a2b8; /* لون خلفية التاق */
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-block;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+.import-foil-tag:hover {
+    background-color: #138496;
+    transform: scale(1.05);
+}
+
+
+
+
+        /* --- Print Styles --- */
+        @media print {
+            body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            body * { visibility: hidden; }
+            .print-area, .print-area * { visibility: visible; }
+            .print-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0 !important; padding: 0 !important; }
+            .no-print { display: none !important; }
+            .card, .table, .accordion-item { box-shadow: none !important; border: 1px solid #ccc !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loading-overlay" style="display: none;">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"><span class="visually-hidden">Loading...</span></div>
+    </div>
+
+    <div class="app-container">
+        <header class="d-flex justify-content-between align-items-center pb-2 mb-3 border-bottom no-print">
+		
+            <h1 class="h4 m-0 fw-bold d-flex align-items-center">
+			        <a href="index.html" class="btn btn-light me-3" title="index">
+            <i class="bi bi-arrow-left fs-5"></i>
+        </a>
+                <i class="bi bi-box-seam text-primary me-2"></i> Sample
+            </h1>
+            <div class="form-check form-switch ms-2" title="Show Archived">
+                <input class="form-check-input" type="checkbox" role="switch" id="show-archived-toggle">
+                <label class="form-check-label" for="show-archived-toggle"><i class="bi bi-archive-fill"></i></label>
+            </div>
+        </header>
+
+        <div class="control-panel no-print">
+		
+            <div class="control-panel-left">
+    <button id="create-btn" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i> Create</button>
+	    <button id="show-sidebar-btn" class="btn btn-outline-secondary" title="Show Locations">
+        <i class="bi bi-folder2-open"></i>
+    </button>
+    
+    <div id="search-logic-container" class="btn-group ms-2" role="group"></div>
+</div>
+            
+            <div id="view-specific-search-container" class="search-container"></div>
+
+            <div class="control-panel-right">
+                <div id="save-status-indicator" style="display: none;"></div>
+                <div class="btn-group view-switcher">
+                    <button class="btn btn-outline-secondary active" id="kanban-view-btn" title="Kanban View"><i class="bi bi-grid-3x3-gap-fill"></i></button>
+                    <button class="btn btn-outline-secondary" id="list-view-btn" title="List View"><i class="bi bi-list-ul"></i></button>
+                    <!-- --- NEW ---: Button for the import view -->
+                    <button class="btn btn-outline-secondary" id="import-view-btn" title="Import View"><i class="bi bi-cloud-arrow-down-fill"></i></button>
+                    <button class="btn btn-outline-secondary" id="foil-view-btn" title="Foil View"><i class="bi bi-layers-fill"></i></button>
+                    <button class="btn btn-outline-secondary" id="reports-view-btn" title="Reports View"><i class="bi bi-journal-text"></i></button>
+                </div>
+                <button id="print-summary-btn" class="btn btn-outline-secondary" title="Print"><i class="bi bi-printer-fill"></i></button>
+            </div>
+        </div>
+        
+        <div id="search-tags-container" class="search-tags-container mb-3 no-print"></div>
+
+        <div class="content-wrapper">
+    <aside id="location-sidebar" class="no-print collapsed">
+        <button id="sidebar-toggle-btn" title="Toggle Sidebar">
+            <i class="bi bi-chevron-left"></i>
+        </button>
+        <div class="sidebar-header">
+            <h4>Locations</h4>
+        </div>
+        <ul id="sidebar-folder-list" class="folder-list">
+            </ul>
+    </aside>
+
+    <main id="main-content" class="print-area"></main>
+</div>
+    </div>
+
+    <div class="modal fade" id="sample-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="sample-form">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modal-title"></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="sample-edit-id">
+                        <div class="text-center mb-3">
+                            <img src="" id="sample-image-preview" class="img-fluid rounded d-none" alt="Image Preview" style="max-height: 150px;">
+                        </div>
+						
+                        <div class="mb-3">
+                            <label class="form-label">Sample Image (Optional)</label>
+                            <div id="image-drop-zone"><p>Drag & drop an image here, or click to select a file.</p></div>
+                            <input type="file" id="sample-image" class="form-control" accept="image/*" hidden>
+                            <button type="button" id="open-camera-btn" class="btn btn-outline-primary w-100 mt-2">
+                                <i class="bi bi-camera-fill me-1"></i> Capture with Camera
+                            </button>
+                        </div>						
+						
+						
+						
+                        <div class="mb-3">
+                            <label for="sample-name" class="form-label">Sample Name</label>
+                            <input type="text" id="sample-name" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="sample-category" class="form-label">Category</label>
+                            <input type="text" id="sample-category" class="form-control">
+
+                        
+                        <div class="mb-3">
+                            <label for="sample-components" class="form-label">Foil Components (Optional)</label>
+                            <select id="sample-components" multiple placeholder="Choose components..."></select>
+                        </div>
+                        <div class="row mb-3">
+                                <div class="col">
+                                    <label for="sample-status" class="form-label">Status</label>
+                                    <select id="sample-status" class="form-select status-select">
+                                        <option value="Unknown" selected>Unknown</option>
+                                        <option value="Available">Available</option>
+                                        <option value="Not Available">Not Available</option>
+                                    </select>
+                                </div>
+                                <div class="col">
+                                    <label for="sample-quantity" class="form-label">Quantity</label>
+                                    <input type="number" id="sample-quantity" class="form-control" placeholder="Enter quantity" disabled>
+                                </div>
+                            </div>
+                                        <div class="mb-3">
+                            <label for="sample-description" class="form-label">Description (Optional)</label>
+                            <textarea id="sample-description" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="sample-entry-date" class="form-label">Entry Date (Optional)</label>
+                            <input type="date" id="sample-entry-date" class="form-control">
+                        </div>
+
+						
+						                        </div>
+<div class="mb-3">
+    <label for="sample-location" class="form-label">Location (press Enter to add)</label>
+    <input type="text" id="sample-location" placeholder="Add one or more locations...">
+</div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade" id="details-modal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="details-modal-title"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="details-modal-body"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- --- NEW ---: Modal for Import Item Details -->
+<div class="modal fade" id="import-details-modal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <form id="import-form">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="import-modal-title">Import Sample</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="import-item-id">
+                        <div class="text-center mb-3">
+                            <img src="" id="import-image-preview" class="img-fluid rounded d-none" alt="Image Preview" style="max-height: 150px;">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Add Image (Optional)</label>
+                            <div id="import-image-drop-zone"><p>Drag & drop an image here, or click to select.</p></div>
+                            <input type="file" id="import-image-input" class="form-control" accept="image/*" hidden>
+                        </div>
+                        <ul class="list-group">
+                            <li class="list-group-item"><strong>Name:</strong> <span id="import-name"></span></li>
+                            <li class="list-group-item"><strong>Category:</strong> <span id="import-category"></span></li>
+                            <li class="list-group-item"><strong>Location:</strong> <span id="import-location"></span></li>
+                            <li class="list-group-item"><strong>Foil:</strong> <span id="import-foil"></span></li>
+                        </ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-cloud-arrow-down-fill me-1"></i> Confirm & Import</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="confirmation-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Action</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="confirmation-modal-body"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmation-modal-confirm-btn">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade" id="camera-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Capture Image</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p id="camera-permission-message">Waiting for camera permission...</p>
+                    <video id="camera-stream" autoplay playsinline style="display:none;"></video>
+                    <img id="camera-snap-preview" alt="Image Preview" style="display:none;" />
+                    <canvas id="camera-canvas" style="display:none;"></canvas>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="snap-photo-btn" style="display:none;"><i class="bi bi-camera"></i> Snap</button>
+                    <button type="button" class="btn btn-success" id="use-photo-btn" style="display:none;"><i class="bi bi-check-lg"></i> Use Photo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade" id="annotation-modal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Annotate Components</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="foil-tray" class="mb-3 p-2 bg-light rounded d-flex flex-wrap gap-2">
+                    </div>
+                    <div class="text-center position-relative">
+                        <canvas id="annotation-canvas" class="border bg-secondary-subtle"></canvas>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="save-annotations-btn">Save Annotations</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container position-fixed top-0 end-0 p-3 z-3"></div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    <script src="https://cdn.datatables.net/2.0.8/js/dataTables.js"></script>
+    <script src="https://cdn.datatables.net/2.0.8/js/dataTables.bootstrap5.js"></script>
+    
+ <script type="module">
+    // =================================================================
+    // =========== الخطوة 1: إعداد واستيراد Firebase =====================
+    // =================================================================
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyBPDnVOol10iskGrtgqxlp9a28cQFCemB4",
+        authDomain: "nnnnc-48782.firebaseapp.com",
+        databaseURL: "https://nnnnc-48782-default-rtdb.firebaseio.com",
+        projectId: "nnnnc-48782",
+        storageBucket: "nnnnc-48782.firebasestorage.app",
+        messagingSenderId: "91157067378",
+        appId: "1:91157067378:web:e0a600f956bad0b44234eb",
+        measurementId: "G-5D1059BT76"
+    };
+
+    // Initialize Firebase
+    const firebaseApp = initializeApp(firebaseConfig);
+    const database = getDatabase(firebaseApp);
+    // =================================================================
+
+    // --- PWA & Offline Setup (No Changes Here) ---
+    (function() {
+        const manifest = {
+            "name": "Sample Management",
+            "short_name": "SampleMgr",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#f8f9fa",
+            "theme_color": "#674ea7",
+            "description": "A system to manage samples.",
+            "icons": [{ "src": "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/box-seam.svg", "sizes": "any", "type": "image/svg+xml" }]
+        };
+        const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+        const manifestURL = URL.createObjectURL(blob);
+        document.querySelector('#manifest-placeholder').setAttribute('href', manifestURL);
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('WS-Sample.js')
+                    .then(reg => console.log('ServiceWorker registered.'))
+                    .catch(err => console.error('ServiceWorker registration failed:', err));
+            });
+        }
+    })();
+    
+    document.addEventListener('DOMContentLoaded', () => {
+
+        const LocalDB = {
+            db: null,
+            DB_NAME: 'SampleManagerDB',
+            DB_VERSION: 2, 
+
+            init() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+                    request.onupgradeneeded = event => {
+                        this.db = event.target.result;
+                        if (!this.db.objectStoreNames.contains('samples')) {
+                            this.db.createObjectStore('samples', { keyPath: 'docId' });
+                        }
+                        if (!this.db.objectStoreNames.contains('logs')) {
+                            this.db.createObjectStore('logs', { keyPath: 'id' });
+                        }
+                        if (!this.db.objectStoreNames.contains('foils')) {
+                            this.db.createObjectStore('foils', { keyPath: 'docId' });
+                        }
+                    };
+                    request.onsuccess = event => { this.db = event.target.result; resolve(); };
+                    request.onerror = event => { console.error('IndexedDB error:', event.target.error); reject(event.target.error); };
+                });
+            },
+            async saveData(data) {
+                if (!this.db) await this.init();
+                const tx = this.db.transaction(['samples', 'logs', 'foils'], 'readwrite');
+                tx.objectStore('samples').clear();
+                tx.objectStore('logs').clear();
+                tx.objectStore('foils').clear();
+                data.samples.forEach(sample => tx.objectStore('samples').put(sample));
+                data.logs.forEach(log => tx.objectStore('logs').put(log));
+                data.foils.forEach(foil => tx.objectStore('foils').put(foil));
+                return new Promise((resolve, reject) => {
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = event => reject(tx.error);
+                });
+            },
+            async getData() {
+                if (!this.db) await this.init();
+                const tx = this.db.transaction(['samples', 'logs', 'foils'], 'readonly');
+                const samples = await new Promise(res => { const req = tx.objectStore('samples').getAll(); req.onsuccess = () => res(req.result); });
+                const logs = await new Promise(res => { const req = tx.objectStore('logs').getAll(); req.onsuccess = () => res(req.result); });
+                const foils = await new Promise(res => { const req = tx.objectStore('foils').getAll(); req.onsuccess = () => res(req.result); });
+                return { samples: samples || [], logs: logs || [], foils: foils || [] };
+            }
+        };
+
+        const SampleManagerApp = {
+            state: {
+                samples: [],
+                logs: [],
+                foils: [],
+                googleSheetSamples: [], // --- NEW ---: State for imported data
+                currentView: 'kanban',
+				                searchLogic: 'OR', // ✨ الإضافة الجديدة هنا
+    sidebarOrder: [], // ✨ أضف هذا السطر
+importRenderLimit: 30, 
+                isAppendingImport: false,
+                isSaving: false,
+                retryTimerId: null,
+                fuse: null,
+                foilFuse: null,
+                searchTerms: { kanban: [], list: [], reports: [], foil: [], import: [] }, // --- NEW: Added 'import'
+                showArchived: false,
+                hasSuccessfullyLoadedOnce: false,
+                cameraStream: null,
+                componentsSelect: null,
+                categorySelect: null, 
+				                locationSelect: null, // ✨ الإضافة الجديدة هنا
+
+                listViewHolder: null, 
+            },
+            elements: {
+                mainContent: document.getElementById('main-content'),
+                viewSwitcher: {
+                    kanban: document.getElementById('kanban-view-btn'),
+                    list: document.getElementById('list-view-btn'),
+                    foil: document.getElementById('foil-view-btn'),
+                    reports: document.getElementById('reports-view-btn'),
+                    import: document.getElementById('import-view-btn'), // --- NEW ---
+                },
+                createBtn: document.getElementById('create-btn'),
+                printBtn: document.getElementById('print-summary-btn'),
+                searchContainer: document.getElementById('view-specific-search-container'),
+                searchTagsContainer: document.getElementById('search-tags-container'),
+                showArchivedToggle: document.getElementById('show-archived-toggle'),
+                sampleModal: new bootstrap.Modal(document.getElementById('sample-modal')),
+                detailsModal: new bootstrap.Modal(document.getElementById('details-modal')),
+                importDetailsModal: new bootstrap.Modal(document.getElementById('import-details-modal')), // --- NEW ---
+                detailsModalBody: document.getElementById('details-modal-body'),
+                detailsModalTitle: document.getElementById('details-modal-title'),
+                confirmationModal: new bootstrap.Modal(document.getElementById('confirmation-modal')),
+                loadingOverlay: document.getElementById('loading-overlay'),
+                saveStatusIndicator: document.getElementById('save-status-indicator'),
+                cameraModal: new bootstrap.Modal(document.getElementById('camera-modal')),
+            },
+            
+            // =================================================================
+            // =========== الخطوة 2: استبدال كائن المزامنة بالكامل ==============
+            // =================================================================
+            FirebasePersistence: {
+                // دالة مساعدة لتحويل المصفوفة إلى كائن
+                _arrayToObject(array, keyField = 'docId') {
+                    if (!array || !Array.isArray(array)) return {};
+                    return array.reduce((obj, item) => {
+                        if (item && item[keyField]) {
+                            obj[item[keyField]] = item;
+                        }
+                        return obj;
+                    }, {});
+                },
+
+                // ✨ دالة جديدة: تنظيف البيانات من undefined و NaN قبل الإرسال
+                _cleanData(data) {
+                    return JSON.parse(JSON.stringify(data, (key, value) => {
+                        // Firebase يكره undefined، نحولها إلى null
+                        if (value === undefined) return null;
+                        // Firebase يكره NaN، نحولها إلى null
+                        if (typeof value === 'number' && isNaN(value)) return null;
+                        return value;
+                    }));
+                },
+
+                // جلب البيانات
+                async getData() {
+                    console.log("Fetching data from Firebase...");
+                    try {
+                        const dbRef = ref(database);
+                        const snapshot = await get(dbRef);
+                        if (snapshot.exists()) {
+                            const data = snapshot.val();
+                            const samples = Object.values(data.samples || {});
+                            const logs = Object.values(data.logs || {});
+                            const rolls = Object.values(data.rolls || {}); 
+                            const sidebarOrder = data.settings?.sidebarOrder || [];
+                            
+                            return { samples, logs, rolls, sidebarOrder };
+                        } else {
+                            return { samples: [], logs: [], rolls: [], sidebarOrder: [] };
+                        }
+                    } catch (error) {
+                        console.error("Firebase GET failed:", error);
+                        throw new Error(`Firebase API GET failed: ${error.message}`);
+                    }
+                },
+
+                // حفظ البيانات
+                async saveData(state) {
+                    console.log("Saving data to Firebase...");
+                    try {
+                        const samplesToSave = state.samples.filter(s => !s.isDeleted);
+                        const samplesObject = this._arrayToObject(samplesToSave);
+                        const logsObject = this._arrayToObject(state.logs, 'id');
+
+                        // تجهيز التحديثات
+                        const rawUpdates = {
+                            '/samples': samplesObject,
+                            '/logs': logsObject,
+                            '/settings/sidebarOrder': state.sidebarOrder || []
+                        };
+
+                        // ✨ تنظيف البيانات قبل الإرسال لتجنب أخطاء Firebase
+                        const cleanUpdates = this._cleanData(rawUpdates);
+
+                        await update(ref(database), cleanUpdates);
+                        return { success: true, message: "Data saved to Firebase." };
+
+                    } catch (error) {
+                        // طباعة الخطأ بالتفصيل في الكونسول لمعرفة السبب
+                        console.error("Firebase Save Error Detailed:", error);
+                        throw new Error(error.message || "Unknown error during save");
+                    }
+                }
+            },
+            // The old GoogleAppsScriptPersistence object is now completely removed.
+
+            async init() {
+                this.setupBackButtonHandling();
+                await LocalDB.init();
+                this.bindEventListeners();
+                this.UI.renderCurrentView(); 
+                this.loadInitialData(); 
+                this.loadGoogleSheetData(); // --- NEW ---: Load data from Google Sheets
+            },
+
+            // --- NEW ---: Function to load and process data from Google Sheets
+            // --- MODIFIED ---: Function to load data in background silently
+            async loadGoogleSheetData() {
+                // ❌ تم إزالة this.UI.setLoading(true) لعدم تجميد التطبيق
+                console.log("Started fetching Google Sheet data in background...");
+                try {
+                    const response = await fetch('https://opensheet.elk.sh/1xa8jeqLMMgoPIqJn7mVtRVJsq1WWnKGJ-2Hzx5WLiHM/Foil-modeles');
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    
+                    // Clean and normalize the data
+                    this.state.googleSheetSamples = data.map(item => ({
+                        ID: item.ID || `gs_${Date.now()}_${Math.random()}`,
+                        Name: item.Name || 'Unnamed',
+                        'Location (press Enter to add)': item['Location (press Enter to add)'] || 'N/A',
+                        'Sample Name': item['Sample Name'] || item.Name,
+                        Category: item.Category || 'Uncategorized',
+                        'Foil Components': item['Foil Components'] || '****'
+                    }));
+                    
+                    console.log("Successfully loaded Google Sheet data in background.");
+
+                    // تحديث الواجهة فقط إذا كان المستخدم واقفاً على عرض الاستيراد
+                    if (this.state.currentView === 'import') {
+                        this.UI.renderCurrentView();
+                    }
+                    
+                } catch (error) {
+                    console.error("Failed to load data from Google Sheets:", error);
+                    // يمكنك إظهار رسالة خطأ صغيرة إذا أردت
+                } 
+                // ❌ تم إزالة finally { this.UI.setLoading(false); }
+            },
+
+            async loadInitialData() {
+                this.UI.updateSaveStatus('loading');
+                try {
+                    const localData = await LocalDB.getData();
+                    this.state.samples = localData.samples || [];
+                    this.state.logs = localData.logs || [];
+                    this.state.foils = localData.foils || [];
+                                        this.state.samples.sort((a, b) => this.naturalSortCompare(a.name || '', b.name || ''));
+
+                    console.log("Loaded initial data from IndexedDB.");
+                    
+                    this.finishDataProcessing(); 
+
+                    if (localData.samples.length > 0 || localData.foils.length > 0) {
+                        this.state.hasSuccessfullyLoadedOnce = true;
+                        this.UI.updateSaveStatus('offline');
+                    }
+
+                } catch (dbError) {
+                    console.error("Critical error reading from IndexedDB:", dbError);
+                    this.UI.showToast("A critical error occurred with the local database.", 'danger');
+                }
+
+                this.runBackgroundSync();
+            },
+
+            // =================================================================
+            // =========== الخطوة 3: تعديل دالة الدمج الذكي ======================
+            // =================================================================
+            // =================================================================
+            // =========== استبدل هذه الدالة بالكامل بالنسخة الجديدة ============
+            // =================================================================
+            mergeData(localItems, remoteItems) {
+                const localMap = new Map(localItems.map(item => [item.docId, item]));
+                const remoteMap = new Map(remoteItems.map(item => [item.docId, item]));
+                const mergedList = [];
+                const itemsToPush = [];
+
+                // --- NEW: Find the timestamp of the latest update from the server ---
+                let maxRemoteDate = new Date(0);
+                remoteItems.forEach(item => {
+                    const remoteItemDate = new Date(item.lastUpdated || 0);
+                    if (remoteItemDate > maxRemoteDate) {
+                        maxRemoteDate = remoteItemDate;
+                    }
+                });
+                // ---------------------------------------------------------------------
+
+                const allKeys = new Set([...localMap.keys(), ...remoteMap.keys()]);
+
+                allKeys.forEach(key => {
+                    const local = localMap.get(key);
+                    const remote = remoteMap.get(key);
+
+                    if (local && !remote) {
+                        // Item exists locally, but not on the server.
+                        // This is the critical case that was causing the problem.
+
+                        // NEW LOGIC: Check if the local item is genuinely new or just stale.
+                        const localDate = new Date(local.lastUpdated || 0);
+                        if (local.isDeleted) {
+                            // Item was deleted on this device while offline. Ignore it.
+                            console.log(`Item ${local.docId} confirmed deleted on this device.`);
+                        } else if (localDate > maxRemoteDate) {
+                            // The local-only item is NEWER than ANY item on the server.
+                            // It's almost certainly a new item created offline on this device.
+                            console.log(`Local-only item ${local.docId} is newer than last server update. Re-adding and pushing.`);
+                            mergedList.push(local);
+                            itemsToPush.push(local);
+                        } else {
+                            // The local-only item is OLDER than the latest server state.
+                            // It's a stale record of an item deleted on another device. Ignore it.
+                            console.log(`Stale local-only item ${local.docId} detected and ignored.`);
+                        }
+
+                    } else if (!local && remote) {
+                        // Item exists on the server only. It's a new item from another device. Add it.
+                        mergedList.push(remote);
+
+                    } else if (local && remote) {
+                        // Item exists in both places. The newest version wins.
+                        const localDate = new Date(local.lastUpdated || 0);
+                        const remoteDate = new Date(remote.lastUpdated || 0);
+
+                        if (localDate > remoteDate) {
+                            mergedList.push(local);
+                            itemsToPush.push(local);
+                        } else {
+                            mergedList.push(remote);
+                        }
+                    }
+                });
+                
+                mergedList.sort((a, b) => this.naturalSortCompare(a.name || '', b.name || ''));
+                
+                return { mergedList, itemsToPush };
+            },
+
+            // =================================================================
+            // =========== الخطوة 4: تعديل دالة المزامنة بالكامل =================
+            // =================================================================
+            async runBackgroundSync() {
+                console.log("Starting SMART background sync with Firebase...");
+                this.UI.updateSaveStatus('loading');
+
+                let remoteData;
+                try {
+                    remoteData = await this.FirebasePersistence.getData();
+                } catch(e) {
+                    console.warn("Background sync failed:", e.message);
+                    this.UI.updateSaveStatus('offline'); // Or 'retrying' if you want
+                    // If we can't fetch from remote, we can't proceed.
+                    // The UI will show offline/retry status from commitState failures.
+                    return;
+                }
+				
+				
+				
+    // ✨✨ === السطر الجديد والمهم هنا === ✨✨
+    // بمجرد أن نجحنا في جلب البيانات، نرفع "علم الأمان"
+    this.state.hasSuccessfullyLoadedOnce = true; 
+    console.log("Initial data successfully loaded from remote. Saving is now enabled.");
+
+                let stateChanged = false;
+                let itemsToCommit = [];
+    const remoteOrder = remoteData.sidebarOrder || [];
+    if (JSON.stringify(this.state.sidebarOrder) !== JSON.stringify(remoteOrder)) {
+        this.state.sidebarOrder = remoteOrder;
+        stateChanged = true;
+        console.log("Sidebar order updated from remote.");
+    }
+                // --- Merge Samples Data ---
+                const remoteSamples = remoteData.samples || [];
+                const { mergedList, itemsToPush } = this.mergeData(this.state.samples, remoteSamples);
+                
+                if (JSON.stringify(this.state.samples) !== JSON.stringify(mergedList)) {
+                    this.state.samples = mergedList;
+                    stateChanged = true;
+                    console.log("Samples state updated after smart merge.");
+                }
+                if (itemsToPush.length > 0) {
+                    itemsToCommit.push(...itemsToPush);
+                    console.log(`${itemsToPush.length} local samples are newer and will be pushed.`);
+                }
+                
+                // --- Process Foils Data (from 'rolls' node in Firebase) ---
+                const foilData = remoteData.rolls || [];
+                const newFoils = foilData.map(foil => ({
+                    docId: foil.docId, name: foil.id || "Unnamed Import", reference: foil.groupNumber ? String(foil.groupNumber) : "N/A",
+                    imageUrl: foil.imageUrl || "", entryDate: foil.entryDate || null, components: foil.components || [],
+                    totalStandardLength: foil.totalStandardLength || 0, width: foil.width || 0
+                }));
+                if (JSON.stringify(this.state.foils) !== JSON.stringify(newFoils)) {
+                    this.state.foils = newFoils;
+                    stateChanged = true;
+                    console.log("Foils data updated from remote.");
+                }
+
+                // If state has changed, save locally and push to cloud if needed
+                if (stateChanged || itemsToCommit.length > 0) {
+                    console.log("State has changed, saving to DB and potentially committing newer local items.");
+                    try {
+                        await LocalDB.saveData(this.state);
+                        this.UI.showToast('Data synced in the background.', 'success');
+                        
+                        // If there were newer local items, commit the whole state to the cloud
+                        if (itemsToCommit.length > 0) {
+                            console.log("Committing merged state to Firebase because local changes were found...");
+                            await this.commitState(); 
+                        }
+                        
+                        this.finishDataProcessing();
+                    } catch (dbError) {
+                        console.error("Failed to save updated state to IndexedDB after merge:", dbError);
+                        this.UI.showToast('Failed to save updated data locally.', 'danger');
+                    }
+                } else {
+                    console.log("No data changes detected from remote. No update needed.");
+                }
+
+                this.UI.updateSaveStatus('saved');
+            },
+
+            finishDataProcessing() {
+                this.state.samples.forEach(sample => {
+                    sample.componentNamesStr = (sample.components || [])
+                        .map(comp => {
+                            const foil = this.state.foils.find(f => f.docId === (typeof comp === 'object' ? comp.id : comp));
+                            return foil ? foil.name : '';
+                        })
+                        .join(' ');
+                });
+
+                this.state.fuse = new Fuse(this.state.samples, {
+                    keys: ['name', 'category', 'location', 'componentNamesStr'], 
+                    threshold: 0.0, 
+                    ignoreLocation: true
+                });
+
+                this.state.foilFuse = new Fuse(this.state.foils, {
+                    keys: ['name', 'reference'], threshold: 0.0, ignoreLocation: true
+                });
+                
+                const activeModal = document.querySelector('.modal.show');
+                if (activeModal && activeModal.id === 'details-modal') {
+                    this.UI.renderDetailsModal(this.state.currentModalSampleId); 
+                } else {
+                    this.UI.renderCurrentView();
+                }
+				                this.UI.renderLocationSidebar(); // ارسم أو حدث الشريط الجانبي
+
+            },
+            
+            async saveStateLocallyAndCommit() {
+                try {
+                    await LocalDB.saveData(this.state);
+                    console.log("State saved to IndexedDB.");
+                    this.UI.updateSaveStatus('offline');
+                    await this.commitState();
+                } catch(dbError) {
+                    console.error("Failed to save state to IndexedDB:", dbError);
+                    this.UI.showToast("Critical error: Could not save data locally.", 'danger');
+                }
+            },
+            
+            scheduleRetry() {
+                if (this.state.retryTimerId) clearTimeout(this.state.retryTimerId);
+                const retryDelay = 10000;
+                this.state.retryTimerId = setTimeout(() => this.commitState(), retryDelay);
+            },
+
+            // =================================================================
+            // =========== الخطوة 5: تعديل دالة الحفظ النهائية ===================
+            // =================================================================
+            async commitState() {
+                if (!this.state.hasSuccessfullyLoadedOnce) {
+                    console.warn("SAVE ABORTED: Initial data not loaded.");
+                    this.UI.showToast("Cannot save: initial data not loaded. Check connection.", 'danger');
+                    return;
+                }
+                if (this.state.isSaving) return;
+                if (!navigator.onLine) { this.UI.updateSaveStatus('offline'); return; }
+                if (this.state.retryTimerId) { clearTimeout(this.state.retryTimerId); this.state.retryTimerId = null; }
+
+                this.state.isSaving = true;
+                this.UI.updateSaveStatus('saving');
+
+                try {
+                    // This now calls the new Firebase persistence method
+                    await this.FirebasePersistence.saveData(this.state);
+                    console.log("Data successfully synced to Firebase.");
+                    this.state.isSaving = false;
+                    this.UI.updateSaveStatus('saved');
+                } catch (e) {
+                    console.error("Commit Error:", e);
+                    this.state.isSaving = false;
+                    this.UI.updateSaveStatus('retrying');
+                    
+                    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+                        this.UI.showToast('Connection failed. Sync will run in background when online.', 'info');
+                        navigator.serviceWorker.ready.then(swRegistration => {
+                            return swRegistration.sync.register('sync-samples');
+                        }).catch(err => {
+                            console.error('Background sync registration failed:', err);
+                            this.scheduleRetry();
+                        });
+                    } else {
+                        this.UI.showToast(`Sync failed: ${e.message}. Will retry automatically.`, 'warning');
+                        this.scheduleRetry();
+                    }
+                }
+            },
+
+            // =================================================================
+            // ===== لا توجد تعديلات على الدوال التالية، تم نسخها كما هي ========
+            // =================================================================
+
+            addLog(action, description, details = {}) {
+                const newLog = { id: `log_${Date.now()}`, timestamp: new Date().toISOString(), action, description, details };
+                this.state.logs.unshift(newLog);
+                if (this.state.logs.length > 500) this.state.logs.pop();
+            },
+            
+            addSample(data) {
+                const components = (data.components || []).map(id => ({ id: id, points: [] }));
+   
+                const newSample = {
+                    docId: `sample_${Date.now()}`,
+                    isArchived: false,
+                    imageUrl: '',
+                    ...data,
+                    components: components,
+                    lastUpdated: new Date().toISOString()
+                };
+                this.state.samples.push(newSample);
+                this.addLog('CREATE_SAMPLE', `Created new sample: ${data.name}`, { docId: newSample.docId });
+                this.state.samples.sort((a, b) => this.naturalSortCompare(a.name || '', b.name || ''));
+                this.saveStateLocallyAndCommit();
+            },
+
+            updateSample(docId, data) {
+                const index = this.state.samples.findIndex(sample => sample.docId === docId);
+                if (index > -1) {
+                    const oldSample = this.state.samples[index];
+                    const oldName = oldSample.name;
+                    
+// if (data.components && !data.hasOwnProperty('annotatedImageUrl')) {
+//    data.annotatedImageUrl = null;
+// }
+
+                    if (data.components && Array.isArray(data.components) && data.components.every(c => typeof c === 'string')) {
+                        const oldComponentData = (oldSample.components || []).filter(c => typeof c === 'object');
+                        data.components = data.components.map(newId => {
+                            const existing = oldComponentData.find(old => old.id === newId);
+                            return existing || { id: newId, points: [] };
+                        });
+                    }
+                    
+                    // تحديث البيانات في الذاكرة
+                    this.state.samples[index] = { ...this.state.samples[index], ...data, lastUpdated: new Date().toISOString() };
+                    
+                    if (oldName !== data.name) {
+                        this.addLog('UPDATE_SAMPLE_INFO', `Renamed sample ${oldName} -> ${data.name}`, { docId: docId });
+                    }
+                    
+                    this.state.samples.sort((a, b) => this.naturalSortCompare(a.name || '', b.name || ''));
+                    
+                    // حفظ البيانات في قاعدة البيانات
+                    this.saveStateLocallyAndCommit();
+                    
+                    // === الجزء الجديد والمهم لإعادة الرسم ===
+                    
+                    // 1. إعادة رسم الواجهة الرئيسية (Kanban) في الخلفية
+                    this.UI.renderCurrentView(); 
+                    
+                    // 2. التحقق مما إذا كانت نافذة التفاصيل مفتوحة، وإعادة رسمها هي أيضاً
+                    const detailsModalEl = document.getElementById('details-modal');
+                    if (detailsModalEl && detailsModalEl.classList.contains('show')) {
+                        this.UI.renderDetailsModal(docId);
+                    }
+                    // === نهاية الجزء الجديد ===
+                }
+            },
+            
+            archiveSample(docId) {
+                const index = this.state.samples.findIndex(s => s.docId === docId);
+                if (index > -1) {
+                    this.state.samples[index].isArchived = true;
+                    this.state.samples[index].lastUpdated = new Date().toISOString();
+                    this.addLog('ARCHIVE_SAMPLE', `Archived sample: ${this.state.samples[index].name}`, { docId });
+                    this.saveStateLocallyAndCommit();
+                    this.UI.renderCurrentView();
+					
+                }
+            },
+            
+            unarchiveSample(docId) {
+                const index = this.state.samples.findIndex(s => s.docId === docId);
+                if (index > -1) {
+                    this.state.samples[index].isArchived = false;
+                    this.state.samples[index].lastUpdated = new Date().toISOString();
+                    this.addLog('UNARCHIVE_SAMPLE', `Restored sample: ${this.state.samples[index].name}`, { docId });
+                    this.saveStateLocallyAndCommit();
+                    this.UI.renderCurrentView();
+                }
+            },
+
+            deleteSample(docId) {
+                const index = this.state.samples.findIndex(s => s.docId === docId);
+                if (index > -1) {
+                    const sampleName = this.state.samples[index].name;
+                    
+                    // Mark as deleted for sync purposes
+                    this.state.samples[index].isDeleted = true;
+                    this.state.samples[index].lastUpdated = new Date().toISOString();
+                    
+                    this.addLog('DELETE_SAMPLE', `Permanently deleted sample: ${sampleName}`, { docId: docId, deletedName: sampleName });
+                    
+                    this.saveStateLocallyAndCommit();
+                    this.UI.renderCurrentView();
+                }
+            },
+
+            bindEventListeners() {
+            Object.entries(this.elements.viewSwitcher).forEach(([viewName, btn]) => {
+                btn.addEventListener('click', () => this.navigateTo(viewName));
+            });
+            
+            this.elements.createBtn.addEventListener('click', () => this.UI.openModal('add'));
+            this.elements.printBtn.addEventListener('click', () => this.UI.printView());
+            this.elements.showArchivedToggle.addEventListener('change', (e) => {
+                this.state.showArchived = e.target.checked;
+                this.UI.renderCurrentView();
+            });
+
+            window.addEventListener('online', () => { this.UI.showToast("You are back online. Syncing changes...", 'success'); this.commitState(); });
+            window.addEventListener('offline', () => { this.UI.showToast("You are offline. Changes will be saved locally.", 'info'); this.UI.updateSaveStatus('offline'); });
+
+this.elements.searchTagsContainer.addEventListener('click', (e) => {
+                const tagElement = e.target.closest('.search-tag');
+                if (!tagElement) return;
+
+                // الحالة 1: النقر على زر الإغلاق (الحذف)
+                if (e.target.closest('.btn-close')) {
+                    this.Search.removeTerm(this.state.currentView, tagElement.dataset.term);
+                    return;
+                }
+
+                // ✨ --- منطق تعديل الفلتر يبدأ هنا --- ✨
+
+                // الحالة 2: النقر على جسم الوسم (التعديل)
+                // التأكد من عدم وجود وسم آخر في وضع التحرير حاليًا
+                if (tagElement.classList.contains('is-editing')) return;
+                
+                const originalTerm = tagElement.dataset.term;
+                const termTextSpan = tagElement.querySelector('.term-text');
+                
+                // إنشاء حقل الإدخال
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'search-tag-edit';
+                input.value = originalTerm;
+                
+                // إخفاء النص الأصلي وإظهار حقل الإدخال
+                termTextSpan.style.display = 'none';
+                tagElement.prepend(input);
+                tagElement.classList.add('is-editing');
+                input.focus();
+                input.select();
+                
+                // دالة لإنهاء وضع التحرير
+                const finishEditing = () => {
+                    // التحقق من وجود الحقل قبل محاولة إزالته
+                    if (tagElement.contains(input)) {
+                         tagElement.removeChild(input);
+                    }
+                    termTextSpan.style.display = 'inline';
+                    tagElement.classList.remove('is-editing');
+                };
+
+                // مستمع الأحداث المؤقت لحقل الإدخال
+                input.addEventListener('keydown', (keyEvent) => {
+                    if (keyEvent.key === 'Enter') {
+                        keyEvent.preventDefault();
+                        const newTerm = input.value.trim();
+
+                        // إذا كان المصطلح الجديد فارغًا، احذف الفلتر
+                        if (newTerm === '') {
+                             this.Search.removeTerm(this.state.currentView, originalTerm);
+                        } 
+                        // إذا كان المصطلح مختلفًا، قم بتحديثه
+                        else if (newTerm !== originalTerm) {
+                            const terms = this.state.searchTerms[this.state.currentView];
+                            const index = terms.indexOf(originalTerm);
+                            if (index > -1) {
+                                terms.splice(index, 1, newTerm);
+                            }
+                        }
+                        // إعادة الرسم لإظهار التغييرات
+                        this.UI.renderCurrentView();
+
+                    } else if (keyEvent.key === 'Escape') {
+                        finishEditing(); // ألغِ التعديل بدون حفظ
+                        termTextSpan.style.display = 'inline'; // أعد إظهار النص فورًا
+                    }
+                });
+                
+                // عند فقدان التركيز (blur)، ألغِ التعديل
+                input.addEventListener('blur', () => {
+                    finishEditing();
+                    // أعد الرسم لضمان عودة الواجهة لحالتها الطبيعية
+                    this.UI.renderCurrentView();
+                });
+            });
+
+
+            document.getElementById('sample-form').addEventListener('submit', (e) => this.handleFormSubmit(e));
+            this.elements.mainContent.addEventListener('click', (e) => this.handleMainContentClick(e));
+            
+            document.getElementById('details-modal').addEventListener('click', (e) => this.handleDetailsModalClick(e));
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.search-container')) {
+                    this.UI.hideAdvancedSearch();
+                }
+            });
+
+            // ✨ --- هذا هو الجزء الذي تم تصحيحه --- ✨
+            document.getElementById('search-logic-container').addEventListener('click', (e) => {
+                const button = e.target.closest('button');
+                if (button && button.dataset.logic) {
+                    const logic = button.dataset.logic;
+                    if (this.state.searchLogic !== logic) {
+                        this.state.searchLogic = logic;
+                        // ✨ السطر الذي تم تصحيحه: أضفنا .UI
+                        this.UI.renderCurrentView(); 
+                    }
+                }
+            });
+			
+			
+// ✨ التعديل الثاني: أضف هذا الكود داخل دالة bindEventListeners
+const sidebarList = document.getElementById('sidebar-folder-list');
+if (sidebarList) {
+    sidebarList.addEventListener('dragstart', e => {
+        const target = e.target.closest('.folder-item');
+        if (target) {
+            // إضافة كلاس لتمييز العنصر المسحوب
+            target.classList.add('dragging');
+        }
+    });
+
+    sidebarList.addEventListener('dragend', e => {
+        const target = e.target.closest('.folder-item');
+        if (target) {
+            // إزالة الكلاس عند انتهاء السحب
+            target.classList.remove('dragging');
+        }
+    });
+
+    sidebarList.addEventListener('dragover', e => {
+        e.preventDefault(); // ✅ هذا السطر ضروري للسماح بالإفلات
+        const draggingItem = sidebarList.querySelector('.dragging');
+        if (!draggingItem) return;
+
+        // تحديد العنصر الذي يتم التحليق فوقه
+        const afterElement = getDragAfterElement(sidebarList, e.clientY);
+        
+        if (afterElement == null) {
+            sidebarList.appendChild(draggingItem);
+        } else {
+            sidebarList.insertBefore(draggingItem, afterElement);
+        }
+    });
+
+// ✨ التعديل الثاني: استبدل مستمع الحدث 'drop' بهذا الكود
+sidebarList.addEventListener('drop', () => {
+    // 1. احصل على الترتيب الجديد من عناصر DOM
+    const newOrder = [...sidebarList.querySelectorAll('.folder-item[data-location]')]
+        .map(item => item.dataset.location)
+        .filter(location => location !== '_all_'); // استثناء "All Samples"
+
+    // 2. إذا لم يتغير الترتيب، لا تفعل شيئًا
+    if (JSON.stringify(SampleManagerApp.state.sidebarOrder) === JSON.stringify(newOrder)) {
+        return;
+    }
+
+    // 3. حدّث حالة التطبيق واحفظها محليًا ثم أرسلها إلى Firebase
+    console.log('New order to be saved:', newOrder);
+    SampleManagerApp.state.sidebarOrder = newOrder;
+    SampleManagerApp.saveStateLocallyAndCommit(); // ✅ هذه الدالة موجودة بالفعل وتقوم بكل العمل!
+});
+
+    // دالة مساعدة لتحديد مكان إدراج العنصر المسحوب
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.folder-item:not(.dragging)')];
+        
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+}			
+			
+			
+			
+			
+			
+			
+			
+            // --- نهاية الجزء المصحح ---
+// ✨ --- الكود الجديد والمصحح للشريط الجانبي (داخل دالة bindEventListeners) --- ✨
+    // ✨ --- إضافة جديدة: التعامل مع زر إظهار الشريط الجانبي الجديد --- ✨
+// ✨ --- إضافة جديدة: التعامل مع زر إظهار الشريط الجانبي الجديد --- ✨
+const showSidebarBtn = document.getElementById('show-sidebar-btn');
+if (showSidebarBtn) {
+    showSidebarBtn.addEventListener('click', () => {
+        const sidebar = document.getElementById('location-sidebar');
+        if(sidebar) {
+            // عند النقر، قم بتبديل حالة الشريط (فتح/إغلاق)
+            sidebar.classList.toggle('collapsed'); // ✅ هذا السطر يفتح ويغلق
+        }
+    });
+}
+const sidebar = document.getElementById('location-sidebar');
+if (sidebar) {
+    // 1. مستمع الأحداث لزر الطي والإظهار
+    const toggleBtn = document.getElementById('sidebar-toggle-btn');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+        });
+    }
+
+    // 2. مستمع الأحداث للنقر على المجلدات (نسخة محسّنة)
+    sidebar.addEventListener('click', (e) => {
+        // ابحث عن أقرب عنصر مجلد تم النقر عليه
+        const folderItem = e.target.closest('.folder-item');
+        if (!folderItem) {
+            return; // إذا لم يكن النقر على مجلد، اخرج
+        }
+
+        const location = folderItem.dataset.location;
+        const currentView = this.state.currentView;
+
+        // التأكد من وجود مصفوفة بحث لهذه الواجهة
+        if (!this.state.searchTerms[currentView]) {
+            this.state.searchTerms[currentView] = [];
+        }
+
+        // الخطوة أ: قم بإنشاء مصفوفة جديدة تحتوي فقط على الفلاتر التي "ليست" فلاتر موقع
+        const otherTerms = this.state.searchTerms[currentView].filter(term => !term.startsWith('location:'));
+
+        // الخطوة ب: ابدأ بمصفوفة الفلاتر الجديدة
+        let newTerms = [...otherTerms];
+
+        // الخطوة ج: إذا تم النقر على موقع معين (وليس "All Samples")، أضف الفلتر الجديد
+        if (location !== '_all_') {
+            newTerms.push(`location:"${location}"`);
+        }
+
+        // الخطوة د: حدّث الحالة (state) بالمصفوفة النهائية للفلاتر
+        this.state.searchTerms[currentView] = newTerms;
+        
+        // الخطوة هـ: أعد رسم الواجهة الرئيسية لتطبيق الفلاتر الجديدة
+        this.UI.renderCurrentView();
+
+        // الخطوة و: أعد رسم الشريط الجانبي لتحديث المجلد "النشط"
+        this.UI.renderLocationSidebar();
+    });
+}
+            const dropZone = document.getElementById('image-drop-zone');
+            const fileInput = document.getElementById('sample-image');
+            dropZone.addEventListener('click', () => fileInput.click());
+            dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    const event = new Event('change', { bubbles: true });
+                    fileInput.dispatchEvent(event);
+                }
+            });
+            fileInput.addEventListener('change', () => {
+               if (fileInput.files.length) this.UI.updateImagePreview(fileInput.files[0], 'sample-image-preview', 'image-drop-zone');
+            });
+
+            // --- NEW ---: Event listeners for the import modal's image drop zone
+            const importDropZone = document.getElementById('import-image-drop-zone');
+            const importFileInput = document.getElementById('import-image-input');
+            importDropZone.addEventListener('click', () => importFileInput.click());
+            importDropZone.addEventListener('dragover', (e) => { e.preventDefault(); importDropZone.classList.add('dragover'); });
+            importDropZone.addEventListener('dragleave', () => importDropZone.classList.remove('dragover'));
+            importDropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                importDropZone.classList.remove('dragover');
+                if (e.dataTransfer.files.length) {
+                    importFileInput.files = e.dataTransfer.files;
+                    const event = new Event('change', { bubbles: true });
+                    importFileInput.dispatchEvent(event);
+                }
+            });
+            importFileInput.addEventListener('change', () => {
+               if (importFileInput.files.length) this.UI.updateImagePreview(importFileInput.files[0], 'import-image-preview', 'import-image-drop-zone');
+            });
+
+
+            document.getElementById('open-camera-btn').addEventListener('click', () => this.UI.Camera.open());
+            document.getElementById('snap-photo-btn').addEventListener('click', () => this.UI.Camera.snap());
+            document.getElementById('use-photo-btn').addEventListener('click', () => this.UI.Camera.use());
+            document.getElementById('camera-modal').addEventListener('hidden.bs.modal', () => this.UI.Camera.close());
+            
+            document.getElementById('save-annotations-btn').addEventListener('click', () => {
+                this.UI.ImageAnnotator.save();
+            });
+        },
+
+
+naturalSortCompare(a, b) {
+            // استخراج الأجزاء الرقمية والنصية من كل سلسلة
+            const partsA = a.match(/(\d+|\D+)/g) || [];
+            const partsB = b.match(/(\d+|\D+)/g) || [];
+            const len = Math.min(partsA.length, partsB.length);
+
+            for (let i = 0; i < len; i++) {
+                const partA = partsA[i];
+                const partB = partsB[i];
+
+                // التحقق إذا كان الجزءان عبارة عن أرقام
+                const isPartANumber = !isNaN(partA);
+                const isPartBNumber = !isNaN(partB);
+
+                if (isPartANumber && isPartBNumber) {
+                    // إذا كانا رقمين، قارن بينهما عددياً
+                    const numA = Number(partA);
+                    const numB = Number(partB);
+                    if (numA !== numB) {
+                        return numA - numB;
+                    }
+                } else {
+                    // إذا كانا نصين، قارن بينهما أبجدياً
+                    const comparison = partA.localeCompare(partB);
+                    if (comparison !== 0) {
+                        return comparison;
+                    }
+                }
+            }
+
+            // إذا كانت الأجزاء الأولى متساوية، السلسلة الأطول تكون الأكبر
+            return partsA.length - partsB.length;
+        },
+
+getCombinations(arr, minSize = 2) {
+            const results = [];
+            const n = arr.length;
+            // نمر على كل المجموعات الجزئية الممكنة باستخدام قناع البت (bitmask)
+            for (let i = 1; i < (1 << n); i++) {
+                const subset = [];
+                for (let j = 0; j < n; j++) {
+                    // التحقق مما إذا كان البت الحالي في القناع نشطًا
+                    if ((i >> j) & 1) {
+                        subset.push(arr[j]);
+                    }
+                }
+                if (subset.length >= minSize) {
+                    results.push(subset);
+                }
+            }
+            return results;
+        },
+            setupBackButtonHandling() {
+                window.addEventListener('popstate', () => {
+                    const openModals = document.querySelectorAll('.modal.show');
+
+                    if (openModals.length > 0) {
+                        let topModal = openModals[0];
+                        if (openModals.length > 1) {
+                            topModal = Array.from(openModals).reduce((a, b) => {
+                                const zIndexA = parseInt(window.getComputedStyle(a).zIndex, 10);
+                                const zIndexB = parseInt(window.getComputedStyle(b).zIndex, 10);
+                                return zIndexA > zIndexB ? a : b;
+                            });
+                        }
+                        const modalInstance = bootstrap.Modal.getInstance(topModal);
+                        if (modalInstance) {
+                            topModal.dataset.isClosingViaPopstate = 'true';
+                            modalInstance.hide();
+                        }
+                    }
+                });
+
+                document.querySelectorAll('.modal').forEach(modalEl => {
+                    modalEl.addEventListener('hide.bs.modal', function (event) {
+                        if (modalEl.dataset.isClosingViaPopstate === 'true') {
+                            modalEl.dataset.isClosingViaPopstate = 'false';
+                            return;
+                        }
+                        event.preventDefault();
+                        history.back();
+                    });
+                });
+            },
+
+navigateTo(viewName) {
+                this.state.currentView = viewName;
+                // ✨ تصفير العداد عند الدخول لأي صفحة
+                this.state.importRenderLimit = 30; 
+                this.state.isAppendingImport = false;
+
+                Object.values(this.elements.viewSwitcher).forEach(btn => btn.classList.remove('active'));
+                if (this.elements.viewSwitcher[viewName]) this.elements.viewSwitcher[viewName].classList.add('active');
+                this.UI.renderCurrentView();
+            },
+			
+            handleSearch() { this.UI.renderCurrentView(); },
+
+performSearch() {
+        const currentView = this.state.currentView;
+        const searchTerms = this.state.searchTerms[currentView] || [];
+        
+        let sourceData, fuseOptions;
+
+        // --- NEW ---: Determine data source based on view
+        if (currentView === 'import') {
+            sourceData = this.state.googleSheetSamples;
+            fuseOptions = { keys: ['Name', 'Category', 'Location (press Enter to add)', 'Foil Components', 'Sample Name'], threshold: 0.1, ignoreLocation: true };
+        } else if (currentView === 'foil') {
+            sourceData = this.state.foils;
+            fuseOptions = { keys: ['name', 'reference'], threshold: 0.0, ignoreLocation: true };
+        } else {
+            sourceData = this.state.samples;
+            fuseOptions = { keys: ['name', 'category', 'location', 'componentNamesStr'], threshold: 0.0, ignoreLocation: true };
+        }
+        
+        if (!sourceData) return [];
+
+        let filteredData = sourceData;
+
+        const structuredTerms = [];
+        const fuzzyTerms = [];
+        const filterRegex = /^(\w+):"([^"]+)"$/;
+
+        searchTerms.forEach(term => {
+            const match = term.match(filterRegex);
+            if (match) {
+                structuredTerms.push({ key: match[1].toLowerCase(), value: match[2].toLowerCase() });
+            } else {
+                fuzzyTerms.push(term);
+            }
+        });
+
+        // الخطوة 1: تطبيق الفلاتر المخصصة (structured) أولاً
+        if (structuredTerms.length > 0) {
+            filteredData = filteredData.filter(item => {
+return structuredTerms.every(term => {
+    const itemValue = item[term.key];
+    if (itemValue == null) return false;
+
+    // ✨ التحقق إذا كانت القيمة مصفوفة (مثل حقل الموقع الجديد)
+    if (Array.isArray(itemValue)) {
+        // ابحث داخل المصفوفة عن أي عنصر يطابق قيمة البحث
+        return itemValue.some(val => String(val).toLowerCase().includes(term.value));
+    } else {
+        // المنطق الأصلي للحقول الأخرى (مثل category)
+        return String(itemValue).toLowerCase().includes(term.value);
+    }
+});
+            });
+        }
+        
+        // ✨ --- المنطق الجديد للبحث (AND/OR) يبدأ هنا --- ✨
+        // تم استبدال منطق التوافيق القديم بهذا المنطق الأكثر وضوحًا
+        // ✨ --- المنطق الجديد للبحث (AND/OR/EXACT) يبدأ هنا --- ✨
+        // ✨ --- المنطق الجديد للبحث (AND/OR/EXACT) يبدأ هنا --- ✨
+        if (fuzzyTerms.length > 0) {
+            
+            // ======= ✨ 1. منطق التطابق التام المستقل (Exact Match as OR) =======
+            if (this.state.searchLogic === 'EXACT') {
+                
+                // تجهيز قائمة بقواعد البحث (Regex) لكل كلمة على حدة مسبقاً (لزيادة السرعة)
+                const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const exactRegexes = fuzzyTerms.map(term => 
+                    new RegExp('(^|[^a-zA-Z0-9\u0621-\u064A])' + escapeRegExp(term) + '([^a-zA-Z0-9\u0621-\u064A]|$)', 'i')
+                );
+                
+                filteredData = filteredData.filter(item => {
+                    let searchableText = '';
+                    // تجميع كل النصوص القابلة للبحث في سلسلة نصية واحدة لفحصها
+                    if (currentView === 'import') {
+                        searchableText = [item.Name, item.Category, item['Location (press Enter to add)'], item['Foil Components'], item['Sample Name']].join(' ');
+                    } else if (currentView === 'foil') {
+                        searchableText = [item.name, item.reference].join(' ');
+                    } else {
+                        const loc = Array.isArray(item.location) ? item.location.join(' ') : (item.location || '');
+                        searchableText = [item.name, item.category, loc, item.componentNamesStr].join(' ');
+                    }
+                    
+                    // ✨ السطر السحري: نتحقق مما إذا كانت "أي" كلمة من كلمات البحث تتطابق تطابقاً تاماً (some)
+                    return exactRegexes.some(regex => regex.test(searchableText));
+                });
+            } 
+            // ======= 2. منطق التطابق الشامل (AND) =======
+            else if (this.state.searchLogic === 'AND') {
+                fuzzyTerms.forEach(term => {
+                    const tempFuse = new Fuse(filteredData, fuseOptions);
+                    filteredData = tempFuse.search(term).map(result => result.item);
+                });
+            } 
+            // ======= 3. منطق التطابق الجزئي (OR) =======
+            else { 
+                const resultSet = new Set();
+                const initialDataForFuzzySearch = [...filteredData]; 
+
+                fuzzyTerms.forEach(term => {
+                    const tempFuse = new Fuse(initialDataForFuzzySearch, fuseOptions);
+                    const termResults = tempFuse.search(term);
+                    termResults.forEach(result => resultSet.add(result.item));
+                });
+                
+                filteredData = Array.from(resultSet);
+            }
+        }
+        // --- نهاية المنطق الجديد ---
+        // --- نهاية المنطق الجديد ---
+        // --- نهاية المنطق الجديد ---
+        
+        if (currentView !== 'foil' && currentView !== 'import') {
+            let activeData = filteredData.filter(sample => !sample.isDeleted);
+            return activeData.filter(sample => this.state.showArchived ? sample.isArchived : !sample.isArchived);
+        }
+
+        return filteredData;
+    },
+
+            async handleFormSubmit(e) {
+                e.preventDefault();
+                
+                const name = document.getElementById('sample-name').value.trim();
+                const category = this.state.categorySelect ? this.state.categorySelect.getValue() : '';
+const location = SampleManagerApp.state.locationSelect ? SampleManagerApp.state.locationSelect.getValue() : [];
+
+                const description = document.getElementById('sample-description').value.trim();
+                const entryDate = document.getElementById('sample-entry-date').value;
+                let imageFile = document.getElementById('sample-image').files[0];
+                const editId = document.getElementById('sample-edit-id').value;
+                const components = this.state.componentsSelect ? this.state.componentsSelect.getValue() : [];
+				
+				                // =================== الإضافة الجديدة هنا ===================
+                const status = document.getElementById('sample-status').value;
+                const quantityValue = document.getElementById('sample-quantity').value;
+                // إضافة || 0 لضمان أن النتيجة رقم صحيح أو null
+let parsedQty = parseInt(quantityValue, 10);
+if (isNaN(parsedQty)) parsedQty = 0; 
+const quantity = (status === 'Available' && quantityValue) ? parsedQty : null;
+                // =========================================================
+
+                if (!name) {
+                    this.UI.showToast("Please enter a valid sample name.", 'danger');
+                    return;
+                }
+
+                this.UI.setLoading(true);
+
+                const sampleData = { name, category, location, description, components, entryDate: entryDate || null, status, quantity };
+
+                // ... inside handleFormSubmit
+if (imageFile) {
+    try {
+        imageFile = await this.UI.ImageConverter.convertToPng(imageFile);
+    } catch (error) {
+        console.error("Image conversion failed:", error);
+        this.UI.showToast("Failed to process the image. Please try a different image.", 'danger');
+        this.UI.setLoading(false);
+        return;
+    }
+
+    const imageUrl = await this.uploadToImgur(imageFile);
+    if (imageUrl) {
+        sampleData.imageUrl = imageUrl;
+
+        // =================== الإضافة الجديدة تبدأ هنا ===================
+
+        // 1. حذف رابط الصورة القديمة التي عليها علامات
+        //    هذا يضمن أن نافذة التفاصيل ستعرض الصورة الجديدة
+        sampleData.annotatedImageUrl = null;
+        
+        // 2. إعادة تعيين إحداثيات العلامات (لأنها خاصة بالصورة القديمة)
+        //    نستخدم متغير 'components' الذي يحتوي على IDs المكونات من الفورم
+        if (editId) {
+    sampleData.components = components.map(id => ({ id: id, points: [] }));
+} else {
+    sampleData.components = components;
+}
+
+        // =================== الإضافة الجديدة تنتهي هنا ===================
+
+    } else {
+        this.UI.setLoading(false);
+        return;
+    }
+}
+// ...
+
+                this.elements.sampleModal.hide();
+                
+                if (editId) {
+                    if (!sampleData.imageUrl) {
+                        const existingSample = this.state.samples.find(s => s.docId === editId);
+                        if (existingSample) sampleData.imageUrl = existingSample.imageUrl;
+                    }
+                    this.updateSample(editId, sampleData);
+                } else {
+                    this.addSample(sampleData);
+                }
+                this.UI.setLoading(false);
+                this.UI.renderCurrentView();
+            },
+            
+            handleMainContentClick(e) {
+			
+			    const etiquetteIcon = e.target.closest('.etiquette-link-icon');
+    if (etiquetteIcon) {
+        e.preventDefault(); // منع السلوك الافتراضي للرابط
+        e.stopPropagation(); // منع فتح نافذة التفاصيل (مهم جداً)
+
+        const docId = etiquetteIcon.dataset.id;
+        const sample = this.state.samples.find(s => s.docId === docId);
+
+        if (sample) {
+            const url = this.UI.generateEtiquetteUrl(sample);
+            window.open(url, '_blank'); // فتح الرابط في نافذة جديدة
+        }
+        return; // الخروج من الدالة بعد تنفيذ المطلوب
+    }
+	const importCategoryLink = e.target.closest('.import-category-link');
+                if (importCategoryLink) {
+                    e.stopPropagation(); // يمنع فتح المودال الخاص بالبطاقة
+                    e.preventDefault();
+                    const categoryName = importCategoryLink.textContent.trim();
+                    if (categoryName) {
+                        // إضافة الكلمة إلى شريط البحث مباشرة
+                        this.Search.addTerm(this.state.currentView, categoryName);
+                    }
+                    return;
+                }
+
+                // 2. عند النقر على Foil tag
+                const importFoilTag = e.target.closest('.import-foil-tag');
+                if (importFoilTag) {
+                    e.stopPropagation(); // يمنع فتح المودال الخاص بالبطاقة
+                    e.preventDefault();
+                    const foilName = importFoilTag.textContent.trim();
+                    if (foilName) {
+                        // إضافة الكلمة إلى شريط البحث مباشرة
+                        this.Search.addTerm(this.state.currentView, foilName);
+                    }
+                    return;
+                }
+                // --- NEW ---: Handle import button click
+                const importCard = e.target.closest('.import-kanban-card');
+                if (importCard) {
+                    e.stopPropagation();
+                    const sampleId = importCard.dataset.id;
+                    const isConfirmed = SampleManagerApp.state.samples.some(s => s.originalId === sampleId);
+                    if (!isConfirmed) {
+                       this.UI.openImportDetailsModal(sampleId);
+                    }
+                    return;
+                }
+
+                const componentTag = e.target.closest('.component-tag');
+                if (componentTag) {
+                    e.stopPropagation();
+                    const componentName = componentTag.textContent.trim();
+                    if (componentName) {
+                        this.Search.addTerm(this.state.currentView, componentName);
+                    }
+                    return;
+                }
+
+                const categoryLink = e.target.closest('.kanban-category-link');
+                if (categoryLink) {
+                    e.preventDefault(); 
+                    e.stopPropagation();
+                    const categoryName = categoryLink.dataset.category;
+                    if (categoryName) {
+                        const searchTerm = `category:"${categoryName}"`;
+                        this.Search.addTerm(this.state.currentView, searchTerm);
+                    }
+                    return;
+                }
+
+                const card = e.target.closest('.kanban-card, .list-view-row');
+                if (card && card.dataset.id) {
+                    if (this.state.currentView !== 'foil' && this.state.currentView !== 'import') {
+                        this.UI.renderDetailsModal(card.dataset.id);
+                    }
+                    return;
+                }
+            },
+            
+            handleDetailsModalClick(e) {
+			
+			    const etiquetteIcon = e.target.closest('.etiquette-link-icon');
+    if (etiquetteIcon) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const docId = etiquetteIcon.dataset.id;
+        const sample = this.state.samples.find(s => s.docId === docId);
+
+        if (sample) {
+            const url = this.UI.generateEtiquetteUrl(sample);
+            window.open(url, '_blank');
+        }
+        return;
+    }
+                const editBtn = e.target.closest('#details-edit-btn');
+                const archiveBtn = e.target.closest('#details-archive-btn');
+                const unarchiveBtn = e.target.closest('#details-unarchive-btn');
+                const deleteBtn = e.target.closest('#details-delete-btn');
+                const annotateBtn = e.target.closest('#details-annotate-btn');
+    
+                if (annotateBtn) {
+                    const docId = annotateBtn.dataset.docId;
+                    const sample = this.state.samples.find(s => s.docId === docId);
+                    if (sample && sample.imageUrl && sample.components && sample.components.length > 0) {
+                        this.elements.detailsModal.hide();
+                        setTimeout(() => {
+                            const annotationModal = new bootstrap.Modal(document.getElementById('annotation-modal'));
+                            history.pushState({ modal: 'annotation-modal' }, '');
+                            annotationModal.show();
+                            this.UI.ImageAnnotator.init(sample);
+                        }, 300);
+                    } else {
+                        this.UI.showToast('Image and components are required to annotate.', 'warning');
+                    }
+                    return;
+                }
+
+                const handleAction = (action, docId) => {
+                    this.elements.detailsModal.hide();
+                    setTimeout(() => action(docId), 200);
+                };
+    
+                if (editBtn) {
+                    handleAction((docId) => this.UI.openModal('edit', docId), editBtn.dataset.docId);
+                } else if (archiveBtn) {
+                    handleAction((docId) => {
+                        this.UI.showConfirmationModal('Are you sure you want to archive this sample?', () => this.archiveSample(docId));
+                    }, archiveBtn.dataset.docId);
+                } else if (unarchiveBtn) {
+                    handleAction((docId) => this.unarchiveSample(docId), unarchiveBtn.dataset.docId);
+                } else if (deleteBtn) {
+                    handleAction((docId) => {
+                        this.UI.showConfirmationModal('Are you sure you want to permanently delete this sample?', () => this.deleteSample(docId));
+                    }, deleteBtn.dataset.docId);
+                }
+            },
+            
+            async uploadToImgur(file) {
+                const clientId = 'a2752b647621b24';
+                const formData = new FormData();
+                formData.append('image', file);
+                this.UI.setLoading(true);
+                try {
+                    const response = await fetch('https://api.imgur.com/3/image', {
+                        method: 'POST', headers: { Authorization: `Client-ID ${clientId}` }, body: formData,
+                    });
+                    if (!response.ok) throw new Error(`Imgur upload failed: ${await response.text()}`);
+                    const result = await response.json();
+                    if (result.success) {
+                        this.UI.showToast('Image uploaded successfully!', 'success');
+                        return result.data.link;
+                    } else {
+                        throw new Error('Imgur API returned an error.');
+                    }
+                } catch (error) {
+                    console.error('Imgur upload error:', error);
+                    this.UI.showToast(`Image upload failed: ${error.message}`, 'danger');
+                    return null;
+                } finally {
+                    this.UI.setLoading(false);
+                }
+            },
+            
+            Search: {
+                addTerm(view, term) {
+				SampleManagerApp.state.importRenderLimit = 30; 
+                    SampleManagerApp.state.isAppendingImport = false;
+                    const terms = SampleManagerApp.state.searchTerms[view];
+                    term = term.trim();
+                    if (term && !terms.includes(term)) {
+                        terms.push(term);
+                        SampleManagerApp.UI.renderSearchTags(view);
+                        SampleManagerApp.handleSearch();
+                    }
+                    const input = SampleManagerApp.elements.searchContainer.querySelector('input');
+                    if(input) input.value = '';
+                    SampleManagerApp.UI.hideAdvancedSearch();
+                },
+                removeTerm(view, termToRemove) {
+                    const terms = SampleManagerApp.state.searchTerms[view];
+                    const index = terms.indexOf(termToRemove);
+                    if (index > -1) {
+                        terms.splice(index, 1);
+                        SampleManagerApp.UI.renderSearchTags(view);
+                        SampleManagerApp.handleSearch();
+                    }
+                },
+            }
+        };
+        
+        SampleManagerApp.UI = {
+            setLoading(isLoading) { SampleManagerApp.elements.loadingOverlay.style.display = isLoading ? 'flex' : 'none'; },
+            
+            updateSaveStatus(status) {
+                const indicator = SampleManagerApp.elements.saveStatusIndicator;
+                if (!indicator) return;
+                let content = '';
+                switch(status) {
+                    case 'loading': content = `<div class="spinner-border spinner-border-sm text-primary" role="status"></div><span class="text-muted small">Loading...</span>`; break;
+                    case 'saving': content = `<i class="bi bi-cloud-arrow-up text-primary"></i><span class="text-muted small">Saving...</span>`; break;
+                    case 'saved': content = `<i class="bi bi-check-circle-fill text-success"></i><span class="text-success small">Synced</span>`; break;
+                    case 'offline': content = `<i class="bi bi-wifi-off text-muted"></i><span class="text-muted small">Offline</span>`; break;
+                    case 'retrying': content = `<i class="bi bi-exclamation-triangle-fill text-warning"></i><span class="text-warning small">Sync failed. Retrying...</span>`; break;
+                    case 'error': content = `<i class="bi bi-exclamation-triangle-fill text-danger"></i><span class="text-danger small">Error</span>`; break;
+                    default: indicator.style.display = 'none'; break;
+                }
+                indicator.innerHTML = content;
+                indicator.style.display = 'flex';
+                if (status === 'saved') setTimeout(() => { if(indicator.innerHTML.includes('Synced')) indicator.style.display = 'none'; }, 2000);
+            },
+
+            renderCurrentView() {
+                const view = SampleManagerApp.state.currentView;
+                document.body.classList.toggle('import-view-active', view === 'import'); // --- NEW: Toggle theme
+                this.renderSearchControls(view); 
+                const data = SampleManagerApp.performSearch();
+                
+                this.renderSearchTags(view);
+
+                const countContainer = document.getElementById('item-count-display');
+                if (countContainer) {
+                    let countText = '';
+                    if (view === 'foil') countText = 'Foil';
+                    else if (view === 'import') countText = 'Item';
+                    else countText = SampleManagerApp.state.showArchived ? 'Archived' : '';
+                    countContainer.textContent = `${data.length} ${countText}${data.length !== 1 ? 's' : ''}`;
+                    countContainer.title = 'Total items currently displayed';
+                }
+                
+                const isMainView = ['kanban', 'list'].includes(view);
+                SampleManagerApp.elements.printBtn.style.display = (isMainView && !SampleManagerApp.state.showArchived) ? 'block' : 'none';
+                SampleManagerApp.elements.createBtn.style.display = (SampleManagerApp.state.showArchived || ['foil', 'reports', 'import'].includes(view)) ? 'none' : 'block';
+                SampleManagerApp.elements.showArchivedToggle.style.display = isMainView ? 'block' : 'none';
+
+                switch (view) {
+                    case 'kanban': this.renderKanbanView(data); break;
+                    case 'list': this.renderListView(data); break;
+                    case 'foil': this.renderFoilView(data); break;
+                    case 'reports': this.renderReportsView(); break;
+                    case 'import': this.renderImportView(data); break; // --- NEW ---
+                }
+                this.initTooltips();
+            },
+
+renderSearchControls(view) {
+                const searchContainer = SampleManagerApp.elements.searchContainer;
+                const logicContainer = document.getElementById('search-logic-container'); 
+
+                if (view === 'reports' || (view !== 'foil' && SampleManagerApp.state.showArchived)) {
+                    searchContainer.innerHTML = '';
+                    logicContainer.innerHTML = ''; 
+                    return;
+                }
+                
+                // ====== التحقق مما إذا كان مربع البحث موجوداً بالفعل ======
+                const existingInput = document.getElementById(`${view}-search-input`);
+                if (existingInput) {
+                    if (logicContainer) {
+                        const andBtn = logicContainer.querySelector('[data-logic="AND"]');
+                        const orBtn = logicContainer.querySelector('[data-logic="OR"]');
+                        const exactBtn = logicContainer.querySelector('[data-logic="EXACT"]'); // ✨ زر المطابقة التامة
+                        
+                        if(andBtn) andBtn.className = `btn btn-outline-secondary ${SampleManagerApp.state.searchLogic === 'AND' ? 'active' : ''}`;
+                        if(orBtn) orBtn.className = `btn btn-outline-secondary ${SampleManagerApp.state.searchLogic === 'OR' ? 'active' : ''}`;
+                        if(exactBtn) exactBtn.className = `btn btn-outline-secondary ${SampleManagerApp.state.searchLogic === 'EXACT' ? 'active' : ''}`;
+                    }
+                    return;
+                }
+                // ==========================================================
+
+                searchContainer.innerHTML = `
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="search" id="${view}-search-input" class="form-control" placeholder="Search..." autocomplete="off">
+                        <span id="item-count-display" class="input-group-text bg-light text-dark"></span>
+                    </div>
+                    <div id="advanced-search-dropdown" class="advanced-search-dropdown" style="display: none;"></div>
+                `;
+                
+                // ✨ إضافة الزر الجديد EXACT في الواجهة
+                logicContainer.innerHTML = `
+                    <button type="button" data-logic="AND" class="btn btn-outline-secondary ${SampleManagerApp.state.searchLogic === 'AND' ? 'active' : ''}" title="Match ALL terms">All</button>
+                    <button type="button" data-logic="OR" class="btn btn-outline-secondary ${SampleManagerApp.state.searchLogic === 'OR' ? 'active' : ''}" title="Match ANY term">Any</button>
+                    <button type="button" data-logic="EXACT" class="btn btn-outline-secondary ${SampleManagerApp.state.searchLogic === 'EXACT' ? 'active' : ''}" title="Exact Word Match">Exact</button>
+                `;
+
+                // ربط الأحداث مع العناصر التي تم إنشاؤها
+                const input = document.getElementById(`${view}-search-input`);
+                input.addEventListener('focus', () => this.showAdvancedSearch(view));
+                
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && input.value.trim()) {
+                        e.preventDefault();
+                        SampleManagerApp.Search.addTerm(view, input.value.trim());
+                    }
+                });
+
+                // التعرف على اللصق المتعدد الأسطر (كما فعلنا سابقاً)
+                input.addEventListener('paste', (e) => {
+                    const pasteData = (e.clipboardData || window.clipboardData).getData('text');
+                    if (pasteData.includes('\n')) {
+                        e.preventDefault(); 
+                        const newTerms = pasteData.split(/\r?\n/).map(t => t.trim()).filter(Boolean);
+                        if (newTerms.length > 0) {
+                            const currentTerms = SampleManagerApp.state.searchTerms[view];
+                            let isChanged = false;
+                            newTerms.forEach(term => {
+                                if (!currentTerms.includes(term)) {
+                                    currentTerms.push(term);
+                                    isChanged = true;
+                                }
+                            });
+                            if (isChanged) {
+                                SampleManagerApp.state.importRenderLimit = 30;
+                                SampleManagerApp.state.isAppendingImport = false;
+                                SampleManagerApp.UI.renderSearchTags(view);
+                                SampleManagerApp.handleSearch();
+                            }
+                            input.value = '';
+                            SampleManagerApp.UI.hideAdvancedSearch();
+                        }
+                    }
+                });
+
+                const dropdown = document.getElementById('advanced-search-dropdown');
+                dropdown.addEventListener('click', (e) => {
+                    const item = e.target.closest('.search-dropdown-item');
+                    if (item && item.dataset.filterKey && item.dataset.filterValue) {
+                        const { filterKey, filterValue } = item.dataset;
+                        const term = `${filterKey}:"${filterValue}"`;
+                        SampleManagerApp.Search.addTerm(view, term);
+                    }
+                });
+            },
+            showAdvancedSearch(view) {
+                const dropdown = document.getElementById('advanced-search-dropdown');
+                if (!dropdown) return;
+
+                let content = '';
+                const sourceData = view === 'foil' ? SampleManagerApp.state.foils : SampleManagerApp.state.samples;
+
+                // --- لا يوجد تغيير هنا ---
+                const categories = [...new Set(sourceData.map(s => s.category).filter(Boolean))];
+// --- ✨ السطر الصحيح ---
+const locations = [...new Set(sourceData.flatMap(s => s.location || []).filter(Boolean))];                
+                // --- الإضافة الجديدة تبدأ هنا ---
+const statuses = ['Available', 'Not Available', 'Unknown']; // إضافة Unknown                
+                // لا نضيف قسم الفلتر إلا إذا كانت في واجهة العينات (وليس الرقائق)
+                if (view !== 'foil') {
+                    content += `<div class="search-dropdown-section"><div class="search-dropdown-header">Status</div>`;
+                    statuses.forEach(stat => {
+                        content += `<div class="search-dropdown-item" data-filter-key="status" data-filter-value="${stat}"><i class="bi bi-toggles"></i>${stat}</div>`;
+                    });
+                    content += `</div>`;
+                }
+                // --- الإضافة الجديدة تنتهي هنا ---
+
+                if (categories.length > 0) {
+                    content += `<div class="search-dropdown-section"><div class="search-dropdown-header">Category</div>`;
+                    categories.forEach(cat => {
+                        content += `<div class="search-dropdown-item" data-filter-key="category" data-filter-value="${cat}"><i class="bi bi-tag"></i>${cat}</div>`;
+                    });
+                    content += `</div>`;
+                }
+
+                if (locations.length > 0) {
+                    content += `<div class="search-dropdown-section"><div class="search-dropdown-header">Location</div>`;
+                    locations.forEach(loc => {
+                        content += `<div class="search-dropdown-item" data-filter-key="location" data-filter-value="${loc}"><i class="bi bi-geo-alt"></i>${loc}</div>`;
+                    });
+                    content += `</div>`;
+                }
+
+                dropdown.innerHTML = content || '<div class="text-muted text-center p-2">No filters available.</div>';
+                dropdown.style.display = 'block';
+            },
+
+            hideAdvancedSearch() {
+                const dropdown = document.getElementById('advanced-search-dropdown');
+                if (dropdown) {
+                    dropdown.style.display = 'none';
+                }
+            },
+
+            renderKanbanView(samplesToRender) {
+                const container = SampleManagerApp.elements.mainContent;
+                if (samplesToRender.length === 0) {
+                    container.innerHTML = `<div class="text-center text-muted"><div class="card p-5"><p class="mb-0 h5">No samples match your search.</p></div></div>`; return;
+                }
+                const kanbanContainer = document.createElement('div');
+                kanbanContainer.id = 'kanban-view-content';
+                samplesToRender.forEach(sample => { kanbanContainer.innerHTML += this.createKanbanCard(sample); });
+                container.innerHTML = ''; container.appendChild(kanbanContainer);
+            },
+
+            createKanbanCard(sample) {
+                const placeholderImg = `https://placehold.co/80x80/6c757d/ffffff?text=${encodeURIComponent(sample.name[0] || '?')}`;
+                
+                const componentNames = (sample.components && sample.components.length > 0)
+                    ? sample.components.map(comp => {
+                        const foil = SampleManagerApp.state.foils.find(f => f.docId === (typeof comp === 'object' ? comp.id : comp));
+						
+						
+						
+                        return foil ? `<span class="component-tag">${foil.name}</span>` : '';
+                    }).filter(Boolean).join('')
+                    : '<span style="font-size: 0.9em; color: #888;">No components</span>';
+
+                const categoryHtml = sample.category 
+                    ? `<a href="#" class="kanban-category-link" data-category="${sample.category}">${sample.category}</a>` 
+                    : 'N/A';
+
+                // =============================================================
+                let statusHtml = '';
+                if (sample.status === 'Available') {
+                    const quantityText = sample.quantity !== null ? `(${sample.quantity})` : '';
+                    statusHtml = `<span class="badge bg-success me-2">Available ${quantityText}</span>`;
+} else if (sample.status === 'Not Available') {
+    statusHtml = `<span class="badge me-2" style="background-color: rgb(88, 7, 15); color: white;">Not Available</span>`;
+}
+                // ===
+
+
+
+                return `
+                <div class="kanban-card ${sample.isArchived ? 'opacity-50' : ''}" data-id="${sample.docId}">
+                    <div class="kanban-card-header">
+                        <div>
+                            <div class="d-flex align-items-center justify-content-start">
+    <div class="kanban-card-title me-2">${sample.name}</div>
+    <a href="#" class="etiquette-link-icon" data-id="${sample.docId}" title="Generate Etiquette">
+        <i class="bi bi-printer"></i>
+    </a>
+</div>
+                        </div>
+                        <div class="kanban-image-container">
+                            <img src="${sample.imageUrl || placeholderImg}" alt="Sample Image" onerror="this.onerror=null;this.src='${placeholderImg}';">
+                        </div>
+                    </div>
+                    <div class="kanban-card-body">
+                        <p><strong><i class="bi bi-tag-fill me-1"></i>Category:</strong> ${categoryHtml}</p>
+                        <div class="component-tags-container">${componentNames}</div>
+                    </div>
+<div class="kanban-card-footer">
+    ${statusHtml}
+    <div style="margin-left: auto;">
+        ${sample.isArchived ? '<span class="badge bg-secondary">Archived</span>' : ''}
+    </div>
+</div>`;
+            },
+            
+            renderListView(samplesToRender) {
+                const container = SampleManagerApp.elements.mainContent;
+
+                if (SampleManagerApp.state.listViewHolder) {
+                    SampleManagerApp.state.listViewHolder.destroy();
+                    SampleManagerApp.state.listViewHolder = null;
+                }
+                
+                let tableHtml = `<div class="table-view-container"><table id="samples-list-table" class="table table-hover align-middle mb-0"><thead><tr>
+                    <th class="no-print">Image</th><th>Name</th><th>Category</th><th>Location</th><th>Last Updated</th>
+                </tr></thead><tbody>`;
+                
+                if (samplesToRender.length > 0) {
+                    samplesToRender.forEach(s => {
+                        const placeholderImg = `https://placehold.co/40x40/6c757d/ffffff?text=${encodeURIComponent(s.name[0] || '?')}`;
+                        const lastUpdatedText = s.lastUpdated ? new Date(s.lastUpdated).toLocaleDateString('en-US') : 'N/A';
+                        tableHtml += `<tr class="list-view-row ${s.isArchived ? 'opacity-50' : ''}" data-id="${s.docId}">
+                            <td class="no-print"><img src="${s.imageUrl || placeholderImg}" class="rounded" style="width:40px;height:40px;object-fit:cover;" onerror="this.onerror=null;this.src='${placeholderImg}';"></td>
+                            <td class="fw-bold">
+    ${s.name}
+    <a href="#" class="etiquette-link-icon ms-2" data-id="${s.docId}" title="Generate Etiquette">
+        <i class="bi bi-printer"></i>
+    </a>
+</td>
+                            <td>${s.category || '-'}</td>
+                            
+<td>${Array.isArray(s.location) ? s.location.join(', ') : (s.location || '-')}</td>
+                            <td>${lastUpdatedText}</td>
+                        </tr>`;
+                    });
+                }
+                tableHtml += `</tbody></table></div>`;
+                container.innerHTML = tableHtml;
+
+                const tableElement = document.getElementById('samples-list-table');
+                if (tableElement && samplesToRender.length > 0) {
+                   SampleManagerApp.state.listViewHolder = new DataTable(tableElement, {
+                        searching: false,
+                        lengthChange: false,
+                        pageLength: 10,
+                        language: {
+                            url: '//cdn.datatables.net/plug-ins/2.0.8/i18n/ar.json',
+                        },
+                        drawCallback: () => {
+                            const rows = document.querySelectorAll('#samples-list-table .list-view-row');
+                            rows.forEach(row => {
+                                row.style.cursor = 'pointer';
+                                row.onclick = (e) => {
+                                    if(e.target.tagName === 'IMG') return;
+                                    const sampleId = row.dataset.id;
+                                    if(sampleId) this.renderDetailsModal(sampleId);
+                                };
+                            });
+                        }
+                    });
+                } else if(samplesToRender.length === 0){
+                    container.innerHTML = `<div class="text-center text-muted"><div class="card p-5"><p class="mb-0 h5">No samples match your search.</p></div></div>`;
+                }
+
+            },
+
+            // --- NEW / MODIFIED ---: Function to render the new import view
+            // --- MODIFIED ---: Function to render the new import view with Lazy Loading
+            renderImportView(dataToRender) {
+                const container = SampleManagerApp.elements.mainContent;
+                
+                // حالة 1: البيانات لم يتم تحميلها من الخلفية بعد
+                if (!SampleManagerApp.state.googleSheetSamples || SampleManagerApp.state.googleSheetSamples.length === 0) {
+                    container.innerHTML = `<div class="card p-5 text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-3 text-muted">جاري تحميل البيانات من الخادم، يرجى الانتظار ثوانٍ قليلة...</p></div>`;
+                    return;
+                }
+
+                // حالة 2: لا توجد نتائج للبحث
+                if (dataToRender.length === 0) {
+                    container.innerHTML = `<div class="text-center text-muted"><div class="card p-5"><p class="mb-0 h5">No items to import or all items match your search.</p></div></div>`;
+                    return;
+                }
+
+                // ✨ منطق التحميل التدريجي (Lazy Rendering)
+                const chunkSize = 30; // عدد البطاقات في كل دفعة
+                const currentLimit = SampleManagerApp.state.importRenderLimit || chunkSize;
+                const isAppending = SampleManagerApp.state.isAppendingImport;
+                
+                // تحديد العناصر التي سيتم رسمها الآن
+                const startIndex = isAppending ? (currentLimit - chunkSize) : 0;
+                const itemsToDraw = dataToRender.slice(startIndex, currentLimit);
+
+                // البحث عن حاوية البطاقات أو إنشاؤها
+                let kanbanContainer = document.getElementById('import-kanban-view-content');
+                if (!isAppending || !kanbanContainer) {
+                    kanbanContainer = document.createElement('div');
+                    kanbanContainer.id = 'import-kanban-view-content';
+                    container.innerHTML = '';
+                    container.appendChild(kanbanContainer);
+                }
+
+                // رسم البطاقات
+                let htmlStr = '';
+                itemsToDraw.forEach(item => {
+                    htmlStr += this.createImportKanbanCard(item);
+                });
+
+                if (isAppending) {
+                    kanbanContainer.insertAdjacentHTML('beforeend', htmlStr);
+                } else {
+                    kanbanContainer.innerHTML = htmlStr;
+                }
+
+                // إعادة تعيين مؤشر الإضافة
+                SampleManagerApp.state.isAppendingImport = false; 
+
+                // إزالة زر "تحميل المزيد" القديم إن وجد
+                // إزالة زر أو مؤشر التمرير القديم إن وجد
+                const existingBtn = document.getElementById('load-more-import-btn');
+                if (existingBtn) existingBtn.remove();
+                const existingSentinel = document.getElementById('import-scroll-sentinel');
+                if (existingSentinel) existingSentinel.remove();
+
+                // إضافة مؤشر التحميل التلقائي إذا كان هناك عناصر متبقية
+                if (currentLimit < dataToRender.length) {
+                    // إنشاء عنصر مخفي (Sentinel) نضعه في آخر القائمة
+                    const sentinel = document.createElement('div');
+                    sentinel.id = 'import-scroll-sentinel';
+                    sentinel.className = 'text-center py-4 w-100 mt-3 mb-5';
+                    sentinel.innerHTML = '<div class="spinner-border text-primary spinner-border-sm" role="status"></div><span class="ms-2 text-muted small">جاري تحميل المزيد...</span>';
+                    container.appendChild(sentinel);
+
+                    // استخدام IntersectionObserver لمراقبة وصول المستخدم لهذا العنصر
+                    const observer = new IntersectionObserver((entries) => {
+                        if (entries[0].isIntersecting) {
+                            observer.disconnect(); // إيقاف المراقبة الحالية لتجنب التكرار
+                            
+                            // زيادة الحد الأقصى وتحميل الدفعة التالية
+                            SampleManagerApp.state.importRenderLimit += chunkSize;
+                            SampleManagerApp.state.isAppendingImport = true;
+                            this.renderImportView(dataToRender);
+                        }
+                    }, {
+                        root: null, // المراقبة بالنسبة لنافذة المتصفح
+                        rootMargin: '300px', // يبدأ التحميل قبل أن يصل المستخدم للنهاية بـ 300 بكسل لتجربة سلسة جداً
+                        threshold: 0.1
+                    });
+
+                    // بدء مراقبة العنصر
+                    observer.observe(sentinel);
+                }
+            },
+
+            // --- NEW ---: Create a Kanban card for the import view
+            // --- NEW ---: Create a Kanban card for the import view
+            // --- MODIFIED ---: Create a Kanban card for the import view (Matches Main Kanban)
+            createImportKanbanCard(item) {
+                const isConfirmed = SampleManagerApp.state.samples.some(s => s.originalId === item.ID);
+                const statusBadge = isConfirmed 
+                    ? `<span class="badge badge-confirmed">Confirmed</span>`
+                    : `<span class="badge badge-unconfirmed">Unconfirmed</span>`;
+                const placeholderText = encodeURIComponent((item['Sample Name'] || '?')[0]);
+                const placeholderImg = `https://placehold.co/80x80/6c757d/ffffff?text=${placeholderText}`;
+
+                // تجهيز شكل Category (نص أزرق قابل للنقر)
+                const categoryDisplay = (item.Category && item.Category !== '-' && item.Category !== 'Uncategorized') 
+                    ? `<a href="#" class="import-category-link" data-category="${item.Category}">${item.Category}</a>` 
+                    : (item.Category || '-');
+
+                // ✨ استخراج الفويل وعرضه بنفس شكل Tags في كانبان الأساسي
+                let componentNamesHtml = '<span style="font-size: 0.9em; color: #888;">No components</span>';
+                const rawFoils = item['Foil Components'];
+                if (rawFoils && rawFoils !== '-' && rawFoils !== '****') {
+                    // تقسيم النص بناءً على الفاصلة أو علامة الزائد
+                    const foilNames = rawFoils.split(/[,+]/).map(f => f.trim()).filter(Boolean);
+                    componentNamesHtml = foilNames.map(name => `<span class="component-tag import-foil-tag">${name}</span>`).join('');
+                }
+
+                // ✨ أضفنا كلاس 'kanban-card' لتطبيق نفس التأثيرات البصرية تماماً
+                return `
+                <div class="kanban-card import-kanban-card ${isConfirmed ? 'opacity-50' : ''}" data-id="${item.ID}">
+                    <div class="kanban-card-header">
+                        <div>
+                            <div class="d-flex align-items-center justify-content-start">
+                                <div class="kanban-card-title me-2">${item['Sample Name']}</div>
+                            </div>
+                        </div>
+                        <div class="kanban-image-container">
+                             <img src="${placeholderImg}" alt="Sample Image">
+                        </div>
+                    </div>
+                    <div class="kanban-card-body">
+                        <p class="mb-1"><strong><i class="bi bi-tag-fill me-1"></i>Category:</strong> ${categoryDisplay}</p>
+                        <p class="mb-1"><strong><i class="bi bi-geo-alt-fill me-1"></i>Location:</strong> ${item['Location (press Enter to add)'] || '-'}</p>
+                        <div class="component-tags-container mt-2">${componentNamesHtml}</div>
+                    </div>
+                    <div class="kanban-card-footer">
+                        ${statusBadge}
+                    </div>
+                </div>`;
+            },
+
+            createComponentsTable(foil) {
+                const components = foil.components || [];
+                if (components.length === 0) {
+                    return '<p class="text-muted small mt-3">No parts recorded for this foil.</p>';
+                }
+
+                let tableRows = '';
+                components.forEach(comp => {
+                    tableRows += `<tr>
+                        <td>${comp.length || 0} cm</td>
+                        <td>${comp.width || 0} cm</td>
+                    </tr>`;
+                });
+
+                return `<table class="table table-sm table-bordered mt-3">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Length</th>
+                            <th>Width</th>
+                        </tr>
+                    </thead>
+                    <tbody>${tableRows}</tbody>
+                </table>`;
+            },
+            
+            renderFoilView(foilsToRender) {
+                const container = SampleManagerApp.elements.mainContent;
+                if (foilsToRender.length === 0) {
+                    container.innerHTML = `<div class="text-center text-muted"><div class="card p-5"><p class="mb-0 h5">No foils to display.</p></div></div>`;
+                    return;
+                }
+
+                const accordionHtml = foilsToRender.map((foil, index) => {
+                    const placeholderImg = `https://placehold.co/40x40/6c757d/ffffff?text=${encodeURIComponent(foil.name[0] || '?')}`;
+                    return `
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading-${foil.docId}">
+                                <button class="accordion-button ${index > 0 ? 'collapsed' : ''}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${foil.docId}">
+                                    <img src="${foil.imageUrl || placeholderImg}" class="rounded me-3" style="width:32px;height:32px;object-fit:cover;" onerror="this.onerror=null;this.src='${placeholderImg}';">
+                                    <span class="fw-bold me-auto">${foil.name}</span>
+                                    <small class="text-muted">Ref: ${foil.reference || '-'}</small>
+                                </button>
+                            </h2>
+                            <div id="collapse-${foil.docId}" class="accordion-collapse collapse ${index === 0 ? 'show' : ''}" data-bs-parent="#foilAccordion">
+                                <div class="accordion-body">
+                                    <h6 class="component-bar-title">Visual Representation (Total Width: ${foil.width || 64} cm)</h6>
+                                    ${this.createVisualBar(foil)}
+                                    <h6 class="component-bar-title mt-4">Parts Table</h6>
+                                    ${this.createComponentsTable(foil)}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = `<div class="accordion" id="foilAccordion">${accordionHtml}</div>`;
+            },
+
+            createVisualBar(foil) {
+                const maxLength = foil.width || 64;
+                const components = foil.components || [];
+                const COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#14b8a6', '#f97316'];
+                let segmentsHTML = '';
+                
+                const totalLength = components.reduce((sum, comp) => sum + (comp.length || 0), 0);
+                
+                components.forEach((component, index) => {
+                    if (!component || !component.length || component.length <= 0) return;
+
+                    const segmentWidthPercentage = (component.length / maxLength) * 100;
+                    const segmentColor = COLORS[index % COLORS.length];
+
+                    segmentsHTML += `
+                        <div 
+                            class="visual-bar-segment" 
+                            style="width: ${segmentWidthPercentage}%; background-color: ${segmentColor};"
+                            data-bs-toggle="tooltip" 
+                            title="Length: ${component.length} cm, Width: ${component.width || foil.width} cm"
+                        ></div>`;
+                });
+
+                if (totalLength < maxLength) {
+                    const remainingLength = maxLength - totalLength;
+                    const remainingPercentage = (remainingLength / maxLength) * 100;
+                    segmentsHTML += `<div class="visual-bar-segment" style="width: ${remainingPercentage}%" data-bs-toggle="tooltip" title="Remaining: ${remainingLength.toFixed(1)} cm"></div>`;
+                } else if (totalLength > maxLength) {
+                    segmentsHTML += `
+                        <div 
+                            class="visual-bar-segment" 
+                            style="flex-grow: 1; background-color: #dc3545;"
+                            data-bs-toggle="tooltip" 
+                            title="Exceeded: ${(totalLength - maxLength).toFixed(1)} cm"
+                        >+</div>`;
+                }
+
+                return `
+                    <div class="visual-bar-container">
+                        <div class="visual-bar-content">
+                            ${segmentsHTML}
+                        </div>
+                    </div>`;
+            },
+            
+            renderReportsView() {
+                const container = SampleManagerApp.elements.mainContent;
+                const logs = SampleManagerApp.state.logs.slice(0, 50);
+
+                if (logs.length === 0) {
+                    container.innerHTML = `<div class="card p-5 text-center text-muted">No logs to display.</div>`;
+                    return;
+                }
+
+                const getIconForAction = (action) => {
+                    switch(action) {
+                        case 'CREATE_SAMPLE': return '<i class="bi bi-plus-circle-fill text-success me-2"></i>';
+                        case 'UPDATE_SAMPLE_INFO': return '<i class="bi bi-pencil-fill text-primary me-2"></i>';
+                        case 'ARCHIVE_SAMPLE': return '<i class="bi bi-archive-fill text-warning me-2"></i>';
+                        case 'UNARCHIVE_SAMPLE': return '<i class="bi bi-box-arrow-up text-info me-2"></i>';
+                        case 'DELETE_SAMPLE': return '<i class="bi bi-trash3-fill text-danger me-2"></i>';
+                        case 'SYNC_FOILS':
+                        case 'IMPORT_FOILS': return '<i class="bi bi-cloud-download-fill text-info me-2"></i>';
+                        default: return '<i class="bi bi-info-circle-fill text-muted me-2"></i>';
+                    }
+                };
+
+                const accordionHtml = logs.map((log, index) => `
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="heading-${log.id}">
+                            <button class="accordion-button ${index > 0 ? 'collapsed' : ''}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${log.id}">
+                                ${getIconForAction(log.action)} ${log.description}
+                                <small class="ms-auto text-muted">${new Date(log.timestamp).toLocaleString('en-US')}</small>
+                            </button>
+                        </h2>
+                        <div id="collapse-${log.id}" class="accordion-collapse collapse ${index === 0 ? 'show' : ''}" data-bs-parent="#logsAccordion">
+                            <div class="accordion-body">
+                                <strong>Log Details:</strong>
+                                <pre class="bg-light p-2 rounded mt-2"><code>${JSON.stringify(log.details, null, 2)}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                container.innerHTML = `<div class="accordion" id="logsAccordion">${accordionHtml}</div>`;
+            },
+            
+            openModal(mode, docId = null){
+                const form = document.getElementById('sample-form');
+                form.reset();
+                
+                if (SampleManagerApp.state.componentsSelect) {
+                    SampleManagerApp.state.componentsSelect.destroy();
+                }
+// ... داخل دالة openModal
+
+// ✨ --- ابدأ بإضافة الكود التالي --- ✨
+
+// تأكد من تدمير النسخة القديمة إذا كانت موجودة
+if (SampleManagerApp.state.locationSelect) {
+    SampleManagerApp.state.locationSelect.destroy();
+    SampleManagerApp.state.locationSelect = null;
+}
+
+// (اختياري) استخراج كل المواقع الموجودة لاقتراحها على المستخدم
+const existingLocations = SampleManagerApp.state.samples
+    .flatMap(s => s.location || []) // flatMap رائعة للتعامل مع المصفوفات
+    .filter(Boolean);
+const allLocationOptions = [...new Set(existingLocations)].map(loc => ({ value: loc, text: loc }));
+
+// تهيئة Tom Select للموقع
+SampleManagerApp.state.locationSelect = new TomSelect('#sample-location', {
+    plugins: ['remove_button'], // لإضافة زر حذف لكل وسم
+    create: true,               // السماح بإنشاء مواقع جديدة
+    persist: false,             // لا تحفظ الخيارات الجديدة في القائمة المنسدلة
+    options: allLocationOptions,
+    onItemAdd: function() {
+        this.setTextboxValue(''); // مسح مربع النص بعد إضافة وسم
+        this.blur();              // إزالة التركيز
+    }
+});
+// ✨ --- انتهى الكود المضاف --- ✨
+
+// اذهب إلى نهاية الدالة، داخل قسم if(mode === 'edit' && docId)
+// ...
+                if (SampleManagerApp.state.categorySelect) {
+                    SampleManagerApp.state.categorySelect.destroy();
+                    SampleManagerApp.state.categorySelect = null;
+                }
+                
+                const defaultCategories = ['CIMAISE', 'PLINTHE', 'Wall panel', 'CORNICHE', 'CORNIERE', 'CADRE'];
+                const existingCategories = SampleManagerApp.state.samples.map(s => s.category).filter(Boolean);
+                const allCategoryOptions = [...new Set([...defaultCategories, ...existingCategories])].map(cat => ({ value: cat, text: cat }));
+
+                SampleManagerApp.state.categorySelect = new TomSelect('#sample-category', {
+                    create: true,
+                    options: allCategoryOptions,
+                    items: [],
+                    render: {
+                        no_results: function(data, escape) {
+                            return '<div class="no-results">No results found. Type to create a new category.</div>';
+                        },
+                    }
+                });
+
+                const uniqueFoilsByName = [...new Map(SampleManagerApp.state.foils.map(item => [item['name'], item])).values()];
+                const options = uniqueFoilsByName.map(foil => ({ value: foil.docId, text: foil.name }));
+
+SampleManagerApp.state.componentsSelect = new TomSelect('#sample-components', {
+                    create: false,
+                    options: options,
+                    items: [],
+                    // --- ✨ الإضافة الجديدة هنا ---
+                    closeAfterSelect: true, // لغلق القائمة بعد الاختيار مباشرة
+                    onItemAdd: function() {
+                        // `this` هنا يشير إلى نسخة TomSelect
+                        this.setTextboxValue(''); // يقوم بمسح نص البحث المكتوب
+                        this.blur();              // يزيل التركيز (focus) من حقل الإدخال
+                    }
+                    // ---------------------------
+                });
+
+                const imgPreview = document.getElementById('sample-image-preview');
+                imgPreview.src = '';
+                imgPreview.classList.add('d-none');
+                document.getElementById('image-drop-zone').querySelector('p').textContent = 'Drag & drop an image here, or click to select a file.';
+                document.getElementById('sample-edit-id').value = (mode === 'edit' && docId) ? docId : '';
+                document.getElementById('modal-title').textContent = (mode === 'add') ? 'Create New Sample' : 'Edit Sample';
+
+                if(mode === 'edit' && docId){
+                    const sample = SampleManagerApp.state.samples.find(s => s.docId === docId);
+                    if(sample){
+                        document.getElementById('sample-name').value = sample.name || '';
+                        SampleManagerApp.state.categorySelect.setValue(sample.category || '');
+SampleManagerApp.state.locationSelect.setValue(sample.location || []);
+
+
+                        document.getElementById('sample-description').value = sample.description || '';
+                        if(sample.entryDate) document.getElementById('sample-entry-date').value = sample.entryDate;
+                        if(sample.imageUrl){ 
+                            imgPreview.src = sample.imageUrl; 
+                            imgPreview.classList.remove('d-none');
+                            document.getElementById('image-drop-zone').querySelector('p').textContent = "Existing image. Drag a new one to replace.";
+                        }
+                        if(sample.components) {
+                            const componentIds = sample.components.map(c => typeof c === 'object' ? c.id : c);
+                            SampleManagerApp.state.componentsSelect.setValue(componentIds);
+                        }
+                    }
+                }
+				
+				
+				
+				                const statusSelect = document.getElementById('sample-status');
+                const quantityInput = document.getElementById('sample-quantity');
+
+                // دالة مساعدة لتحديث لون القائمة وتفعيل/تعطيل حقل الكمية
+                const updateStatusAndQuantity = () => {
+                    const status = statusSelect.value;
+
+                    // إزالة الكلاسات القديمة
+                    statusSelect.classList.remove('status-available', 'status-not-available');
+
+                    if (status === 'Available') {
+                        statusSelect.classList.add('status-available');
+                        quantityInput.removeAttribute('disabled');
+                    } else {
+                        quantityInput.setAttribute('disabled', true);
+                        quantityInput.value = ''; // مسح القيمة عند التعطيل
+                        if (status === 'Not Available') {
+                            statusSelect.classList.add('status-not-available');
+                        }
+                    }
+                };
+
+                // ربط حدث التغيير بالقائمة
+                statusSelect.addEventListener('change', updateStatusAndQuantity);
+
+                // تعبئة البيانات في حالة التعديل وتشغيل الدالة للمرة الأولى
+                if (mode === 'edit' && docId) {
+                    const sample = SampleManagerApp.state.samples.find(s => s.docId === docId);
+                    if (sample) {
+                        statusSelect.value = sample.status || 'Unknown';
+                        quantityInput.value = sample.quantity || '';
+                    }
+                }
+                
+                // تحديث الواجهة عند فتح النافذة لأول مرة
+                updateStatusAndQuantity();
+
+
+
+                history.pushState({ modal: 'sample-modal' }, '');
+                SampleManagerApp.elements.sampleModal.show();
+            },
+
+            // --- NEW ---: Open a modal to confirm import and add an image
+            // --- MODIFIED ---: Open a modal to confirm import (Matches Details Modal)
+            // --- MODIFIED ---: Open a modal to confirm import (Matches Details Modal 100%)
+            // --- MODIFIED ---: Open a modal to confirm import (Matches Kanban Details Modal 100%)
+            openImportDetailsModal(itemId) {
+                const sampleToImport = SampleManagerApp.state.googleSheetSamples.find(s => s.ID === itemId);
+                if (!sampleToImport) return;
+
+                // 1. استنساخ الفورم لإزالة أي أحداث (Event Listeners) قديمة
+                const oldForm = document.getElementById('import-form');
+                const newForm = oldForm.cloneNode(false);
+                oldForm.parentNode.replaceChild(newForm, oldForm);
+
+                // 2. ✨ البحث عن مكونات الفويل في قاعدة البيانات لإنشاء الأشرطة المرئية
+                let componentsBarsHtml = '';
+                const rawFoils = sampleToImport['Foil Components'];
+                let matchedComponentIds = []; 
+                let uniqueMatchedNames = new Set(); // نستخدم Set لمنع التكرار وتجميع الفويلات بنفس طريقة الكانبان
+
+                if (rawFoils && rawFoils !== '-' && rawFoils !== '****') {
+                    // تقسيم الأسماء بناءً على الفاصلة أو علامة الزائد
+                    const foilNames = rawFoils.split(/[,+]/).map(f => f.trim()).filter(Boolean);
+                    
+                    foilNames.forEach(name => {
+                        // البحث عن كل الفويلات التي تشارك هذا الاسم في قاعدة البيانات
+                        let matchingFoils = SampleManagerApp.state.foils.filter(f => f.name.trim().toLowerCase() === name.toLowerCase());
+                        
+                        // إن لم يجد مطابقة تامة، يبحث بمطابقة تقريبية
+                        if (matchingFoils.length === 0) {
+                            matchingFoils = SampleManagerApp.state.foils.filter(f => f.name.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(f.name.toLowerCase()));
+                        }
+
+                        if (matchingFoils.length > 0) {
+                            matchingFoils.forEach(foil => {
+                                if (!matchedComponentIds.includes(foil.docId)) {
+                                    matchedComponentIds.push(foil.docId); // حفظ الـ IDs لاستيرادها
+                                }
+                                uniqueMatchedNames.add(foil.name); // حفظ الاسم الأصلي من قاعدة البيانات للتجميع
+                            });
+                        }
+                    });
+                }
+
+                // ✨ تطبيق نفس منطق عرض التفاصيل الأساسية (renderDetailsModal) بنسبة 100%
+                if (uniqueMatchedNames.size > 0) {
+                    const uniqueNames = Array.from(uniqueMatchedNames);
+                    const lightColors = ['rgba(232, 245, 253, 0.7)', 'rgba(237, 247, 237, 0.7)', 'rgba(250, 240, 255, 0.7)', 'rgba(255, 248, 225, 0.7)', 'rgba(255, 235, 238, 0.7)'];
+                    let colorIndex = 0;
+
+                    uniqueNames.forEach(name => {
+                        // نجلب جميع الفويلات المرتبطة بهذا الاسم لعرضها معاً
+                        const allMatchingFoils = SampleManagerApp.state.foils.filter(f => f.name === name);
+                        const backgroundColor = lightColors[(colorIndex++) % lightColors.length];
+                        const representativeFoil = allMatchingFoils[0];
+                        const placeholderImg = `https://placehold.co/40x40/6c757d/ffffff?text=${encodeURIComponent(representativeFoil.name[0] || '?')}`;
+                        const groupImageHtml = `<img src="${representativeFoil.imageUrl || placeholderImg}" class="component-bar-image me-2" onerror="this.onerror=null;this.src='${placeholderImg}';">`;
+
+                        let barsHtml = '';
+
+                        // إذا كان هناك أكثر من فويل بنفس الاسم (مثل حالة MM014 في الصورة المرفقة)
+                        if (allMatchingFoils.length > 1) {
+                            allMatchingFoils.forEach(foil => {
+                                barsHtml += `
+                                    <div class="mt-2">
+                                        <h6 class="component-bar-title mb-1"><small class="text-muted">Ref: ${foil.reference || 'N/A'}</small></h6>
+                                        ${this.createVisualBar(foil)}
+                                    </div>`;
+                            });
+                            
+                            componentsBarsHtml += `
+                                <div class="mb-3 p-2" style="border-left: 3px solid rgb(var(--bs-danger-rgb)); background-color: ${backgroundColor}; border-radius: 5px;">
+                                    <div class="d-flex align-items-center">
+                                        ${groupImageHtml}
+                                        <h6 class="component-bar-title mb-0 flex-grow-1">${representativeFoil.name} <span class="badge bg-secondary">${allMatchingFoils.length}</span></h6>
+                                    </div>
+                                    ${barsHtml}
+                                </div>`;
+                        } 
+                        // إذا كان فويل واحد فقط (مثل حالة WXGL012-2 في الصورة المرفقة)
+                        else {
+                            const foil = allMatchingFoils[0];
+                            if (foil) {
+                                barsHtml = `<div class="mt-2">${this.createVisualBar(foil)}</div>`;
+                                componentsBarsHtml += `
+                                <div class="component-bar-container p-2 mb-2" style="background-color: ${backgroundColor}; border-radius: 5px;">
+                                    <div class="d-flex align-items-center">
+                                        ${groupImageHtml}
+                                        <h6 class="component-bar-title mb-0 flex-grow-1">${foil.name} <small class="text-muted">(Ref: ${foil.reference || 'N/A'})</small></h6>
+                                    </div>
+                                    ${barsHtml}
+                                </div>`;
+                            }
+                        }
+                    });
+                } else if (rawFoils && rawFoils !== '-' && rawFoils !== '****') {
+                    // في حال كان اسم الفويل مكتوباً في جوجل شيت ولكنه غير موجود إطلاقاً في قاعدة بياناتك
+                    componentsBarsHtml = `<div class="alert alert-warning py-2 px-3 mt-2 small"><i class="bi bi-exclamation-triangle me-2"></i> No matching foils found in your database for: <strong>${rawFoils}</strong></div>`;
+                } else {
+                    componentsBarsHtml = '<div class="text-muted small mt-2">No visual components available.</div>';
+                }
+
+                // 3. ✨ بناء HTML للنافذة لتبدو تماماً مثل نافذة التفاصيل
+                newForm.innerHTML = `
+                    <div class="modal-header">
+                        <h5 class="modal-title">Import Sample: ${sampleToImport['Sample Name']}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="import-item-id" value="${itemId}">
+                        <div class="row">
+                            <div class="col-md-5 mb-3 mb-md-0 text-center">
+                                <div id="import-image-drop-zone" class="mb-3 p-4 border rounded" style="cursor: pointer; border: 2px dashed #ccc; transition: all 0.2s;">
+                                    <img src="" id="import-image-preview" class="img-fluid rounded d-none mb-2 shadow-sm" style="max-height: 200px;">
+                                    <div id="import-drop-text">
+                                        <i class="bi bi-cloud-upload display-4 text-muted"></i>
+                                        <p class="mb-0 mt-2 text-muted">Drag & drop an image here,<br>or click to select.</p>
+                                    </div>
+                                    <input type="file" id="import-image-input" class="form-control" accept="image/*" hidden>
+                                </div>
+                            </div>
+                            <div class="col-md-7">
+                                <ul class="list-group mb-3">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center"><strong>Name:</strong> <span class="fw-bold">${sampleToImport['Sample Name']}</span></li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center"><strong>Category:</strong> <span>${sampleToImport.Category || '-'}</span></li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center"><strong>Location:</strong> <span><span class="badge bg-warning text-dark">${sampleToImport['Location (press Enter to add)'] || '-'}</span></span></li>
+                                </ul>
+                                <h6 class="border-bottom pb-2 mb-3 fw-bold">Foil Components Overview</h6>
+                                <div id="import-components-bars-section" style="max-height: 280px; overflow-y: auto;">
+                                    ${componentsBarsHtml}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-cloud-arrow-down-fill me-1"></i> Confirm & Import</button>
+                    </div>
+                `;
+
+                // 4. تفعيل وظائف السحب والإفلات للصورة
+                const importDropZone = document.getElementById('import-image-drop-zone');
+                const importFileInput = document.getElementById('import-image-input');
+                const dropText = document.getElementById('import-drop-text');
+                
+                importDropZone.addEventListener('click', () => importFileInput.click());
+                importDropZone.addEventListener('dragover', (e) => { 
+                    e.preventDefault(); 
+                    importDropZone.style.borderColor = 'var(--bs-primary-import-rgb)'; 
+                    importDropZone.style.backgroundColor = '#f8f9fa'; 
+                });
+                importDropZone.addEventListener('dragleave', () => { 
+                    importDropZone.style.borderColor = '#ccc'; 
+                    importDropZone.style.backgroundColor = 'transparent'; 
+                });
+                importDropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    importDropZone.style.borderColor = '#ccc';
+                    importDropZone.style.backgroundColor = 'transparent';
+                    if (e.dataTransfer.files.length) {
+                        importFileInput.files = e.dataTransfer.files;
+                        const event = new Event('change', { bubbles: true });
+                        importFileInput.dispatchEvent(event);
+                    }
+                });
+                importFileInput.addEventListener('change', () => {
+                    if (importFileInput.files.length) {
+                        this.updateImagePreview(importFileInput.files[0], 'import-image-preview', 'import-image-drop-zone');
+                        dropText.classList.add('d-none');
+                    }
+                });
+
+                // 5. وظيفة زر الحفظ والاستيراد
+                newForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    this.setLoading(true);
+                    
+                    const imageFile = document.getElementById('import-image-input').files[0];
+                    let imageUrl = '';
+
+                    if (imageFile) {
+                        let processedFile = imageFile;
+                        try {
+                            processedFile = await this.ImageConverter.convertToPng(imageFile);
+                        } catch (error) {
+                            console.error("Image conversion failed:", error);
+                            this.showToast("Failed to process the image.", 'danger');
+                            this.setLoading(false);
+                            return;
+                        }
+
+                        imageUrl = await SampleManagerApp.uploadToImgur(processedFile);
+                        if (!imageUrl) {
+                            this.setLoading(false);
+                            return; 
+                        }
+                    }
+
+                    const newSampleData = {
+                        name: sampleToImport['Sample Name'],
+                        category: sampleToImport['Category'],
+                        location: [sampleToImport['Location (press Enter to add)']],
+                        components: matchedComponentIds, // سيتم ربط كل الفويلات التي تم العثور عليها بالمنتج تلقائياً
+                        originalId: sampleToImport.ID,
+                        description: `Imported from Google Sheets. Original Name: ${sampleToImport.Name}`,
+                        imageUrl: imageUrl, 
+                        status: 'Unknown',
+                        quantity: null
+                    };
+
+                    SampleManagerApp.addSample(newSampleData);
+                    this.showToast(`Successfully imported ${sampleToImport.Name}!`, 'success');
+                    SampleManagerApp.elements.importDetailsModal.hide();
+                    this.setLoading(false);
+                });
+
+                // تفعيل التلميحات (Tooltips) الخاصة بالشريط المرئي
+                setTimeout(() => {
+                    this.initTooltips();
+                }, 100);
+
+                history.pushState({ modal: 'import-details-modal' }, '');
+                SampleManagerApp.elements.importDetailsModal.show();
+            },
+
+            updateImagePreview(fileOrUrl, previewId, dropZoneId) {
+                const dropZoneText = document.getElementById(dropZoneId).querySelector('p');
+                const imgPreview = document.getElementById(previewId);
+
+                if (typeof fileOrUrl === 'string') {
+                    imgPreview.src = fileOrUrl;
+                    imgPreview.classList.remove('d-none');
+                    dropZoneText.textContent = "Image captured.";
+                } else if (fileOrUrl instanceof File) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        imgPreview.src = e.target.result;
+                        imgPreview.classList.remove('d-none');
+                    };
+                    reader.readAsDataURL(fileOrUrl);
+                    dropZoneText.textContent = fileOrUrl.name;
+                }
+            },
+            
+renderSearchTags(view) {
+            const container = SampleManagerApp.elements.searchTagsContainer;
+            container.innerHTML = '';
+            const terms = SampleManagerApp.state.searchTerms[view] || [];
+            terms.forEach(term => {
+                const escapedTerm = term.replace(/"/g, '&quot;');
+                // ✨ تعديل: تم وضع النص داخل <span class="term-text">
+                container.innerHTML += `
+                    <span class="search-tag" data-term="${escapedTerm}">
+                        <span class="term-text">${term}</span>
+                        <button type="button" class="btn-close btn-close-sm"></button>
+                    </span>`;
+            });
+        },
+// ✨ التعديل الأول: تحديث دالة renderLocationSidebar بالكامل
+renderLocationSidebar() {
+    const container = document.getElementById('sidebar-folder-list');
+    if (!container) return;
+
+    // استخراج كل المواقع الفريدة من مصفوفة العينات
+    const allLocations = [...new Set(
+        SampleManagerApp.state.samples.flatMap(s => {
+            const loc = s.location;
+            if (Array.isArray(loc)) return loc;
+            if (typeof loc === 'string' && loc.length > 0) {
+                return loc.split(',').map(item => item.trim());
+            }
+            return [];
+        })
+    )];
+    
+    // ✅ --- الإضافة الجديدة والمهمة هنا --- ✅
+    // 1. محاولة جلب الترتيب المخصص من localStorage
+const customOrder = SampleManagerApp.state.sidebarOrder;
+
+    // 2. إذا وجد ترتيب مخصص، نستخدمه لفرز المواقع، وإلا نستخدم الفرز الأبجدي الافتراضي
+    if (customOrder && Array.isArray(customOrder)) {
+        allLocations.sort((a, b) => {
+            const indexA = customOrder.indexOf(a);
+            const indexB = customOrder.indexOf(b);
+            // ضع العناصر غير الموجودة في الترتيب المحفوظ في النهاية
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
+        });
+    } else {
+        // السلوك الافتراضي إذا لم يتم حفظ ترتيب
+        allLocations.sort(SampleManagerApp.naturalSortCompare);
+    }
+    // --- نهاية الإضافة ---
+
+    // التحقق من الفلتر الحالي لتحديد المجلد النشط
+    const currentTerms = SampleManagerApp.state.searchTerms[SampleManagerApp.state.currentView] || [];
+    let activeLocation = '_all_';
+    currentTerms.forEach(term => {
+        const match = term.match(/^location:"([^"]+)"$/);
+        if (match) {
+            activeLocation = match[1];
+        }
+    });
+
+    // إنشاء HTML للمجلدات
+    let foldersHtml = `
+        <li class="folder-item ${activeLocation === '_all_' ? 'active' : ''}" data-location="_all_">
+            <i class="bi bi-collection-fill folder-icon" style="color: #6c757d;"></i> All Samples
+        </li>
+    `;
+
+    allLocations.forEach(location => {
+        // ✨ تمت إضافة draggable="true" هنا لجعل العنصر قابلاً للسحب
+        foldersHtml += `
+            <li class="folder-item ${activeLocation === location ? 'active' : ''}" data-location="${location}" draggable="true">
+                <i class="bi bi-folder-fill folder-icon"></i> ${location}
+            </li>
+        `;
+    });
+
+    container.innerHTML = foldersHtml;
+},
+            closeAllSuggestions() {
+                if (SampleManagerApp.state.activeSuggestions && SampleManagerApp.state.activeSuggestions.element) {
+                    SampleManagerApp.state.activeSuggestions.element.style.display = 'none';
+                    SampleManagerApp.state.activeSuggestions = null;
+                }
+            },
+
+            printView() { window.print(); },
+            showToast(message, type='success'){const id='t-'+Date.now();const tc=document.querySelector('.toast-container');tc.insertAdjacentHTML('beforeend',`<div id="${id}" class="toast align-items-center text-bg-${type} border-0" role="alert"><div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white ms-auto me-2" data-bs-dismiss="toast"></button></div></div>`);const toastEl=document.getElementById(id);const toast=new bootstrap.Toast(toastEl,{delay:3500});toast.show();toastEl.addEventListener('hidden.bs.toast',()=>toastEl.remove());},
+            showConfirmationModal(message, onConfirm){const modalEl=document.getElementById('confirmation-modal');modalEl.querySelector('.modal-body').textContent=message;const confirmBtn=modalEl.querySelector('#confirmation-modal-confirm-btn');const newBtn=confirmBtn.cloneNode(true);confirmBtn.parentNode.replaceChild(newBtn,confirmBtn);newBtn.addEventListener('click',async ()=>{await onConfirm();SampleManagerApp.elements.confirmationModal.hide();},{once:true});
+            history.pushState({ modal: 'confirmation-modal' }, '');
+            SampleManagerApp.elements.confirmationModal.show();},
+            
+            initTooltips() {
+                const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+                [...tooltipTriggerList].forEach(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+            },
+
+            drawAnnotationsOnCanvas(ctx, annotations) {
+                if (!ctx || !annotations || annotations.length === 0) {
+                    return;
+                }
+
+                annotations.forEach(annotation => {
+                    const foil = SampleManagerApp.state.foils.find(f => f.docId === annotation.id);
+                    if (!foil) return;
+                    const labelText = foil.name;
+
+                    (annotation.points || []).forEach(point => {
+                        if (point.x === null || point.y === null) return;
+
+                        ctx.font = 'bold 16px Inter';
+                        ctx.textAlign = 'center';
+                        const textMetrics = ctx.measureText(labelText);
+                        const textWidth = textMetrics.width;
+                        const textHeight = 16;
+                        const padding = 8;
+                        const rectWidth = textWidth + padding;
+                        const rectHeight = textHeight + padding;
+                        const rectX = point.x - (rectWidth / 2);
+                        const rectY = point.y - 35 - rectHeight;
+
+                        ctx.fillStyle = 'rgba(103, 78, 167, 0.9)';
+                        ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
+
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillText(labelText, point.x, point.y - 35 - (padding / 2));
+
+                        ctx.strokeStyle = 'rgba(103, 78, 167, 0.9)';
+                        ctx.fillStyle = 'rgba(103, 78, 167, 0.9)';
+                        ctx.lineWidth = 2;
+                        
+                        ctx.beginPath();
+                        ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
+                        ctx.fill();
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(point.x, point.y);
+                        ctx.lineTo(point.x, rectY + rectHeight);
+                        ctx.stroke();
+                    });
+                });
+            },
+
+            renderDetailsModal(sampleId) {
+                SampleManagerApp.state.currentModalSampleId = sampleId;
+                const sample = SampleManagerApp.state.samples.find(s => s.docId === sampleId);
+                if (!sample) { SampleManagerApp.elements.detailsModal.hide(); return; }
+
+                SampleManagerApp.elements.detailsModalTitle.innerHTML = `
+    Sample Details: ${sample.name} 
+    <a href="#" class="etiquette-link-icon ms-2" data-id="${sample.docId}" title="Generate Etiquette">
+        <i class="bi bi-printer"></i>
+    </a>
+`;
+                const lastUpdatedText = sample.lastUpdated ? new Date(sample.lastUpdated).toLocaleString('en-US') : 'N/A';
+
+                let actionButtonsHtml = '';
+                if (sample.isArchived) {
+                    actionButtonsHtml = `
+                        <button id="details-unarchive-btn" data-doc-id="${sample.docId}" class="btn btn-success w-100 mb-2"><i class="bi bi-box-arrow-up me-2"></i>Unarchive</button>
+                        <button id="details-delete-btn" data-doc-id="${sample.docId}" class="btn btn-danger w-100"><i class="bi bi-trash3-fill me-2"></i>Delete Permanently</button>`;
+                } else {
+                    actionButtonsHtml = `
+                        <button id="details-edit-btn" data-doc-id="${sample.docId}" class="btn btn-primary w-100 mb-2"><i class="bi bi-pencil-square me-2"></i>Edit</button>
+                        <button id="details-annotate-btn" data-doc-id="${sample.docId}" class="btn btn-info w-100 mb-2"><i class="bi bi-palette-fill me-2"></i>Annotate Image</button>
+                        <button id="details-archive-btn" data-doc-id="${sample.docId}" class="btn btn-warning w-100 mb-2"><i class="bi bi-archive-fill me-2"></i>Archive</button>
+                        <button id="details-delete-btn" data-doc-id="${sample.docId}" class="btn btn-outline-danger w-100"><i class="bi bi-trash3-fill me-2"></i>Delete Permanently</button>`;
+                }
+                
+                let componentsBarsHtml = '';
+                if (sample.components && sample.components.length > 0) {
+                    const attachedFoils = sample.components
+                        .map(comp => SampleManagerApp.state.foils.find(f => f.docId === (typeof comp === 'object' ? comp.id : comp)))
+                        .filter(f => f);
+                    
+                    const uniqueNames = [...new Set(attachedFoils.map(f => f.name))];
+                    const lightColors = ['rgba(232, 245, 253, 0.7)', 'rgba(237, 247, 237, 0.7)', 'rgba(250, 240, 255, 0.7)', 'rgba(255, 248, 225, 0.7)', 'rgba(255, 235, 238, 0.7)'];
+                    let colorIndex = 0;
+
+                    uniqueNames.forEach(name => {
+                        const allMatchingFoils = SampleManagerApp.state.foils.filter(f => f.name === name);
+                        const backgroundColor = lightColors[(colorIndex++) % lightColors.length];
+                        const representativeFoil = allMatchingFoils[0];
+                        const placeholderImg = `https://placehold.co/40x40/6c757d/ffffff?text=${encodeURIComponent(representativeFoil.name[0] || '?')}`;
+                        const groupImageHtml = `<img src="${representativeFoil.imageUrl || placeholderImg}" class="component-bar-image me-2" onerror="this.onerror=null;this.src='${placeholderImg}';">`;
+
+                        let barsHtml = '';
+
+                        if (allMatchingFoils.length > 1) {
+                            allMatchingFoils.forEach(foil => {
+                                barsHtml += `
+                                    <div class="mt-2">
+                                        <h6 class="component-bar-title mb-1"><small class="text-muted">Ref: ${foil.reference || 'N/A'}</small></h6>
+                                        ${this.createVisualBar(foil)}
+                                    </div>`;
+                            });
+                            
+                            componentsBarsHtml += `
+                                <div class="mb-3 p-2" style="border-left: 3px solid rgb(var(--bs-danger-rgb)); background-color: ${backgroundColor}; border-radius: 5px;">
+                                    <div class="d-flex align-items-center">
+                                        ${groupImageHtml}
+                                        <h6 class="component-bar-title mb-0 flex-grow-1">${representativeFoil.name} <span class="badge bg-secondary">${allMatchingFoils.length}</span></h6>
+                                    </div>
+                                    ${barsHtml}
+                                </div>`;
+                        } else {
+                            const foil = allMatchingFoils[0];
+                            if (foil) {
+                                barsHtml = `<div class="mt-2">${this.createVisualBar(foil)}</div>`;
+                                componentsBarsHtml += `
+                                <div class="component-bar-container p-2 mb-2" style="background-color: ${backgroundColor}; border-radius: 5px;">
+                                    <div class="d-flex align-items-center">
+                                        ${groupImageHtml}
+                                        <h6 class="component-bar-title mb-0 flex-grow-1">${foil.name} <small class="text-muted">(Ref: ${foil.reference || 'N/A'})</small></h6>
+                                    </div>
+                                    ${barsHtml}
+                                </div>`;
+                            }
+                        }
+                    });
+                }
+
+                // A. نحدد أي رابط سنستخدمه: الصورة المعدلة أولاً، ثم الأصلية إذا لم توجد
+// نحدد أي رابط سنستخدمه: الصورة المعدلة أولاً، ثم الأصلية إذا لم توجد
+const imageUrlToShow = sample.annotatedImageUrl || sample.imageUrl;
+
+// نستخدم الرابط الذي اخترناه في كود HTML ونزيل عنصر <canvas>
+const imageDisplayHtml = imageUrlToShow
+? `<div class="position-relative mb-3">
+    <img src="${imageUrlToShow}" id="details-image-tag" class="img-fluid rounded shadow-sm" style="border: 1px solid #dee2e6;">
+  </div>`
+: `<div class="text-center bg-light p-5 rounded mb-3"><i class="bi bi-image-alt h1 text-muted"></i><p class="text-muted mt-2">No image for this sample</p></div>`;
+// ✨ --- كود جديد وذكي لعرض المواقع في نافذة التفاصيل --- ✨
+let locationsHtml = '-';
+const locData = sample.location;
+let locationsArray = [];
+
+// التحقق إذا كانت البيانات مصفوفة (جديدة)
+if (Array.isArray(locData) && locData.length > 0) {
+    locationsArray = locData;
+} 
+// التحقق إذا كانت البيانات نصًا (قديمة)
+else if (typeof locData === 'string' && locData.trim().length > 0) {
+    locationsArray = locData.split(',').map(item => item.trim());
+}
+
+// إذا كانت لدينا مواقع (سواء من مصفوفة أو نص)، قم بإنشاء HTML لها
+if (locationsArray.length > 0) {
+    locationsHtml = locationsArray.map(loc => `<span class="badge bg-warning text-dark me-1">${loc}</span>`).join(' ');
+
+}
+                // استبدل الكتلة الحالية بهذا الكود الجديد بالكامل
+SampleManagerApp.elements.detailsModalBody.innerHTML = `
+<div class="row">
+    <div class="col-md-5 mb-3 mb-md-0">
+        ${imageDisplayHtml} 
+        ${actionButtonsHtml}
+        <div class="text-center text-muted small mt-3"><i class="bi bi-clock-history"></i> Last updated: ${lastUpdatedText}</div>
+    </div>
+    <div class="col-md-7">
+        <ul class="list-group mb-3">
+            <li class="list-group-item d-flex justify-content-between align-items-center"><strong>Category:</strong> <span>${sample.category || '-'}</span></li>
+<li class="list-group-item d-flex justify-content-between align-items-start"><strong>Location:</strong> <span class="text-end">${locationsHtml}</span></li>
+
+            <li class="list-group-item d-flex justify-content-between align-items-center"><strong>Entry Date:</strong> <span>${sample.entryDate ? new Date(sample.entryDate).toLocaleDateString('en-CA') : '-'}</span></li>
+            
+            <li class="list-group-item">
+                <strong>Description:</strong>
+                <textarea id="details-sample-description" class="form-control form-control-sm mt-1" rows="2">${sample.description || ''}</textarea>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <strong>Status:</strong>
+                <select id="details-sample-status" class="form-select form-select-sm w-50 status-select">
+                    <option value="Unknown" ${sample.status === 'Unknown' ? 'selected' : ''}>Unknown</option>
+                    <option value="Available" ${sample.status === 'Available' ? 'selected' : ''}>Available</option>
+                    <option value="Not Available" ${sample.status === 'Not Available' ? 'selected' : ''}>Not Available</option>
+                </select>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <strong>Quantity:</strong>
+                <input type="number" id="details-sample-quantity" class="form-control form-control-sm w-50" value="${sample.quantity || ''}" ${sample.status !== 'Available' ? 'disabled' : ''}>
+            </li>
+            </ul>
+        <div id="components-bars-section">
+           ${componentsBarsHtml}
+        </div>
+    </div>
+</div>`;
+
+// أضف هذا الكود مباشرة بعد السطر السابق
+// =================== كود جديد لربط الأحداث في نافذة التفاصيل ===================
+const detailsStatusSelect = document.getElementById('details-sample-status');
+const detailsQuantityInput = document.getElementById('details-sample-quantity');
+const detailsDescriptionTextarea = document.getElementById('details-sample-description');
+
+// دالة لتحديث لون القائمة
+const updateDetailsStatusColor = () => {
+    detailsStatusSelect.classList.remove('status-available', 'status-not-available');
+    if (detailsStatusSelect.value === 'Available') {
+        detailsStatusSelect.classList.add('status-available');
+    } else if (detailsStatusSelect.value === 'Not Available') {
+        detailsStatusSelect.classList.add('status-not-available');
+    }
+};
+updateDetailsStatusColor(); // تطبيق اللون عند الفتح
+
+// حدث تغيير الحالة
+detailsStatusSelect.addEventListener('change', () => {
+    const newStatus = detailsStatusSelect.value;
+    let newQuantity = sample.quantity;
+
+    if (newStatus === 'Available') {
+        detailsQuantityInput.removeAttribute('disabled');
+    } else {
+        detailsQuantityInput.setAttribute('disabled', true);
+        detailsQuantityInput.value = '';
+        newQuantity = null;
+    }
+    
+    SampleManagerApp.updateSample(sample.docId, { status: newStatus, quantity: newQuantity });
+    this.showToast('Status updated!', 'success');
+    updateDetailsStatusColor(); // تحديث اللون
+});
+
+// حدث تغيير الكمية
+detailsQuantityInput.addEventListener('change', () => {
+    const newQuantity = detailsQuantityInput.value ? parseInt(detailsQuantityInput.value, 10) : null;
+    SampleManagerApp.updateSample(sample.docId, { quantity: newQuantity });
+    this.showToast('Quantity updated!', 'success');
+});
+
+// حدث تغيير الوصف
+detailsDescriptionTextarea.addEventListener('change', () => {
+    SampleManagerApp.updateSample(sample.docId, { description: detailsDescriptionTextarea.value });
+    this.showToast('Description updated!', 'success');
+});
+// ==============================================================================
+                
+                
+
+                this.initTooltips();
+
+                if (!SampleManagerApp.elements.detailsModal._element.classList.contains('show')) {
+                    history.pushState({ modal: 'details-modal' }, '');
+                    SampleManagerApp.elements.detailsModal.show();
+                }
+            },
+
+            ImageAnnotator: {
+                canvas: null, ctx: null, sample: null, image: null, annotations: [],
+                isDrawing: false, activeFoilId: null, isDragging: false, draggedPoint: null,
+
+                init(sample) {
+                    this.sample = sample;
+                    this.canvas = document.getElementById('annotation-canvas');
+                    this.ctx = this.canvas.getContext('2d');
+                    
+                    this.annotations = JSON.parse(JSON.stringify(
+                        (sample.components || []).map(c => {
+                            if (typeof c === 'object' && c.points) {
+                                return c;
+                            }
+                            return { id: (c.id || c), points: (c.x !== null && c.y !== null) ? [{ x: c.x, y: c.y }] : [] };
+                        })
+                    ));
+
+                    this.image = new Image();
+                    this.image.crossOrigin = "Anonymous";
+                    this.image.onload = () => {
+                        this.canvas.width = this.image.width;
+                        this.canvas.height = this.image.height;
+                        this.redraw();
+                    };
+                    this.image.src = sample.imageUrl;
+
+                    this.populateFoilTray();
+                    this.bindEvents();
+                },
+
+                populateFoilTray() {
+                    const tray = document.getElementById('foil-tray');
+                    tray.innerHTML = '';
+                    this.annotations.forEach(annotation => {
+                        const foil = SampleManagerApp.state.foils.find(f => f.docId === annotation.id);
+                        if (foil) {
+                            tray.innerHTML += `
+                                <div class="foil-label" data-foil-id="${foil.docId}">
+                                    <span class="foil-name">${foil.name}</span>
+                                    <div class="foil-handle"></div>
+                                </div>
+                            `;
+                        }
+                    });
+                },
+
+                findNearbyPoint(mouseX, mouseY) {
+                    const hitRadius = 15;
+                    for (const annotation of this.annotations) {
+                        for (let i = 0; i < annotation.points.length; i++) {
+                            const point = annotation.points[i];
+                            const distance = Math.sqrt(Math.pow(mouseX - point.x, 2) + Math.pow(mouseY - point.y, 2));
+                            if (distance < hitRadius) {
+                                return { annotation, pointIndex: i };
+                            }
+                        }
+                    }
+                    return null;
+                },
+
+                bindEvents() {
+                    const tray = document.getElementById('foil-tray');
+                    tray.onmousedown = (e) => {
+                        if (e.target.classList.contains('foil-handle')) {
+                            this.isDrawing = true;
+                            this.activeFoilId = e.target.closest('.foil-label').dataset.foilId;
+                            e.preventDefault();
+                        }
+                    };
+
+                    this.canvas.onmousedown = (e) => {
+                        const rect = this.canvas.getBoundingClientRect();
+                        const mouseX = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+                        const mouseY = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+
+                        const nearbyPoint = this.findNearbyPoint(mouseX, mouseY);
+                        if (nearbyPoint) {
+                            this.isDragging = true;
+                            this.draggedPoint = nearbyPoint;
+                            e.preventDefault();
+                        }
+                    };
+
+                    this.canvas.onmousemove = (e) => {
+                        const rect = this.canvas.getBoundingClientRect();
+                        const mouseX = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+                        const mouseY = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+                        
+                        if (this.isDragging && this.draggedPoint) {
+                            this.draggedPoint.annotation.points[this.draggedPoint.pointIndex] = { x: mouseX, y: mouseY };
+                            this.redraw();
+                        } 
+                        else if (this.isDrawing) {
+                            this.redraw();
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(mouseX, 0);
+                            this.ctx.lineTo(mouseX, mouseY);
+                            this.ctx.strokeStyle = 'rgb(var(--bs-primary-rgb))';
+                            this.ctx.lineWidth = 2;
+                            this.ctx.setLineDash([5, 5]);
+                            this.ctx.stroke();
+                            this.ctx.setLineDash([]);
+                        }
+                    };
+
+                    this.canvas.onmouseup = (e) => {
+                        const rect = this.canvas.getBoundingClientRect();
+                        
+                        if (this.isDragging && this.draggedPoint) {
+                            const isOutside = e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom;
+                            
+                            if (isOutside) {
+                                this.draggedPoint.annotation.points.splice(this.draggedPoint.pointIndex, 1);
+                            }
+                        }
+                        else if (this.isDrawing) {
+                            const mouseX = Math.round((e.clientX - rect.left) * (this.canvas.width / rect.width));
+                            const mouseY = Math.round((e.clientY - rect.top) * (this.canvas.height / rect.height));
+
+                            const annotation = this.annotations.find(a => a.id === this.activeFoilId);
+                            if (annotation) {
+                                annotation.points.push({ x: mouseX, y: mouseY });
+                            }
+                        }
+
+                        this.isDrawing = false;
+                        this.isDragging = false;
+                        this.activeFoilId = null;
+                        this.draggedPoint = null;
+                        this.redraw();
+                    };
+                },
+
+                redraw() {
+                    if (!this.image || !this.ctx) return;
+                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                    this.ctx.drawImage(this.image, 0, 0);
+
+                    this.annotations.forEach(annotation => {
+                        const foil = SampleManagerApp.state.foils.find(f => f.docId === annotation.id);
+                        const labelText = foil ? foil.name : 'Unknown';
+
+                        annotation.points.forEach(point => {
+                            this.ctx.font = 'bold 16px Inter';
+                            this.ctx.textAlign = 'center';
+                            const textMetrics = this.ctx.measureText(labelText);
+                            const textWidth = textMetrics.width;
+                            const textHeight = 16;
+                            const padding = 8;
+                            const rectWidth = textWidth + padding;
+                            const rectHeight = textHeight + padding;
+                            const rectX = point.x - (rectWidth / 2);
+                            const rectY = point.y - 35 - rectHeight;
+
+                            this.ctx.fillStyle = 'rgba(220, 53, 69, 0.9)';
+                            this.ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
+
+                            this.ctx.fillStyle = '#FFFFFF';
+                            this.ctx.fillText(labelText, point.x, point.y - 35 - (padding / 2));
+
+                            this.ctx.strokeStyle = 'rgba(220, 53, 69, 0.9)';
+                            this.ctx.fillStyle = 'rgba(220, 53, 69, 0.9)';
+                            this.ctx.lineWidth = 2;
+                            this.ctx.beginPath();
+                            this.ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
+                            this.ctx.fill();
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(point.x, point.y);
+                            this.ctx.lineTo(point.x, rectY + rectHeight);
+                            this.ctx.stroke();
+                        });
+                    });
+                },
+
+                async save() {
+                    const tempCanvas = document.createElement('canvas');
+                    const tempCtx = tempCanvas.getContext('2d');
+                    
+                    tempCanvas.width = this.image.naturalWidth;
+                    tempCanvas.height = this.image.naturalHeight;
+
+                    tempCtx.drawImage(this.image, 0, 0);
+                    SampleManagerApp.UI.drawAnnotationsOnCanvas(tempCtx, this.annotations);
+                    const annotatedDataUrl = tempCanvas.toDataURL('image/webp', 0.9);
+
+                    SampleManagerApp.updateSample(this.sample.docId, { 
+                        components: this.annotations,
+                        annotatedImageUrl: annotatedDataUrl 
+                    });
+                    
+                    this.cleanup();
+                    bootstrap.Modal.getInstance(document.getElementById('annotation-modal')).hide();
+                    SampleManagerApp.UI.showToast('Annotations saved successfully!', 'success');
+                },
+
+                cleanup() {
+                    this.canvas.onmousedown = null;
+                    this.canvas.onmousemove = null;
+                    this.canvas.onmouseup = null;
+                    document.getElementById('foil-tray').onmousedown = null;
+                    this.canvas = null; this.ctx = null; this.sample = null;
+                    this.image = null; this.annotations = [];
+                    this.isDrawing = this.isDragging = false;
+                    this.activeFoilId = this.draggedPoint = null;
+                }
+            },
+            
+            Camera: {
+                dataURLtoFile(dataurl, filename) {
+                    let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+                        bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+                    while(n--){ u8arr[n] = bstr.charCodeAt(n); }
+                    return new File([u8arr], filename, {type: mime});
+                },
+                async open() {
+                    if (!('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices)) {
+                        SampleManagerApp.UI.showToast("Camera not supported on this browser.", "danger");
+                        return;
+                    }
+                    this.reset();
+                    history.pushState({ modal: 'camera-modal' }, '');
+                    SampleManagerApp.elements.cameraModal.show();
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                        SampleManagerApp.state.cameraStream = stream;
+                        const video = document.getElementById('camera-stream');
+                        video.srcObject = stream;
+                        video.style.display = 'block';
+                        document.getElementById('camera-permission-message').style.display = 'none';
+                        document.getElementById('snap-photo-btn').style.display = 'inline-block';
+                    } catch (err) {
+                        console.error("Camera access error:", err);
+                        SampleManagerApp.UI.showToast(`Camera access denied: ${err.message}`, "danger");
+                        document.getElementById('camera-permission-message').textContent = "Could not access camera.";
+                        SampleManagerApp.elements.cameraModal.hide();
+                    }
+                },
+                snap() {
+                    const video = document.getElementById('camera-stream');
+                    const canvas = document.getElementById('camera-canvas');
+                    const preview = document.getElementById('camera-snap-preview');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    canvas.getContext('2d').drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+                    preview.src = canvas.toDataURL('image/jpeg');
+                    video.style.display = 'none';
+                    preview.style.display = 'block';
+                    document.getElementById('snap-photo-btn').style.display = 'none';
+                    document.getElementById('use-photo-btn').style.display = 'inline-block';
+                },
+                use() {
+                    const canvas = document.getElementById('camera-canvas');
+                    const dataUrl = canvas.toDataURL('image/jpeg');
+                    const file = this.dataURLtoFile(dataUrl, `capture_${Date.now()}.jpg`);
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    document.getElementById('sample-image').files = dataTransfer.files;
+                    SampleManagerApp.UI.updateImagePreview(dataUrl, 'sample-image-preview', 'image-drop-zone');
+                    history.back();
+                },
+                close() {
+                    if (SampleManagerApp.state.cameraStream) {
+                        SampleManagerApp.state.cameraStream.getTracks().forEach(track => track.stop());
+                        SampleManagerApp.state.cameraStream = null;
+                        console.log("Camera stream stopped.");
+                    }
+                    this.reset();
+                },
+                reset() {
+                    document.getElementById('camera-permission-message').style.display = 'block';
+                    document.getElementById('camera-permission-message').textContent = 'Waiting for camera permission...';
+                    document.getElementById('camera-stream').style.display = 'none';
+                    document.getElementById('camera-snap-preview').style.display = 'none';
+                    document.getElementById('snap-photo-btn').style.display = 'none';
+                    document.getElementById('use-photo-btn').style.display = 'none';
+                }
+            },
+ 
+// ... داخل الكائن SampleManagerApp.UI
+generateEtiquetteUrl(sample) {
+                // 1. الحصول على اسم المنتج
+                const sampleName = sample.name || '';
+
+                // 2. الحصول على أسماء مكونات الفويل ودمجها
+                const componentNames = (sample.components || [])
+                    .map(comp => {
+                        const foil = SampleManagerApp.state.foils.find(f => f.docId === (typeof comp === 'object' ? comp.id : comp));
+                        return foil ? foil.name : null;
+                    })
+                    .filter(Boolean)
+                    .join('  ➕  ');
+
+                // 3. ✨ تشفير كل جزء على حدة
+                const encodedSampleName = encodeURIComponent(sampleName);
+                const encodedComponentNames = encodeURIComponent(componentNames);
+
+                // 4. ✨ دمج الأجزاء المشفرة مع علامة '+' الحرفية
+                const finalData = `${encodedSampleName}+${encodedComponentNames}`;
+
+                // 5. بناء الرابط النهائي (لاحظ أننا نستخدم finalData مباشرة بدون تشفير إضافي)
+                return `file:///C:/Users/veryg/Videos/fifa/New%20Folder/dashboard/Etiquette/Etiquette.html#${finalData}`;
+            },
+
+
+
+
+
+ 
+            ImageConverter: {
+                convertToPng(file) {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        const image = new Image();
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        image.onload = () => {
+                            canvas.width = image.width;
+                            canvas.height = image.height;
+                            ctx.drawImage(image, 0, 0);
+                            const dataUrl = canvas.toDataURL('image/png');
+                            const newFileName = file.name.replace(/\.[^/.]+$/, "") + ".png";
+                            const pngFile = SampleManagerApp.UI.Camera.dataURLtoFile(dataUrl, newFileName);
+                            resolve(pngFile);
+                        };
+
+                        image.onerror = (error) => { reject(error); };
+                        reader.onload = (e) => { image.src = e.target.result; };
+                        reader.onerror = (error) => { reject(error); };
+                        reader.readAsDataURL(file);
+                    });
+                }
+            }
+        };
+
+        SampleManagerApp.init();
+    });
+</script>
+</body>
+</html>
+
